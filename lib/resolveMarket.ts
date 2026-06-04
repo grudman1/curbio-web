@@ -3,6 +3,7 @@ import { getOperatorLead } from "./operator";
 import {
   buildResolvedMarket,
   canonicalZipForSlug,
+  nearestServedMarket,
   type ResolvedMarket,
 } from "./markets";
 
@@ -47,8 +48,23 @@ export async function resolveMarket(searchParams: {
   try {
     const h = await headers();
     const postal = h.get("x-vercel-ip-postal-code");
+
+    // 3a. Exact ZIP match — most precise when the geo ZIP is actually served.
     if (postal) {
       const market = buildResolvedMarket(await getOperatorLead(postal));
+      if (market) return { market, source: "geo" };
+    }
+
+    // 3b. Nearest served market by coordinates. IP geolocation is approximate,
+    // so a metro visitor's ZIP often isn't one Curbio serves exactly — match
+    // them to the closest market instead of dropping to the neutral state.
+    const lat = parseFloat(h.get("x-vercel-ip-latitude") ?? "");
+    const lng = parseFloat(h.get("x-vercel-ip-longitude") ?? "");
+    const region = h.get("x-vercel-ip-country-region");
+    const nearSlug = nearestServedMarket(lat, lng, region);
+    if (nearSlug) {
+      const zip = canonicalZipForSlug(nearSlug);
+      const market = zip ? buildResolvedMarket(await getOperatorLead(zip)) : null;
       if (market) return { market, source: "geo" };
     }
   } catch {

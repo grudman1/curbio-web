@@ -140,6 +140,57 @@ export const MARKET_CARDS: MarketCard[] = Object.values(BY_MARKET_NAME).map((e) 
 }));
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Geo fallback — approximate service-area centers, used to match a visitor to
+// the NEAREST served market when their IP-geolocated ZIP isn't an exact match
+// (IP geolocation is imprecise, so strict ZIP matching alone misses most metro
+// visitors). Coordinates are rough metro centroids.
+// ─────────────────────────────────────────────────────────────────────────────
+const MARKET_COORDS: Record<string, { lat: number; lng: number }> = {
+  atlanta: { lat: 33.749, lng: -84.388 },
+  baltimore: { lat: 39.13, lng: -76.85 }, // Baltimore + Montgomery MD suburbs
+  dallas: { lat: 32.7767, lng: -96.797 },
+  "los-angeles": { lat: 34.0522, lng: -118.2437 },
+  riverside: { lat: 33.9533, lng: -117.3962 },
+  "northern-virginia": { lat: 38.8462, lng: -77.3064 },
+  "southern-maryland": { lat: 38.7, lng: -76.85 }, // Charles + PG counties
+};
+
+const GEO_NEAREST_MILES = 75;
+
+function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 3958.8;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * Nearest served market to a lat/lng, within GEO_NEAREST_MILES. Prefers markets
+ * in the visitor's state (so DC-metro MD vs VA, or LA vs Riverside, disambiguate
+ * sensibly) and falls back to nearest-overall when no served market shares the
+ * state (e.g. a Washington, DC visitor). Returns a market slug or null.
+ */
+export function nearestServedMarket(
+  lat: number,
+  lng: number,
+  region?: string | null
+): string | null {
+  if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+  const ranked = Object.entries(MARKET_COORDS)
+    .map(([slug, c]) => ({ slug, miles: haversineMiles(lat, lng, c.lat, c.lng), state: BY_SLUG[slug].state }))
+    .sort((a, b) => a.miles - b.miles);
+  const r = (region ?? "").trim().toUpperCase();
+  const sameState = r ? ranked.filter((m) => m.state === r) : [];
+  const pool = sameState.length ? sameState : ranked;
+  const best = pool[0];
+  return best && best.miles <= GEO_NEAREST_MILES ? best.slug : null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Resolved view model — what the page components render.
 // ─────────────────────────────────────────────────────────────────────────────
 
