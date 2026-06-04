@@ -1,0 +1,39 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# next.js / build output
+/.next/
+/out/
+/build
+next-env.d.ts
+*.tsbuildinfo
+
+# environment variables — never commit real values; keep the example template
+.env
+.env.*
+!.env.example
+
+# vercel
+.vercel
+
+# editor / local tooling
+.claude/
+.idea/
+.vscode/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# misc / OS
+.DS_Store
+*.pem
+
+# local reference docs (kept on disk, excluded from the deployed repo)
+/Curbio Website Design Brief (standalone).html
+/curbio-claude-code-brief.md
+/markets.json
