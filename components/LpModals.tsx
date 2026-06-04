@@ -229,7 +229,7 @@ export function QuoteModal({
               style={{
                 fontSize: 13,
                 color: "var(--amber-120)",
-                background: "var(--amber-10)",
+                background: "var(--stone)",
                 padding: "10px 12px",
                 borderRadius: 8,
                 margin: "14px 0 0",
@@ -254,12 +254,11 @@ export function QuoteModal({
               width: 62,
               height: 62,
               borderRadius: 999,
-              background: "var(--amber-10)",
+              background: "var(--stone)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               margin: "0 auto 18px",
-              border: "1px solid var(--amber-30)",
             }}
           >
             <Icon name="check" size={28} color="var(--amber)" stroke={2.5} />

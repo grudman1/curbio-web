@@ -400,12 +400,11 @@ export function Downloads({ market }: { market: ResolvedMarket | null }) {
                     width: 56,
                     height: 56,
                     borderRadius: 999,
-                    background: "var(--amber-10)",
+                    background: "var(--stone)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     margin: "0 auto 16px",
-                    border: "1px solid var(--amber-30)",
                   }}
                 >
                   <Icon name="check" size={26} color="var(--amber)" stroke={2.5} />
