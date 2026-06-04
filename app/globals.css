@@ -214,32 +214,32 @@ select.lp-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 .lp-nav-link:hover{color:var(--amber)}
 
 /* ---------- hero ---------- */
-.lp-hero{padding:28px 0 34px}
-.lp-hero-grid{display:grid;grid-template-columns:1.26fr 0.74fr;gap:44px;align-items:center}
-.lp-hero-h1{font-family:var(--font-serif);font-weight:600;font-size:clamp(31px,3.5vw,46px);line-height:1.08;letter-spacing:-0.015em;margin:0;color:var(--navy)}
+.lp-hero{min-height:calc(100svh - 150px);display:grid;align-content:center;padding:24px 0 28px}
+.lp-hero-grid{display:grid;grid-template-columns:1.18fr 0.82fr;gap:48px;align-items:center;width:100%}
+.lp-hero-h1{font-family:var(--font-serif);font-weight:600;font-size:clamp(33px,3.7vw,50px);line-height:1.08;letter-spacing:-0.015em;margin:0;color:var(--navy)}
 .lp-hero-h1 em{color:var(--amber)}
 .lp-hero-sub{font-size:17px;line-height:1.6;color:var(--fg-muted);max-width:50ch;margin:0}
 .lp-hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:28px}
 .lp-trust{display:flex;align-items:center;gap:9px;margin-top:24px;font-size:13px;font-weight:600;color:var(--fg-muted);flex-wrap:wrap}
-@media (max-width:920px){ .lp-hero-grid{grid-template-columns:1fr;gap:36px} .lp-hero{padding:40px 0 52px} }
+@media (max-width:920px){ .lp-hero{min-height:0;display:block;padding:32px 0 44px} .lp-hero-grid{grid-template-columns:1fr;gap:32px} }
 
 /* ---------- HSM card ---------- */
 .lp-hsm{background:#fff;border:1px solid var(--stone);border-radius:20px;box-shadow:var(--shadow-lg);overflow:hidden}
-.lp-hsm-photo{position:relative;aspect-ratio:16/10}
+.lp-hsm-photo{position:relative;aspect-ratio:4/3}
 .lp-hsm-badge{position:absolute;left:14px;bottom:14px;display:inline-flex;align-items:center;gap:6px;background:rgba(13,37,77,0.82);backdrop-filter:blur(6px);color:#fff;font-size:11.5px;font-weight:700;letter-spacing:.02em;padding:6px 12px;border-radius:999px}
 .lp-hsm-body{padding:18px 20px 20px}
 .lp-hsm-name{font-family:var(--font-serif);font-size:23px;font-weight:600;color:var(--navy);line-height:1.1}
 .lp-hsm-title{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--amber);margin-top:5px}
-.lp-hsm-bio{font-size:13px;line-height:1.5;color:var(--fg-muted);margin:11px 0 0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.lp-hsm-bio{font-size:13px;line-height:1.5;color:var(--fg-muted);margin:11px 0 0}
 .lp-hsm-stats{display:flex;gap:10px 20px;margin:16px 0 0;flex-wrap:wrap;padding-bottom:15px;border-bottom:1px solid var(--stone)}
 .lp-hsm-stats span{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--navy)}
 .lp-dot{display:inline-block;width:9px;height:9px;border-radius:999px;background:var(--fg-subtle)}
 .lp-dot.on{background:#2E7D52;box-shadow:0 0 0 3px rgba(46,125,82,0.18)}
-.lp-hsm-callbox{display:flex;align-items:center;gap:13px;margin-top:15px;text-decoration:none}
-.lp-hsm-callicon{width:44px;height:44px;border-radius:999px;background:var(--amber-10);border:1px solid var(--amber-30);display:flex;align-items:center;justify-content:center;flex:none}
-.lp-hsm-callinfo{display:flex;flex-direction:column;line-height:1.1}
-.lp-hsm-calllabel{font-family:var(--font-sans);font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--fg-subtle)}
-.lp-hsm-callnum{font-family:var(--font-sans);font-size:21px;font-weight:800;color:var(--navy);margin-top:3px;transition:color .15s}
+.lp-hsm-callbox{display:flex;align-items:center;gap:11px;margin-top:14px;text-decoration:none}
+.lp-hsm-callicon{width:38px;height:38px;border-radius:999px;background:var(--amber-10);border:1px solid var(--amber-30);display:flex;align-items:center;justify-content:center;flex:none}
+.lp-hsm-callinfo{display:flex;flex-direction:column;line-height:1.15}
+.lp-hsm-calllabel{font-family:var(--font-sans);font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--fg-subtle)}
+.lp-hsm-callnum{font-family:var(--font-sans);font-size:17px;font-weight:700;color:var(--navy);margin-top:2px;transition:color .15s}
 .lp-hsm-callbox:hover .lp-hsm-callnum{color:var(--amber)}
 
 /* tertiary text CTA in the hero */
