@@ -4,6 +4,7 @@ export const runtime = "nodejs";
 
 type LeadBody = {
   name?: string;
+  phone?: string;
   zip?: string;
   email?: string;
   description?: string;
@@ -33,8 +34,11 @@ export async function POST(req: Request) {
 
   const errors: string[] = [];
   if (!body.name?.trim()) errors.push("name");
-  if (!body.zip || body.zip.replace(/\D/g, "").length !== 5) errors.push("zip");
   if (!body.email || !isValidEmail(body.email)) errors.push("email");
+  // Quote requests collect a phone; magnet/other sources don't.
+  if (body.source === "quote" && (!body.phone || body.phone.replace(/\D/g, "").length < 10)) {
+    errors.push("phone");
+  }
   if (errors.length) {
     return NextResponse.json(
       { ok: false, error: `Missing or invalid: ${errors.join(", ")}` },
@@ -44,8 +48,9 @@ export async function POST(req: Request) {
 
   const payload = {
     name: body.name!.trim(),
-    zip: body.zip!.replace(/\D/g, "").slice(0, 5),
+    phone: body.phone?.trim() ?? "",
     email: body.email!.trim(),
+    zip: body.zip ? body.zip.replace(/\D/g, "").slice(0, 5) : "",
     description: body.description?.trim() ?? "",
     market: body.market ?? null,
     source: body.source ?? "quote",

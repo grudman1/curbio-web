@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { MARKET_CARDS, type ResolvedMarket } from "@/lib/markets";
-import { Modal, Eyebrow, PillButton, Field, Icon, SuccessPanel } from "./LpKit";
+import { Modal, Eyebrow, PillButton, Field, Icon } from "./LpKit";
 
 function isValidEmail(s: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
@@ -135,18 +135,18 @@ export function QuoteModal({
   onClose: () => void;
   market: ResolvedMarket | null;
 }) {
-  const [f, setF] = useState({ name: "", zip: "", email: "", description: "" });
+  const [f, setF] = useState({ name: "", phone: "", email: "", description: "" });
   const [sent, setSent] = useState(false);
   const [pending, setPending] = useState(false);
   const [serverErr, setServerErr] = useState<string | null>(null);
   const set = (k: keyof typeof f) => (v: string) => setF((s) => ({ ...s, [k]: v }));
-  const valid = f.name.trim() && f.zip.replace(/\D/g, "").length === 5 && isValidEmail(f.email);
+  const valid = f.name.trim() && f.phone.replace(/\D/g, "").length >= 10 && isValidEmail(f.email);
 
   const close = () => {
     setSent(false);
     setPending(false);
     setServerErr(null);
-    setF({ name: "", zip: "", email: "", description: "" });
+    setF({ name: "", phone: "", email: "", description: "" });
     onClose();
   };
 
@@ -160,7 +160,7 @@ export function QuoteModal({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           name: f.name.trim(),
-          zip: f.zip.replace(/\D/g, "").slice(0, 5),
+          phone: f.phone.trim(),
           email: f.email.trim(),
           description: f.description.trim(),
           market: market?.slug ?? null,
@@ -179,6 +179,9 @@ export function QuoteModal({
   }
 
   const hsmName = market?.hsm.name ?? "Your local Home Services Manager";
+  const firstName = market?.hsm.firstName ?? "";
+  const calendlyUrl =
+    market?.hsm.calendlyUrl && market.hsm.calendlyUrl !== "#" ? market.hsm.calendlyUrl : null;
 
   return (
     <Modal open={open} onClose={close} maxWidth={500}>
@@ -203,14 +206,13 @@ export function QuoteModal({
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             <Field label="Name" value={f.name} onChange={set("name")} required half />
             <Field
-              label="Property ZIP"
-              value={f.zip}
-              onChange={set("zip")}
+              label="Phone"
+              type="tel"
+              value={f.phone}
+              onChange={set("phone")}
               required
               half
-              inputMode="numeric"
-              maxLength={5}
-              placeholder="20817"
+              placeholder="(240) 555-0148"
             />
             <Field label="Email" type="email" value={f.email} onChange={set("email")} required />
             <Field
@@ -246,17 +248,54 @@ export function QuoteModal({
           </p>
         </>
       ) : (
-        <SuccessPanel
-          title="Request received"
-          body={
-            <span>
-              {market ? `${market.hsm.name} will` : "Your local Curbio team will"} reach out within one business
-              day to schedule your walkthrough. Keep an eye on{" "}
-              <strong style={{ color: "var(--navy)" }}>{f.email || "your inbox"}</strong>.
-            </span>
-          }
-          onClose={close}
-        />
+        <div style={{ textAlign: "center", padding: "12px 4px 6px" }}>
+          <div
+            style={{
+              width: 62,
+              height: 62,
+              borderRadius: 999,
+              background: "var(--amber-10)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 18px",
+              border: "1px solid var(--amber-30)",
+            }}
+          >
+            <Icon name="check" size={28} color="var(--amber)" stroke={2.5} />
+          </div>
+          <h2
+            style={{
+              fontFamily: "var(--font-serif)",
+              fontSize: 26,
+              fontWeight: 600,
+              color: "var(--navy)",
+              margin: "0 0 8px",
+              lineHeight: 1.1,
+            }}
+          >
+            Request received
+          </h2>
+          <p style={{ fontSize: 14, color: "var(--fg-muted)", margin: "0 auto 22px", lineHeight: 1.55, maxWidth: 400 }}>
+            {market ? market.hsm.name : "Your local Curbio team"} will reach out within one business day at{" "}
+            <strong style={{ color: "var(--navy)" }}>{f.email || "your inbox"}</strong>.
+            {calendlyUrl ? " Want to talk sooner? Grab a time that works for you." : ""}
+          </p>
+          {calendlyUrl ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 340, margin: "0 auto" }}>
+              <PillButton full size="lg" icon="calendar" href={calendlyUrl} target="_blank">
+                Schedule a call{firstName ? ` with ${firstName}` : ""}
+              </PillButton>
+              <PillButton full variant="secondary" onClick={close}>
+                No thanks, I&apos;ll wait
+              </PillButton>
+            </div>
+          ) : (
+            <PillButton size="lg" variant="secondary" onClick={close} style={{ minWidth: 160 }}>
+              Done
+            </PillButton>
+          )}
+        </div>
       )}
     </Modal>
   );
