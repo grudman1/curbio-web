@@ -119,8 +119,8 @@ const SLUG_HSM: Record<string, { first: string; photo: string | null }> = {
   dallas: { first: "Miguel", photo: "/hsm/miguel-picart.jpg" },
   "los-angeles": { first: "Trevor", photo: "/hsm/trevor-laramee.jpg" },
   riverside: { first: "Trevor", photo: "/hsm/trevor-laramee.jpg" },
-  "northern-virginia": { first: "Joshua", photo: null },
-  "southern-maryland": { first: "Joshua", photo: null },
+  "northern-virginia": { first: "Joshua", photo: "/hsm/joshua-collins.jpg" },
+  "southern-maryland": { first: "Joshua", photo: "/hsm/joshua-collins.jpg" },
 };
 
 export type MarketCard = {
@@ -229,6 +229,12 @@ const TEAM: Record<string, TeamMember> = {
     title: "VP, Sales & Operations",
     bio: "Aaron is Curbio's VP of Sales & Operations. With deep construction and operations experience, he helps agents prepare homes for sale through strategic, pre-listing renovations — maximizing value and reducing friction for their clients.",
   },
+  "Joshua Collins": {
+    photo: "/hsm/joshua-collins.jpg",
+    title: "Home Services Manager",
+    // {market} is replaced with the resolved market label (NOVA / Southern Maryland).
+    bio: "Joshua Collins is your complete home-renovation expert, master plumber, and certified home inspector — bringing over 20 years of hands-on construction experience and management to the {market} market. Working directly with agents, buyers, and sellers to get homes ready for market or move-in ready, he's highly motivated to deliver an excellent customer experience — handling every aspect of the project personally to ensure quality, on-time delivery, and clear communication from start to finish.",
+  },
 };
 
 export type ResolvedMarket = {
@@ -291,9 +297,10 @@ export function buildResolvedMarket(
       firstName,
       name: cleanName,
       title: member?.title ?? "Home Services Manager",
-      bio:
+      bio: (
         member?.bio ??
-        `${firstName} helps ${label}-area agents and sellers get listings market-ready — on time and on budget. From the first walkthrough to closing, ${firstName} scopes the work, builds the plan, and stays accountable for the whole project.`,
+        `${firstName} helps ${label}-area agents and sellers get listings market-ready — on time and on budget. From the first walkthrough to closing, ${firstName} scopes the work, builds the plan, and stays accountable for the whole project.`
+      ).replace(/\{market\}/g, label),
       photo: member?.photo ?? null,
       phone: lead.pmPhone ? formatPhone(lead.pmPhone) : "",
       phoneRaw: lead.pmPhone ?? "",
