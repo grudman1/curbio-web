@@ -37,7 +37,7 @@ export default function PageShell({
         <SocialProof />
         <Downloads market={market} />
         <Proof />
-        <Closer onQuote={openQuote} onZip={openZip} />
+        <Closer market={market} onQuote={openQuote} onZip={openZip} />
       </main>
       <Footer onZip={openZip} />
 

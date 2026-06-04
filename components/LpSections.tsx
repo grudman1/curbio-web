@@ -486,7 +486,15 @@ export function Proof() {
 }
 
 // ── Navy closer ──
-export function Closer({ onQuote, onZip }: { onQuote: () => void; onZip: () => void }) {
+export function Closer({
+  market,
+  onQuote,
+  onZip,
+}: {
+  market: ResolvedMarket | null;
+  onQuote: () => void;
+  onZip: () => void;
+}) {
   return (
     <section className="lp-closer">
       <div className="lp-shell lp-closer-inner">
@@ -504,9 +512,15 @@ export function Closer({ onQuote, onZip }: { onQuote: () => void; onZip: () => v
           <PillButton size="lg" onClick={onQuote}>
             Get a free quote
           </PillButton>
-          <PillButton size="lg" variant="ghostNavy" icon="pin" onClick={onZip}>
-            Find your market
-          </PillButton>
+          {market ? (
+            <PillButton size="lg" variant="ghostNavy" icon="calendar" href={market.hsm.calendlyUrl} target="_blank">
+              Speak with {market.hsm.firstName}
+            </PillButton>
+          ) : (
+            <PillButton size="lg" variant="ghostNavy" icon="pin" onClick={onZip}>
+              Find your market
+            </PillButton>
+          )}
         </div>
       </div>
     </section>
@@ -520,8 +534,12 @@ export function Footer({ onZip }: { onZip: () => void }) {
       <div className="lp-shell lp-foot-inner">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={LOGO} alt="Curbio" style={{ height: 26 }} />
-        <button className="lp-link" onClick={onZip} style={{ color: "#C7CFDB" }}>
-          <Icon name="pin" size={14} color="var(--amber)" style={{ verticalAlign: "-2px", marginRight: 4 }} />
+        <button
+          className="lp-link"
+          onClick={onZip}
+          style={{ color: "#C7CFDB", display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
+        >
+          <Icon name="pin" size={14} color="var(--amber)" />
           Find your market
         </button>
         <div className="lp-foot-tag">The pre-listing home improvement experts.</div>
