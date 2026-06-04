@@ -314,11 +314,11 @@ export function Stats() {
         <div className="lp-statrow">
           {stats.map((s, i) => (
             <div key={i} className="lp-statcell">
-              <div className="lp-statcell-n">
-                {s.n}
+              <div className="lp-statcell-n">{s.n}</div>
+              <div className="lp-statcell-l">
+                {s.l}
                 <sup className="lp-statref">{s.ref}</sup>
               </div>
-              <div className="lp-statcell-l">{s.l}</div>
             </div>
           ))}
         </div>

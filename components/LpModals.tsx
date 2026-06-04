@@ -216,7 +216,7 @@ export function QuoteModal({
             />
             <Field label="Email" type="email" value={f.email} onChange={set("email")} required />
             <Field
-              label="What do you need? (optional)"
+              label="How can we help? (optional)"
               value={f.description}
               onChange={set("description")}
               placeholder="Tell us about the listing or the work you have in mind."

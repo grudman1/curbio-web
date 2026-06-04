@@ -233,7 +233,7 @@ const TEAM: Record<string, TeamMember> = {
     photo: "/hsm/joshua-collins.jpg",
     title: "Home Services Manager",
     // {market} is replaced with the resolved market label (NOVA / Southern Maryland).
-    bio: "Joshua Collins is your complete home-renovation expert, master plumber, and certified home inspector — bringing over 20 years of hands-on construction experience and management to the {market} market. Working directly with agents, buyers, and sellers to get homes ready for market or move-in ready, he's highly motivated to deliver an excellent customer experience — handling every aspect of the project personally to ensure quality, on-time delivery, and clear communication from start to finish.",
+    bio: "A master plumber and certified home inspector with 20+ years of construction experience in the {market} market — handling every project personally for quality and on-time delivery.",
   },
 };
 
