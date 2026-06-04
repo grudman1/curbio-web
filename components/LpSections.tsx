@@ -101,7 +101,7 @@ export function MarketBar({
           )}
         </span>
         <button className="lp-geobar-link" onClick={onZip}>
-          Not your market? Enter ZIP
+          Not your market? Click here.
         </button>
       </div>
     </div>
@@ -253,7 +253,8 @@ function NeutralCard({ onChoose }: { onChoose: () => void }) {
 }
 
 // ── Social proof: testimonial carousel + stats band ──
-export function SocialProof() {
+// ── Testimonials carousel (navy band) ──
+export function Testimonials() {
   const trackRef = useRef<HTMLDivElement>(null);
   const scroll = (dir: number) => {
     const track = trackRef.current;
@@ -265,60 +266,68 @@ export function SocialProof() {
     track.scrollBy({ left: dir * step, behavior: "smooth" });
   };
 
-  const stats = [
-    { n: "$400", l: "The potential return on every $100 you invest in staging your home" },
-    { n: "8,000+", l: "Homes prepped" },
-    { n: "$0", l: "Until the home sells*" },
-  ];
-
   return (
-    <>
-      <section className="lp-testis" id="social">
-        <div className="lp-shell">
-          <div className="lp-testis-head">
-            <Eyebrow amber>Loved by agents</Eyebrow>
-            <h2 className="lp-h2">
-              Agents nationwide <em>count on Curbio.</em>
-            </h2>
-          </div>
-          <div className="lp-carousel">
-            <button className="lp-carousel-arrow prev" onClick={() => scroll(-1)} aria-label="Previous testimonials">
-              <Icon name="arrow" size={20} color="currentColor" style={{ transform: "rotate(180deg)" }} />
-            </button>
-            <div className="lp-carousel-track" ref={trackRef}>
-              {TESTIMONIALS.map((t, i) => (
-                <figure key={i} className="lp-tcard">
-                  <span className="lp-tcard-mark">&ldquo;</span>
-                  <blockquote className="lp-tcard-quote">{t.quote}</blockquote>
-                  <figcaption className="lp-tcard-foot">
-                    <div className="lp-tcard-name">{t.name}</div>
-                    <div className="lp-tcard-title">{t.title}</div>
-                    <div className="lp-tcard-loc">{t.location}</div>
-                  </figcaption>
-                </figure>
-              ))}
-            </div>
-            <button className="lp-carousel-arrow next" onClick={() => scroll(1)} aria-label="Next testimonials">
-              <Icon name="arrow" size={20} color="currentColor" />
-            </button>
-          </div>
+    <section className="lp-testis" id="social">
+      <div className="lp-shell">
+        <div className="lp-testis-head">
+          <Eyebrow amber>Loved by agents</Eyebrow>
+          <h2 className="lp-h2">
+            Agents nationwide <em>count on Curbio.</em>
+          </h2>
         </div>
-      </section>
-
-      <section className="lp-stats" id="stats">
-        <div className="lp-shell">
-          <div className="lp-statrow">
-            {stats.map((s, i) => (
-              <div key={i} className="lp-statcell">
-                <div className="lp-statcell-n">{s.n}</div>
-                <div className="lp-statcell-l">{s.l}</div>
-              </div>
+        <div className="lp-carousel">
+          <button className="lp-carousel-arrow prev" onClick={() => scroll(-1)} aria-label="Previous testimonials">
+            <Icon name="arrow" size={20} color="currentColor" style={{ transform: "rotate(180deg)" }} />
+          </button>
+          <div className="lp-carousel-track" ref={trackRef}>
+            {TESTIMONIALS.map((t, i) => (
+              <figure key={i} className="lp-tcard">
+                <span className="lp-tcard-mark">&ldquo;</span>
+                <blockquote className="lp-tcard-quote">{t.quote}</blockquote>
+                <figcaption className="lp-tcard-foot">
+                  <div className="lp-tcard-name">{t.name}</div>
+                  <div className="lp-tcard-title">{t.title}</div>
+                  <div className="lp-tcard-loc">{t.location}</div>
+                </figcaption>
+              </figure>
             ))}
           </div>
-          <p className="lp-statsrc">*$400: National Association of Realtors. 8,000+: Curbio internal data.</p>
+          <button className="lp-carousel-arrow next" onClick={() => scroll(1)} aria-label="Next testimonials">
+            <Icon name="arrow" size={20} color="currentColor" />
+          </button>
         </div>
-      </section>
-    </>
+      </div>
+    </section>
+  );
+}
+
+// ── Stats band (with numbered source references) ──
+export function Stats() {
+  const stats = [
+    { n: "$400", ref: 1, l: "The potential return on every $100 you invest in staging your home" },
+    { n: "8,000+", ref: 2, l: "Homes prepped" },
+    { n: "$0", ref: 3, l: "Until the home sells" },
+  ];
+  return (
+    <section className="lp-stats" id="stats">
+      <div className="lp-shell">
+        <div className="lp-statrow">
+          {stats.map((s, i) => (
+            <div key={i} className="lp-statcell">
+              <div className="lp-statcell-n">
+                {s.n}
+                <sup className="lp-statref">{s.ref}</sup>
+              </div>
+              <div className="lp-statcell-l">{s.l}</div>
+            </div>
+          ))}
+        </div>
+        <p className="lp-statsrc">
+          <sup>1</sup> National Association of Realtors. <sup>2</sup> Curbio internal data.{" "}
+          <sup>3</sup> Pay-at-close financing available to qualified sellers, subject to approval.
+        </p>
+      </div>
+    </section>
   );
 }
 

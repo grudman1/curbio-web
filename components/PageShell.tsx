@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { type ResolvedMarket } from "@/lib/markets";
-import { Nav, MarketBar, Hero, SocialProof, Downloads, Proof, Closer, Footer } from "./LpSections";
+import { Nav, MarketBar, Hero, Testimonials, Stats, Downloads, Proof, Closer, Footer } from "./LpSections";
 import { QuoteModal, ZipModal } from "./LpModals";
 
 type Modal = "quote" | "zip" | null;
@@ -34,9 +34,10 @@ export default function PageShell({
       <MarketBar market={market} source={source} onZip={openZip} />
       <main>
         <Hero market={market} onQuote={openQuote} onZip={openZip} />
-        <SocialProof />
-        <Downloads market={market} />
         <Proof />
+        <Stats />
+        <Downloads market={market} />
+        <Testimonials />
         <Closer market={market} onQuote={openQuote} onZip={openZip} />
       </main>
       <Footer onZip={openZip} />
