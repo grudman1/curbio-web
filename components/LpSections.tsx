@@ -522,11 +522,11 @@ export function Closer({
             Get a free quote
           </PillButton>
           {market ? (
-            <PillButton size="lg" variant="secondary" icon="calendar" href={market.hsm.calendlyUrl} target="_blank">
+            <PillButton size="lg" variant="ghostNavy" icon="calendar" href={market.hsm.calendlyUrl} target="_blank">
               Speak with {market.hsm.firstName}
             </PillButton>
           ) : (
-            <PillButton size="lg" variant="secondary" icon="pin" onClick={onZip}>
+            <PillButton size="lg" variant="ghostNavy" icon="pin" onClick={onZip}>
               Find your market
             </PillButton>
           )}
