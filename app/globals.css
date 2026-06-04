@@ -215,7 +215,7 @@ select.lp-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 
 /* ---------- hero ---------- */
 .lp-hero{min-height:calc(100svh - 150px);display:grid;align-content:center;padding:24px 0 28px}
-.lp-hero-grid{display:grid;grid-template-columns:1.18fr 0.82fr;gap:48px;align-items:center;width:100%}
+.lp-hero-grid{display:grid;grid-template-columns:1.28fr 0.72fr;gap:48px;align-items:center;width:100%}
 .lp-hero-h1{font-family:var(--font-serif);font-weight:600;font-size:clamp(33px,3.7vw,50px);line-height:1.08;letter-spacing:-0.015em;margin:0;color:var(--navy)}
 .lp-hero-h1 em{color:var(--amber)}
 .lp-hero-sub{font-size:17px;line-height:1.6;color:var(--fg-muted);max-width:50ch;margin:0}
