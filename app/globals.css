@@ -246,14 +246,14 @@ select.lp-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
   padding:72px 0 48px;
   background-image:url('/hero/atlanta-skyline.jpg');
   background-size:cover;
-  background-position:center 40%;
+  background-position:center center;
   isolation:isolate;
 }
-/* Flat navy scrim — brief: no gradients except a flat scrim where text overlays a photo */
+/* Flat navy scrim — just enough to ensure text contrast on the night photo */
 .lp-hero::before{
   content:'';
   position:absolute;inset:0;
-  background:rgba(10,28,60,0.62);
+  background:rgba(8,20,48,0.45);
   z-index:0;
 }
 .lp-hero>.lp-shell{position:relative;z-index:1}
