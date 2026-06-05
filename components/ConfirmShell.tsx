@@ -10,9 +10,9 @@ import type { ResolvedMarket } from "@/lib/markets";
 export type CalendlyPrefill = {
   name?: string;
   email?: string;
-  /** Mapped to Calendly's first custom-question slot (a1).
-   *  Verify in Calendly admin: Event → Questions → confirm "Phone Number"
-   *  is question #1 (a1). If it's question #2, change a1 → a2 here. */
+  /** Maps to Calendly custom question slot a2.
+   *  Confirmed by inspection: a1 = textarea ("Please share anything..."),
+   *  a2 = Phone number (flag + country-code input). */
   phone?: string;
 };
 
@@ -33,11 +33,12 @@ function buildCalendlyIframeSrc(
   });
 
   // Prefill params — only appended when the value is non-empty.
-  // Calendly reads: name → guest name, email → guest email,
-  // a1 → first custom question answer (phone, if configured as Q1).
+  // Custom question slots confirmed by inspection:
+  //   a1 = "Please share anything that will help prepare for our meeting." (textarea)
+  //   a2 = Phone number (flag + country code input)
   if (prefill.name)  params.set("name",  prefill.name);
   if (prefill.email) params.set("email", prefill.email);
-  if (prefill.phone) params.set("a1",    prefill.phone);
+  if (prefill.phone) params.set("a2",    prefill.phone);
 
   return `${base}/general-meeting?${params.toString()}`;
 }
