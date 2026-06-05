@@ -4,12 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { type ResolvedMarket } from "@/lib/markets";
 import {
   Nav,
-  MarketBar,
   Hero,
   Testimonials,
   Stats,
   Downloads,
-  Proof,
   Closer,
   Footer,
   WaitlistPage,
@@ -36,8 +34,6 @@ export default function PageShell({
   const openZip = useCallback(() => setModal("zip"), []);
   const close = useCallback(() => setModal(null), []);
 
-  // Visitors with no market signal are greeted with the chooser.
-  // Out-of-area visitors see the waitlist instead — never auto-open the picker.
   useEffect(() => {
     if (!market && source !== "out-of-area") {
       const t = setTimeout(() => setModal((m) => (m === null ? "zip" : m)), 700);
@@ -68,10 +64,8 @@ export default function PageShell({
   return (
     <>
       <Nav onQuote={openQuote} />
-      <MarketBar market={market} source={source} onZip={openZip} />
       <main>
         <Hero market={market} onQuote={openQuote} onZip={openZip} />
-        <Proof />
         <Stats />
         <Downloads market={market} />
         <Testimonials />

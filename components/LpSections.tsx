@@ -46,48 +46,15 @@ const TESTIMONIALS = [
 
 // ── Nav ──
 export function Nav({ onQuote }: { onQuote: () => void }) {
-  const [drawerOpen, setDrawerOpen] = useState(false);
   return (
     <header className="lp-nav">
       <div className="lp-shell lp-nav-inner">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={LOGO} alt="Curbio" className="lp-logo" />
-        {/* Desktop: full nav — hidden at ≤880px via CSS */}
-        <div className="lp-nav-right">
-          <PillButton size="sm" variant="ghostNavy" href="#downloads">
-            Learn more
-          </PillButton>
-          <PillButton size="sm" onClick={onQuote}>
-            Get a free quote
-          </PillButton>
-        </div>
-        {/* Mobile: amber CTA + hamburger — shown at ≤880px via CSS */}
-        <div className="lp-nav-mob">
-          <PillButton size="sm" onClick={onQuote}>
-            Get a free quote
-          </PillButton>
-          <button
-            className="lp-hamburger"
-            onClick={() => setDrawerOpen((o) => !o)}
-            aria-label={drawerOpen ? "Close menu" : "Menu"}
-            aria-expanded={drawerOpen}
-          >
-            <Icon name={drawerOpen ? "x" : "menu"} size={20} color="#fff" />
-          </button>
-        </div>
+        <PillButton size="sm" onClick={onQuote}>
+          Get a free quote
+        </PillButton>
       </div>
-      {/* Mobile drawer: secondary nav items only */}
-      {drawerOpen && (
-        <nav className="lp-nav-drawer" aria-label="Navigation">
-          <a
-            href="#downloads"
-            className="lp-nav-drawer-link"
-            onClick={() => setDrawerOpen(false)}
-          >
-            Learn more
-          </a>
-        </nav>
-      )}
     </header>
   );
 }
