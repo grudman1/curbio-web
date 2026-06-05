@@ -7,7 +7,6 @@ import {
   SoldProofStrip,
   HowItWorks,
   Closer,
-  StickyBar,
 } from "./LpSections";
 import { ZipModal } from "./LpModals";
 import type { CtaVariant } from "@/lib/flags";
@@ -33,8 +32,6 @@ export default function PageShell({
         <HowItWorks />
         <Closer ctaCopy={ctaCopy} />
       </main>
-      {/* Page ends cleanly after the Closer — no footer section */}
-      <StickyBar ctaCopy={ctaCopy} />
       <ZipModal open={zipOpen} onClose={() => setZipOpen(false)} current={market} />
     </>
   );
