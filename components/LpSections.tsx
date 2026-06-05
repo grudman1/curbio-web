@@ -301,7 +301,7 @@ export function HowItWorks() {
     <section className="lp-how" id="how">
       <div className="lp-shell">
         <h2 className="lp-h2 lp-how-title">
-          One call. <em>We handle the rest.</em>
+          Simple. Fast. <em>No upfront cost.</em>
         </h2>
         <ol className="lp-how-steps">
           {STEPS.map((s) => (
