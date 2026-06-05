@@ -3,8 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { type ResolvedMarket } from "@/lib/markets";
 import { Icon, Eyebrow, AmberRule, PillButton, PhotoPlaceholder, Field } from "./LpKit";
-import { SoldProof } from "./SoldProof";
-import { ATLANTA_SOLD } from "@/lib/atlantaSoldProjects";
 
 const LOGO = "/logo/curbio-white.svg";
 
@@ -47,12 +45,15 @@ const TESTIMONIALS = [
 ];
 
 // ── Nav ──
-export function Nav() {
+export function Nav({ onQuote }: { onQuote: () => void }) {
   return (
     <header className="lp-nav">
       <div className="lp-shell lp-nav-inner">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo/curbio-white.svg" alt="Curbio" className="lp-logo" />
+        <PillButton size="sm" onClick={onQuote}>
+          Get a free quote
+        </PillButton>
       </div>
     </header>
   );
@@ -103,20 +104,13 @@ export function MarketBar({
 }
 
 // ── Hero ──
-export function Hero({
-  market,
-  onQuote,
-  onZip,
-}: {
-  market: ResolvedMarket | null;
-  onQuote: () => void;
-  onZip: () => void;
-}) {
+export function Hero({ onQuote }: { onQuote: () => void }) {
   return (
     <section className="lp-hero">
-      <div className="lp-shell lp-hero-grid">
-        <div>
-          <Eyebrow amber style={{ marginBottom: 18 }}>
+      {/* ── LEFT: solid navy — text never sits over a photo ── */}
+      <div className="lp-hero-left">
+        <div className="lp-hero-copy">
+          <Eyebrow amber style={{ marginBottom: 16 }}>
             Pre-listing home improvement
           </Eyebrow>
           <h1 className="lp-hero-h1">
@@ -124,154 +118,37 @@ export function Hero({
             <br />
             We do the work.
             <br />
-            Your seller <em>pays at close.</em>
+            <em>Your seller pays at close.</em>
           </h1>
-          <AmberRule width={64} style={{ margin: "18px 0" }} />
+          <AmberRule width={56} style={{ margin: "20px 0" }} />
           <p className="lp-hero-sub">
-            Curbio gets your listing market-ready on time and on budget — design, materials, and full project
-            management, handled by one local expert. Your seller pays nothing until the home sells.
+            Curbio gets your listing market-ready — design, materials, and full
+            project management by one local expert. Your seller pays nothing
+            until the home sells.
           </p>
-          <div style={{ marginTop: 28 }}>
+          <div className="lp-hero-cta">
             <PillButton size="lg" onClick={onQuote}>
-              Win your next listing
+              Get a free quote
             </PillButton>
           </div>
-          <div className="lp-trust" style={{ marginTop: 18 }}>
-            <Icon name="shield" size={15} color="var(--amber)" />
+          <div className="lp-trust">
+            <Icon name="shield" size={14} color="rgba(255,255,255,0.45)" />
             <span>Licensed &amp; insured · 8,000+ homes prepped · Pay at close</span>
           </div>
         </div>
-        <HeroRight market={market} onZip={onZip} />
+      </div>
+
+      {/* ── RIGHT: single bright after photo, full-bleed, no overlay text ── */}
+      <div className="lp-hero-right">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/hero/curbio-after.jpg"
+          alt="A home prepared for sale by Curbio"
+          className="lp-hero-photo"
+          onError={(e) => { e.currentTarget.src = "/sold/_placeholder.svg"; }}
+        />
       </div>
     </section>
-  );
-}
-
-function HeroRight({ market, onZip }: { market: ResolvedMarket | null; onZip: () => void }) {
-  if (market?.slug === "atlanta") {
-    return <SoldProof data={ATLANTA_SOLD} />;
-  }
-  return <HeroVideo />;
-}
-
-function HeroVideo() {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    v.muted = true;
-    v.play().catch(() => {});
-    const observer = new IntersectionObserver(
-      (entries) => entries.forEach((e) => (e.isIntersecting ? v.play().catch(() => {}) : v.pause())),
-      { threshold: 0.25 }
-    );
-    observer.observe(v);
-    return () => observer.disconnect();
-  }, []);
-  return (
-    <div className="lp-hero-video">
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        loop
-        playsInline
-        poster="/proof/before-after.poster.jpg"
-        style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }}
-      >
-        <source src="/proof/before-after.webm" type="video/webm" />
-        <source src="/proof/before-after.mp4" type="video/mp4" />
-      </video>
-      <span className="lp-proof-vtag">
-        <Icon name="arrow" size={12} color="var(--navy)" />
-        Before → After
-      </span>
-    </div>
-  );
-}
-
-function HeroForm({ market }: { market: ResolvedMarket | null }) {
-  const [f, setF] = useState({ name: "", email: "", phone: "" });
-  const [sent, setSent] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const set = (k: keyof typeof f) => (v: string) => setF((s) => ({ ...s, [k]: v }));
-  const validEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
-  const valid =
-    f.name.trim().length > 0 &&
-    validEmail(f.email) &&
-    f.phone.replace(/\D/g, "").length >= 10;
-
-  async function submit() {
-    if (!valid || pending) return;
-    setPending(true);
-    setErr(null);
-    try {
-      const res = await fetch("/api/lead", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          name: f.name.trim(),
-          email: f.email.trim(),
-          phone: f.phone.trim(),
-          market: market?.slug ?? null,
-          source: "quote",
-          submittedAt: new Date().toISOString(),
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) throw new Error(data.error || "Something went wrong. Please try again.");
-      setSent(true);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Something went wrong.");
-    } finally {
-      setPending(false);
-    }
-  }
-
-  if (sent) {
-    return (
-      <div className="lp-hero-form-success" id="hero-form">
-        <Icon name="check" size={22} color="var(--amber)" stroke={2.5} />
-        <span>Got it — your local Curbio team will be in touch shortly.</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="lp-hero-form" id="hero-form">
-      <div className="lp-hero-form-row">
-        <input
-          className="lp-input lp-hero-input"
-          placeholder="Name"
-          value={f.name}
-          onChange={(e) => set("name")(e.target.value)}
-          aria-label="Name"
-        />
-        <input
-          className="lp-input lp-hero-input"
-          type="tel"
-          placeholder="Phone"
-          value={f.phone}
-          onChange={(e) => set("phone")(e.target.value)}
-          aria-label="Phone"
-        />
-      </div>
-      <input
-        className="lp-input lp-hero-input"
-        type="email"
-        placeholder="Work email"
-        value={f.email}
-        onChange={(e) => set("email")(e.target.value)}
-        aria-label="Email"
-      />
-      {err && (
-        <p style={{ fontSize: 12.5, color: "var(--amber-120)", margin: 0, lineHeight: 1.4 }}>{err}</p>
-      )}
-      <PillButton full size="lg" disabled={!valid || pending} onClick={submit}>
-        {pending ? "Sending…" : "Win your next listing"}
-      </PillButton>
-    </div>
   );
 }
 
