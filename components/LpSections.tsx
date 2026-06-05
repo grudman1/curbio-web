@@ -125,7 +125,7 @@ export function Hero({ onQuote }: { onQuote: () => void }) {
           </p>
           <div className="lp-hero-cta">
             <PillButton size="lg" variant="navySolid" icon="arrow" onClick={onQuote}>
-              Get a free quote
+              See how we'd prep your listing
             </PillButton>
           </div>
           <div className="lp-trust">
