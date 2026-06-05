@@ -45,15 +45,12 @@ const TESTIMONIALS = [
 ];
 
 // ── Nav ──
-export function Nav({ onQuote }: { onQuote: () => void }) {
+export function Nav() {
   return (
     <header className="lp-nav">
       <div className="lp-shell lp-nav-inner">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo/curbio-white.svg" alt="Curbio" className="lp-logo" />
-        <PillButton size="sm" onClick={onQuote}>
-          Get a free quote
-        </PillButton>
+        <img src="/logo/curbio-navy.svg" alt="Curbio" className="lp-logo" />
       </div>
     </header>
   );
@@ -127,12 +124,12 @@ export function Hero({ onQuote }: { onQuote: () => void }) {
             until the home sells.
           </p>
           <div className="lp-hero-cta">
-            <PillButton size="lg" onClick={onQuote}>
+            <PillButton size="lg" variant="navySolid" icon="arrow" onClick={onQuote}>
               Get a free quote
             </PillButton>
           </div>
           <div className="lp-trust">
-            <Icon name="shield" size={14} color="rgba(255,255,255,0.45)" />
+            <Icon name="shield" size={14} color="#4A5A75" />
             <span>Licensed &amp; insured · 8,000+ homes prepped · Pay at close</span>
           </div>
         </div>

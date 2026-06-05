@@ -106,7 +106,7 @@ const BTN_SIZES: Record<string, CSSProperties> = {
   lg: { padding: "16px 30px", fontSize: 16 },
 };
 
-type Variant = "primary" | "secondary" | "ghostNavy" | "white";
+type Variant = "primary" | "secondary" | "ghostNavy" | "white" | "navySolid";
 
 export function PillButton({
   children,
@@ -154,6 +154,7 @@ export function PillButton({
     secondary: { background: "transparent", color: "var(--navy)", border: "1.5px solid var(--navy)" },
     ghostNavy: { background: "rgba(255,255,255,0.10)", color: "#fff", border: "1px solid rgba(255,255,255,0.22)" },
     white: { background: "#fff", color: "var(--navy)", border: "1px solid var(--stone)" },
+    navySolid: { background: "var(--navy)", color: "#fff" },
   };
   const v = variants[variant];
   const cls = `lp-btn lp-btn-${variant}${disabled ? " lp-btn-disabled" : ""}`;
