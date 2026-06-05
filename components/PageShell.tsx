@@ -6,7 +6,6 @@ import {
   Nav,
   Hero,
   Testimonials,
-  Downloads,
   Closer,
   Footer,
   WaitlistPage,
@@ -63,7 +62,6 @@ export default function PageShell({
     <>
       <main>
         <Hero market={market} onQuote={openQuote} onZip={openZip} />
-        <Downloads market={market} />
         <Testimonials />
         <Closer market={market} onQuote={openQuote} onZip={openZip} />
       </main>
