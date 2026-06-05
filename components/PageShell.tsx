@@ -44,7 +44,6 @@ export default function PageShell({
   if (source === "out-of-area") {
     return (
       <>
-        <Nav onQuote={openQuote} />
         <main>
           <WaitlistPage
             zip={outZip ?? ""}
@@ -62,7 +61,6 @@ export default function PageShell({
   // ── Normal page ────────────────────────────────────────────────────────────
   return (
     <>
-      <Nav onQuote={openQuote} />
       <main>
         <Hero market={market} onQuote={openQuote} onZip={openZip} />
         <Downloads market={market} />
