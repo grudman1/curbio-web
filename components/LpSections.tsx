@@ -126,9 +126,11 @@ export function Hero({
             Pre-listing home improvement
           </Eyebrow>
           <h1 className="lp-hero-h1">
-            Win the listing.
+            <em>You</em> win the listing.
             <br />
-            Your seller <em>pays at close.</em>
+            <em>We</em> do the work.
+            <br />
+            <em>Your</em> seller pays at close.
           </h1>
           <AmberRule width={64} style={{ margin: "18px 0" }} />
           <p className="lp-hero-sub">
