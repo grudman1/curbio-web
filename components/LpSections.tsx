@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { Icon, Eyebrow, AmberRule, PillButton } from "./LpKit";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
@@ -101,8 +102,8 @@ function FormCard({
 }) {
   const [f, setF] = useState({ name: "", email: "", phone: "" });
   const [errs, setErrs] = useState<{ name?: string; email?: string; server?: string }>({});
-  const [sent, setSent] = useState(false);
   const [pending, setPending] = useState(false);
+  const router = useRouter();
 
   const onChange = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setF((s) => ({ ...s, [k]: e.target.value }));
@@ -141,24 +142,13 @@ function FormCard({
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) throw new Error(data.error || "Something went wrong. Please try again.");
       track("lead_submit", { variant });
-      setSent(true);
+      // Navigate to the confirmation page showing the HSM card + Calendly
+      router.push(`/confirm?market=${market.slug}`);
     } catch (err) {
       setErrs({ server: err instanceof Error ? err.message : "Something went wrong." });
     } finally {
       setPending(false);
     }
-  }
-
-  if (sent) {
-    return (
-      <div className="lp-fc lp-fc-sent" id="quote-form" role="status" aria-live="polite">
-        <span className="lp-fc-check">
-          <Icon name="checkCircle" size={24} color="var(--amber)" stroke={2} />
-        </span>
-        <p className="lp-fc-sent-h">We&apos;ll be in touch.</p>
-        <p className="lp-fc-sent-sub">Expect to hear from us within one business day.</p>
-      </div>
-    );
   }
 
   return (
