@@ -101,21 +101,19 @@ export function MarketBar({
 }
 
 // ── Hero ──
-export function Hero({ onQuote }: { onQuote: () => void }) {
+export function Hero({ onQuote: _onQuote }: { onQuote: () => void }) {
   return (
     <section className="lp-hero">
-      {/* ── LEFT: solid navy — text never sits over a photo ── */}
+      {/* ── LEFT: copy only — no CTA button; form is the sole conversion action ── */}
       <div className="lp-hero-left">
         <div className="lp-hero-copy">
           <Eyebrow amber style={{ marginBottom: 16 }}>
             Pre-listing home improvement
           </Eyebrow>
           <h1 className="lp-hero-h1">
-            <em>You win the listing.</em>
+            A market-ready listing.
             <br />
-            We do the work.
-            <br />
-            <em>Your seller pays at close.</em>
+            <em>Paid for at close.</em>
           </h1>
           <AmberRule width={56} style={{ margin: "20px 0" }} />
           <p className="lp-hero-sub">
@@ -123,11 +121,6 @@ export function Hero({ onQuote }: { onQuote: () => void }) {
             project management by one local expert. Your seller pays nothing
             until the home sells.
           </p>
-          <div className="lp-hero-cta">
-            <PillButton size="lg" variant="navySolid" icon="arrow" onClick={onQuote}>
-              See how we'd prep your listing
-            </PillButton>
-          </div>
           <div className="lp-trust">
             <Icon name="shield" size={14} color="#4A5A75" />
             <span>Licensed &amp; insured · 8,000+ homes prepped · Pay at close</span>
@@ -135,17 +128,147 @@ export function Hero({ onQuote }: { onQuote: () => void }) {
         </div>
       </div>
 
-      {/* ── RIGHT: single bright after photo, full-bleed, no overlay text ── */}
+      {/* ── RIGHT: inline lead form card ── */}
       <div className="lp-hero-right">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/hero/curbio-after.jpg"
-          alt="A home prepared for sale by Curbio"
-          className="lp-hero-photo"
-          onError={(e) => { e.currentTarget.src = "/sold/_placeholder.svg"; }}
-        />
+        <HeroLeadForm />
       </div>
     </section>
+  );
+}
+
+// ── Hero inline lead form ──
+function HeroLeadForm() {
+  const [f, setF] = useState({ name: "", email: "", phone: "" });
+  const [errs, setErrs] = useState<{
+    name?: string; email?: string; phone?: string; server?: string;
+  }>({});
+  const [sent, setSent] = useState(false);
+  const [pending, setPending] = useState(false);
+
+  function setField(k: keyof typeof f) {
+    return (e: { target: { value: string } }) => {
+      setF((s) => ({ ...s, [k]: e.target.value }));
+      setErrs((prev) => ({ ...prev, [k]: undefined }));
+    };
+  }
+
+  function validate() {
+    const e: typeof errs = {};
+    if (!f.name.trim()) e.name = "Name is required.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim()))
+      e.email = "Enter a valid email address.";
+    if (f.phone.replace(/\D/g, "").length < 10)
+      e.phone = "Enter a valid US phone number.";
+    return e;
+  }
+
+  async function submit() {
+    const e = validate();
+    if (Object.keys(e).length) { setErrs(e); return; }
+    if (pending) return;
+    setPending(true);
+    setErrs({});
+    try {
+      const res = await fetch("/api/lead", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: f.name.trim(),
+          email: f.email.trim(),
+          phone: f.phone.trim(),
+          source: "email-campaign-atlanta",
+          submittedAt: new Date().toISOString(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data.error || "Something went wrong. Please try again.");
+      setSent(true);
+    } catch (err) {
+      setErrs({ server: err instanceof Error ? err.message : "Something went wrong." });
+    } finally {
+      setPending(false);
+    }
+  }
+
+  if (sent) {
+    return (
+      <div className="lp-hero-form lp-hero-form-sent">
+        <div className="lp-hf-check">
+          <Icon name="check" size={24} color="var(--amber)" stroke={2.5} />
+        </div>
+        <p className="lp-hf-sent-hed">We&apos;ll be in touch.</p>
+        <p className="lp-hf-sent-sub">Expect to hear from us soon.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="lp-hero-form">
+      <p className="lp-hero-form-heading">
+        See what we&apos;d recommend before it goes live.
+      </p>
+
+      <div className="lp-hf-field">
+        <label className="lp-hf-label" htmlFor="hf-name">Full Name</label>
+        <input
+          id="hf-name"
+          className={"lp-input" + (errs.name ? " lp-input-err" : "")}
+          type="text"
+          value={f.name}
+          placeholder="Jane Smith"
+          onChange={setField("name")}
+          autoComplete="name"
+        />
+        {errs.name && <span className="lp-hf-err" role="alert">{errs.name}</span>}
+      </div>
+
+      <div className="lp-hf-field">
+        <label className="lp-hf-label" htmlFor="hf-email">Work Email</label>
+        <input
+          id="hf-email"
+          className={"lp-input" + (errs.email ? " lp-input-err" : "")}
+          type="email"
+          value={f.email}
+          placeholder="jane@brokerage.com"
+          onChange={setField("email")}
+          autoComplete="email"
+        />
+        {errs.email && <span className="lp-hf-err" role="alert">{errs.email}</span>}
+      </div>
+
+      <div className="lp-hf-field">
+        <label className="lp-hf-label" htmlFor="hf-phone">Phone</label>
+        <input
+          id="hf-phone"
+          className={"lp-input" + (errs.phone ? " lp-input-err" : "")}
+          type="tel"
+          inputMode="tel"
+          value={f.phone}
+          placeholder="(240) 555-0148"
+          onChange={setField("phone")}
+          autoComplete="tel"
+        />
+        {errs.phone && <span className="lp-hf-err" role="alert">{errs.phone}</span>}
+      </div>
+
+      {errs.server && (
+        <p className="lp-hf-server-err" role="alert">{errs.server}</p>
+      )}
+
+      <button className="lp-hf-submit" onClick={submit} disabled={pending}>
+        {pending ? "Sending…" : "Get a free quote"}
+      </button>
+
+      <p className="lp-hf-tcpa">
+        By clicking &ldquo;Get a free quote,&rdquo; you consent to receive calls
+        and texts from Curbio at the number provided, including by autodialer.
+        Msg &amp; data rates may apply. Consent is not a condition of purchase.
+        Reply STOP to opt out.{" "}
+        <a href="https://curbio.com/privacy-policy" target="_blank" rel="noreferrer noopener">
+          Privacy Policy
+        </a>.
+      </p>
+    </div>
   );
 }
 

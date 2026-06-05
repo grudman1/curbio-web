@@ -9,7 +9,7 @@ type LeadBody = {
   email?: string;
   description?: string;
   market?: string | null;
-  source?: "quote" | "magnet" | "closer" | "waitlist";
+  source?: string; // "quote" | "magnet" | "closer" | "waitlist" | campaign slugs (e.g. "email-campaign-atlanta")
   magnet?: "checklist" | "spring-listings" | "resource-kit" | null;
   submittedAt?: string;
   /** Forwarded from Vercel geo headers — shows WHERE demand is for expansion planning. */

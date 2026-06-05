@@ -239,27 +239,42 @@ select.lp-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 /* Floating logo overlaid on the hero — no banner, background shows through */
 .lp-hero-logo{position:absolute;top:24px;left:32px;height:30px;width:auto;z-index:10;pointer-events:none}
 @media (max-width:600px){ .lp-hero-logo{top:18px;left:24px;height:26px} }
-/* ---------- Hero: solid-navy left / bright photo right ---------- */
-/* Text never sits over a photo — headline lives on solid navy only. */
+/* ---------- Hero: copy left / lead-form card right ---------- */
 .lp-hero{display:grid;grid-template-columns:55fr 45fr;min-height:calc(100svh - 64px);overflow:hidden}
 .lp-hero-left{background:var(--cloud-white);display:flex;align-items:center;justify-content:flex-end}
-.lp-hero-copy{width:100%;max-width:600px;padding:72px 64px 72px 40px}
-.lp-hero-right{position:relative;overflow:hidden;background:var(--stone)}
-.lp-hero-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.lp-hero-copy{width:100%;max-width:600px;padding:72px 48px 72px 40px}
+/* Right: form container — same background so card floats cleanly */
+.lp-hero-right{background:var(--cloud-white);display:flex;align-items:center;justify-content:center;padding:48px 40px 48px 24px}
 /* Type */
 .lp-hero-h1{font-family:var(--font-serif);font-weight:600;font-size:clamp(30px,3.2vw,50px);line-height:1.08;letter-spacing:-0.015em;margin:0;color:var(--navy)}
 .lp-hero-h1 em{color:var(--amber);font-style:normal}
 .lp-hero-sub{font-size:18px;line-height:1.6;color:#4A5A75;max-width:44ch;margin:0}
-.lp-hero-cta{margin-top:32px}
 .lp-trust{display:flex;align-items:center;gap:8px;margin-top:20px;font-size:13px;font-weight:600;color:#4A5A75;flex-wrap:wrap}
-.lp-btn-navySolid:hover:not(.lp-btn-disabled){background:#1A335E!important}
-/* Mobile: navy block on top, full-width photo below */
+/* ---------- hero inline lead form card ---------- */
+.lp-hero-form{background:#fff;border-radius:20px;box-shadow:0 4px 12px rgba(13,37,77,.08),0 1px 2px rgba(13,37,77,.04);border:1px solid var(--stone);padding:28px 26px 22px;width:100%;max-width:400px}
+.lp-hero-form-sent{display:flex;flex-direction:column;align-items:center;text-align:center;padding:48px 26px;min-height:320px;justify-content:center}
+.lp-hero-form-heading{font-family:var(--font-sans);font-size:17px;font-weight:700;color:var(--navy);line-height:1.35;margin:0 0 20px}
+.lp-hf-field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.lp-hf-label{font-family:var(--font-sans);font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-muted)}
+.lp-hf-err{font-family:var(--font-sans);font-size:12px;color:var(--amber-120);line-height:1.3;margin-top:2px}
+.lp-input-err{border-color:var(--amber-120)!important}
+.lp-input-err:focus{box-shadow:0 0 0 3px rgba(157,97,24,.18)!important;border-color:var(--amber-120)!important}
+.lp-hf-server-err{font-size:13px;color:var(--amber-120);background:var(--stone);padding:10px 12px;border-radius:8px;margin:0 0 12px;line-height:1.45}
+.lp-hf-submit{width:100%;background:var(--amber);color:#fff;border:0;border-radius:999px;font-family:var(--font-sans);font-size:16px;font-weight:700;height:52px;cursor:pointer;transition:background .22s var(--ease-out);display:flex;align-items:center;justify-content:center;margin-top:6px}
+.lp-hf-submit:hover:not(:disabled){background:var(--amber-110)}
+.lp-hf-submit:disabled{opacity:.55;cursor:not-allowed}
+.lp-hf-tcpa{font-size:10.5px;color:var(--fg-subtle);line-height:1.5;margin:10px 0 0;text-align:center}
+.lp-hf-tcpa a{color:var(--fg-subtle);text-decoration:underline;text-underline-offset:2px}
+.lp-hf-check{width:52px;height:52px;border-radius:999px;background:var(--stone);display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.lp-hf-sent-hed{font-family:var(--font-sans);font-size:17px;font-weight:700;color:var(--navy);margin:0 0 6px}
+.lp-hf-sent-sub{font-size:14px;color:var(--fg-muted);line-height:1.55;margin:0}
+/* Mobile: single column — copy on top, form card full-width below */
 @media(max-width:768px){
   .lp-hero{grid-template-columns:1fr;min-height:auto}
   .lp-hero-left{justify-content:flex-start}
-  .lp-hero-copy{max-width:none;padding:44px 24px 40px}
-  .lp-hero-right{aspect-ratio:4/3;min-height:240px}
-  .lp-hero-cta .lp-btn{width:100%;justify-content:center;min-height:50px}
+  .lp-hero-copy{max-width:none;padding:44px 24px 32px}
+  .lp-hero-right{padding:0 24px 48px;justify-content:flex-start}
+  .lp-hero-form{max-width:none}
   .lp-hero-h1{font-size:clamp(28px,7vw,40px)}
   .lp-hero-sub{font-size:16px}
   .lp-trust{font-size:12px}
