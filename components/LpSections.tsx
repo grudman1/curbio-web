@@ -128,7 +128,7 @@ function FormCard({ variant, ctaCopy }: { variant: CtaVariant; ctaCopy: string }
 
   if (sent) {
     return (
-      <div className="lp-fc lp-fc-sent" id="quote-form">
+      <div className="lp-fc lp-fc-sent" id="quote-form" role="status" aria-live="polite">
         <span className="lp-fc-check">
           <Icon name="checkCircle" size={24} color="var(--amber)" stroke={2} />
         </span>
@@ -153,8 +153,9 @@ function FormCard({ variant, ctaCopy }: { variant: CtaVariant; ctaCopy: string }
           placeholder="Your name"
           autoComplete="name"
           aria-invalid={!!errs.name}
+          aria-describedby={errs.name ? "fc-name-err" : undefined}
         />
-        {errs.name && <span className="lp-fc-err" role="alert">{errs.name}</span>}
+        {errs.name && <span id="fc-name-err" className="lp-fc-err" role="alert">{errs.name}</span>}
       </div>
 
       <div className="lp-fc-field">
@@ -168,8 +169,9 @@ function FormCard({ variant, ctaCopy }: { variant: CtaVariant; ctaCopy: string }
           placeholder="you@brokerage.com"
           autoComplete="email"
           aria-invalid={!!errs.email}
+          aria-describedby={errs.email ? "fc-email-err" : undefined}
         />
-        {errs.email && <span className="lp-fc-err" role="alert">{errs.email}</span>}
+        {errs.email && <span id="fc-email-err" className="lp-fc-err" role="alert">{errs.email}</span>}
       </div>
 
       <div className="lp-fc-field">
@@ -183,13 +185,14 @@ function FormCard({ variant, ctaCopy }: { variant: CtaVariant; ctaCopy: string }
           onChange={onChange("phone")}
           placeholder="(555) 555-5555"
           autoComplete="tel"
+          aria-describedby="fc-phone-help"
         />
-        <span className="lp-fc-help">Optional. Helps us reach you faster.</span>
+        <span id="fc-phone-help" className="lp-fc-help">Optional. Helps us reach you faster.</span>
       </div>
 
       {errs.server && <p className="lp-fc-server" role="alert">{errs.server}</p>}
 
-      <button className="lp-fc-submit" type="submit" disabled={pending}>
+      <button className="lp-fc-submit" type="submit" disabled={pending} aria-busy={pending}>
         {pending ? (
           <>
             <span className="lp-spinner" aria-hidden /> Sending…
@@ -223,7 +226,7 @@ export function SoldProofStrip() {
             <li className="lp-sold-card" key={p.neighborhood}>
               <div className="lp-sold-photo lp-ph lp-ph-warm" aria-hidden>
                 <span className="lp-sold-pill">
-                  <Icon name="check" size={12} color="var(--navy)" stroke={2.25} /> Sold
+                  <Icon name="check" size={12} color="#fff" stroke={2.5} /> Sold
                 </span>
               </div>
               <div className="lp-sold-body">
