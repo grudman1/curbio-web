@@ -27,7 +27,7 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
     name: "Atlanta",
     sold: [
       { neighborhood: "Intown Atlanta", price: "$665,000" },
-      { neighborhood: "Marietta", price: "$365,000", photo: "/sold/marietta.jpg" },
+      { neighborhood: "Marietta", price: "$365,000", photo: "/sold/680Smithstone_Marietta.webp" },
       { neighborhood: "Roswell", price: "$785,000" },
       // TODO verify — Zestimate, not a confirmed sale.
       { neighborhood: "Acworth", price: "$497,000", unverified: true },
