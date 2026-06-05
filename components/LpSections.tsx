@@ -198,18 +198,6 @@ function HsmCard({ market }: { market: ResolvedMarket }) {
         <div className="lp-hsm-name">{hsm.name}</div>
         <div className="lp-hsm-title">{hsm.title}</div>
         <p className="lp-hsm-bio">{hsm.bio}</p>
-        <div className="lp-hsm-stats">
-          <span>
-            <Icon name="home" size={15} color="var(--amber)" />
-            <span>Local to {market.name}</span>
-          </span>
-          <span>
-            <span className="lp-dot-wrap" aria-hidden>
-              <span className={"lp-dot" + (market.isBusinessHours ? " on" : "")} />
-            </span>
-            <span>{market.isBusinessHours ? "Available now" : "Replies next day"}</span>
-          </span>
-        </div>
         {hsm.phone ? (
           <a className="lp-hsm-callbox" href={`tel:${hsm.phoneRaw}`}>
             <span className="lp-hsm-callicon">
