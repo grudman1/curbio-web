@@ -9,9 +9,12 @@ type LeadBody = {
   email?: string;
   description?: string;
   market?: string | null;
-  source?: "quote" | "magnet" | "closer";
+  source?: "quote" | "magnet" | "closer" | "waitlist";
   magnet?: "checklist" | "spring-listings" | "resource-kit" | null;
   submittedAt?: string;
+  /** Forwarded from Vercel geo headers — shows WHERE demand is for expansion planning. */
+  detectedCity?: string;
+  detectedRegion?: string;
 };
 
 const MAGNET_FILES: Record<string, string> = {
@@ -56,6 +59,8 @@ export async function POST(req: Request) {
     source: body.source ?? "quote",
     magnet: body.magnet ?? null,
     submittedAt: body.submittedAt ?? new Date().toISOString(),
+    detectedCity: body.detectedCity?.trim() ?? "",
+    detectedRegion: body.detectedRegion?.trim() ?? "",
   };
 
   const webhook = process.env.CURBIO_CRM_WEBHOOK_URL;

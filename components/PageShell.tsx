@@ -2,7 +2,18 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { type ResolvedMarket } from "@/lib/markets";
-import { Nav, MarketBar, Hero, Testimonials, Stats, Downloads, Proof, Closer, Footer } from "./LpSections";
+import {
+  Nav,
+  MarketBar,
+  Hero,
+  Testimonials,
+  Stats,
+  Downloads,
+  Proof,
+  Closer,
+  Footer,
+  WaitlistPage,
+} from "./LpSections";
 import { QuoteModal, ZipModal } from "./LpModals";
 
 type Modal = "quote" | "zip" | null;
@@ -10,24 +21,50 @@ type Modal = "quote" | "zip" | null;
 export default function PageShell({
   market,
   source,
+  outZip,
+  geoCity,
+  geoRegion,
 }: {
   market: ResolvedMarket | null;
-  source: "param" | "zip" | "geo" | "none";
+  source: "param" | "zip" | "geo" | "out-of-area" | "none";
+  outZip?: string;
+  geoCity?: string;
+  geoRegion?: string;
 }) {
   const [modal, setModal] = useState<Modal>(null);
   const openQuote = useCallback(() => setModal("quote"), []);
   const openZip = useCallback(() => setModal("zip"), []);
   const close = useCallback(() => setModal(null), []);
 
-  // Visitors who weren't directed to a market (no ?market=, no ZIP, no geo
-  // match) are greeted with the market chooser so they can self-select.
+  // Visitors with no market signal are greeted with the chooser.
+  // Out-of-area visitors see the waitlist instead — never auto-open the picker.
   useEffect(() => {
-    if (!market) {
+    if (!market && source !== "out-of-area") {
       const t = setTimeout(() => setModal((m) => (m === null ? "zip" : m)), 700);
       return () => clearTimeout(t);
     }
-  }, [market]);
+  }, [market, source]);
 
+  // ── Out-of-area: waitlist page ─────────────────────────────────────────────
+  if (source === "out-of-area") {
+    return (
+      <>
+        <Nav onQuote={openQuote} />
+        <main>
+          <WaitlistPage
+            zip={outZip ?? ""}
+            geoCity={geoCity}
+            geoRegion={geoRegion}
+            onChooseMarket={openZip}
+          />
+        </main>
+        <Footer onZip={openZip} />
+        <ZipModal open={modal === "zip"} onClose={close} current={null} />
+      </>
+    );
+  }
+
+  // ── Normal page ────────────────────────────────────────────────────────────
   return (
     <>
       <Nav onQuote={openQuote} />

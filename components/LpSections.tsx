@@ -538,6 +538,193 @@ export function Closer({
   );
 }
 
+// ── Waitlist page (out-of-area state) ──
+export function WaitlistPage({
+  zip,
+  geoCity,
+  geoRegion,
+  onChooseMarket,
+}: {
+  zip: string;
+  geoCity?: string;
+  geoRegion?: string;
+  onChooseMarket: () => void;
+}) {
+  const [f, setF] = useState({ name: "", email: "", zip: zip });
+  const [sent, setSent] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [serverErr, setServerErr] = useState<string | null>(null);
+
+  // Keep local zip in sync if parent zip changes (e.g. navigation).
+  useEffect(() => { setF((s) => ({ ...s, zip })); }, [zip]);
+
+  const set = (k: keyof typeof f) => (v: string) => setF((s) => ({ ...s, [k]: v }));
+  const validEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+  const valid =
+    f.name.trim().length > 0 &&
+    validEmail(f.email) &&
+    f.zip.replace(/\D/g, "").length === 5;
+
+  async function submit() {
+    if (!valid || pending) return;
+    setPending(true);
+    setServerErr(null);
+    try {
+      const res = await fetch("/api/lead", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: f.name.trim(),
+          email: f.email.trim(),
+          zip: f.zip.replace(/\D/g, "").slice(0, 5),
+          detectedCity: geoCity || undefined,
+          detectedRegion: geoRegion || undefined,
+          source: "waitlist",
+          submittedAt: new Date().toISOString(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data.error || "Something went wrong. Please try again.");
+      setSent(true);
+    } catch (e) {
+      setServerErr(e instanceof Error ? e.message : "Something went wrong.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  const displayZip = f.zip.replace(/\D/g, "").slice(0, 5) || zip || "your area";
+
+  return (
+    <section className="lp-waitlist">
+      <div className="lp-shell lp-waitlist-inner">
+        {!sent ? (
+          <>
+            <Eyebrow amber style={{ marginBottom: 14 }}>Coming to your area</Eyebrow>
+            <h1 className="lp-waitlist-h1">
+              Curbio isn't in your area <em>yet</em>.
+            </h1>
+            <p className="lp-waitlist-sub">
+              We're expanding fast. Add your details and we'll reach out the moment
+              a local Curbio team covers your area.
+            </p>
+            <AmberRule width={56} style={{ margin: "22px 0 26px" }} />
+            <div className="lp-waitlist-fields">
+              <Field label="Full name" value={f.name} onChange={set("name")} required />
+              <Field label="Work email" type="email" value={f.email} onChange={set("email")} required />
+              <Field
+                label="ZIP code"
+                value={f.zip}
+                onChange={(v) => set("zip")(v.replace(/\D/g, "").slice(0, 5))}
+                required
+                inputMode="numeric"
+                maxLength={5}
+                placeholder="e.g. 80202"
+              />
+            </div>
+            {serverErr && (
+              <p
+                role="alert"
+                style={{
+                  fontSize: 13,
+                  color: "var(--amber-120)",
+                  background: "var(--stone)",
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  margin: "0 0 14px",
+                  lineHeight: 1.45,
+                }}
+              >
+                {serverErr}
+              </p>
+            )}
+            <PillButton full size="lg" disabled={!valid || pending} onClick={submit}>
+              {pending ? "Joining…" : "Join the waitlist"}
+            </PillButton>
+            <p style={{ fontSize: 11.5, color: "var(--fg-subtle)", margin: "12px 0 0", lineHeight: 1.4 }}>
+              By submitting you agree to receive email updates from Curbio. We never share your information.
+            </p>
+            <div className="lp-waitlist-alt">
+              <span style={{ fontSize: 14, color: "var(--fg-muted)" }}>
+                Already in a Curbio market?
+              </span>{" "}
+              <button
+                onClick={onChooseMarket}
+                style={{
+                  fontFamily: "var(--font-sans)",
+                  fontSize: 14,
+                  fontWeight: 700,
+                  color: "var(--amber)",
+                  background: "none",
+                  border: 0,
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+              >
+                Choose your market →
+              </button>
+            </div>
+          </>
+        ) : (
+          <div style={{ textAlign: "center", maxWidth: 440, margin: "0 auto", padding: "20px 0" }}>
+            <div
+              style={{
+                width: 62,
+                height: 62,
+                borderRadius: 999,
+                background: "var(--stone)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 22px",
+              }}
+            >
+              <Icon name="check" size={28} color="var(--amber)" stroke={2.5} />
+            </div>
+            <h2
+              style={{
+                fontFamily: "var(--font-serif)",
+                fontSize: 28,
+                fontWeight: 600,
+                color: "var(--navy)",
+                margin: "0 0 12px",
+                lineHeight: 1.1,
+              }}
+            >
+              You're on the list.
+            </h2>
+            <p
+              style={{
+                fontSize: 15,
+                color: "var(--fg-muted)",
+                lineHeight: 1.6,
+                margin: "0 0 28px",
+              }}
+            >
+              We'll let you know the moment Curbio reaches{" "}
+              <strong style={{ color: "var(--navy)" }}>{displayZip}</strong>.
+            </p>
+            <button
+              onClick={onChooseMarket}
+              style={{
+                fontFamily: "var(--font-sans)",
+                fontSize: 14,
+                fontWeight: 700,
+                color: "var(--amber)",
+                background: "none",
+                border: 0,
+                cursor: "pointer",
+              }}
+            >
+              See our current markets →
+            </button>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 // ── Footer ──
 export function Footer({ onZip }: { onZip: () => void }) {
   return (

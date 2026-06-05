@@ -121,6 +121,26 @@ export function ZipModal({
         </div>
         {err && <p style={{ fontSize: 12.5, color: "var(--amber-120)", margin: "10px 0 0", lineHeight: 1.45 }}>{err}</p>}
       </div>
+
+      {/* Persistent affordance for visitors outside all served markets */}
+      <div style={{ marginTop: 16, textAlign: "center" }}>
+        <span style={{ fontSize: 13, color: "var(--fg-subtle)" }}>Outside these areas?</span>{" "}
+        <button
+          onClick={() => { onClose(); router.push("/?status=waitlist"); }}
+          style={{
+            fontFamily: "var(--font-sans)",
+            fontSize: 13,
+            fontWeight: 700,
+            color: "var(--amber)",
+            background: "none",
+            border: 0,
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          Join the waitlist →
+        </button>
+      </div>
     </Modal>
   );
 }
