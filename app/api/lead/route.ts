@@ -4,15 +4,17 @@ export const runtime = "nodejs";
 
 type LeadBody = {
   name?: string;
+  firstName?: string;
   phone?: string;
   zip?: string;
   email?: string;
   description?: string;
   market?: string | null;
   source?: string; // "quote" | "magnet" | "closer" | "waitlist" | campaign slugs (e.g. "email-campaign-atlanta")
+  variant?: string; // A/B variant (cta-copy: "control" | "treatment")
   magnet?: "checklist" | "spring-listings" | "resource-kit" | null;
   submittedAt?: string;
-  /** Forwarded from Vercel geo headers — shows WHERE demand is for expansion planning. */
+  // Forwarded from Vercel geo headers. Shows WHERE demand is for expansion planning.
   detectedCity?: string;
   detectedRegion?: string;
 };
@@ -51,12 +53,14 @@ export async function POST(req: Request) {
 
   const payload = {
     name: body.name!.trim(),
+    firstName: body.firstName?.trim() ?? body.name!.trim().split(/\s+/)[0],
     phone: body.phone?.trim() ?? "",
     email: body.email!.trim(),
     zip: body.zip ? body.zip.replace(/\D/g, "").slice(0, 5) : "",
     description: body.description?.trim() ?? "",
     market: body.market ?? null,
     source: body.source ?? "quote",
+    variant: body.variant ?? null,
     magnet: body.magnet ?? null,
     submittedAt: body.submittedAt ?? new Date().toISOString(),
     detectedCity: body.detectedCity?.trim() ?? "",
@@ -79,14 +83,14 @@ export async function POST(req: Request) {
       if (!res.ok) {
         console.error("[lead] CRM webhook failed", res.status, await res.text().catch(() => ""));
         return NextResponse.json(
-          { ok: false, error: "We couldn't reach our team — please try again." },
+          { ok: false, error: "We couldn't reach our team. Please try again." },
           { status: 502 }
         );
       }
     } catch (err) {
       console.error("[lead] CRM webhook threw", err);
       return NextResponse.json(
-        { ok: false, error: "We couldn't reach our team — please try again." },
+        { ok: false, error: "We couldn't reach our team. Please try again." },
         { status: 502 }
       );
     }

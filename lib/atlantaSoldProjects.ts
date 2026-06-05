@@ -1,76 +1,25 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Atlanta "Sold Proof" data — easy to edit per market.
-// Replace photo paths once Curbio OWN project photos are available.
-// All prices are verified sold prices — NOT Zestimates.
+// Atlanta sold-proof data. Specific named listings beat generic claims.
+// Photos are striped placeholders until real Curbio project photos land
+// (see /public/sold/). Edit per market.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type SoldProject = {
-  neighborhood: string;
-  price: string;
-  soldNote: string;
-  photo: string;
-  /** Optional before-state photo. When present the featured tile renders
-   *  the BEFORE / AFTER toggle per the design brief's signature device. */
-  before?: string;
+  neighborhood: string; // "Intown Atlanta"
+  state: string; // "GA"
+  price: string; // "$665,000"
+  photo: string; // /sold/*.jpg — striped placeholder until real photo
+  /** When true, price is a Zestimate, not a confirmed sale. Render quietly or omit. */
+  unverified?: boolean;
 };
 
-export type FilmstripItem = {
-  /** Short label shown under the thumbnail, e.g. "$365K · Marietta" */
-  label: string;
-  photo: string;
-  before?: string;
-  /** Full caption fields shown when this item is in the featured slot.
-   *  Defaults to parsing `label` if omitted. */
-  neighborhood?: string;
-  price?: string;
-  soldNote?: string;
-};
+export const ATLANTA_SOLD: SoldProject[] = [
+  { neighborhood: "Intown Atlanta", state: "GA", price: "$665,000", photo: "/sold/atlanta.jpg" },
+  { neighborhood: "Marietta", state: "GA", price: "$365,000", photo: "/sold/marietta.jpg" },
+  { neighborhood: "Roswell", state: "GA", price: "$785,000", photo: "/sold/roswell.jpg" },
+  // TODO verify — Zestimate, not a confirmed sale. Replace or remove before a real send.
+  { neighborhood: "Acworth", state: "GA", price: "$497,000", photo: "/sold/acworth.jpg", unverified: true },
+  { neighborhood: "Lawrenceville", state: "GA", price: "$354,000", photo: "/sold/lawrenceville.jpg" },
+];
 
-export type SoldProofData = {
-  eyebrow: string;
-  featured: SoldProject;
-  filmstrip: FilmstripItem[];
-  closingLine: string;
-};
-
-export const ATLANTA_SOLD: SoldProofData = {
-  eyebrow: "Sold across Atlanta",
-  featured: {
-    neighborhood: "Intown Atlanta, GA",
-    price: "$665,000",
-    soldNote: "Prepped by Curbio · sold Oct 2025",
-    photo: "/sold/atlanta-berne-st.jpg",
-    // before: "/sold/atlanta-berne-st-before.jpg",  ← uncomment when available
-  },
-  filmstrip: [
-    {
-      label: "$365K · Marietta",
-      photo: "/sold/marietta.jpg",
-      neighborhood: "Marietta, GA",
-      price: "$365,000",
-      soldNote: "Prepped by Curbio · sold",
-    },
-    {
-      label: "$785K · Roswell",
-      photo: "/sold/roswell.jpg",
-      neighborhood: "Roswell, GA",
-      price: "$785,000",
-      soldNote: "Prepped by Curbio · sold",
-    },
-    {
-      label: "$497K · Acworth",
-      photo: "/sold/acworth.jpg",
-      neighborhood: "Acworth, GA",
-      price: "$497,000", // verified sold price, not a Zestimate
-      soldNote: "Prepped by Curbio · sold",
-    },
-    {
-      label: "$354K · L'ville",
-      photo: "/sold/lawrenceville.jpg",
-      neighborhood: "Lawrenceville, GA",
-      price: "$354,000",
-      soldNote: "Prepped by Curbio · sold",
-    },
-  ],
-  closingLine: "Real Atlanta listings, prepped by Curbio. All sold.",
-};
+export const ATLANTA_SOLD_CAPTION = "Real Atlanta listings, market-ready. All sold.";

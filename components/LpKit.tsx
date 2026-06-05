@@ -25,6 +25,11 @@ const LP_ICONS: Record<string, string> = {
   star: "M12 2l3 7 7 .5L17 14.5 18.5 22 12 18l-6.5 4L7 14.5 2 9.5 9 9z",
   mail: "M4 4h16v16H4z M22 6l-10 7L2 6",
   menu: "M3 6h18 M3 12h18 M3 18h18",
+  wrench:
+    "M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z",
+  checkCircle: "M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4L12 14.01l-3-3",
+  clipboardCheck:
+    "M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2 M9 14l2 2 4-4",
 };
 
 export function Icon({

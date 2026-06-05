@@ -1,75 +1,36 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { type ResolvedMarket } from "@/lib/markets";
 import {
-  Nav,
+  Header,
   Hero,
-  Stats,
-  Testimonials,
+  SoldProofStrip,
+  BeforeAfter,
+  HowItWorks,
   Closer,
+  StickyBar,
   Footer,
-  WaitlistPage,
 } from "./LpSections";
-import { QuoteModal, ZipModal } from "./LpModals";
-
-type Modal = "quote" | "zip" | null;
+import type { CtaVariant } from "@/lib/flags";
 
 export default function PageShell({
-  market,
-  source,
-  outZip,
-  geoCity,
-  geoRegion,
+  variant,
+  ctaCopy,
 }: {
-  market: ResolvedMarket | null;
-  source: "param" | "zip" | "geo" | "out-of-area" | "none";
-  outZip?: string;
-  geoCity?: string;
-  geoRegion?: string;
+  variant: CtaVariant;
+  ctaCopy: string;
 }) {
-  const [modal, setModal] = useState<Modal>(null);
-  const openQuote = useCallback(() => setModal("quote"), []);
-  const openZip = useCallback(() => setModal("zip"), []);
-  const close = useCallback(() => setModal(null), []);
-
-  useEffect(() => {
-    if (!market && source !== "out-of-area") {
-      const t = setTimeout(() => setModal((m) => (m === null ? "zip" : m)), 700);
-      return () => clearTimeout(t);
-    }
-  }, [market, source]);
-
-  if (source === "out-of-area") {
-    return (
-      <>
-        <Nav />
-        <main>
-          <WaitlistPage
-            zip={outZip ?? ""}
-            geoCity={geoCity}
-            geoRegion={geoRegion}
-            onChooseMarket={openZip}
-          />
-        </main>
-        <Footer onZip={openZip} />
-        <ZipModal open={modal === "zip"} onClose={close} current={null} />
-      </>
-    );
-  }
-
   return (
     <>
-      <Nav />
+      <Header />
       <main>
-        <Hero onQuote={openQuote} />
-        <Stats />
-        <Testimonials />
-        <Closer />
+        <Hero variant={variant} ctaCopy={ctaCopy} />
+        <SoldProofStrip />
+        <BeforeAfter />
+        <HowItWorks />
+        <Closer ctaCopy={ctaCopy} />
       </main>
-      <Footer onZip={openZip} />
-      <QuoteModal open={modal === "quote"} onClose={close} market={market} />
-      <ZipModal open={modal === "zip"} onClose={close} current={market} />
+      <Footer />
+      <StickyBar ctaCopy={ctaCopy} />
     </>
   );
 }
