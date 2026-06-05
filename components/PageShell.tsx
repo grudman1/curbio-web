@@ -62,7 +62,7 @@ export default function PageShell({
     <>
       <Nav />
       <main>
-        <Hero onQuote={openQuote} onZip={openZip} />
+        <Hero market={market} onQuote={openQuote} onZip={openZip} />
         <Stats />
         <Testimonials />
         <Closer />

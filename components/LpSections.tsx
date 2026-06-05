@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { type ResolvedMarket } from "@/lib/markets";
 import { Icon, Eyebrow, AmberRule, PillButton, PhotoPlaceholder, Field } from "./LpKit";
+import { SoldProof } from "./SoldProof";
+import { ATLANTA_SOLD } from "@/lib/atlantaSoldProjects";
 
 const LOGO = "/logo/curbio-white.svg";
 
@@ -102,9 +104,11 @@ export function MarketBar({
 
 // ── Hero ──
 export function Hero({
+  market,
   onQuote,
   onZip,
 }: {
+  market: ResolvedMarket | null;
   onQuote: () => void;
   onZip: () => void;
 }) {
@@ -137,10 +141,17 @@ export function Hero({
             <span>Licensed &amp; insured · 8,000+ homes prepped · Pay at close</span>
           </div>
         </div>
-        <HeroVideo />
+        <HeroRight market={market} onZip={onZip} />
       </div>
     </section>
   );
+}
+
+function HeroRight({ market, onZip }: { market: ResolvedMarket | null; onZip: () => void }) {
+  if (market?.slug === "atlanta") {
+    return <SoldProof data={ATLANTA_SOLD} />;
+  }
+  return <HeroVideo />;
 }
 
 function HeroVideo() {

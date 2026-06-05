@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <defs>
+    <pattern id="stripes" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+      <rect width="10" height="20" fill="#D8D4D1"/>
+      <rect x="10" width="10" height="20" fill="#CCC8C5"/>
+    </pattern>
+  </defs>
+  <rect width="400" height="300" fill="url(#stripes)"/>
+  <rect x="70" y="108" width="260" height="84" rx="8" fill="rgba(255,255,255,0.82)"/>
+  <text x="200" y="148" text-anchor="middle" font-family="Georgia, serif" font-size="14" font-weight="600" fill="#0D254D">Photo needed</text>
+  <text x="200" y="172" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" fill="#6B6560">Add real photo to /public/sold/</text>
+</svg>

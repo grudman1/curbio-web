@@ -322,6 +322,39 @@ select.lp-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 .lp-testis-head .lp-h2{margin:12px 0 0;color:var(--navy)}
 @media (max-width:640px){ .lp-testis-head{margin-bottom:28px} }
 
+/* ---------- Sold Proof (hero right, Atlanta) ---------- */
+.lp-sold{display:flex;flex-direction:column;gap:12px}
+.lp-sold-eyebrow{font-family:var(--font-sans);font-size:12px;font-weight:800;letter-spacing:0.14em;text-transform:uppercase;color:var(--navy);line-height:1.3}
+/* Featured card */
+.lp-sold-card{background:#fff;border-radius:20px;box-shadow:var(--shadow-lg);overflow:hidden;border:1px solid var(--stone)}
+.lp-sold-photo{position:relative;aspect-ratio:4/3;overflow:hidden;background:var(--stone)}
+/* Pills */
+.lp-sold-pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-sans);font-size:11px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;padding:5px 11px;border-radius:999px;line-height:1;border:none;cursor:pointer}
+.lp-sold-pill-amber{background:var(--amber);color:#fff} /* contrast ratio ~4.7:1 — passes AA */
+.lp-sold-pill-navy{background:var(--navy);color:#fff}
+.lp-sold-pill-sold{position:absolute;top:12px;left:12px;cursor:default}
+.lp-sold-ba-pills{position:absolute;top:12px;left:12px;display:flex;gap:6px}
+.lp-sold-ba-pills .lp-sold-pill{opacity:0.55;transition:opacity .18s}
+.lp-sold-ba-pills .lp-sold-pill.lp-sold-pill-active{opacity:1}
+/* Caption */
+.lp-sold-caption{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:14px 16px 16px}
+.lp-sold-caption-left{flex:1;min-width:0}
+.lp-sold-hood{font-family:var(--font-serif);font-size:17px;font-weight:600;color:var(--navy);line-height:1.2}
+.lp-sold-note{font-size:12px;color:var(--fg-muted);margin-top:3px;font-family:var(--font-sans)}
+.lp-sold-price{font-family:var(--font-sans);font-size:15px;font-weight:600;color:var(--navy);white-space:nowrap;flex-shrink:0;padding-top:2px}
+/* Filmstrip */
+.lp-sold-filmstrip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.lp-sold-thumb{background:none;border:none;padding:0;cursor:pointer;text-align:center;display:flex;flex-direction:column;align-items:center;gap:5px;min-height:44px}
+.lp-sold-thumb-img{width:100%;aspect-ratio:1/1;border-radius:8px;overflow:hidden;background:var(--stone);box-shadow:var(--shadow-sm);transition:box-shadow .2s ease}
+@media(prefers-reduced-motion:no-preference){.lp-sold-thumb:hover .lp-sold-thumb-img{box-shadow:var(--shadow-lg)}}
+.lp-sold-thumb-label{font-size:11px;color:var(--fg-muted);font-weight:600;font-family:var(--font-sans);line-height:1.3;white-space:nowrap}
+/* Closing */
+.lp-sold-closing{font-size:13px;color:var(--fg-muted);font-family:var(--font-sans);margin:0;line-height:1.4}
+.lp-sold-divider{border:none;border-top:0.5px solid var(--stone);margin:0}
+/* Mobile */
+@media(max-width:920px){.lp-sold-thumb-label{font-size:10.5px}}
+@media(max-width:360px){.lp-sold-filmstrip{grid-template-columns:repeat(2,1fr)}}
+
 /* ---------- stats ---------- */
 .lp-stats{padding:34px 0;background:var(--navy)}
 @media (max-width:640px){ .lp-stats{padding:28px 0} }
