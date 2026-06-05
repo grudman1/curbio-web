@@ -24,6 +24,7 @@ const LP_ICONS: Record<string, string> = {
   x: "M18 6L6 18 M6 6l12 12",
   star: "M12 2l3 7 7 .5L17 14.5 18.5 22 12 18l-6.5 4L7 14.5 2 9.5 9 9z",
   mail: "M4 4h16v16H4z M22 6l-10 7L2 6",
+  menu: "M3 6h18 M3 12h18 M3 18h18",
 };
 
 export function Icon({

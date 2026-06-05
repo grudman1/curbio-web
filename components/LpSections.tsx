@@ -46,11 +46,13 @@ const TESTIMONIALS = [
 
 // ── Nav ──
 export function Nav({ onQuote }: { onQuote: () => void }) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
   return (
     <header className="lp-nav">
       <div className="lp-shell lp-nav-inner">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={LOGO} alt="Curbio" className="lp-logo" />
+        {/* Desktop: full nav — hidden at ≤880px via CSS */}
         <div className="lp-nav-right">
           <PillButton size="sm" variant="ghostNavy" href="#downloads">
             Learn more
@@ -59,7 +61,33 @@ export function Nav({ onQuote }: { onQuote: () => void }) {
             Get a free quote
           </PillButton>
         </div>
+        {/* Mobile: amber CTA + hamburger — shown at ≤880px via CSS */}
+        <div className="lp-nav-mob">
+          <PillButton size="sm" onClick={onQuote}>
+            Get a free quote
+          </PillButton>
+          <button
+            className="lp-hamburger"
+            onClick={() => setDrawerOpen((o) => !o)}
+            aria-label={drawerOpen ? "Close menu" : "Menu"}
+            aria-expanded={drawerOpen}
+          >
+            <Icon name={drawerOpen ? "x" : "menu"} size={20} color="#fff" />
+          </button>
+        </div>
       </div>
+      {/* Mobile drawer: secondary nav items only */}
+      {drawerOpen && (
+        <nav className="lp-nav-drawer" aria-label="Navigation">
+          <a
+            href="#downloads"
+            className="lp-nav-drawer-link"
+            onClick={() => setDrawerOpen(false)}
+          >
+            Learn more
+          </a>
+        </nav>
+      )}
     </header>
   );
 }
@@ -174,6 +202,8 @@ function HsmCard({ market }: { market: ResolvedMarket }) {
           <img
             src={hsm.photo}
             alt={`${hsm.name}, ${hsm.title}`}
+            loading="lazy"
+            decoding="async"
             style={{
               position: "absolute",
               inset: 0,
@@ -256,17 +286,38 @@ function NeutralCard({ onChoose }: { onChoose: () => void }) {
 }
 
 // ── Social proof: testimonial carousel + stats band ──
-// ── Testimonials carousel (navy band) ──
+// ── Testimonials carousel (cloud-white band) ──
 export function Testimonials() {
   const trackRef = useRef<HTMLDivElement>(null);
+  const [activeDot, setActiveDot] = useState(0);
+
+  function getStep(): number {
+    const track = trackRef.current;
+    if (!track) return 0;
+    const card = track.querySelector<HTMLElement>(".lp-tcard");
+    const gap = parseFloat(getComputedStyle(track).gap || "24") || 24;
+    return card ? card.offsetWidth + gap : track.clientWidth;
+  }
+
   const scroll = (dir: number) => {
     const track = trackRef.current;
     if (!track) return;
-    const card = track.querySelector<HTMLElement>(".lp-tcard");
-    const styles = getComputedStyle(track);
-    const gap = parseFloat(styles.columnGap || styles.gap || "24") || 24;
-    const step = card ? card.offsetWidth + gap : track.clientWidth;
-    track.scrollBy({ left: dir * step, behavior: "smooth" });
+    track.scrollBy({ left: dir * getStep(), behavior: "smooth" });
+  };
+
+  const scrollToIdx = (i: number) => {
+    const track = trackRef.current;
+    if (!track) return;
+    track.scrollTo({ left: i * getStep(), behavior: "smooth" });
+  };
+
+  const handleScroll = () => {
+    const track = trackRef.current;
+    if (!track) return;
+    const step = getStep();
+    if (step <= 0) return;
+    const idx = Math.min(Math.round(track.scrollLeft / step), TESTIMONIALS.length - 1);
+    setActiveDot(idx);
   };
 
   return (
@@ -282,7 +333,7 @@ export function Testimonials() {
           <button className="lp-carousel-arrow prev" onClick={() => scroll(-1)} aria-label="Previous testimonials">
             <Icon name="arrow" size={20} color="currentColor" style={{ transform: "rotate(180deg)" }} />
           </button>
-          <div className="lp-carousel-track" ref={trackRef}>
+          <div className="lp-carousel-track" ref={trackRef} onScroll={handleScroll}>
             {TESTIMONIALS.map((t, i) => (
               <figure key={i} className="lp-tcard">
                 <span className="lp-tcard-mark">&ldquo;</span>
@@ -298,6 +349,18 @@ export function Testimonials() {
           <button className="lp-carousel-arrow next" onClick={() => scroll(1)} aria-label="Next testimonials">
             <Icon name="arrow" size={20} color="currentColor" />
           </button>
+        </div>
+        {/* Dot indicators — CSS-shown on mobile only */}
+        <div className="lp-carousel-dots" aria-hidden="true">
+          {TESTIMONIALS.map((_, i) => (
+            <button
+              key={i}
+              className={"lp-carousel-dot" + (i === activeDot ? " active" : "")}
+              onClick={() => scrollToIdx(i)}
+              tabIndex={-1}
+              aria-hidden="true"
+            />
+          ))}
         </div>
       </div>
     </section>
@@ -442,8 +505,25 @@ export function Proof() {
     const v = videoRef.current;
     if (!v) return;
     v.muted = true;
-    const p = v.play();
-    if (p && typeof p.catch === "function") p.catch(() => {});
+    // Attempt immediate play for desktop (video already in view).
+    v.play().catch(() => {});
+    // On mobile the video is below the fold — use IntersectionObserver to
+    // trigger play the moment it enters the viewport (25% visible).
+    // Also pause when scrolled away to save battery.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            v.play().catch(() => {});
+          } else {
+            v.pause();
+          }
+        });
+      },
+      { threshold: 0.25 }
+    );
+    observer.observe(v);
+    return () => observer.disconnect();
   }, []);
   return (
     <section className="lp-proof">
