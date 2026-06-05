@@ -308,13 +308,14 @@ em { font-style: normal; }
 .lp-confirm { background: var(--cloud-white); padding: 56px 0 80px; min-height: calc(100vh - 64px); }
 .lp-confirm-grid { display: grid; grid-template-columns: 42fr 58fr; gap: 48px; align-items: start; }
 .lp-confirm-eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-muted); margin: 0 0 16px; }
-.lp-confirm-cal { min-width: 320px; height: 700px; }
+.lp-confirm-cal { min-width: 320px; height: 580px; }
 .lp-confirm-no-cal { background: #fff; border: 1px solid var(--stone); border-radius: 16px; padding: 28px 24px; margin-top: 0; }
-.lp-confirm-nothx { display: block; text-align: center; margin-top: 16px; font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--fg-muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; transition: color .15s; }
-.lp-confirm-nothx:hover { color: var(--navy); }
+/* Secondary pill button — visible without scrolling */
+.lp-confirm-nothx { display: flex; align-items: center; justify-content: center; width: 100%; margin-top: 14px; padding: 14px 24px; min-height: 50px; font-family: var(--font-sans); font-size: 15px; font-weight: 700; color: var(--navy); background: transparent; border: 1.5px solid var(--navy); border-radius: 999px; text-decoration: none; cursor: pointer; transition: background .18s, color .18s; }
+.lp-confirm-nothx:hover { background: var(--navy); color: #fff; }
 @media (max-width: 860px) {
   .lp-confirm-grid { grid-template-columns: 1fr; gap: 32px; }
-  .lp-confirm-cal { height: 640px; }
+  .lp-confirm-cal { height: 580px; }
 }
 
 /* ============================================================ WAITLIST PAGE */
