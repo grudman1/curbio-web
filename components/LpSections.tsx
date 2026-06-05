@@ -200,11 +200,14 @@ function HsmCard({ market }: { market: ResolvedMarket }) {
         <p className="lp-hsm-bio">{hsm.bio}</p>
         <div className="lp-hsm-stats">
           <span>
-            <Icon name="home" size={15} color="var(--amber)" /> Local to {market.name}
+            <Icon name="home" size={15} color="var(--amber)" />
+            <span>Local to {market.name}</span>
           </span>
           <span>
-            <span className={"lp-dot" + (market.isBusinessHours ? " on" : "")} aria-hidden />
-            {market.isBusinessHours ? "Available now" : "Replies next business day"}
+            <span className="lp-dot-wrap" aria-hidden>
+              <span className={"lp-dot" + (market.isBusinessHours ? " on" : "")} />
+            </span>
+            <span>{market.isBusinessHours ? "Available now" : "Replies next business day"}</span>
           </span>
         </div>
         {hsm.phone ? (
