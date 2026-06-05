@@ -7,21 +7,49 @@ import { Icon } from "./LpKit";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 import type { ResolvedMarket } from "@/lib/markets";
 
+export type CalendlyPrefill = {
+  name?: string;
+  email?: string;
+  /** Mapped to Calendly's first custom-question slot (a1).
+   *  Verify in Calendly admin: Event → Questions → confirm "Phone Number"
+   *  is question #1 (a1). If it's question #2, change a1 → a2 here. */
+  phone?: string;
+};
+
 // Build the direct Calendly iframe URL. All HSMs use the "general-meeting"
 // event slug — verified via the Calendly API. Direct iframe is faster and
 // more reliable than the widget script (no JS loading, no CSP issues).
-function buildCalendlyIframeSrc(profileUrl: string): string {
-  // Normalise trailing slash, then append the event slug
+function buildCalendlyIframeSrc(
+  profileUrl: string,
+  prefill: CalendlyPrefill = {}
+): string {
   const base = profileUrl.replace(/\/$/, "");
-  return `${base}/general-meeting?embed_type=Inline&hide_gdpr_banner=1&background_color=ffffff&text_color=0d254d&primary_color=cd8629`;
+  const params = new URLSearchParams({
+    embed_type: "Inline",
+    hide_gdpr_banner: "1",
+    background_color: "ffffff",
+    text_color: "0d254d",
+    primary_color: "cd8629",
+  });
+
+  // Prefill params — only appended when the value is non-empty.
+  // Calendly reads: name → guest name, email → guest email,
+  // a1 → first custom question answer (phone, if configured as Q1).
+  if (prefill.name)  params.set("name",  prefill.name);
+  if (prefill.email) params.set("email", prefill.email);
+  if (prefill.phone) params.set("a1",    prefill.phone);
+
+  return `${base}/general-meeting?${params.toString()}`;
 }
 
 export default function ConfirmShell({
   market,
   hsm,
+  prefill = {},
 }: {
   market: CampaignMarket;
   hsm: ResolvedMarket | null;
+  prefill?: CalendlyPrefill;
 }) {
   const [zipOpen, setZipOpen] = useState(false);
 
@@ -30,7 +58,7 @@ export default function ConfirmShell({
       ? hsm.hsm.calendlyUrl
       : null;
 
-  const iframeSrc = profileUrl ? buildCalendlyIframeSrc(profileUrl) : null;
+  const iframeSrc = profileUrl ? buildCalendlyIframeSrc(profileUrl, prefill) : null;
 
   return (
     <>

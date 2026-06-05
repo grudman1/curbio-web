@@ -8,9 +8,14 @@ export const dynamic = "force-dynamic";
 export default async function ConfirmPage({
   searchParams,
 }: {
-  searchParams: Promise<{ market?: string }>;
+  searchParams: Promise<{
+    market?: string;
+    name?: string;
+    email?: string;
+    phone?: string;
+  }>;
 }) {
-  const { market: slug } = await searchParams;
+  const { market: slug, name, email, phone } = await searchParams;
   const campaignMarket = getCampaignMarket(slug);
 
   // Resolve the live HSM data for this market via the operator API
@@ -18,9 +23,13 @@ export default async function ConfirmPage({
   const lead = zip ? await getOperatorLead(zip) : null;
   const resolved = buildResolvedMarket(lead);
 
-  // Fallback: if the API is down, construct minimal HSM data so the page
-  // still renders gracefully (the Calendly link just won't be personalised)
   const hsm = resolved ?? null;
 
-  return <ConfirmShell market={campaignMarket} hsm={hsm} />;
+  return (
+    <ConfirmShell
+      market={campaignMarket}
+      hsm={hsm}
+      prefill={{ name, email, phone }}
+    />
+  );
 }

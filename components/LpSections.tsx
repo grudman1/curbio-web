@@ -142,8 +142,14 @@ function FormCard({
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) throw new Error(data.error || "Something went wrong. Please try again.");
       track("lead_submit", { variant });
-      // Navigate to the confirmation page showing the HSM card + Calendly
-      router.push(`/confirm?market=${market.slug}`);
+      // Navigate to the confirmation page, carrying prefill values for Calendly.
+      // phone is omitted when empty so Calendly's field stays blank rather than
+      // showing an empty string.
+      const qs = new URLSearchParams({ market: market.slug });
+      qs.set("name", f.name.trim());
+      qs.set("email", f.email.trim());
+      if (f.phone.trim()) qs.set("phone", f.phone.trim());
+      router.push(`/confirm?${qs.toString()}`);
     } catch (err) {
       setErrs({ server: err instanceof Error ? err.message : "Something went wrong." });
     } finally {
