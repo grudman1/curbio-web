@@ -26,12 +26,11 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
     slug: "atlanta",
     name: "Atlanta",
     sold: [
-      { neighborhood: "Intown Atlanta", price: "$665,000" },
+      { neighborhood: "Intown Atlanta", price: "$665,000", photo: "/sold/959Berne_Intown.jpeg" },
       { neighborhood: "Marietta", price: "$365,000", photo: "/sold/680Smithstone_Marietta.webp" },
-      { neighborhood: "Roswell", price: "$785,000" },
-      // TODO verify — Zestimate, not a confirmed sale.
-      { neighborhood: "Acworth", price: "$497,000", unverified: true },
-      { neighborhood: "Lawrenceville", price: "$354,000" },
+      { neighborhood: "Roswell", price: "$785,000", photo: "/sold/905Windsor_Roswell.webp" },
+      { neighborhood: "Acworth", price: "$497,000", photo: "/sold/5076OakBranch_Acworth.webp" },
+      { neighborhood: "Lawrenceville", price: "$354,000", photo: "/sold/772Bostonian_Lawrenceville.webp" },
     ],
   },
   {
