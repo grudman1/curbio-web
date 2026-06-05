@@ -50,7 +50,7 @@ export function Nav() {
     <header className="lp-nav">
       <div className="lp-shell lp-nav-inner">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={LOGO} alt="Curbio" className="lp-logo" />
+        <img src="/logo/curbio-white.svg" alt="Curbio" className="lp-logo" />
       </div>
     </header>
   );
@@ -102,16 +102,14 @@ export function MarketBar({
 
 // ── Hero ──
 export function Hero({
-  market,
+  onQuote,
   onZip,
 }: {
-  market: ResolvedMarket | null;
+  onQuote: () => void;
   onZip: () => void;
 }) {
   return (
     <section className="lp-hero">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/logo/curbio-navy.svg" alt="Curbio" className="lp-hero-logo" />
       <div className="lp-shell lp-hero-grid">
         <div>
           <Eyebrow amber style={{ marginBottom: 18 }}>
@@ -122,23 +120,62 @@ export function Hero({
             <br />
             We do the work.
             <br />
-            <em>Your seller pays at close.</em>
+            Your seller pays at close.
           </h1>
           <AmberRule width={64} style={{ margin: "18px 0" }} />
           <p className="lp-hero-sub">
             Curbio gets your listing market-ready on time and on budget — design, materials, and full project
             management, handled by one local expert. Your seller pays nothing until the home sells.
           </p>
-          <HeroForm market={market} />
-          <div className="lp-trust" style={{ marginTop: 14 }}>
+          <div style={{ marginTop: 28 }}>
+            <PillButton size="lg" onClick={onQuote}>
+              Win your next listing
+            </PillButton>
+          </div>
+          <div className="lp-trust" style={{ marginTop: 18 }}>
             <Icon name="shield" size={15} color="var(--amber)" />
             <span>Licensed &amp; insured · 8,000+ homes prepped · Pay at close</span>
           </div>
         </div>
-
-        {market ? <HsmCard market={market} /> : <NeutralCard onChoose={onZip} />}
+        <HeroVideo />
       </div>
     </section>
+  );
+}
+
+function HeroVideo() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = true;
+    v.play().catch(() => {});
+    const observer = new IntersectionObserver(
+      (entries) => entries.forEach((e) => (e.isIntersecting ? v.play().catch(() => {}) : v.pause())),
+      { threshold: 0.25 }
+    );
+    observer.observe(v);
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <div className="lp-hero-video">
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        loop
+        playsInline
+        poster="/proof/before-after.poster.jpg"
+        style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }}
+      >
+        <source src="/proof/before-after.webm" type="video/webm" />
+        <source src="/proof/before-after.mp4" type="video/mp4" />
+      </video>
+      <span className="lp-proof-vtag">
+        <Icon name="arrow" size={12} color="var(--navy)" />
+        Before → After
+      </span>
+    </div>
   );
 }
 
