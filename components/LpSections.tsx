@@ -1,22 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { Icon, Eyebrow, AmberRule, PillButton } from "./LpKit";
-import { ATLANTA_SOLD, ATLANTA_SOLD_CAPTION } from "@/lib/atlantaSoldProjects";
+import { MARKET_OPTIONS, type CampaignMarket } from "@/lib/campaignMarkets";
 import type { CtaVariant } from "@/lib/flags";
 
 const LOGO_NAVY = "/logo/curbio-navy.svg";
-
-// Atlanta Home Services Manager (from markets.json). Last name "Harvey" is
-// carried in markets.json; FLAG to confirm before a real send.
-const ATLANTA_HSM = {
-  name: "Christine Harvey",
-  phone: "703-927-9606",
-  phoneRaw: "+17039279606",
-  calendlyUrl: "https://calendly.com/charvey-curbio",
-  photo: "/hsm/christine-harvey.jpg",
-};
 
 // Smooth-scroll to the form and focus the first input (honors reduced-motion).
 function scrollToForm() {
@@ -31,31 +22,100 @@ function scrollToForm() {
 }
 
 // ── Header (chrome) ──
-export function Header() {
+export function Header({ market }: { market: CampaignMarket }) {
   return (
     <header className="lp-header">
       <div className="lp-shell lp-header-inner">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={LOGO_NAVY} alt="Curbio" className="lp-header-logo" />
-        <span className="lp-header-tag">Atlanta</span>
+        <MarketPicker current={market} />
       </div>
     </header>
   );
 }
 
+// Market picker: the "Atlanta" tag is a dropdown. Selecting a market reloads
+// the page with ?market=<slug>, which re-renders every market-named string.
+function MarketPicker({ current }: { current: CampaignMarket }) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  function choose(slug: string) {
+    setOpen(false);
+    if (slug !== current.slug) router.push(`/?market=${slug}`);
+  }
+
+  return (
+    <div className="lp-mkt" ref={ref}>
+      <button
+        className="lp-mkt-btn"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`Market: ${current.name}. Change market`}
+      >
+        <Icon name="pin" size={13} color="var(--fg-muted)" stroke={1.75} />
+        {current.name}
+        <Icon name="chevronDown" size={14} color="var(--fg-muted)" stroke={2} style={{ marginLeft: 1 }} />
+      </button>
+      {open && (
+        <ul className="lp-mkt-menu" role="listbox" aria-label="Choose your market">
+          {MARKET_OPTIONS.map((m) => {
+            const active = m.slug === current.slug;
+            return (
+              <li key={m.slug} role="option" aria-selected={active}>
+                <button
+                  className={"lp-mkt-opt" + (active ? " active" : "")}
+                  onClick={() => choose(m.slug)}
+                >
+                  {m.name}
+                  {active && <Icon name="check" size={14} color="var(--amber)" stroke={2.5} />}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 // ── a. Hero ──
-export function Hero({ variant, ctaCopy }: { variant: CtaVariant; ctaCopy: string }) {
+export function Hero({
+  market,
+  variant,
+  ctaCopy,
+}: {
+  market: CampaignMarket;
+  variant: CtaVariant;
+  ctaCopy: string;
+}) {
   return (
     <section className="lp-hero" id="hero">
       <div className="lp-shell lp-hero-grid">
         <div className="lp-hero-copy">
-          <Eyebrow style={{ marginBottom: 18, color: "var(--fg-muted)" }}>Atlanta agents</Eyebrow>
+          <Eyebrow style={{ marginBottom: 18, color: "var(--fg-muted)" }}>{market.name} agents</Eyebrow>
           <h1 className="lp-hero-h1">
-            <em>You win the listing.</em>
+            We do the <em>prep.</em>
             <br />
-            We do the work.
+            You make the <em>sale.</em>
             <br />
-            <em>Your seller pays at close.</em>
+            Seller pays <em>at close.</em>
           </h1>
           <AmberRule width={48} style={{ margin: "22px 0" }} />
           <p className="lp-hero-sub">
@@ -67,7 +127,7 @@ export function Hero({ variant, ctaCopy }: { variant: CtaVariant; ctaCopy: strin
           </p>
         </div>
         <div className="lp-hero-form-col">
-          <FormCard variant={variant} ctaCopy={ctaCopy} />
+          <FormCard market={market} variant={variant} ctaCopy={ctaCopy} />
         </div>
       </div>
     </section>
@@ -75,7 +135,15 @@ export function Hero({ variant, ctaCopy }: { variant: CtaVariant; ctaCopy: strin
 }
 
 // ── FormCard (#quote-form) ──
-function FormCard({ variant, ctaCopy }: { variant: CtaVariant; ctaCopy: string }) {
+function FormCard({
+  market,
+  variant,
+  ctaCopy,
+}: {
+  market: CampaignMarket;
+  variant: CtaVariant;
+  ctaCopy: string;
+}) {
   const [f, setF] = useState({ name: "", email: "", phone: "" });
   const [errs, setErrs] = useState<{ name?: string; email?: string; server?: string }>({});
   const [sent, setSent] = useState(false);
@@ -109,8 +177,8 @@ function FormCard({ variant, ctaCopy }: { variant: CtaVariant; ctaCopy: string }
           firstName: full.split(/\s+/)[0],
           email: f.email.trim(),
           phone: f.phone.trim() || undefined,
-          source: "email-campaign-atlanta",
-          market: "atlanta",
+          source: `email-campaign-${market.slug}`,
+          market: market.slug,
           variant,
           submittedAt: new Date().toISOString(),
         }),
@@ -216,13 +284,15 @@ function FormCard({ variant, ctaCopy }: { variant: CtaVariant; ctaCopy: string }
 }
 
 // ── b. Sold-proof strip ──
-export function SoldProofStrip() {
+export function SoldProofStrip({ market }: { market: CampaignMarket }) {
   return (
     <section className="lp-sold" id="sold">
       <div className="lp-shell">
-        <Eyebrow style={{ textAlign: "center", color: "var(--fg-muted)" }}>Sold across Atlanta</Eyebrow>
+        <Eyebrow style={{ textAlign: "center", color: "var(--fg-muted)" }}>
+          Prepped by Curbio. Sold by {market.name} REALTORS&reg;
+        </Eyebrow>
         <ul className="lp-sold-row">
-          {ATLANTA_SOLD.map((p) => (
+          {market.sold.map((p) => (
             <li className="lp-sold-card" key={p.neighborhood}>
               <div className="lp-sold-photo lp-ph lp-ph-warm" aria-hidden>
                 <span className="lp-sold-pill">
@@ -231,44 +301,18 @@ export function SoldProofStrip() {
               </div>
               <div className="lp-sold-body">
                 <span className="lp-sold-hood">{p.neighborhood}</span>
-                <span className="lp-sold-price">{p.price}</span>
+                {p.price && <span className="lp-sold-price">{p.price}</span>}
                 <span className="lp-sold-note">Prepped by Curbio</span>
               </div>
             </li>
           ))}
         </ul>
-        <p className="lp-sold-cap">{ATLANTA_SOLD_CAPTION}</p>
       </div>
     </section>
   );
 }
 
-// ── c. Before / After ──
-export function BeforeAfter() {
-  return (
-    <section className="lp-ba" id="before-after">
-      <div className="lp-shell">
-        <h2 className="lp-h2 lp-ba-title">
-          See what prep does to a <em>listing.</em>
-        </h2>
-        <div className="lp-ba-pair">
-          <figure className="lp-ba-fig">
-            <div className="lp-ba-img lp-ph lp-ph-dim" aria-hidden>
-              <span className="lp-ba-tag lp-ba-tag-before">Before</span>
-            </div>
-          </figure>
-          <figure className="lp-ba-fig">
-            <div className="lp-ba-img lp-ph lp-ph-warm" aria-hidden>
-              <span className="lp-ba-tag lp-ba-tag-after">After</span>
-            </div>
-          </figure>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ── d. How it works ──
+// ── How it works ──
 const STEPS = [
   {
     icon: "clipboardCheck",
@@ -283,7 +327,7 @@ const STEPS = [
   {
     icon: "dollar",
     title: "Your seller pays at close.",
-    body: "No upfront cost. We're paid from the sale proceeds.",
+    body: "No upfront cost. Qualified sellers pay when the home sells.",
   },
 ];
 
@@ -310,7 +354,7 @@ export function HowItWorks() {
   );
 }
 
-// ── e. Navy CTA closer ──
+// ── Navy CTA closer ──
 export function Closer({ ctaCopy }: { ctaCopy: string }) {
   return (
     <section className="lp-closer" id="closer">
@@ -318,35 +362,10 @@ export function Closer({ ctaCopy }: { ctaCopy: string }) {
         <h2 className="lp-closer-h">
           List with confidence. We&apos;ll <em>take care</em> of the rest.
         </h2>
-        <p className="lp-closer-sub">
-          A free prep plan, no upfront cost. Your seller pays only when the home sells.
-        </p>
         <div className="lp-closer-cta">
           <PillButton size="lg" icon="arrow" onClick={scrollToForm}>
             {ctaCopy}
           </PillButton>
-        </div>
-        <div className="lp-closer-hsm">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={ATLANTA_HSM.photo}
-            alt={`${ATLANTA_HSM.name}, Curbio Atlanta Home Services Manager`}
-            className="lp-closer-hsm-photo"
-            loading="lazy"
-            decoding="async"
-          />
-          <div className="lp-closer-hsm-info">
-            <span className="lp-closer-hsm-led">
-              Your Atlanta team is led by <strong>{ATLANTA_HSM.name}</strong>.
-            </span>
-            <span className="lp-closer-hsm-links">
-              <a href={`tel:${ATLANTA_HSM.phoneRaw}`}>{ATLANTA_HSM.phone}</a>
-              <span className="lp-closer-hsm-dot" aria-hidden>·</span>
-              <a href={ATLANTA_HSM.calendlyUrl} target="_blank" rel="noreferrer noopener">
-                Book a call
-              </a>
-            </span>
-          </div>
         </div>
       </div>
     </section>

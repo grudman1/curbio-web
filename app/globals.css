@@ -154,8 +154,16 @@ em { font-style: normal; }
 .lp-header { background: var(--cloud-white); border-bottom: 1px solid var(--stone); }
 .lp-header-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; }
 .lp-header-logo { height: 26px; width: auto; display: block; }
-.lp-header-tag { font-family: var(--font-sans); font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-muted); border: 1px solid var(--stone); border-radius: 999px; padding: 5px 12px; line-height: 1; }
 @media (max-width: 600px) { .lp-header-inner { padding: 12px 0; } .lp-header-logo { height: 23px; } }
+
+/* market picker (the clickable "Atlanta" tag) */
+.lp-mkt { position: relative; }
+.lp-mkt-btn { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-sans); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-muted); background: #fff; border: 1px solid var(--stone); border-radius: 999px; padding: 6px 12px; line-height: 1; cursor: pointer; min-height: 32px; transition: border-color .15s, color .15s; }
+.lp-mkt-btn:hover { border-color: var(--border-strong); color: var(--navy); }
+.lp-mkt-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: var(--z-sticky); margin: 0; padding: 6px; list-style: none; background: #fff; border: 1px solid var(--stone); border-radius: 12px; box-shadow: var(--shadow-lg); min-width: 200px; animation: lp-rise-in 160ms var(--ease-out); }
+.lp-mkt-opt { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--navy); background: none; border: 0; border-radius: 8px; padding: 10px 12px; min-height: 44px; cursor: pointer; text-align: left; transition: background .12s; }
+.lp-mkt-opt:hover { background: var(--cloud-white); }
+.lp-mkt-opt.active { color: var(--amber); }
 
 /* ============================================================ a. HERO */
 .lp-hero { background: var(--cloud-white); padding: 64px 0 72px; }
@@ -210,7 +218,6 @@ em { font-style: normal; }
 .lp-sold-hood { font-family: var(--font-serif); font-weight: 600; font-size: 15px; color: var(--navy); line-height: 1.2; }
 .lp-sold-price { font-family: var(--font-sans); font-weight: 700; font-size: 14px; color: var(--navy); }
 .lp-sold-note { font-family: var(--font-sans); font-weight: 400; font-size: 12px; color: var(--fg-muted); margin-top: 2px; }
-.lp-sold-cap { text-align: center; font-family: var(--font-sans); font-weight: 400; font-size: 13px; color: var(--fg-muted); margin: 24px 0 0; }
 /* tablet / mobile: horizontal scroll + snap */
 @media (max-width: 860px) {
   .lp-sold-row { overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 4px; margin-left: -4px; padding-left: 4px; }
@@ -219,18 +226,7 @@ em { font-style: normal; }
 }
 @media (max-width: 520px) { .lp-sold-card { flex-basis: 78%; } }
 
-/* ============================================================ c. BEFORE / AFTER */
-.lp-ba { background: var(--sage); padding: 72px 0; }
-.lp-ba-title { text-align: center; margin: 0 auto 36px; }
-.lp-ba-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-.lp-ba-fig { margin: 0; }
-.lp-ba-img { position: relative; aspect-ratio: 4 / 3; border-radius: 12px; box-shadow: var(--shadow-sm); }
-.lp-ba-tag { position: absolute; top: 12px; left: 12px; font-family: var(--font-sans); font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 11px; border-radius: 999px; line-height: 1; color: #fff; }
-.lp-ba-tag-before { background: rgba(13, 37, 77, 0.72); }
-.lp-ba-tag-after { background: var(--amber-120); } /* AA white text at 11px */
-@media (max-width: 640px) { .lp-ba { padding: 48px 0; } .lp-ba-pair { gap: 14px; } }
-
-/* ============================================================ d. HOW IT WORKS */
+/* ============================================================ HOW IT WORKS */
 .lp-how { background: var(--cloud-white); padding: 72px 0; }
 .lp-how-title { text-align: center; margin: 0 auto 44px; }
 .lp-how-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; }
@@ -239,23 +235,13 @@ em { font-style: normal; }
 .lp-how-step-b { font-family: var(--font-sans); font-weight: 400; font-size: 15px; color: var(--fg-muted); line-height: 1.55; margin: 8px 0 0; max-width: 34ch; }
 @media (max-width: 760px) { .lp-how { padding: 48px 0; } .lp-how-steps { grid-template-columns: 1fr; gap: 28px; max-width: 30rem; margin: 0 auto; } }
 
-/* ============================================================ e. NAVY CTA CLOSER */
+/* ============================================================ NAVY CTA CLOSER */
 .lp-closer { background: var(--navy); padding: 80px 0; }
 .lp-closer-inner { max-width: 640px; margin: 0 auto; text-align: center; }
 .lp-closer-h { font-family: var(--font-serif); font-weight: 600; font-size: clamp(28px, 3.2vw, 44px); line-height: 1.12; color: #fff; margin: 0; }
 .lp-closer-h em { color: var(--amber); }
-.lp-closer-sub { font-family: var(--font-sans); font-weight: 400; font-size: 16px; color: rgba(255, 255, 255, 0.8); line-height: 1.55; margin: 16px auto 0; max-width: 48ch; }
 .lp-closer-cta { margin-top: 28px; display: flex; justify-content: center; }
-.lp-closer-hsm { margin: 40px auto 0; padding-top: 28px; border-top: 1px solid rgba(255, 255, 255, 0.14); display: inline-flex; align-items: center; gap: 14px; }
-.lp-closer-hsm-photo { width: 52px; height: 52px; border-radius: 999px; object-fit: cover; object-position: center top; flex: none; }
-.lp-closer-hsm-info { display: flex; flex-direction: column; text-align: left; gap: 3px; }
-.lp-closer-hsm-led { font-family: var(--font-sans); font-size: 14px; font-weight: 400; color: rgba(255, 255, 255, 0.8); }
-.lp-closer-hsm-led strong { color: #fff; font-weight: 700; }
-.lp-closer-hsm-links { font-family: var(--font-sans); font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 9px; }
-.lp-closer-hsm-links a { color: var(--amber); text-decoration: none; }
-.lp-closer-hsm-links a:hover { color: var(--amber-30); }
-.lp-closer-hsm-dot { color: rgba(255, 255, 255, 0.4); }
-@media (max-width: 640px) { .lp-closer { padding: 56px 0; } .lp-closer-cta .lp-btn { width: 100%; justify-content: center; } .lp-closer-hsm { display: flex; } }
+@media (max-width: 640px) { .lp-closer { padding: 56px 0; } .lp-closer-cta .lp-btn { width: 100%; justify-content: center; } }
 
 /* ============================================================ STICKY BOTTOM BAR */
 .lp-sticky { position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-sticky); background: var(--navy); transform: translateY(100%); opacity: 0; visibility: hidden; transition: transform var(--dur-base) var(--ease-out), opacity var(--dur-base) var(--ease-out); }
