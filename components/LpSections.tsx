@@ -249,7 +249,17 @@ export function SoldProofStrip({ market }: { market: CampaignMarket }) {
         <ul className="lp-sold-row">
           {market.sold.map((p) => (
             <li className="lp-sold-card" key={p.neighborhood}>
-              <div className="lp-sold-photo lp-ph lp-ph-warm" aria-hidden>
+              <div className={"lp-sold-photo" + (p.photo ? "" : " lp-ph lp-ph-warm")} aria-hidden>
+                {p.photo && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={p.photo}
+                    alt={`${p.neighborhood} home prepped by Curbio`}
+                    loading="lazy"
+                    decoding="async"
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  />
+                )}
                 <span className="lp-sold-pill">
                   <Icon name="check" size={12} color="#fff" stroke={2.5} /> Sold
                 </span>

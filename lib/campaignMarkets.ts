@@ -10,6 +10,7 @@ export type SoldListing = {
   neighborhood: string;
   price?: string; // omit where no verified sale price exists
   unverified?: boolean; // price is a Zestimate, not a confirmed sale
+  photo?: string; // /sold/*.jpg — leave undefined to show striped placeholder
 };
 
 export type CampaignMarket = {
@@ -26,7 +27,7 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
     name: "Atlanta",
     sold: [
       { neighborhood: "Intown Atlanta", price: "$665,000" },
-      { neighborhood: "Marietta", price: "$365,000" },
+      { neighborhood: "Marietta", price: "$365,000", photo: "/sold/marietta.jpg" },
       { neighborhood: "Roswell", price: "$785,000" },
       // TODO verify — Zestimate, not a confirmed sale.
       { neighborhood: "Acworth", price: "$497,000", unverified: true },
