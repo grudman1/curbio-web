@@ -207,7 +207,7 @@ function HsmCard({ market }: { market: ResolvedMarket }) {
             <span className="lp-dot-wrap" aria-hidden>
               <span className={"lp-dot" + (market.isBusinessHours ? " on" : "")} />
             </span>
-            <span>{market.isBusinessHours ? "Available now" : "Replies next business day"}</span>
+            <span>{market.isBusinessHours ? "Available now" : "Replies next day"}</span>
           </span>
         </div>
         {hsm.phone ? (
