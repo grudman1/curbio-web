@@ -35,10 +35,19 @@ function buildCalendlyIframeSrc(
   // Prefill params — only appended when the value is non-empty.
   // Custom question slots confirmed by inspection:
   //   a1 = "Please share anything that will help prepare for our meeting." (textarea)
-  //   a2 = Phone number (flag + country code input)
+  //   a2 = Phone number (flag + country-code input, already shows +1)
+  //
+  // Calendly's phone widget shows "+1 [input]" and expects the 10-digit
+  // national number WITHOUT the leading country code. Strip all non-digits,
+  // then drop a leading "1" so +1 (301) 529-4344 → 3015294344, not 13015294344.
+  // 11-digit values with a leading 1 would be silently rejected by the widget.
   if (prefill.name)  params.set("name",  prefill.name);
   if (prefill.email) params.set("email", prefill.email);
-  if (prefill.phone) params.set("a2",    prefill.phone);
+  if (prefill.phone) {
+    const digits = prefill.phone.replace(/\D/g, "");
+    const national = digits.length === 11 && digits[0] === "1" ? digits.slice(1) : digits;
+    if (national.length === 10) params.set("a2", national);
+  }
 
   return `${base}/general-meeting?${params.toString()}`;
 }
