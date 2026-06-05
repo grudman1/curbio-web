@@ -10,9 +10,10 @@ import type { ResolvedMarket } from "@/lib/markets";
 export type CalendlyPrefill = {
   name?: string;
   email?: string;
-  /** Prefills Calendly's intl-tel-input widget (field name="phone_number").
-   *  NOT an aN custom-answer slot. Passed as phone_number=+1XXXXXXXXXX
-   *  (E.164, URL-encoded by URLSearchParams: + → %2B). */
+  /** Prefills the location phone field via the `location` param.
+   *  All HSM events use location = "Phone call" (invitee provides number),
+   *  so `location` is the correct prefill key — not phone_number, a1, or a2.
+   *  Value is formatted as E.164: +1XXXXXXXXXX (URLSearchParams encodes + → %2B). */
   phone?: string;
 };
 
@@ -33,21 +34,21 @@ function buildCalendlyIframeSrc(
   });
 
   // Prefill params — only appended when the value is non-empty.
-  // phone_number is Calendly's intl-tel-input field (name="phone_number"),
-  // NOT an aN custom-answer slot. It expects E.164 format: +1XXXXXXXXXX.
-  // URLSearchParams encodes + as %2B automatically, so no hand-encoding needed.
-  // Normalization rules:
-  //   10 digits            → prepend +1  (3015294344  → +13015294344)
-  //   11 digits, starts 1  → prepend +   (13015294344 → +13015294344)
-  //   anything else        → omit param  (partial / intl numbers)
+  // All HSM events use location = "Phone call" (invitee provides number).
+  // The location field is prefilled with the `location` param in E.164 format.
+  // URLSearchParams encodes + as %2B automatically — no hand-encoding needed.
+  // Normalization:
+  //   10 digits            → +1{digits}   (3015294344  → +13015294344)
+  //   11 digits, starts 1  → +{digits}    (13015294344 → +13015294344)
+  //   anything else        → omit         (partial / non-US numbers)
   if (prefill.name)  params.set("name",  prefill.name);
   if (prefill.email) params.set("email", prefill.email);
   if (prefill.phone) {
     const digits = prefill.phone.replace(/\D/g, "");
     let e164: string | null = null;
-    if (digits.length === 10)                          e164 = `+1${digits}`;
+    if (digits.length === 10)                           e164 = `+1${digits}`;
     else if (digits.length === 11 && digits[0] === "1") e164 = `+${digits}`;
-    if (e164) params.set("phone_number", e164);
+    if (e164) params.set("location", e164);
   }
 
   return `${base}/general-meeting?${params.toString()}`;
