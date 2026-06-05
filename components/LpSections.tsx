@@ -120,7 +120,7 @@ export function Hero({
             <br />
             We do the work.
             <br />
-            Your seller pays at close.
+            Your seller <em>pays at close.</em>
           </h1>
           <AmberRule width={64} style={{ margin: "18px 0" }} />
           <p className="lp-hero-sub">
