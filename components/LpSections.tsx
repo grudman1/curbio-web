@@ -257,7 +257,7 @@ export function SoldProofStrip({ market }: { market: CampaignMarket }) {
                     alt={`${p.neighborhood} home prepped by Curbio`}
                     loading="lazy"
                     decoding="async"
-                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                   />
                 )}
                 <span className="lp-sold-pill">

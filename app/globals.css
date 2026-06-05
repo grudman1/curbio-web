@@ -231,7 +231,7 @@ em { font-style: normal; }
 .lp-sold { background: var(--stone); padding: 56px 0; }
 .lp-sold-row { list-style: none; display: flex; gap: 16px; margin: 28px 0 0; padding: 0; }
 .lp-sold-card { flex: 1 1 0; min-width: 180px; background: #fff; border-radius: 12px; box-shadow: var(--shadow-sm); overflow: hidden; }
-.lp-sold-photo { position: relative; height: 140px; }
+.lp-sold-photo { position: relative; height: 140px; overflow: hidden; }
 /* amber-120 (not base amber) so 11px white text clears WCAG AA (≈5:1) */
 .lp-sold-pill { position: absolute; top: 10px; left: 10px; display: inline-flex; align-items: center; gap: 5px; background: var(--amber-120); color: #fff; font-family: var(--font-sans); font-size: 11px; font-weight: 800; letter-spacing: 0.02em; padding: 5px 10px 5px 8px; border-radius: 999px; line-height: 1; }
 .lp-sold-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 2px; }
