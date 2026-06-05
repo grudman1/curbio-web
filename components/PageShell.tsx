@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { type ResolvedMarket } from "@/lib/markets";
 import {
-  Nav,
   Hero,
+  Stats,
   Testimonials,
   Closer,
   Footer,
@@ -44,7 +44,6 @@ export default function PageShell({
   if (source === "out-of-area") {
     return (
       <>
-        <Nav />
         <main>
           <WaitlistPage
             zip={outZip ?? ""}
@@ -62,9 +61,9 @@ export default function PageShell({
   // ── Normal page ────────────────────────────────────────────────────────────
   return (
     <>
-      <Nav />
       <main>
         <Hero market={market} onZip={openZip} />
+        <Stats />
         <Testimonials />
         <Closer />
       </main>

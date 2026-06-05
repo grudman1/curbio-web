@@ -192,15 +192,30 @@ function HeroForm({ market }: { market: ResolvedMarket | null }) {
 
   return (
     <div className="lp-hero-form" id="hero-form">
-      <Field label="Name" value={f.name} onChange={set("name")} required />
-      <Field label="Email" type="email" value={f.email} onChange={set("email")} required />
-      <Field
-        label="Phone"
-        type="tel"
-        value={f.phone}
-        onChange={set("phone")}
-        required
-        placeholder="(240) 555-0148"
+      <div className="lp-hero-form-row">
+        <input
+          className="lp-input lp-hero-input"
+          placeholder="Name"
+          value={f.name}
+          onChange={(e) => set("name")(e.target.value)}
+          aria-label="Name"
+        />
+        <input
+          className="lp-input lp-hero-input"
+          type="tel"
+          placeholder="Phone"
+          value={f.phone}
+          onChange={(e) => set("phone")(e.target.value)}
+          aria-label="Phone"
+        />
+      </div>
+      <input
+        className="lp-input lp-hero-input"
+        type="email"
+        placeholder="Work email"
+        value={f.email}
+        onChange={(e) => set("email")(e.target.value)}
+        aria-label="Email"
       />
       {err && (
         <p style={{ fontSize: 12.5, color: "var(--amber-120)", margin: 0, lineHeight: 1.4 }}>{err}</p>
