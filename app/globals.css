@@ -239,29 +239,43 @@ select.lp-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg 
 /* Floating logo overlaid on the hero — no banner, background shows through */
 .lp-hero-logo{position:absolute;top:24px;left:32px;height:30px;width:auto;z-index:10;pointer-events:none}
 @media (max-width:600px){ .lp-hero-logo{top:18px;left:24px;height:26px} }
-.lp-hero{position:relative;min-height:calc(100svh - 150px);display:grid;align-content:center;padding:72px 0 28px}
+.lp-hero{
+  position:relative;
+  min-height:calc(100svh - 64px);
+  display:grid;align-content:center;
+  padding:72px 0 48px;
+  background-image:url('/hero/atlanta-skyline.jpg');
+  background-size:cover;
+  background-position:center 40%;
+  isolation:isolate;
+}
+/* Flat navy scrim — brief: no gradients except a flat scrim where text overlays a photo */
+.lp-hero::before{
+  content:'';
+  position:absolute;inset:0;
+  background:rgba(10,28,60,0.62);
+  z-index:0;
+}
+.lp-hero>.lp-shell{position:relative;z-index:1}
 .lp-hero-grid{display:grid;grid-template-columns:1.28fr 0.72fr;gap:48px;align-items:center;width:100%}
-/* Lower the clamp floor so the headline doesn't dominate on small phones */
-.lp-hero-h1{font-family:var(--font-serif);font-weight:600;font-size:clamp(28px,6.5vw,50px);line-height:1.08;letter-spacing:-0.015em;margin:0;color:var(--navy)}
+.lp-hero-h1{font-family:var(--font-serif);font-weight:600;font-size:clamp(28px,6.5vw,50px);line-height:1.08;letter-spacing:-0.015em;margin:0;color:#fff}
 .lp-hero-h1 em{color:var(--amber);font-style:normal}
-.lp-hero-sub{font-size:17px;line-height:1.6;color:var(--fg-muted);max-width:50ch;margin:0}
+.lp-hero-sub{font-size:17px;line-height:1.6;color:rgba(255,255,255,0.82);max-width:50ch;margin:0}
 .lp-hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-top:28px}
 .lp-hero-form{display:grid;gap:10px;margin-top:22px}
 .lp-hero-form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .lp-hero-input{height:46px;font-size:14px;padding:0 14px;border-radius:10px}
-.lp-hero-form-success{display:flex;align-items:center;gap:10px;margin-top:22px;padding:16px 20px;background:var(--stone);border-radius:12px;font-size:14px;font-weight:600;color:var(--navy);line-height:1.4}
+.lp-hero-form-success{display:flex;align-items:center;gap:10px;margin-top:22px;padding:16px 20px;background:rgba(255,255,255,0.12);border-radius:12px;font-size:14px;font-weight:600;color:#fff;line-height:1.4}
 @media(max-width:500px){.lp-hero-form-row{grid-template-columns:1fr}}
 .lp-hero-video{position:relative;border-radius:20px;overflow:hidden;box-shadow:var(--shadow-lg);aspect-ratio:1500/1242;background:var(--navy)}
-.lp-trust{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:var(--fg-muted);flex-wrap:wrap}
+.lp-trust{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:rgba(255,255,255,0.7);flex-wrap:wrap}
 @media (max-width:920px){ .lp-hero{min-height:0;display:block;padding:32px 0 44px} .lp-hero-grid{grid-template-columns:1fr;gap:32px} }
-/* Mobile hero: tighter padding, stacked full-width CTAs, tighter line-height */
 @media (max-width:640px){
   .lp-hero{padding:20px 0 32px}
   .lp-hero-h1{line-height:1.07}
   .lp-hero-sub{font-size:16px}
   .lp-hero-cta{flex-direction:column;gap:10px;margin-top:22px}
   .lp-hero-cta .lp-btn{width:100%;justify-content:center;min-height:50px}
-  .lp-hero-learn{align-self:center;margin-top:2px}
   .lp-trust{font-size:12.5px}
 }
 
