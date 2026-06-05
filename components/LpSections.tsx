@@ -153,10 +153,8 @@ function FormCard({
 
   return (
     <form className="lp-fc" id="quote-form" onSubmit={submit} noValidate>
-      <p className="lp-fc-h">Get your free prep plan.</p>
-
       <div className="lp-fc-field">
-        <label className="lp-fc-label" htmlFor="fc-name">Full name</label>
+        <label className="lp-fc-label" htmlFor="fc-name">Name</label>
         <input
           id="fc-name"
           className={"lp-input" + (errs.name ? " lp-input-err" : "")}
@@ -172,7 +170,7 @@ function FormCard({
       </div>
 
       <div className="lp-fc-field">
-        <label className="lp-fc-label" htmlFor="fc-email">Work email</label>
+        <label className="lp-fc-label" htmlFor="fc-email">Email</label>
         <input
           id="fc-email"
           className={"lp-input" + (errs.email ? " lp-input-err" : "")}
