@@ -10,9 +10,9 @@ import {
   Footer,
   WaitlistPage,
 } from "./LpSections";
-import { QuoteModal, ZipModal } from "./LpModals";
+import { ZipModal } from "./LpModals";
 
-type Modal = "quote" | "zip" | null;
+type Modal = "zip" | null;
 
 export default function PageShell({
   market,
@@ -28,10 +28,11 @@ export default function PageShell({
   geoRegion?: string;
 }) {
   const [modal, setModal] = useState<Modal>(null);
-  const openQuote = useCallback(() => setModal("quote"), []);
   const openZip = useCallback(() => setModal("zip"), []);
   const close = useCallback(() => setModal(null), []);
 
+  // Visitors with no market signal are greeted with the chooser.
+  // Out-of-area visitors see the waitlist instead — never auto-open the picker.
   useEffect(() => {
     if (!market && source !== "out-of-area") {
       const t = setTimeout(() => setModal((m) => (m === null ? "zip" : m)), 700);
@@ -43,6 +44,7 @@ export default function PageShell({
   if (source === "out-of-area") {
     return (
       <>
+        <Nav />
         <main>
           <WaitlistPage
             zip={outZip ?? ""}
@@ -60,14 +62,13 @@ export default function PageShell({
   // ── Normal page ────────────────────────────────────────────────────────────
   return (
     <>
+      <Nav />
       <main>
-        <Hero market={market} onQuote={openQuote} onZip={openZip} />
+        <Hero market={market} onZip={openZip} />
         <Testimonials />
-        <Closer market={market} onQuote={openQuote} onZip={openZip} />
+        <Closer />
       </main>
       <Footer onZip={openZip} />
-
-      <QuoteModal open={modal === "quote"} onClose={close} market={market} />
       <ZipModal open={modal === "zip"} onClose={close} current={market} />
     </>
   );

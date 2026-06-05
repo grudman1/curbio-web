@@ -45,15 +45,12 @@ const TESTIMONIALS = [
 ];
 
 // ── Nav ──
-export function Nav({ onQuote }: { onQuote: () => void }) {
+export function Nav() {
   return (
     <header className="lp-nav">
       <div className="lp-shell lp-nav-inner">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={LOGO} alt="Curbio" className="lp-logo" />
-        <PillButton size="sm" onClick={onQuote}>
-          Get a free quote
-        </PillButton>
       </div>
     </header>
   );
@@ -106,16 +103,13 @@ export function MarketBar({
 // ── Hero ──
 export function Hero({
   market,
-  onQuote,
   onZip,
 }: {
   market: ResolvedMarket | null;
-  onQuote: () => void;
   onZip: () => void;
 }) {
   return (
     <section className="lp-hero">
-      {/* Floating logo — no background, sits over the hero */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/logo/curbio-navy.svg" alt="Curbio" className="lp-hero-logo" />
       <div className="lp-shell lp-hero-grid">
@@ -135,24 +129,8 @@ export function Hero({
             Curbio gets your listing market-ready on time and on budget — design, materials, and full project
             management, handled by one local expert. Your seller pays nothing until the home sells.
           </p>
-          <div className="lp-hero-cta">
-            <PillButton size="lg" onClick={onQuote}>
-              Get a free quote
-            </PillButton>
-            {market ? (
-              <PillButton size="lg" variant="secondary" icon="calendar" href={market.hsm.calendlyUrl} target="_blank">
-                Speak with {market.hsm.firstName}
-              </PillButton>
-            ) : (
-              <PillButton size="lg" variant="secondary" icon="pin" onClick={onZip}>
-                Find your market
-              </PillButton>
-            )}
-            <a className="lp-hero-learn" href="#downloads">
-              Learn more <Icon name="arrow" size={15} color="currentColor" />
-            </a>
-          </div>
-          <div className="lp-trust">
+          <HeroForm market={market} />
+          <div className="lp-trust" style={{ marginTop: 14 }}>
             <Icon name="shield" size={15} color="var(--amber)" />
             <span>Licensed &amp; insured · 8,000+ homes prepped · Pay at close</span>
           </div>
@@ -161,6 +139,76 @@ export function Hero({
         {market ? <HsmCard market={market} /> : <NeutralCard onChoose={onZip} />}
       </div>
     </section>
+  );
+}
+
+function HeroForm({ market }: { market: ResolvedMarket | null }) {
+  const [f, setF] = useState({ name: "", email: "", phone: "" });
+  const [sent, setSent] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const set = (k: keyof typeof f) => (v: string) => setF((s) => ({ ...s, [k]: v }));
+  const validEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+  const valid =
+    f.name.trim().length > 0 &&
+    validEmail(f.email) &&
+    f.phone.replace(/\D/g, "").length >= 10;
+
+  async function submit() {
+    if (!valid || pending) return;
+    setPending(true);
+    setErr(null);
+    try {
+      const res = await fetch("/api/lead", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name: f.name.trim(),
+          email: f.email.trim(),
+          phone: f.phone.trim(),
+          market: market?.slug ?? null,
+          source: "quote",
+          submittedAt: new Date().toISOString(),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data.error || "Something went wrong. Please try again.");
+      setSent(true);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Something went wrong.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  if (sent) {
+    return (
+      <div className="lp-hero-form-success" id="hero-form">
+        <Icon name="check" size={22} color="var(--amber)" stroke={2.5} />
+        <span>Got it — your local Curbio team will be in touch shortly.</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="lp-hero-form" id="hero-form">
+      <Field label="Name" value={f.name} onChange={set("name")} required />
+      <Field label="Email" type="email" value={f.email} onChange={set("email")} required />
+      <Field
+        label="Phone"
+        type="tel"
+        value={f.phone}
+        onChange={set("phone")}
+        required
+        placeholder="(240) 555-0148"
+      />
+      {err && (
+        <p style={{ fontSize: 12.5, color: "var(--amber-120)", margin: 0, lineHeight: 1.4 }}>{err}</p>
+      )}
+      <PillButton full size="lg" disabled={!valid || pending} onClick={submit}>
+        {pending ? "Sending…" : "Win your next listing"}
+      </PillButton>
+    </div>
   );
 }
 
@@ -426,15 +474,7 @@ export function Proof() {
 }
 
 // ── Navy closer ──
-export function Closer({
-  market,
-  onQuote,
-  onZip,
-}: {
-  market: ResolvedMarket | null;
-  onQuote: () => void;
-  onZip: () => void;
-}) {
+export function Closer() {
   return (
     <section className="lp-closer">
       <div className="lp-shell lp-closer-inner">
@@ -449,18 +489,9 @@ export function Closer({
           </p>
         </div>
         <div className="lp-closer-cta">
-          <PillButton size="lg" onClick={onQuote}>
-            Get a free quote
+          <PillButton size="lg" href="#hero-form">
+            Win your next listing
           </PillButton>
-          {market ? (
-            <PillButton size="lg" variant="ghostNavy" icon="calendar" href={market.hsm.calendlyUrl} target="_blank">
-              Speak with {market.hsm.firstName}
-            </PillButton>
-          ) : (
-            <PillButton size="lg" variant="ghostNavy" icon="pin" onClick={onZip}>
-              Find your market
-            </PillButton>
-          )}
         </div>
       </div>
     </section>
