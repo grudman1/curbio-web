@@ -1,37 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Header } from "./LpSections";
 import { ZipModal } from "./LpModals";
 import { Icon } from "./LpKit";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 import type { ResolvedMarket } from "@/lib/markets";
 
-// Inject the Calendly widget script immediately on mount — do NOT use
-// next/script with strategy="lazyOnload" (it fires too late or never).
-function useCalendly() {
-  useEffect(() => {
-    const SCRIPT_SRC = "https://assets.calendly.com/assets/external/widget.js";
-
-    // If the script is already on the page, just call initInlineWidgets
-    // (handles the case where the user navigates back to this page).
-    if (document.querySelector(`script[src="${SCRIPT_SRC}"]`)) {
-      const w = window as unknown as { Calendly?: { initInlineWidgets: () => void } };
-      w.Calendly?.initInlineWidgets();
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = SCRIPT_SRC;
-    script.async = true;
-    document.head.appendChild(script);
-
-    return () => {
-      // Clean up only if we added it
-      const el = document.querySelector(`script[src="${SCRIPT_SRC}"]`);
-      if (el) el.remove();
-    };
-  }, []);
+// Build the direct Calendly iframe URL. All HSMs use the "general-meeting"
+// event slug — verified via the Calendly API. Direct iframe is faster and
+// more reliable than the widget script (no JS loading, no CSP issues).
+function buildCalendlyIframeSrc(profileUrl: string): string {
+  // Normalise trailing slash, then append the event slug
+  const base = profileUrl.replace(/\/$/, "");
+  return `${base}/general-meeting?embed_type=Inline&hide_gdpr_banner=1&background_color=ffffff&text_color=0d254d&primary_color=cd8629`;
 }
 
 export default function ConfirmShell({
@@ -42,17 +24,13 @@ export default function ConfirmShell({
   hsm: ResolvedMarket | null;
 }) {
   const [zipOpen, setZipOpen] = useState(false);
-  useCalendly();
 
-  const calendlyUrl =
+  const profileUrl =
     hsm?.hsm.calendlyUrl && hsm.hsm.calendlyUrl !== "#"
       ? hsm.hsm.calendlyUrl
       : null;
 
-  // Build Calendly URL with brand colours
-  const embedUrl = calendlyUrl
-    ? `${calendlyUrl}?hide_gdpr_banner=1&background_color=ffffff&text_color=0d254d&primary_color=cd8629`
-    : null;
+  const iframeSrc = profileUrl ? buildCalendlyIframeSrc(profileUrl) : null;
 
   return (
     <>
@@ -126,13 +104,17 @@ export default function ConfirmShell({
           {/* ── Right: Calendly + No thanks ── */}
           <div className="lp-confirm-right">
             <p className="lp-confirm-eyebrow">Pick a time that works for you</p>
-            {embedUrl ? (
+            {iframeSrc ? (
               <div className="lp-confirm-cal-wrap">
-                {/* Calendly initialises this div via the script injected in useCalendly() */}
-                <div
-                  className="calendly-inline-widget"
-                  data-url={embedUrl}
-                  style={{ minWidth: 320, height: 630 }}
+                {/* Direct iframe — no JS, no widget script, loads instantly */}
+                <iframe
+                  src={iframeSrc}
+                  width="100%"
+                  height="700"
+                  frameBorder="0"
+                  scrolling="no"
+                  title={`Schedule a call with ${hsm?.hsm.firstName ?? "your local manager"}`}
+                  style={{ border: 0, display: "block", borderRadius: 8 }}
                 />
                 <a href="/" className="lp-confirm-nothx">
                   No thanks, I&apos;ll wait
