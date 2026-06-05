@@ -115,6 +115,9 @@ export function Hero({
 }) {
   return (
     <section className="lp-hero">
+      {/* Floating logo — no background, sits over the hero */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo/curbio-navy.svg" alt="Curbio" className="lp-hero-logo" />
       <div className="lp-shell lp-hero-grid">
         <div>
           <Eyebrow amber style={{ marginBottom: 18 }}>
