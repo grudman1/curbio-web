@@ -200,17 +200,6 @@ function HsmCard({ market }: { market: ResolvedMarket }) {
         <div className="lp-hsm-name">{hsm.name}</div>
         <div className="lp-hsm-title">{hsm.title}</div>
         <p className="lp-hsm-bio">{hsm.bio}</p>
-        {hsm.phone ? (
-          <a className="lp-hsm-callbox" href={`tel:${hsm.phoneRaw}`}>
-            <span className="lp-hsm-callicon">
-              <Icon name="phone" size={18} color="var(--amber)" />
-            </span>
-            <span className="lp-hsm-callinfo">
-              <span className="lp-hsm-calllabel">Call {hsm.firstName} directly</span>
-              <span className="lp-hsm-callnum">{hsm.phone}</span>
-            </span>
-          </a>
-        ) : null}
       </div>
     </aside>
   );
