@@ -128,7 +128,7 @@ export function Hero({
           <h1 className="lp-hero-h1">
             A market-ready listing.
             <br />
-            Paid for at close.
+            <em>Paid for at close.</em>
           </h1>
           <AmberRule width={64} style={{ margin: "18px 0" }} />
           <p className="lp-hero-sub">
