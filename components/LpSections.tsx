@@ -325,7 +325,7 @@ export function Closer({ ctaCopy }: { ctaCopy: string }) {
     <section className="lp-closer" id="closer">
       <div className="lp-shell lp-closer-inner">
         <h2 className="lp-closer-h">
-          List with confidence. We&apos;ll <em>take care</em> of the rest.
+          Try it on one listing. You&apos;ll wonder <em>why you waited.</em>
         </h2>
         <div className="lp-closer-cta">
           <PillButton size="lg" icon="arrow" onClick={scrollToForm}>
