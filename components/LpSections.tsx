@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { track } from "@vercel/analytics";
 import { Icon, Eyebrow, AmberRule, PillButton } from "./LpKit";
-import { MARKET_OPTIONS, type CampaignMarket } from "@/lib/campaignMarkets";
+import type { CampaignMarket } from "@/lib/campaignMarkets";
 import type { CtaVariant } from "@/lib/flags";
 
 const LOGO_NAVY = "/logo/curbio-navy.svg";
@@ -22,76 +21,29 @@ function scrollToForm() {
 }
 
 // ── Header (chrome) ──
-export function Header({ market }: { market: CampaignMarket }) {
+export function Header({
+  market,
+  onPickerClick,
+}: {
+  market: CampaignMarket;
+  onPickerClick: () => void;
+}) {
   return (
     <header className="lp-header">
       <div className="lp-shell lp-header-inner">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={LOGO_NAVY} alt="Curbio" className="lp-header-logo" />
-        <MarketPicker current={market} />
+        <button
+          className="lp-mkt-btn"
+          onClick={onPickerClick}
+          aria-label={`Market: ${market.name}. Change market`}
+        >
+          <Icon name="pin" size={13} color="var(--fg-muted)" stroke={1.75} />
+          {market.name}
+          <Icon name="chevronDown" size={14} color="var(--fg-muted)" stroke={2} style={{ marginLeft: 1 }} />
+        </button>
       </div>
     </header>
-  );
-}
-
-// Market picker: the "Atlanta" tag is a dropdown. Selecting a market reloads
-// the page with ?market=<slug>, which re-renders every market-named string.
-function MarketPicker({ current }: { current: CampaignMarket }) {
-  const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
-
-  function choose(slug: string) {
-    setOpen(false);
-    if (slug !== current.slug) router.push(`/?market=${slug}`);
-  }
-
-  return (
-    <div className="lp-mkt" ref={ref}>
-      <button
-        className="lp-mkt-btn"
-        onClick={() => setOpen((o) => !o)}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-label={`Market: ${current.name}. Change market`}
-      >
-        <Icon name="pin" size={13} color="var(--fg-muted)" stroke={1.75} />
-        {current.name}
-        <Icon name="chevronDown" size={14} color="var(--fg-muted)" stroke={2} style={{ marginLeft: 1 }} />
-      </button>
-      {open && (
-        <ul className="lp-mkt-menu" role="listbox" aria-label="Choose your market">
-          {MARKET_OPTIONS.map((m) => {
-            const active = m.slug === current.slug;
-            return (
-              <li key={m.slug} role="option" aria-selected={active}>
-                <button
-                  className={"lp-mkt-opt" + (active ? " active" : "")}
-                  onClick={() => choose(m.slug)}
-                >
-                  {m.name}
-                  {active && <Icon name="check" size={14} color="var(--amber)" stroke={2.5} />}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
   );
 }
 

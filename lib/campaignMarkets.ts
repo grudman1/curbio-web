@@ -109,9 +109,19 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
 
 export const DEFAULT_MARKET_SLUG = "atlanta";
 
+// Map old MARKET_CARDS slugs (from lib/markets.ts) to campaign slugs.
+const SLUG_ALIASES: Record<string, string> = {
+  baltimore: "maryland-suburbs",
+  "south-maryland": "maryland-suburbs",
+  "southern-maryland": "maryland-suburbs",
+  nova: "northern-virginia",
+};
+
 export function getCampaignMarket(slug?: string | null): CampaignMarket {
+  if (!slug) return CAMPAIGN_MARKETS.find((m) => m.slug === DEFAULT_MARKET_SLUG)!;
+  const resolved = SLUG_ALIASES[slug] ?? slug;
   return (
-    CAMPAIGN_MARKETS.find((m) => m.slug === slug) ??
+    CAMPAIGN_MARKETS.find((m) => m.slug === resolved) ??
     CAMPAIGN_MARKETS.find((m) => m.slug === DEFAULT_MARKET_SLUG)!
   );
 }

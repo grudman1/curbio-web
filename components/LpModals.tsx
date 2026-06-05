@@ -17,7 +17,9 @@ export function ZipModal({
 }: {
   open: boolean;
   onClose: () => void;
-  current: ResolvedMarket | null;
+  /** Only the slug is needed to highlight the active card. Accepts any object
+   *  with a `slug` string (ResolvedMarket, CampaignMarket, or a plain object). */
+  current: { slug: string } | null;
 }) {
   const router = useRouter();
   const [zip, setZip] = useState("");
