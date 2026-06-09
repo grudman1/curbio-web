@@ -37,6 +37,7 @@ export type MarketResolution = {
  * regardless of outcome.
  */
 export async function resolveMarket(searchParams: {
+  /** Campaign slug (e.g. "atlanta", "dallas") — maps to a canonical ZIP. */
   market?: string;
   zip?: string;
   code?: string;

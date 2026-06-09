@@ -16,12 +16,15 @@ export default function PageShell({
   market,
   variant,
   ctaCopy,
+  showPicker = false,
 }: {
   market: CampaignMarket;
   variant: CtaVariant;
   ctaCopy: string;
+  /** Auto-open the market chooser on mount (used when geo resolves to "none"). */
+  showPicker?: boolean;
 }) {
-  const [zipOpen, setZipOpen] = useState(false);
+  const [zipOpen, setZipOpen] = useState(showPicker);
 
   return (
     <>
