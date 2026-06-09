@@ -217,6 +217,7 @@ em { font-style: normal; }
 .lp-fc-submit:active:not(:disabled) { background: var(--amber-120); box-shadow: none; }
 .lp-fc-submit:disabled { opacity: 0.6; box-shadow: none; cursor: default; }
 .lp-fc-tcpa { font-family: var(--font-sans); font-size: 11px; font-weight: 400; color: var(--fg-muted); line-height: 1.5; margin: 12px 0 0; }
+.lp-fc-optional { font-weight: 400; color: var(--fg-muted); font-size: 0.85em; }
 .lp-fc-tcpa a { color: var(--fg-muted); text-decoration: underline; text-underline-offset: 2px; }
 .lp-fc-tcpa a:hover { color: var(--navy); }
 /* success */
@@ -248,7 +249,6 @@ em { font-style: normal; }
 
 /* ============================================================ HOW IT WORKS */
 .lp-how { background: var(--cloud-white); padding: 72px 0; }
-.lp-how-title { text-align: center; margin: 0 auto 44px; }
 .lp-how-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; }
 .lp-how-step { margin: 0; }
 .lp-how-step-h { font-family: var(--font-serif); font-weight: 600; font-size: 20px; color: var(--navy); line-height: 1.2; margin: 16px 0 0; }

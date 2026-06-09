@@ -75,11 +75,10 @@ export function Hero({
           </h1>
           <AmberRule width={48} style={{ margin: "22px 0" }} />
           <p className="lp-hero-sub">
-            We renovate, paint, stage, and repair before you list. Your seller pays
-            nothing until the home sells.
+            Move-in ready sells. Your seller pays nothing until it closes.
           </p>
           <p className="lp-hero-trust">
-            Licensed &amp; insured · 8,000+ homes prepped · Pay at close
+            Licensed &amp; insured · 8,000+ homes prepped
           </p>
         </div>
         <div className="lp-hero-form-col">
@@ -192,7 +191,9 @@ function FormCard({
       </div>
 
       <div className="lp-fc-field">
-        <label className="lp-fc-label" htmlFor="fc-phone">Phone</label>
+        <label className="lp-fc-label" htmlFor="fc-phone">
+          Phone <span className="lp-fc-optional">(optional)</span>
+        </label>
         <input
           id="fc-phone"
           className="lp-input"
@@ -202,9 +203,7 @@ function FormCard({
           onChange={onChange("phone")}
           placeholder="(555) 555-5555"
           autoComplete="tel"
-          aria-describedby="fc-phone-help"
         />
-        <span id="fc-phone-help" className="lp-fc-help">Optional. Helps us reach you faster.</span>
       </div>
 
       {errs.server && <p className="lp-fc-server" role="alert">{errs.server}</p>}
@@ -220,13 +219,11 @@ function FormCard({
       </button>
 
       <p className="lp-fc-tcpa">
-        By submitting this form, you consent to receive calls and texts from Curbio
-        at the number provided, including by autodialer. Msg &amp; data rates may
-        apply. Consent is not a condition of purchase. Reply STOP to opt out.{" "}
+        By submitting, you agree to our{" "}
         <a href="https://curbio.com/privacy-policy" target="_blank" rel="noreferrer noopener">
           Privacy Policy
         </a>
-        .
+        {" "}and consent to calls and texts from Curbio. Reply STOP to opt out.
       </p>
     </form>
   );
@@ -238,7 +235,7 @@ export function SoldProofStrip({ market }: { market: CampaignMarket }) {
     <section className="lp-sold" id="sold">
       <div className="lp-shell">
         <Eyebrow style={{ textAlign: "center", color: "var(--fg-muted)" }}>
-          Prepped by Curbio. Sold by {market.name} REALTORS&reg;
+          {market.name}
         </Eyebrow>
         <ul className="lp-sold-row">
           {market.sold.map((p) => (
@@ -275,18 +272,18 @@ export function SoldProofStrip({ market }: { market: CampaignMarket }) {
 const STEPS = [
   {
     icon: "clipboardCheck",
-    title: "We assess the home.",
-    body: "A local Curbio manager walks the property and builds a prep plan.",
+    title: "We walk the property.",
+    body: "A local Curbio manager builds a full prep plan — what to fix, what to skip, and what moves the needle.",
   },
   {
     icon: "wrench",
     title: "We do the work.",
-    body: "Paint, repairs, staging, updates. One team, one timeline.",
+    body: "Paint, repairs, staging. One team, one timeline.",
   },
   {
     icon: "dollar",
-    title: "Your seller pays at close.",
-    body: "No upfront cost. Qualified sellers pay when the home sells.",
+    title: "Seller pays at close.",
+    body: "Nothing due upfront. Qualified sellers pay from proceeds when the home sells.",
   },
 ];
 
@@ -294,9 +291,6 @@ export function HowItWorks() {
   return (
     <section className="lp-how" id="how">
       <div className="lp-shell">
-        <h2 className="lp-h2 lp-how-title">
-          Simple. Fast. <em>No upfront cost.</em>
-        </h2>
         <ol className="lp-how-steps">
           {STEPS.map((s) => (
             <li className="lp-how-step" key={s.title}>
@@ -319,7 +313,7 @@ export function Closer({ ctaCopy }: { ctaCopy: string }) {
     <section className="lp-closer" id="closer">
       <div className="lp-shell lp-closer-inner">
         <h2 className="lp-closer-h">
-          Try it on one listing. You&apos;ll wonder <em>why you waited.</em>
+          One listing. You&apos;ll wonder <em>why you waited.</em>
         </h2>
         <div className="lp-closer-cta">
           <PillButton size="lg" icon="arrow" onClick={scrollToForm}>
