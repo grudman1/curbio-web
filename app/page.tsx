@@ -9,9 +9,12 @@ export const dynamic = "force-dynamic";
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ market?: string; zip?: string; code?: string; status?: string }>;
+  searchParams: Promise<{ market?: string; zip?: string; code?: string; status?: string; n?: string; e?: string }>;
 }) {
   const params = await searchParams;
+
+  const prefillName  = (params.n ?? "").trim();
+  const prefillEmail = (params.e ?? "").trim();
 
   // Resolve the A/B flag once — drives both the form button and any future sticky
   let variant: CtaVariant = "control";
@@ -39,12 +42,12 @@ export default async function Page({
   // Resolved via param, zip, or geo → show that market's landing page
   if (resolved) {
     const market = getCampaignMarket(resolved.slug);
-    return <PageShell market={market} variant={variant} ctaCopy={ctaCopy} />;
+    return <PageShell market={market} variant={variant} ctaCopy={ctaCopy} prefillName={prefillName} prefillEmail={prefillEmail} />;
   }
 
   // source === "none": geo couldn't place the visitor → open the market picker
   // immediately so they can choose their area. Use Atlanta as a neutral
   // backdrop (it's behind the modal and won't be seen until they pick).
   const fallback = getCampaignMarket("atlanta");
-  return <PageShell market={fallback} variant={variant} ctaCopy={ctaCopy} showPicker />;
+  return <PageShell market={fallback} variant={variant} ctaCopy={ctaCopy} showPicker prefillName={prefillName} prefillEmail={prefillEmail} />;
 }

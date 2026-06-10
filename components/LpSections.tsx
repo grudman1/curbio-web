@@ -56,10 +56,14 @@ export function Hero({
   market,
   variant,
   ctaCopy,
+  prefillName,
+  prefillEmail,
 }: {
   market: CampaignMarket;
   variant: CtaVariant;
   ctaCopy: string;
+  prefillName?: string;
+  prefillEmail?: string;
 }) {
   return (
     <section className="lp-hero" id="hero">
@@ -95,7 +99,7 @@ export function Hero({
           </div>
         </div>
         <div className="lp-hero-form-col">
-          <FormCard market={market} variant={variant} ctaCopy={ctaCopy} />
+          <FormCard market={market} variant={variant} ctaCopy={ctaCopy} prefillName={prefillName} prefillEmail={prefillEmail} />
         </div>
       </div>
     </section>
@@ -107,12 +111,18 @@ function FormCard({
   market,
   variant,
   ctaCopy,
+  prefillName = "",
+  prefillEmail = "",
 }: {
   market: CampaignMarket;
   variant: CtaVariant;
   ctaCopy: string;
+  prefillName?: string;
+  prefillEmail?: string;
 }) {
-  const [f, setF] = useState({ name: "", email: "", phone: "" });
+  const [f, setF] = useState({ name: prefillName, email: prefillEmail, phone: "" });
+  const [nameEdited,  setNameEdited]  = useState(false);
+  const [emailEdited, setEmailEdited] = useState(false);
   const [errs, setErrs] = useState<{ name?: string; email?: string; server?: string }>({});
   const [pending, setPending] = useState(false);
   const router = useRouter();
@@ -120,6 +130,8 @@ function FormCard({
   const onChange = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setF((s) => ({ ...s, [k]: e.target.value }));
     setErrs((p) => ({ ...p, [k]: undefined }));
+    if (k === "name")  setNameEdited(true);
+    if (k === "email") setEmailEdited(true);
   };
 
   async function submit(e: React.FormEvent) {
@@ -175,7 +187,7 @@ function FormCard({
         <label className="lp-fc-label" htmlFor="fc-name">Name</label>
         <input
           id="fc-name"
-          className={"lp-input" + (errs.name ? " lp-input-err" : "")}
+          className={"lp-input" + (errs.name ? " lp-input-err" : prefillName && !nameEdited ? " lp-input-prefilled" : "")}
           type="text"
           value={f.name}
           onChange={onChange("name")}
@@ -191,7 +203,7 @@ function FormCard({
         <label className="lp-fc-label" htmlFor="fc-email">Email</label>
         <input
           id="fc-email"
-          className={"lp-input" + (errs.email ? " lp-input-err" : "")}
+          className={"lp-input" + (errs.email ? " lp-input-err" : prefillEmail && !emailEdited ? " lp-input-prefilled" : "")}
           type="email"
           value={f.email}
           onChange={onChange("email")}

@@ -20,6 +20,30 @@ Built with **Next.js 15 (App Router) · TypeScript · Tailwind CSS · Vercel**.
 ?market=<slug>    → that market's page directly
 ```
 
+**Email prefill params**
+
+Append `&n=First%20Last&e=agent%40brokerage.com` to any campaign link to
+pre-populate the name and email fields. Use your ESP's merge tags to inject
+per-recipient values at send time. Params are short to keep URLs clean:
+
+| Param | Field |
+|---|---|
+| `n` | Full name |
+| `e` | Work email |
+
+Fields are pre-filled but fully editable. Phone stays blank (not collected at send time).
+Prefilled fields show a subtle amber border until the user edits them.
+
+**Mailchimp:**
+```
+/?market=atlanta&n=*|FNAME|*%20*|LNAME|*&e=*|EMAIL|*
+```
+
+**HubSpot:**
+```
+/?market=atlanta&n={{ contact.firstname }}%20{{ contact.lastname }}&e={{ contact.email }}
+```
+
 ---
 
 ## Project structure

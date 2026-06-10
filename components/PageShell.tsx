@@ -17,12 +17,16 @@ export default function PageShell({
   variant,
   ctaCopy,
   showPicker = false,
+  prefillName = "",
+  prefillEmail = "",
 }: {
   market: CampaignMarket;
   variant: CtaVariant;
   ctaCopy: string;
   /** Auto-open the market chooser on mount (used when geo resolves to "none"). */
   showPicker?: boolean;
+  prefillName?: string;
+  prefillEmail?: string;
 }) {
   const [zipOpen, setZipOpen] = useState(showPicker);
 
@@ -30,7 +34,7 @@ export default function PageShell({
     <>
       <Header market={market} onPickerClick={() => setZipOpen(true)} />
       <main>
-        <Hero market={market} variant={variant} ctaCopy={ctaCopy} />
+        <Hero market={market} variant={variant} ctaCopy={ctaCopy} prefillName={prefillName} prefillEmail={prefillEmail} />
         <SoldProofStrip market={market} />
         <HowItWorks />
         <Closer ctaCopy={ctaCopy} />

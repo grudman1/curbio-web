@@ -137,6 +137,7 @@ em { font-style: normal; }
 .lp-input:focus { outline: 0; border-color: var(--amber); box-shadow: 0 0 0 3px var(--amber-30); }
 .lp-input-err { border-color: var(--error); }
 .lp-input-err:focus { border-color: var(--error); box-shadow: 0 0 0 3px rgba(226,75,74,0.16); }
+.lp-input-prefilled { background-color: #faf9f8; border-color: #e8c97a; }
 
 /* ---------- icon disc (Lucide line, navy, in a stone disc) ---------- */
 .lp-icon-disc { width: 48px; height: 48px; border-radius: 999px; background: var(--stone); display: inline-flex; align-items: center; justify-content: center; flex: none; }
