@@ -192,7 +192,7 @@ em { font-style: normal; }
 .lp-hero-h1 { font-family: var(--font-serif); font-weight: 600; font-size: clamp(31px, 4.4vw, 50px); line-height: 1.1; letter-spacing: -0.015em; color: var(--navy); }
 .lp-hero-h1 em { color: var(--amber); }
 .lp-hero-sub { font-family: var(--font-sans); font-weight: 400; font-size: 18px; line-height: 1.55; color: var(--fg-muted); margin: 0; max-width: 42ch; }
-.lp-hero-trust { font-family: var(--font-sans); font-weight: 600; font-size: 13px; color: var(--fg-muted); margin: 22px 0 0; }
+.lp-hero-trust { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; margin: 22px 0 0; }
 .lp-hero-form-col { display: flex; justify-content: center; }
 @media (max-width: 860px) {
   .lp-hero { padding: 40px 0 52px; }

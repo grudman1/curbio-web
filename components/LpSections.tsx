@@ -77,9 +77,22 @@ export function Hero({
           <p className="lp-hero-sub">
             Move-in ready sells. Your seller pays nothing until it closes.
           </p>
-          <p className="lp-hero-trust">
-            Licensed &amp; insured · 8,000+ homes prepped
-          </p>
+          <div className="lp-hero-trust">
+            <span className="lp-sold-proof">
+              <Icon name="wrench" size={12} color="var(--fg-muted)" stroke={2} />
+              Prepped by Curbio
+            </span>
+            <span className="lp-sold-proof-dot" aria-hidden>·</span>
+            <span className="lp-sold-proof">
+              <Icon name="shield" size={12} color="var(--fg-muted)" stroke={2} />
+              1-year limited warranty
+            </span>
+            <span className="lp-sold-proof-dot" aria-hidden>·</span>
+            <span className="lp-sold-proof">
+              <Icon name="check" size={12} color="var(--fg-muted)" stroke={2.5} />
+              Licensed &amp; insured
+            </span>
+          </div>
         </div>
         <div className="lp-hero-form-col">
           <FormCard market={market} variant={variant} ctaCopy={ctaCopy} />
@@ -234,22 +247,9 @@ export function SoldProofStrip({ market }: { market: CampaignMarket }) {
   return (
     <section className="lp-sold" id="sold">
       <div className="lp-shell">
-        <div className="lp-sold-proofs">
-          <span className="lp-sold-proof">
-            <Icon name="wrench" size={12} color="var(--fg-muted)" stroke={2} />
-            Prepped by Curbio
-          </span>
-          <span className="lp-sold-proof-dot" aria-hidden>·</span>
-          <span className="lp-sold-proof">
-            <Icon name="shield" size={12} color="var(--fg-muted)" stroke={2} />
-            1-year limited warranty
-          </span>
-          <span className="lp-sold-proof-dot" aria-hidden>·</span>
-          <span className="lp-sold-proof">
-            <Icon name="check" size={12} color="var(--fg-muted)" stroke={2.5} />
-            Sold by {market.name} REALTORS&reg;
-          </span>
-        </div>
+        <Eyebrow style={{ textAlign: "center", color: "var(--fg-muted)" }}>
+          Prepped by Curbio. Sold by {market.name} REALTORS&reg;
+        </Eyebrow>
         <ul className="lp-sold-row">
           {market.sold.map((p) => (
             <li className="lp-sold-card" key={p.neighborhood}>
