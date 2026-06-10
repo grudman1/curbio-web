@@ -79,13 +79,13 @@ export function Hero({
           </p>
           <div className="lp-hero-trust">
             <span className="lp-sold-proof">
-              <Icon name="wrench" size={12} color="var(--fg-muted)" stroke={2} />
-              Prepped by Curbio
+              <Icon name="home" size={12} color="var(--fg-muted)" stroke={2} />
+              8,000+ homes prepped
             </span>
             <span className="lp-sold-proof-dot" aria-hidden>·</span>
             <span className="lp-sold-proof">
               <Icon name="shield" size={12} color="var(--fg-muted)" stroke={2} />
-              1-year limited warranty
+              1-year warranty
             </span>
             <span className="lp-sold-proof-dot" aria-hidden>·</span>
             <span className="lp-sold-proof">
