@@ -96,13 +96,12 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
   {
     slug: "maryland-suburbs",
     name: "Maryland Suburbs",
-    placeholder: true,
     sold: [
-      { neighborhood: "Bethesda" },
-      { neighborhood: "Silver Spring" },
-      { neighborhood: "Rockville" },
-      { neighborhood: "Gaithersburg" },
-      { neighborhood: "Bowie" },
+      { neighborhood: "Bethesda",     photo: "/sold/9213Cedarcrest_Bethesda.jpg" },
+      { neighborhood: "Silver Spring", photo: "/sold/13607Wendover_SilverSpring.webp" },
+      { neighborhood: "Pikesville",   photo: "/sold/8216Mcdonogh_Pikesville.jpg" },
+      { neighborhood: "Potomac",      photo: "/sold/8250Buckspark_Potomac.jpg" },
+      { neighborhood: "Ellicott City", photo: "/sold/13339Ridgewood_EllicotCity.webp" },
     ],
   },
 ];
