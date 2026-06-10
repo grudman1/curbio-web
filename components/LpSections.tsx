@@ -234,9 +234,22 @@ export function SoldProofStrip({ market }: { market: CampaignMarket }) {
   return (
     <section className="lp-sold" id="sold">
       <div className="lp-shell">
-        <Eyebrow style={{ textAlign: "center", color: "var(--fg-muted)" }}>
-          {market.name}
-        </Eyebrow>
+        <div className="lp-sold-proofs">
+          <span className="lp-sold-proof">
+            <Icon name="wrench" size={12} color="var(--fg-muted)" stroke={2} />
+            Prepped by Curbio
+          </span>
+          <span className="lp-sold-proof-dot" aria-hidden>·</span>
+          <span className="lp-sold-proof">
+            <Icon name="shield" size={12} color="var(--fg-muted)" stroke={2} />
+            1-year limited warranty
+          </span>
+          <span className="lp-sold-proof-dot" aria-hidden>·</span>
+          <span className="lp-sold-proof">
+            <Icon name="check" size={12} color="var(--fg-muted)" stroke={2.5} />
+            Sold by {market.name} REALTORS&reg;
+          </span>
+        </div>
         <ul className="lp-sold-row">
           {market.sold.map((p) => (
             <li className="lp-sold-card" key={p.neighborhood}>
