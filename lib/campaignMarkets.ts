@@ -99,7 +99,7 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
     sold: [
       { neighborhood: "Bethesda",     photo: "/sold/9213Cedarcrest_Bethesda.jpg" },
       { neighborhood: "Silver Spring", photo: "/sold/13607Wendover_SilverSpring.webp" },
-      { neighborhood: "Pikesville",   photo: "/sold/8216Mcdonogh_Pikesville.jpg" },
+      { neighborhood: "Pikesville",   photo: "/sold/8216McDonogh_Pikesville.webp" },
       { neighborhood: "Potomac",      photo: "/sold/8250Buckspark_Potomac.jpg" },
       { neighborhood: "Ellicott City", photo: "/sold/13339Ridgewood_EllicotCity.webp" },
     ],
