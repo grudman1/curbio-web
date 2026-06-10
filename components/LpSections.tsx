@@ -127,6 +127,10 @@ function FormCard({
   const [pending, setPending] = useState(false);
   const router = useRouter();
 
+  useEffect(() => {
+    window.history.replaceState({}, "", window.location.pathname);
+  }, []);
+
   const onChange = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setF((s) => ({ ...s, [k]: e.target.value }));
     setErrs((p) => ({ ...p, [k]: undefined }));
