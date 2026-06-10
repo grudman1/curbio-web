@@ -283,7 +283,6 @@ export function SoldProofStrip({ market }: { market: CampaignMarket }) {
               <div className="lp-sold-body">
                 <span className="lp-sold-hood">{p.neighborhood}</span>
                 {p.price && <span className="lp-sold-price">{p.price}</span>}
-                <span className="lp-sold-note">Prepped by Curbio</span>
               </div>
             </li>
           ))}
