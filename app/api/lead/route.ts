@@ -122,12 +122,14 @@ export async function POST(req: Request) {
   }
 
   // Email fallback — fires after CRM attempt regardless of outcome.
-  // If RESEND_API_KEY or LEAD_NOTIFY_EMAIL is absent, skips silently.
   // Never fails the request — the agent always gets ok:true.
   const resendKey = process.env.RESEND_API_KEY;
   const notifyEmail = process.env.LEAD_NOTIFY_EMAIL;
-  if (resendKey && notifyEmail) {
+  const resendTo = process.env.RESEND_TO_EMAIL || notifyEmail || "grudman1@gmail.com";
+  console.log("[resend] env check — RESEND_API_KEY set:", !!resendKey, "| LEAD_NOTIFY_EMAIL:", notifyEmail ?? "(not set)", "| RESEND_TO_EMAIL:", process.env.RESEND_TO_EMAIL ?? "(not set)", "| effective to:", resendTo);
+  if (resendKey) {
     try {
+      console.log("[resend] attempting send to:", resendTo);
       const resend = new Resend(resendKey);
       const subject = `New Curbio Lead — ${payload.firstName} ${payload.lastName} — ${payload.market ?? "unknown market"}`.trim();
       const text = [
@@ -147,16 +149,18 @@ export async function POST(req: Request) {
         `Submitted:   ${payload.submittedAt}`,
         `Source:      ${payload.source}`,
       ].join("\n");
-      await resend.emails.send({
+      const data = await resend.emails.send({
         from: "Curbio Leads <leads@curbio.com>",
-        to: process.env.RESEND_TO_EMAIL || process.env.LEAD_NOTIFY_EMAIL || "grudman1@gmail.com",
+        to: resendTo,
         subject,
         text,
       });
-      console.log("[lead] notify email sent to", notifyEmail);
+      console.log("[resend] result:", JSON.stringify(data));
     } catch (err) {
-      console.error("[lead] notify email failed (non-fatal):", err);
+      console.log("[resend] error:", JSON.stringify(err));
     }
+  } else {
+    console.log("[resend] skipped — RESEND_API_KEY not set");
   }
 
   const pdf =
