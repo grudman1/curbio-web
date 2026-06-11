@@ -49,6 +49,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${lora.variable} ${libre.variable}`}>
+      <head>
+        {/* Warm the Calendly connection before the iframe is parsed so
+            DNS + TLS are resolved by the time the request fires. */}
+        <link rel="preconnect" href="https://calendly.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://assets.calendly.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://calendly.com" />
+        <link rel="dns-prefetch" href="https://assets.calendly.com" />
+      </head>
       <body>
         {children}
         <Analytics />

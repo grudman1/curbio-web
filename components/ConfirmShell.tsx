@@ -66,24 +66,32 @@ export default function ConfirmShell({
   market,
   hsm,
   prefill = {},
+  embedDomain: embedDomainProp = "",
 }: {
   market: CampaignMarket;
   hsm: ResolvedMarket | null;
   prefill?: CalendlyPrefill;
+  /** Host resolved server-side so the iframe src is in the SSR HTML and the
+   *  browser starts fetching Calendly before JS hydrates. Falls back to
+   *  window.location.host on the client if the prop is missing. */
+  embedDomain?: string;
 }) {
   const [zipOpen, setZipOpen] = useState(false);
 
-  // embed_domain must match the actual parent host (localhost / preview /
-  // production), so it is resolved client-side after mount. The iframe renders
-  // once this is set — a single load with the events-enabled URL, never a
-  // src swap mid-flight.
-  const [embedDomain, setEmbedDomain] = useState<string | null>(null);
+  // Initialise with the server-provided host so iframeSrc is non-null on first
+  // render (SSR). The useEffect is a safety-net for edge cases where the prop
+  // is absent or differs from the real client host — Calendly's postMessage
+  // target origin is derived from embed_domain so the value must match exactly.
+  const [embedDomain, setEmbedDomain] = useState<string>(embedDomainProp);
   useEffect(() => {
-    // window.location.host (with port), matching Calendly's own widget.js
-    // getDomain() — Calendly derives the postMessage target origin from
-    // embed_domain, so any mismatch silently drops the events.
-    setEmbedDomain(window.location.host);
-  }, []);
+    // Only override if the server didn't supply a value (shouldn't happen in
+    // production) or if running in a context where the host differs.
+    if (!embedDomain) setEmbedDomain(window.location.host);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Skeleton: hide once the iframe fires its load event (Calendly content
+  // has been parsed and is ready to display).
+  const [iframeLoaded, setIframeLoaded] = useState(false);
 
   // Funnel: the Calendly step was reached. Stored UTMs attach automatically.
   useEffect(() => {
@@ -129,6 +137,8 @@ export default function ConfirmShell({
       ? hsm.hsm.calendlyUrl
       : null;
 
+  // embedDomain is non-empty from SSR prop, so iframeSrc is set on first render
+  // and the browser requests Calendly as soon as the HTML is parsed.
   const iframeSrc =
     profileUrl && embedDomain
       ? buildCalendlyIframeSrc(profileUrl, prefill, embedDomain)
@@ -208,24 +218,30 @@ export default function ConfirmShell({
             <p className="lp-confirm-eyebrow">Pick a time that works for you</p>
             {profileUrl ? (
               <div className="lp-confirm-cal-wrap">
-                {/* Direct iframe — no widget script. Rendered once embedDomain
-                    resolves (client mount) so the URL carries embed_domain and
-                    Calendly emits its postMessage lifecycle events. */}
-                {/* No scrolling="no": when Calendly's page_height resize keeps
-                    the iframe taller than its content there is no inner
-                    scrollbar anyway, and if a height message is ever missed
-                    the user can still scroll inside the frame to reach the
-                    submit button (scrolling="no" made the lower form
-                    unreachable). */}
+                {/* iframe src is SSR'd (embedDomain from server Host header) so
+                    the browser starts fetching Calendly when HTML parses.
+                    No scrolling="no": calHeight tracks calendly.page_height
+                    messages so content is never clipped. */}
                 {iframeSrc && (
-                  <iframe
-                    src={iframeSrc}
-                    width="100%"
-                    height={calHeight}
-                    frameBorder="0"
-                    title={`Schedule a call with ${hsm?.hsm.firstName ?? "your local manager"}`}
-                    style={{ border: 0, display: "block", borderRadius: 8 }}
-                  />
+                  <div style={{ position: "relative" }}>
+                    {/* Skeleton — visible until iframe fires onLoad */}
+                    {!iframeLoaded && (
+                      <div
+                        className="lp-cal-skeleton"
+                        style={{ height: calHeight }}
+                        aria-hidden
+                      />
+                    )}
+                    <iframe
+                      src={iframeSrc}
+                      width="100%"
+                      height={calHeight}
+                      frameBorder="0"
+                      title={`Schedule a call with ${hsm?.hsm.firstName ?? "your local manager"}`}
+                      style={{ border: 0, display: "block", borderRadius: 8 }}
+                      onLoad={() => setIframeLoaded(true)}
+                    />
+                  </div>
                 )}
                 <a href="/" className="lp-confirm-nothx">
                   No thanks, I&apos;ll wait

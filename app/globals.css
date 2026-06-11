@@ -334,6 +334,8 @@ em { font-style: normal; }
 /* Secondary pill button — visible without scrolling */
 .lp-confirm-nothx { display: flex; align-items: center; justify-content: center; width: 100%; margin-top: 14px; padding: 14px 24px; min-height: 50px; font-family: var(--font-sans); font-size: 15px; font-weight: 700; color: var(--navy); background: transparent; border: 1.5px solid var(--navy); border-radius: 999px; text-decoration: none; cursor: pointer; transition: background .18s, color .18s; }
 .lp-confirm-nothx:hover { background: var(--navy); color: #fff; }
+@keyframes lp-skeleton-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+.lp-cal-skeleton { position: absolute; inset: 0; background: var(--stone); border-radius: 8px; animation: lp-skeleton-pulse 1.6s ease-in-out infinite; pointer-events: none; }
 @media (max-width: 860px) {
   .lp-confirm-grid { grid-template-columns: 1fr; gap: 32px; }
 }

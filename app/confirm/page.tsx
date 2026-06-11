@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { getOperatorLead } from "@/lib/operator";
 import { buildResolvedMarket, canonicalZipForSlug } from "@/lib/markets";
 import { getCampaignMarket } from "@/lib/campaignMarkets";
@@ -15,7 +16,16 @@ export default async function ConfirmPage({
     phone?: string;
   }>;
 }) {
-  const { market: slug, name, email, phone } = await searchParams;
+  const [{ market: slug, name, email, phone }, requestHeaders] = await Promise.all([
+    searchParams,
+    headers(),
+  ]);
+
+  // embed_domain is resolved server-side from the request Host header so the
+  // Calendly iframe src is included in the SSR HTML. The browser starts
+  // fetching calendly.com as soon as the HTML parses — no hydration delay.
+  const embedDomain = requestHeaders.get("host") ?? "";
+
   const campaignMarket = getCampaignMarket(slug);
 
   // Resolve the live HSM data for this market via the operator API
@@ -30,6 +40,7 @@ export default async function ConfirmPage({
       market={campaignMarket}
       hsm={hsm}
       prefill={{ name, email, phone }}
+      embedDomain={embedDomain}
     />
   );
 }
