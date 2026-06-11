@@ -191,17 +191,15 @@ export default function ConfirmShell({
                       <span>{hsm.isBusinessHours ? "Available now" : "Replies next day"}</span>
                     </span>
                   </div>
-                  {hsm.hsm.phone && (
-                    <a className="lp-hsm-callbox" href={`tel:${hsm.hsm.phoneRaw}`}>
-                      <span className="lp-hsm-callicon">
-                        <Icon name="phone" size={18} color="var(--amber)" />
-                      </span>
-                      <span className="lp-hsm-callinfo">
-                        <span className="lp-hsm-calllabel">Call {hsm.hsm.firstName} directly</span>
-                        <span className="lp-hsm-callnum">{hsm.hsm.phone}</span>
-                      </span>
-                    </a>
-                  )}
+                  <a className="lp-hsm-callbox" href="tel:+18449442629">
+                    <span className="lp-hsm-callicon">
+                      <Icon name="phone" size={18} color="var(--amber)" />
+                    </span>
+                    <span className="lp-hsm-callinfo">
+                      <span className="lp-hsm-calllabel">Call {hsm.hsm.firstName} directly</span>
+                      <span className="lp-hsm-callnum">(844) 944-2629</span>
+                    </span>
+                  </a>
                 </div>
               </div>
             ) : (
