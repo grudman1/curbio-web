@@ -23,7 +23,8 @@ export type CalendlyPrefill = {
 // more reliable than the widget script (no JS loading, no CSP issues).
 function buildCalendlyIframeSrc(
   profileUrl: string,
-  prefill: CalendlyPrefill = {}
+  prefill: CalendlyPrefill = {},
+  embedDomain?: string
 ): string {
   const base = profileUrl.replace(/\/$/, "");
   const params = new URLSearchParams({
@@ -33,6 +34,12 @@ function buildCalendlyIframeSrc(
     text_color: "0d254d",
     primary_color: "cd8629",
   });
+
+  // REQUIRED for postMessage lifecycle events (calendly.event_scheduled etc.):
+  // Calendly's iframe only notifies the parent window when embed_domain is set
+  // (this is what Calendly's own widget.js appends). Without it, no events
+  // fire and booking_complete can never be tracked.
+  if (embedDomain) params.set("embed_domain", embedDomain);
 
   // Prefill params — only appended when the value is non-empty.
   // All HSM events use location = "Phone call" (invitee provides number).
@@ -66,6 +73,18 @@ export default function ConfirmShell({
 }) {
   const [zipOpen, setZipOpen] = useState(false);
 
+  // embed_domain must match the actual parent host (localhost / preview /
+  // production), so it is resolved client-side after mount. The iframe renders
+  // once this is set — a single load with the events-enabled URL, never a
+  // src swap mid-flight.
+  const [embedDomain, setEmbedDomain] = useState<string | null>(null);
+  useEffect(() => {
+    // window.location.host (with port), matching Calendly's own widget.js
+    // getDomain() — Calendly derives the postMessage target origin from
+    // embed_domain, so any mismatch silently drops the events.
+    setEmbedDomain(window.location.host);
+  }, []);
+
   // Funnel: the Calendly step was reached. Stored UTMs attach automatically.
   useEffect(() => {
     gaEvent("booking_view", { market: market.slug || "unknown" });
@@ -75,6 +94,15 @@ export default function ConfirmShell({
   // schedules. Only trust messages from calendly.com origins.
   useEffect(() => {
     function onMessage(e: MessageEvent) {
+      // TEMPORARY DEBUG — log every message event so we can see exactly what
+      // Calendly posts (event name + payload shape). Remove after verifying
+      // booking_complete in GA4 DebugView.
+      try {
+        console.log("[calendly-debug]", e.origin, JSON.stringify(e.data)?.slice(0, 300));
+      } catch {
+        console.log("[calendly-debug]", e.origin, "(unserializable)");
+      }
+
       let origin = "";
       try {
         origin = new URL(e.origin).hostname;
@@ -95,7 +123,10 @@ export default function ConfirmShell({
       ? hsm.hsm.calendlyUrl
       : null;
 
-  const iframeSrc = profileUrl ? buildCalendlyIframeSrc(profileUrl, prefill) : null;
+  const iframeSrc =
+    profileUrl && embedDomain
+      ? buildCalendlyIframeSrc(profileUrl, prefill, embedDomain)
+      : null;
 
   return (
     <>
@@ -169,18 +200,22 @@ export default function ConfirmShell({
           {/* ── Right: Calendly + No thanks ── */}
           <div className="lp-confirm-right">
             <p className="lp-confirm-eyebrow">Pick a time that works for you</p>
-            {iframeSrc ? (
+            {profileUrl ? (
               <div className="lp-confirm-cal-wrap">
-                {/* Direct iframe — no JS, no widget script, loads instantly */}
-                <iframe
-                  src={iframeSrc}
-                  width="100%"
-                  height="700"
-                  frameBorder="0"
-                  scrolling="no"
-                  title={`Schedule a call with ${hsm?.hsm.firstName ?? "your local manager"}`}
-                  style={{ border: 0, display: "block", borderRadius: 8 }}
-                />
+                {/* Direct iframe — no widget script. Rendered once embedDomain
+                    resolves (client mount) so the URL carries embed_domain and
+                    Calendly emits its postMessage lifecycle events. */}
+                {iframeSrc && (
+                  <iframe
+                    src={iframeSrc}
+                    width="100%"
+                    height="700"
+                    frameBorder="0"
+                    scrolling="no"
+                    title={`Schedule a call with ${hsm?.hsm.firstName ?? "your local manager"}`}
+                    style={{ border: 0, display: "block", borderRadius: 8 }}
+                  />
+                )}
                 <a href="/" className="lp-confirm-nothx">
                   No thanks, I&apos;ll wait
                 </a>
