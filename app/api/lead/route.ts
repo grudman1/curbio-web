@@ -87,46 +87,11 @@ export async function POST(req: Request) {
     utm_term: body.utm_term ?? null,
   };
 
-  const webhook = process.env.CURBIO_CRM_WEBHOOK_URL;
-  if (webhook) {
-    try {
-      console.log("[lead] posting to CRM:", webhook, JSON.stringify(payload));
-      const res = await fetch(webhook, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          ...(process.env.CURBIO_CRM_API_KEY
-            ? { authorization: `Bearer ${process.env.CURBIO_CRM_API_KEY}` }
-            : {}),
-        },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        console.error("[lead] CRM webhook failed", res.status, await res.text().catch(() => ""));
-        return NextResponse.json(
-          { ok: false, error: "We couldn't reach our team. Please try again." },
-          { status: 502 }
-        );
-      }
-      console.log("[lead] CRM ok", res.status);
-    } catch (err) {
-      console.error("[lead] CRM webhook threw", err);
-      return NextResponse.json(
-        { ok: false, error: "We couldn't reach our team. Please try again." },
-        { status: 502 }
-      );
-    }
-  } else {
-    // No CRM configured yet — log and accept so the page works end-to-end.
-    console.log("[lead] (no CRM webhook configured) payload:", payload);
-  }
-
-  // Email fallback — fires after CRM attempt regardless of outcome.
-  // Never fails the request — the agent always gets ok:true.
+  // ── 1. Email notification (always fires first, never blocks the response) ──
   const resendKey = process.env.RESEND_API_KEY;
   const notifyEmail = process.env.LEAD_NOTIFY_EMAIL;
   const resendTo = process.env.RESEND_TO_EMAIL || notifyEmail || "grudman1@gmail.com";
-  console.log("[resend] env check — RESEND_API_KEY set:", !!resendKey, "| LEAD_NOTIFY_EMAIL:", notifyEmail ?? "(not set)", "| RESEND_TO_EMAIL:", process.env.RESEND_TO_EMAIL ?? "(not set)", "| effective to:", resendTo);
+  console.log("[resend] env check — RESEND_API_KEY set:", !!resendKey, "| RESEND_TO_EMAIL:", process.env.RESEND_TO_EMAIL ?? "(not set)", "| effective to:", resendTo);
   if (resendKey) {
     try {
       console.log("[resend] attempting send to:", resendTo);
@@ -161,6 +126,33 @@ export async function POST(req: Request) {
     }
   } else {
     console.log("[resend] skipped — RESEND_API_KEY not set");
+  }
+
+  // ── 2. CRM webhook (best-effort — never blocks or fails the response) ──
+  const webhook = process.env.CURBIO_CRM_WEBHOOK_URL;
+  if (webhook) {
+    try {
+      console.log("[lead] posting to CRM:", webhook, JSON.stringify(payload));
+      const res = await fetch(webhook, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          ...(process.env.CURBIO_CRM_API_KEY
+            ? { authorization: `Bearer ${process.env.CURBIO_CRM_API_KEY}` }
+            : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        console.error("[lead] CRM webhook failed", res.status, await res.text().catch(() => ""));
+      } else {
+        console.log("[lead] CRM ok", res.status);
+      }
+    } catch (err) {
+      console.error("[lead] CRM webhook threw", err);
+    }
+  } else {
+    console.log("[lead] (no CRM webhook configured) payload:", payload);
   }
 
   const pdf =
