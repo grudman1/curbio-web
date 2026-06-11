@@ -106,14 +106,17 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
     ],
   },
   {
-    slug: "maryland-suburbs",
-    name: "Maryland Suburbs",
+    // The market is BALTIMORE. "Maryland Suburbs" is only the secondary label
+    // on the Baltimore picker card (region in lib/markets.ts) — never a slug,
+    // market, or folder name.
+    slug: "baltimore",
+    name: "Baltimore",
     sold: [
-      { neighborhood: "Bethesda",     photo: "/sold/maryland-suburbs/9213Cedarcrest_Bethesda.jpg" },
-      { neighborhood: "Silver Spring", photo: "/sold/maryland-suburbs/13607Wendover_SilverSpring.webp" },
-      { neighborhood: "Pikesville",   photo: "/sold/maryland-suburbs/8216McDonogh_Pikesville.webp" },
-      { neighborhood: "Potomac",      photo: "/sold/maryland-suburbs/8250Buckspark_Potomac.jpg" },
-      { neighborhood: "Ellicott City", photo: "/sold/maryland-suburbs/13339Ridgewood_EllicotCity.webp" },
+      { neighborhood: "Bethesda",     photo: "/sold/baltimore/9213Cedarcrest_Bethesda.jpg" },
+      { neighborhood: "Silver Spring", photo: "/sold/baltimore/13607Wendover_SilverSpring.webp" },
+      { neighborhood: "Pikesville",   photo: "/sold/baltimore/8216McDonogh_Pikesville.webp" },
+      { neighborhood: "Potomac",      photo: "/sold/baltimore/8250Buckspark_Potomac.jpg" },
+      { neighborhood: "Ellicott City", photo: "/sold/baltimore/13339Ridgewood_EllicotCity.webp" },
     ],
   },
 ];
@@ -130,9 +133,9 @@ export const NEUTRAL_MARKET: CampaignMarket = {
   sold: [],
 };
 
-// Map old MARKET_CARDS slugs (from lib/markets.ts) to campaign slugs.
+// Tolerated inbound aliases only — each resolves TO the canonical slug.
 const SLUG_ALIASES: Record<string, string> = {
-  baltimore: "maryland-suburbs",
+  "maryland-suburbs": "baltimore", // legacy links; canonical market is baltimore
   "south-maryland": "southern-maryland",
   nova: "northern-virginia",
 };
