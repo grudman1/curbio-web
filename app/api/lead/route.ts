@@ -149,7 +149,7 @@ export async function POST(req: Request) {
       ].join("\n");
       await resend.emails.send({
         from: "Curbio Leads <leads@curbio.com>",
-        to: process.env.RESEND_TO_EMAIL ?? notifyEmail,
+        to: process.env.RESEND_TO_EMAIL || process.env.LEAD_NOTIFY_EMAIL || "grudman1@gmail.com",
         subject,
         text,
       });
