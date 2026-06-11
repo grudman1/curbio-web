@@ -47,13 +47,12 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
   {
     slug: "los-angeles",
     name: "Los Angeles",
-    placeholder: true,
     sold: [
-      { neighborhood: "Hollywood Hills", photo: "/sold/los-angeles/2276LaGranada_HollywoodHills.jpg" },
-      { neighborhood: "Long Beach" },
-      { neighborhood: "Pasadena" },
-      { neighborhood: "Santa Monica" },
-      { neighborhood: "Burbank" },
+      { neighborhood: "Hollywood Hills",  price: "$2,825,000", photo: "/sold/los-angeles/2276LaGranada_HollywoodHills.jpg" },
+      { neighborhood: "Laguna Niguel",    price: "$5,020,000", photo: "/sold/los-angeles/6Riverstone_Pasadena.webp" },
+      { neighborhood: "South OC",         price: "$1,159,000", photo: "/sold/los-angeles/7MonticelloLn_SouthOC.webp" },
+      { neighborhood: "Pasadena",         price: "$2,695,000", photo: "/sold/los-angeles/541MartosDr_Pasadena.jpg" },
+      { neighborhood: "Hermosa Beach",    price: "$2,350,000", photo: "/sold/los-angeles/1256OwossoAve_HermosaBeach.webp" },
     ],
   },
   {
