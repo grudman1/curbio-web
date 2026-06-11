@@ -1,7 +1,14 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Lora, Libre_Franklin } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+
+// Analytics run only in production builds and only when the ID is configured —
+// dev/preview without env vars renders nothing and errors nowhere.
+const IS_PROD = process.env.NODE_ENV === "production";
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
+const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID;
 
 const lora = Lora({
   subsets: ["latin"],
@@ -45,6 +52,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <Analytics />
+        {/* GA4 loader only — gtag init/config happens in lib/analytics.ts so
+            the manual page_view (with explicit UTM params, captured before the
+            URL strip) is always queued ahead of any event. send_page_view is
+            disabled there. */}
+        {IS_PROD && GA_ID && (
+          <Script
+            src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+            strategy="afterInteractive"
+          />
+        )}
+        {/* Microsoft Clarity — default input masking stays ON (form collects
+            PII; it must never appear in session recordings). */}
+        {IS_PROD && CLARITY_ID && (
+          <Script id="ms-clarity" strategy="afterInteractive">
+            {`(function(c,l,a,r,i,t,y){
+              c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+              t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+              y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+            })(window, document, "clarity", "script", "${CLARITY_ID}");`}
+          </Script>
+        )}
       </body>
     </html>
   );

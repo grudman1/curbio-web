@@ -17,6 +17,14 @@ type LeadBody = {
   // Forwarded from Vercel geo headers. Shows WHERE demand is for expansion planning.
   detectedCity?: string;
   detectedRegion?: string;
+  // GA4 client id — stable join key for future lead → closed-job reporting.
+  gaClientId?: string | null;
+  // Campaign attribution captured client-side before the URL strip.
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_content?: string;
+  utm_term?: string;
 };
 
 const MAGNET_FILES: Record<string, string> = {
@@ -65,6 +73,12 @@ export async function POST(req: Request) {
     submittedAt: body.submittedAt ?? new Date().toISOString(),
     detectedCity: body.detectedCity?.trim() ?? "",
     detectedRegion: body.detectedRegion?.trim() ?? "",
+    gaClientId: body.gaClientId ?? null,
+    utm_source: body.utm_source ?? null,
+    utm_medium: body.utm_medium ?? null,
+    utm_campaign: body.utm_campaign ?? null,
+    utm_content: body.utm_content ?? null,
+    utm_term: body.utm_term ?? null,
   };
 
   const webhook = process.env.CURBIO_CRM_WEBHOOK_URL;

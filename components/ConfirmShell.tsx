@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Header } from "./LpSections";
 import { ZipModal } from "./LpModals";
 import { Icon } from "./LpKit";
+import { gaEvent } from "@/lib/analytics";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 import type { ResolvedMarket } from "@/lib/markets";
 
@@ -64,6 +65,30 @@ export default function ConfirmShell({
   prefill?: CalendlyPrefill;
 }) {
   const [zipOpen, setZipOpen] = useState(false);
+
+  // Funnel: the Calendly step was reached. Stored UTMs attach automatically.
+  useEffect(() => {
+    gaEvent("booking_view", { market: market.slug || "unknown" });
+  }, [market.slug]);
+
+  // True goal event: Calendly's inline iframe posts a message when the invitee
+  // schedules. Only trust messages from calendly.com origins.
+  useEffect(() => {
+    function onMessage(e: MessageEvent) {
+      let origin = "";
+      try {
+        origin = new URL(e.origin).hostname;
+      } catch {
+        return;
+      }
+      if (origin !== "calendly.com" && !origin.endsWith(".calendly.com")) return;
+      if ((e.data as { event?: string } | null)?.event === "calendly.event_scheduled") {
+        gaEvent("booking_complete", { market: market.slug || "unknown" });
+      }
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [market.slug]);
 
   const profileUrl =
     hsm?.hsm.calendlyUrl && hsm.hsm.calendlyUrl !== "#"

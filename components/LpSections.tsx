@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
+import { captureAttribution, gaEvent, getGaClientId, getStoredUtms } from "@/lib/analytics";
 import { Icon, Eyebrow, AmberRule, PillButton } from "./LpKit";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 import type { CtaVariant } from "@/lib/flags";
@@ -135,6 +136,10 @@ function FormCard({
   const router = useRouter();
 
   useEffect(() => {
+    // ORDER IS LOAD-BEARING: captureAttribution() reads utm_* from the live
+    // URL, persists them, and queues the GA4 page_view — all synchronously —
+    // BEFORE the strip below wipes the query string for the clean URL.
+    captureAttribution();
     window.history.replaceState({}, "", window.location.pathname);
   }, []);
 
@@ -160,6 +165,11 @@ function FormCard({
     setErrs({});
     const full = f.name.trim();
     try {
+      // GA client_id + stored UTMs ride along to the CRM as the join key for
+      // future lead → closed-job reporting. getGaClientId resolves null fast
+      // when GA4 is absent/blocked, so it never holds up the submit.
+      const gaClientId = await getGaClientId();
+      const utms = getStoredUtms();
       const res = await fetch("/api/lead", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -172,11 +182,15 @@ function FormCard({
           market: market.slug || null,
           variant,
           submittedAt: new Date().toISOString(),
+          gaClientId,
+          ...utms,
         }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.ok) throw new Error(data.error || "Something went wrong. Please try again.");
       track("lead_submit", { variant });
+      // Primary conversion → GA4, with market + stored UTMs (no PII).
+      gaEvent("lead_submit", { market: market.slug || "unknown", variant });
       // Navigate to the confirmation page, carrying prefill values for Calendly.
       // phone is omitted when empty so Calendly's field stays blank rather than
       // showing an empty string.
