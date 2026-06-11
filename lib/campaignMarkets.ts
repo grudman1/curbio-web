@@ -36,13 +36,12 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
   {
     slug: "dallas",
     name: "Dallas",
-    placeholder: true,
     sold: [
-      { neighborhood: "Dallas" },
-      { neighborhood: "Plano" },
-      { neighborhood: "Frisco" },
-      { neighborhood: "Irving" },
-      { neighborhood: "McKinney" },
+      { neighborhood: "Dallas",         price: "$875,000",   photo: "/sold/dallas/221SEdgefield_Dallas.webp" },
+      { neighborhood: "Plano",          price: "$592,000",   photo: "/sold/dallas/2913TrophyDrive_Plano.jpeg" },
+      { neighborhood: "Frisco",         price: "$880,000",   photo: "/sold/dallas/4613ShadowRidge_Frisco.webp" },
+      { neighborhood: "McKinney",       price: "$1,199,900", photo: "/sold/dallas/6558SparrowPoint_McKinney.webp" },
+      { neighborhood: "Lake Highlands", price: "$325,000",   photo: "/sold/dallas/11111QuailRunSt_LakeHighlands.webp" },
     ],
   },
   {
