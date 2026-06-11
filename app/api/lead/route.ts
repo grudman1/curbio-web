@@ -85,6 +85,7 @@ export async function POST(req: Request) {
     utm_campaign: body.utm_campaign ?? null,
     utm_content: body.utm_content ?? null,
     utm_term: body.utm_term ?? null,
+    referralSourceId: "landing page",
   };
 
   // ── 1. Email notification (always fires first, never blocks the response) ──
