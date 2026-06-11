@@ -146,13 +146,28 @@ export type MarketCard = {
   photo: string | null;
 };
 
-export const MARKET_CARDS: MarketCard[] = Object.values(BY_MARKET_NAME).map((e) => ({
-  slug: e.slug,
-  label: labelWithState(e.label, e.state),
-  region: e.region,
-  hsmFirst: SLUG_HSM[e.slug]?.first ?? "",
-  photo: SLUG_HSM[e.slug]?.photo ?? null,
-}));
+// Display order for the chooser grid (2 rows × 4 on desktop) — interleaved so
+// the same HSM's markets aren't clustered side by side.
+const CARD_ORDER = [
+  "atlanta",
+  "washington-dc",
+  "dallas",
+  "baltimore",
+  "northern-virginia",
+  "los-angeles",
+  "southern-maryland",
+  "riverside",
+];
+
+export const MARKET_CARDS: MarketCard[] = [...Object.values(BY_MARKET_NAME)]
+  .sort((a, b) => CARD_ORDER.indexOf(a.slug) - CARD_ORDER.indexOf(b.slug))
+  .map((e) => ({
+    slug: e.slug,
+    label: labelWithState(e.label, e.state),
+    region: e.region,
+    hsmFirst: SLUG_HSM[e.slug]?.first ?? "",
+    photo: SLUG_HSM[e.slug]?.photo ?? null,
+  }));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Geo fallback — approximate service-area centers, used to match a visitor to
