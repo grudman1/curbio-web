@@ -59,9 +59,14 @@ export async function POST(req: Request) {
     );
   }
 
+  const nameParts = body.name!.trim().split(/\s+/);
+  const firstName = body.firstName?.trim() || nameParts[0];
+  const lastName = nameParts.slice(1).join(" "); // empty string for single-word names
+
   const payload = {
     name: body.name!.trim(),
-    firstName: body.firstName?.trim() ?? body.name!.trim().split(/\s+/)[0],
+    firstName,
+    lastName,
     phone: body.phone?.trim() ?? "",
     email: body.email!.trim(),
     zip: body.zip ? body.zip.replace(/\D/g, "").slice(0, 5) : "",
