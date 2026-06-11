@@ -82,13 +82,12 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
   {
     slug: "washington-dc",
     name: "Washington, DC",
-    placeholder: true,
     sold: [
-      { neighborhood: "Capitol Hill" },
-      { neighborhood: "Georgetown" },
-      { neighborhood: "Shaw" },
-      { neighborhood: "Petworth" },
-      { neighborhood: "Brookland" },
+      { neighborhood: "Bellevue",    price: "$430,000",   photo: "/sold/washington-dc/303AtlanticStreet_Bellevue.jpg" },
+      { neighborhood: "Park View",   price: "$785,000",   photo: "/sold/washington-dc/639NWColumbia_Park View.avif" },
+      { neighborhood: "Woodridge",   price: "$852,000",   photo: "/sold/washington-dc/300920thSt_Woodridge.jpg" },
+      { neighborhood: "Chevy Chase", price: "$1,480,000", photo: "/sold/washington-dc/543132ndStreet_ChevyChase.webp" },
+      { neighborhood: "Capitol Hill", price: "$996,500",  photo: "/sold/washington-dc/1217DStreetNE_CapitolHill.jpeg" },
     ],
   },
   {
