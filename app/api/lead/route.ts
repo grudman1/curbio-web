@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Resend } from "resend";
 
 export const runtime = "nodejs";
 
@@ -89,6 +90,7 @@ export async function POST(req: Request) {
   const webhook = process.env.CURBIO_CRM_WEBHOOK_URL;
   if (webhook) {
     try {
+      console.log("[lead] posting to CRM:", webhook, JSON.stringify(payload));
       const res = await fetch(webhook, {
         method: "POST",
         headers: {
@@ -106,6 +108,7 @@ export async function POST(req: Request) {
           { status: 502 }
         );
       }
+      console.log("[lead] CRM ok", res.status);
     } catch (err) {
       console.error("[lead] CRM webhook threw", err);
       return NextResponse.json(
@@ -116,6 +119,44 @@ export async function POST(req: Request) {
   } else {
     // No CRM configured yet — log and accept so the page works end-to-end.
     console.log("[lead] (no CRM webhook configured) payload:", payload);
+  }
+
+  // Email fallback — fires after CRM attempt regardless of outcome.
+  // If RESEND_API_KEY or LEAD_NOTIFY_EMAIL is absent, skips silently.
+  // Never fails the request — the agent always gets ok:true.
+  const resendKey = process.env.RESEND_API_KEY;
+  const notifyEmail = process.env.LEAD_NOTIFY_EMAIL;
+  if (resendKey && notifyEmail) {
+    try {
+      const resend = new Resend(resendKey);
+      const subject = `New Curbio Lead — ${payload.firstName} ${payload.lastName} — ${payload.market ?? "unknown market"}`.trim();
+      const text = [
+        `Name:        ${payload.name}`,
+        `Email:       ${payload.email}`,
+        `Phone:       ${payload.phone || "(not provided)"}`,
+        `Market:      ${payload.market ?? ""}`,
+        `ZIP:         ${payload.zip || ""}`,
+        ``,
+        `utm_source:  ${payload.utm_source ?? ""}`,
+        `utm_campaign:${payload.utm_campaign ?? ""}`,
+        `utm_medium:  ${payload.utm_medium ?? ""}`,
+        `utm_content: ${payload.utm_content ?? ""}`,
+        `utm_term:    ${payload.utm_term ?? ""}`,
+        ``,
+        `GA Client ID: ${payload.gaClientId ?? ""}`,
+        `Submitted:   ${payload.submittedAt}`,
+        `Source:      ${payload.source}`,
+      ].join("\n");
+      await resend.emails.send({
+        from: "Curbio Leads <leads@curbio.com>",
+        to: notifyEmail,
+        subject,
+        text,
+      });
+      console.log("[lead] notify email sent to", notifyEmail);
+    } catch (err) {
+      console.error("[lead] notify email failed (non-fatal):", err);
+    }
   }
 
   const pdf =
