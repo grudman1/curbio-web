@@ -24,11 +24,14 @@ function scrollToForm() {
 // ── Header (chrome) ──
 export function Header({
   market,
+  neutral = false,
   onPickerClick,
 }: {
   market: CampaignMarket;
+  neutral?: boolean;
   onPickerClick: () => void;
 }) {
+  const pillLabel = neutral ? "Choose your market" : market.name;
   return (
     <header className="lp-header">
       <div className="lp-shell lp-header-inner">
@@ -40,10 +43,10 @@ export function Header({
         <button
           className="lp-mkt-btn"
           onClick={onPickerClick}
-          aria-label={`Market: ${market.name}. Change market`}
+          aria-label={neutral ? "Choose your market" : `Market: ${market.name}. Change market`}
         >
           <Icon name="pin" size={13} color="var(--fg-muted)" stroke={1.75} />
-          {market.name}
+          {pillLabel}
           <Icon name="chevronDown" size={14} color="var(--fg-muted)" stroke={2} style={{ marginLeft: 1 }} />
         </button>
       </div>
@@ -54,12 +57,14 @@ export function Header({
 // ── a. Hero ──
 export function Hero({
   market,
+  neutral = false,
   variant,
   ctaCopy,
   prefillName,
   prefillEmail,
 }: {
   market: CampaignMarket;
+  neutral?: boolean;
   variant: CtaVariant;
   ctaCopy: string;
   prefillName?: string;
@@ -69,7 +74,9 @@ export function Hero({
     <section className="lp-hero" id="hero">
       <div className="lp-shell lp-hero-grid">
         <div className="lp-hero-copy">
-          <Eyebrow style={{ marginBottom: 18, color: "var(--fg-muted)" }}>{market.name} agents</Eyebrow>
+          <Eyebrow style={{ marginBottom: 18, color: "var(--fg-muted)" }}>
+            {neutral ? "For listing agents" : `${market.name} agents`}
+          </Eyebrow>
           <h1 className="lp-hero-h1">
             We do the <em>prep.</em>
             <br />
@@ -161,8 +168,8 @@ function FormCard({
           firstName: full.split(/\s+/)[0],
           email: f.email.trim(),
           phone: f.phone.trim() || undefined,
-          source: `email-campaign-${market.slug}`,
-          market: market.slug,
+          source: `email-campaign-${market.slug || "unknown"}`,
+          market: market.slug || null,
           variant,
           submittedAt: new Date().toISOString(),
         }),
@@ -173,7 +180,8 @@ function FormCard({
       // Navigate to the confirmation page, carrying prefill values for Calendly.
       // phone is omitted when empty so Calendly's field stays blank rather than
       // showing an empty string.
-      const qs = new URLSearchParams({ market: market.slug });
+      const qs = new URLSearchParams();
+      if (market.slug) qs.set("market", market.slug);
       qs.set("name", f.name.trim());
       qs.set("email", f.email.trim());
       if (f.phone.trim()) qs.set("phone", f.phone.trim());

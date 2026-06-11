@@ -108,6 +108,16 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
 
 export const DEFAULT_MARKET_SLUG = "atlanta";
 
+// Brand-neutral backdrop for cold/unidentifiable traffic (no campaign link, no
+// ZIP, geo miss). Rendered behind the auto-opened market picker — must carry
+// zero market-specific branding. Empty slug → no picker card highlights.
+export const NEUTRAL_MARKET: CampaignMarket = {
+  slug: "",
+  name: "",
+  placeholder: true,
+  sold: [],
+};
+
 // Map old MARKET_CARDS slugs (from lib/markets.ts) to campaign slugs.
 const SLUG_ALIASES: Record<string, string> = {
   baltimore: "maryland-suburbs",

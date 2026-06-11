@@ -33,7 +33,7 @@ const BY_MARKET_NAME: Record<string, CatalogEntry> = {
     slug: "baltimore",
     label: "Baltimore",
     state: "MD",
-    region: "Baltimore · Maryland suburbs",
+    region: "Baltimore · Maryland Suburbs",
     canonicalZip: "21201",
     cities: ["Baltimore", "Bethesda", "Rockville", "Silver Spring", "Columbia"],
   },
@@ -65,7 +65,7 @@ const BY_MARKET_NAME: Record<string, CatalogEntry> = {
     slug: "northern-virginia",
     label: "Northern Virginia",
     state: "VA",
-    region: "Northern Virginia · DC Metro",
+    region: "Northern Virginia · Arlington · Manassas",
     canonicalZip: "22030",
     cities: ["Arlington", "Alexandria", "Fairfax", "Reston", "Vienna"],
   },
@@ -73,9 +73,18 @@ const BY_MARKET_NAME: Record<string, CatalogEntry> = {
     slug: "southern-maryland",
     label: "Southern Maryland",
     state: "MD",
-    region: "Southern Maryland · DC Metro",
+    region: "Southern Maryland · Waldorf · Clinton",
     canonicalZip: "20601",
     cities: ["Waldorf", "Bowie", "Upper Marlboro", "La Plata"],
+  },
+  // Keyed by the API's exact marketName — it returns "DC", not "Washington DC".
+  DC: {
+    slug: "washington-dc",
+    label: "Washington, DC",
+    state: "DC",
+    region: "Washington",
+    canonicalZip: "20001",
+    cities: ["Washington", "Georgetown", "Capitol Hill", "Navy Yard"],
   },
 };
 
@@ -88,7 +97,6 @@ export const SLUG_ALIASES: Record<string, string> = {
   nova: "northern-virginia",
   "los-angeles-ca": "los-angeles",
   la: "los-angeles",
-  "washington-dc": "southern-maryland",
   "south-maryland": "southern-maryland",
   "maryland-suburbs": "baltimore",
 };
@@ -105,10 +113,16 @@ export function canonicalZipForSlug(slug: string | null | undefined): string | n
   return s ? BY_SLUG[s].canonicalZip : null;
 }
 
+// "Label, ST" — but never doubled when the label already carries the state
+// (e.g. "Washington, DC" must not become "Washington, DC, DC").
+function labelWithState(label: string, state: string): string {
+  return label.endsWith(`, ${state}`) ? label : `${label}, ${state}`;
+}
+
 // Static list for the footer "markets we serve" links.
 export const ALL_MARKETS: { slug: string; displayName: string }[] = Object.values(
   BY_MARKET_NAME
-).map((e) => ({ slug: e.slug, displayName: `${e.label}, ${e.state}` }));
+).map((e) => ({ slug: e.slug, displayName: labelWithState(e.label, e.state) }));
 
 // Which HSM (and headshot) staffs each market — stable assignment used by the
 // market chooser so it can render without an API call per card. Photo is null
@@ -121,6 +135,7 @@ const SLUG_HSM: Record<string, { first: string; photo: string | null }> = {
   riverside: { first: "Trevor", photo: "/hsm/trevor-laramee.jpg" },
   "northern-virginia": { first: "Joshua", photo: "/hsm/joshua-collins.jpg" },
   "southern-maryland": { first: "Joshua", photo: "/hsm/joshua-collins.jpg" },
+  "washington-dc": { first: "Joshua", photo: "/hsm/joshua-collins.jpg" },
 };
 
 export type MarketCard = {
@@ -133,7 +148,7 @@ export type MarketCard = {
 
 export const MARKET_CARDS: MarketCard[] = Object.values(BY_MARKET_NAME).map((e) => ({
   slug: e.slug,
-  label: `${e.label}, ${e.state}`,
+  label: labelWithState(e.label, e.state),
   region: e.region,
   hsmFirst: SLUG_HSM[e.slug]?.first ?? "",
   photo: SLUG_HSM[e.slug]?.photo ?? null,
@@ -153,6 +168,7 @@ const MARKET_COORDS: Record<string, { lat: number; lng: number }> = {
   riverside: { lat: 33.9533, lng: -117.3962 },
   "northern-virginia": { lat: 38.8462, lng: -77.3064 },
   "southern-maryland": { lat: 38.7, lng: -76.85 }, // Charles + PG counties
+  "washington-dc": { lat: 38.9072, lng: -77.0369 },
 };
 
 const GEO_NEAREST_MILES = 75;
@@ -170,9 +186,9 @@ function haversineMiles(lat1: number, lng1: number, lat2: number, lng2: number):
 
 /**
  * Nearest served market to a lat/lng, within GEO_NEAREST_MILES. Prefers markets
- * in the visitor's state (so DC-metro MD vs VA, or LA vs Riverside, disambiguate
- * sensibly) and falls back to nearest-overall when no served market shares the
- * state (e.g. a Washington, DC visitor). Returns a market slug or null.
+ * in the visitor's state (so a DC visitor gets Washington, DC over the closer-by
+ * MD/VA markets, and LA vs Riverside disambiguate sensibly) and falls back to
+ * nearest-overall when no served market shares the state. Returns a slug or null.
  */
 export function nearestServedMarket(
   lat: number,
@@ -289,7 +305,7 @@ export function buildResolvedMarket(
   return {
     slug: cat?.slug ?? slugify(lead.marketName),
     name: label,
-    displayName: state ? `${label}, ${state}` : label,
+    displayName: state ? labelWithState(label, state) : label,
     region: cat?.region ?? label,
     cities: cat?.cities ?? [],
     isBusinessHours: lead.isBusinessHours,

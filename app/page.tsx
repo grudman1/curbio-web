@@ -1,7 +1,7 @@
 import PageShell from "@/components/PageShell";
 import WaitlistShell from "@/components/WaitlistShell";
 import { ctaCopyFlag, CTA_COPY, type CtaVariant } from "@/lib/flags";
-import { getCampaignMarket } from "@/lib/campaignMarkets";
+import { getCampaignMarket, NEUTRAL_MARKET } from "@/lib/campaignMarkets";
 import { resolveMarket } from "@/lib/resolveMarket";
 
 export const dynamic = "force-dynamic";
@@ -45,9 +45,8 @@ export default async function Page({
     return <PageShell market={market} variant={variant} ctaCopy={ctaCopy} prefillName={prefillName} prefillEmail={prefillEmail} />;
   }
 
-  // source === "none": geo couldn't place the visitor → open the market picker
-  // immediately so they can choose their area. Use Atlanta as a neutral
-  // backdrop (it's behind the modal and won't be seen until they pick).
-  const fallback = getCampaignMarket("atlanta");
-  return <PageShell market={fallback} variant={variant} ctaCopy={ctaCopy} showPicker prefillName={prefillName} prefillEmail={prefillEmail} />;
+  // source === "none": cold/unidentifiable traffic (no campaign link, no served
+  // ZIP, geo miss) → brand-neutral backdrop with the market picker auto-opened.
+  // No market-specific branding until the visitor picks.
+  return <PageShell market={NEUTRAL_MARKET} neutral variant={variant} ctaCopy={ctaCopy} showPicker prefillName={prefillName} prefillEmail={prefillEmail} />;
 }
