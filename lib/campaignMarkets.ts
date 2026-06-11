@@ -94,6 +94,18 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
     ],
   },
   {
+    slug: "southern-maryland",
+    name: "Southern Maryland",
+    placeholder: true,
+    sold: [
+      { neighborhood: "Waldorf" },
+      { neighborhood: "Clinton" },
+      { neighborhood: "Upper Marlboro" },
+      { neighborhood: "La Plata" },
+      { neighborhood: "Bowie" },
+    ],
+  },
+  {
     slug: "maryland-suburbs",
     name: "Maryland Suburbs",
     sold: [
@@ -121,8 +133,7 @@ export const NEUTRAL_MARKET: CampaignMarket = {
 // Map old MARKET_CARDS slugs (from lib/markets.ts) to campaign slugs.
 const SLUG_ALIASES: Record<string, string> = {
   baltimore: "maryland-suburbs",
-  "south-maryland": "maryland-suburbs",
-  "southern-maryland": "maryland-suburbs",
+  "south-maryland": "southern-maryland",
   nova: "northern-virginia",
 };
 
