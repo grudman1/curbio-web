@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { captureAttribution, gaEvent, getGaClientId, getStoredUtms } from "@/lib/analytics";
@@ -293,13 +294,15 @@ export function SoldProofStrip({ market }: { market: CampaignMarket }) {
             <li className="lp-sold-card" key={p.neighborhood}>
               <div className={"lp-sold-photo" + (p.photo ? "" : " lp-ph lp-ph-warm")} aria-hidden>
                 {p.photo && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={p.photo}
                     alt={`${p.neighborhood} home prepped by Curbio`}
-                    loading="lazy"
-                    decoding="async"
-                    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    fill
+                    // Card widths: ≤520px → 78vw, ≤860px → 64vw, desktop ≈ 1/5
+                    // of the 1200px shell. Keeps the served file at card size
+                    // instead of shipping the raw upload.
+                    sizes="(max-width: 520px) 78vw, (max-width: 860px) 64vw, 230px"
+                    style={{ objectFit: "cover" }}
                   />
                 )}
                 <span className="lp-sold-pill">
