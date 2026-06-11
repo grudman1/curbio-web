@@ -82,7 +82,7 @@ export function ZipModal({
                 )}
               </span>
               <span className="lp-mkt-name">{m.label}</span>
-              <span className="lp-mkt-region">{m.region}</span>
+              {m.region ? <span className="lp-mkt-region">{m.region}</span> : null}
               {m.hsmFirst ? <span className="lp-mkt-hsm">{m.hsmFirst}</span> : null}
             </a>
           );
