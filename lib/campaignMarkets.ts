@@ -26,11 +26,11 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
     slug: "atlanta",
     name: "Atlanta",
     sold: [
-      { neighborhood: "Intown Atlanta", price: "$665,000", photo: "/sold/959Berne_Intown.jpeg" },
-      { neighborhood: "Marietta", price: "$365,000", photo: "/sold/680Smithstone_Marietta.webp" },
-      { neighborhood: "Roswell", price: "$785,000", photo: "/sold/905Windsor_Roswell.webp" },
-      { neighborhood: "Acworth", price: "$497,000", photo: "/sold/5076OakBranch_Acworth.webp" },
-      { neighborhood: "Lawrenceville", price: "$354,000", photo: "/sold/772Bostonian_Lawrenceville.webp" },
+      { neighborhood: "Intown Atlanta", price: "$665,000", photo: "/sold/atlanta/959Berne_Intown.jpeg" },
+      { neighborhood: "Marietta", price: "$365,000", photo: "/sold/atlanta/680Smithstone_Marietta.webp" },
+      { neighborhood: "Roswell", price: "$785,000", photo: "/sold/atlanta/905Windsor_Roswell.webp" },
+      { neighborhood: "Acworth", price: "$497,000", photo: "/sold/atlanta/5076OakBranch_Acworth.webp" },
+      { neighborhood: "Lawrenceville", price: "$354,000", photo: "/sold/atlanta/772Bostonian_Lawrenceville.webp" },
     ],
   },
   {
@@ -50,7 +50,7 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
     name: "Los Angeles",
     placeholder: true,
     sold: [
-      { neighborhood: "Los Angeles" },
+      { neighborhood: "Hollywood Hills", photo: "/sold/los-angeles/2276LaGranada_HollywoodHills.jpg" },
       { neighborhood: "Long Beach" },
       { neighborhood: "Pasadena" },
       { neighborhood: "Santa Monica" },
@@ -109,11 +109,11 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
     slug: "maryland-suburbs",
     name: "Maryland Suburbs",
     sold: [
-      { neighborhood: "Bethesda",     photo: "/sold/9213Cedarcrest_Bethesda.jpg" },
-      { neighborhood: "Silver Spring", photo: "/sold/13607Wendover_SilverSpring.webp" },
-      { neighborhood: "Pikesville",   photo: "/sold/8216McDonogh_Pikesville.webp" },
-      { neighborhood: "Potomac",      photo: "/sold/8250Buckspark_Potomac.jpg" },
-      { neighborhood: "Ellicott City", photo: "/sold/13339Ridgewood_EllicotCity.webp" },
+      { neighborhood: "Bethesda",     photo: "/sold/maryland-suburbs/9213Cedarcrest_Bethesda.jpg" },
+      { neighborhood: "Silver Spring", photo: "/sold/maryland-suburbs/13607Wendover_SilverSpring.webp" },
+      { neighborhood: "Pikesville",   photo: "/sold/maryland-suburbs/8216McDonogh_Pikesville.webp" },
+      { neighborhood: "Potomac",      photo: "/sold/maryland-suburbs/8250Buckspark_Potomac.jpg" },
+      { neighborhood: "Ellicott City", photo: "/sold/maryland-suburbs/13339Ridgewood_EllicotCity.webp" },
     ],
   },
 ];
