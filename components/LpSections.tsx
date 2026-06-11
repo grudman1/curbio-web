@@ -59,6 +59,7 @@ export function Header({
 // ── a. Hero ──
 export function Hero({
   market,
+  crmMarketName = null,
   neutral = false,
   variant,
   ctaCopy,
@@ -66,6 +67,7 @@ export function Hero({
   prefillEmail,
 }: {
   market: CampaignMarket;
+  crmMarketName?: string | null;
   neutral?: boolean;
   variant: CtaVariant;
   ctaCopy: string;
@@ -108,7 +110,7 @@ export function Hero({
           </div>
         </div>
         <div className="lp-hero-form-col">
-          <FormCard market={market} variant={variant} ctaCopy={ctaCopy} prefillName={prefillName} prefillEmail={prefillEmail} />
+          <FormCard market={market} crmMarketName={crmMarketName} variant={variant} ctaCopy={ctaCopy} prefillName={prefillName} prefillEmail={prefillEmail} />
         </div>
       </div>
     </section>
@@ -118,12 +120,14 @@ export function Hero({
 // ── FormCard (#quote-form) ──
 function FormCard({
   market,
+  crmMarketName = null,
   variant,
   ctaCopy,
   prefillName = "",
   prefillEmail = "",
 }: {
   market: CampaignMarket;
+  crmMarketName?: string | null;
   variant: CtaVariant;
   ctaCopy: string;
   prefillName?: string;
@@ -181,6 +185,7 @@ function FormCard({
           phone: f.phone.trim() || undefined,
           source: `email-campaign-${market.slug || "unknown"}`,
           market: market.slug || null,
+          crmMarketName: crmMarketName ?? null,
           variant,
           submittedAt: new Date().toISOString(),
           gaClientId,

@@ -14,6 +14,7 @@ import type { CampaignMarket } from "@/lib/campaignMarkets";
 
 export default function PageShell({
   market,
+  crmMarketName = null,
   variant,
   ctaCopy,
   showPicker = false,
@@ -22,6 +23,7 @@ export default function PageShell({
   prefillEmail = "",
 }: {
   market: CampaignMarket;
+  crmMarketName?: string | null;
   variant: CtaVariant;
   ctaCopy: string;
   /** Auto-open the market chooser on mount (used when geo resolves to "none"). */
@@ -37,7 +39,7 @@ export default function PageShell({
     <>
       <Header market={market} neutral={neutral} onPickerClick={() => setZipOpen(true)} />
       <main>
-        <Hero market={market} neutral={neutral} variant={variant} ctaCopy={ctaCopy} prefillName={prefillName} prefillEmail={prefillEmail} />
+        <Hero market={market} crmMarketName={crmMarketName} neutral={neutral} variant={variant} ctaCopy={ctaCopy} prefillName={prefillName} prefillEmail={prefillEmail} />
         {!neutral && <SoldProofStrip market={market} />}
         <HowItWorks />
         <Closer ctaCopy={ctaCopy} />

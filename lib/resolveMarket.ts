@@ -16,6 +16,8 @@ export type MarketResolution = {
   geoCity?: string;
   /** Vercel IP state code (e.g. "MD"). */
   geoRegion?: string;
+  /** Raw marketName from the operator API (e.g. "NOVA", "DC") — sent to the CRM directly. */
+  crmMarketName?: string | null;
 };
 
 /**
@@ -64,8 +66,9 @@ export async function resolveMarket(searchParams: {
   if (searchParams.market) {
     const zip = canonicalZipForSlug(searchParams.market);
     if (zip) {
-      const market = buildResolvedMarket(await getOperatorLead(zip));
-      if (market) return { market, source: "param" };
+      const lead = await getOperatorLead(zip);
+      const market = buildResolvedMarket(lead);
+      if (market) return { market, source: "param", crmMarketName: lead?.marketName ?? null };
     }
   }
 
@@ -87,7 +90,7 @@ export async function resolveMarket(searchParams: {
       // Got a real API response — commit to it.
       if (!lead.isOutOfMarket) {
         const market = buildResolvedMarket(lead);
-        if (market) return { market, source: "zip" };
+        if (market) return { market, source: "zip", crmMarketName: lead.marketName ?? null };
       }
       // isOutOfMarket true, or the lead was in-market but missing required fields:
       // both mean we cannot serve this ZIP — return out-of-area, not a fallback.
@@ -104,8 +107,9 @@ export async function resolveMarket(searchParams: {
 
     // 3a. Exact postal-code match — most precise when the geo ZIP is served.
     if (postal) {
-      const market = buildResolvedMarket(await getOperatorLead(postal));
-      if (market) return { market, source: "geo" };
+      const geoLead = await getOperatorLead(postal);
+      const market = buildResolvedMarket(geoLead);
+      if (market) return { market, source: "geo", crmMarketName: geoLead?.marketName ?? null };
     }
 
     // 3b. Nearest served market by coordinates. IP geo is approximate, so a
@@ -119,8 +123,9 @@ export async function resolveMarket(searchParams: {
     const nearSlug = nearestServedMarket(lat, lng, region);
     if (nearSlug) {
       const zip = canonicalZipForSlug(nearSlug);
-      const market = zip ? buildResolvedMarket(await getOperatorLead(zip)) : null;
-      if (market) return { market, source: "geo" };
+      const nearLead = zip ? await getOperatorLead(zip) : null;
+      const market = nearLead ? buildResolvedMarket(nearLead) : null;
+      if (market) return { market, source: "geo", crmMarketName: nearLead?.marketName ?? null };
     }
   } catch {
     // headers() unavailable (local dev) — treat as no geo.

@@ -11,6 +11,7 @@ type LeadBody = {
   email?: string;
   description?: string;
   market?: string | null;
+  crmMarketName?: string | null;
   source?: string; // "quote" | "magnet" | "closer" | "waitlist" | campaign slugs (e.g. "email-campaign-atlanta")
   variant?: string; // A/B variant (cta-copy: "control" | "treatment")
   magnet?: "checklist" | "spring-listings" | "resource-kit" | null;
@@ -93,7 +94,7 @@ export async function POST(req: Request) {
     email: body.email!.trim(),
     zip: body.zip ? body.zip.replace(/\D/g, "").slice(0, 5) : "",
     description: body.description?.trim() ?? "",
-    market: toCrmMarket(body.market),
+    market: body.crmMarketName ?? toCrmMarket(body.market),
     source: body.source ?? "quote",
     variant: body.variant ?? null,
     magnet: body.magnet ?? null,

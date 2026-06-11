@@ -27,7 +27,7 @@ export default async function Page({
   //   ?status=waitlist → waitlist view                    (priority 0)
   //   no params     → Vercel IP geo → nearest market      (priority 3)
   //   geo miss      → "none" → show market-chooser modal  (priority 4)
-  const { market: resolved, source, outZip, geoCity, geoRegion } = await resolveMarket({
+  const { market: resolved, source, outZip, geoCity, geoRegion, crmMarketName } = await resolveMarket({
     market: params.market,
     zip: params.zip,
     code: params.code,
@@ -42,11 +42,11 @@ export default async function Page({
   // Resolved via param, zip, or geo → show that market's landing page
   if (resolved) {
     const market = getCampaignMarket(resolved.slug);
-    return <PageShell market={market} variant={variant} ctaCopy={ctaCopy} prefillName={prefillName} prefillEmail={prefillEmail} />;
+    return <PageShell market={market} crmMarketName={crmMarketName ?? null} variant={variant} ctaCopy={ctaCopy} prefillName={prefillName} prefillEmail={prefillEmail} />;
   }
 
   // source === "none": cold/unidentifiable traffic (no campaign link, no served
   // ZIP, geo miss) → brand-neutral backdrop with the market picker auto-opened.
   // No market-specific branding until the visitor picks.
-  return <PageShell market={NEUTRAL_MARKET} neutral variant={variant} ctaCopy={ctaCopy} showPicker prefillName={prefillName} prefillEmail={prefillEmail} />;
+  return <PageShell market={NEUTRAL_MARKET} crmMarketName={null} neutral variant={variant} ctaCopy={ctaCopy} showPicker prefillName={prefillName} prefillEmail={prefillEmail} />;
 }
