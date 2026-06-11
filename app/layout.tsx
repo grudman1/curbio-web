@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Lora, Libre_Franklin } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 // Analytics run only in production builds and only when the ID is configured —
@@ -60,6 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <Analytics />
+        <SpeedInsights />
         {/* GA4 loader only — gtag init/config happens in lib/analytics.ts so
             the manual page_view (with explicit UTM params, captured before the
             URL strip) is always queued ahead of any event. send_page_view is
