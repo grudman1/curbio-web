@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Lora, Libre_Franklin } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
@@ -16,6 +16,12 @@ const libre = Libre_Franklin({
   display: "swap",
   variable: "--font-sans",
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5, // allow zoom for accessibility — never 1 / user-scalable=no
+};
 
 export const metadata: Metadata = {
   title: "Curbio — Get your home market-ready",

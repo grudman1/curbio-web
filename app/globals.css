@@ -153,13 +153,20 @@ em { font-style: normal; }
 
 /* ============================================================ HEADER */
 .lp-header { background: var(--cloud-white); border-bottom: 1px solid var(--stone); }
-.lp-header-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; }
+/* padding-top/bottom only — the shorthand `padding: 14px 0` was clobbering
+   .lp-shell's horizontal padding (same element), leaving the header flush
+   against the screen edge below the 1200px max-width */
+.lp-header-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 14px; padding-bottom: 14px; }
 .lp-header-logo { height: 26px; width: auto; display: block; }
-@media (max-width: 600px) { .lp-header-inner { padding: 12px 0; } .lp-header-logo { height: 23px; } }
+@media (max-width: 600px) { .lp-header-inner { padding-top: 12px; padding-bottom: 12px; } .lp-header-logo { height: 23px; } }
 
 /* ---------- market picker button (header tag) ---------- */
-.lp-mkt-btn { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-sans); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-muted); background: #fff; border: 1px solid var(--stone); border-radius: 999px; padding: 6px 12px; line-height: 1; cursor: pointer; min-height: 32px; transition: border-color .15s, color .15s; }
+.lp-mkt-btn { position: relative; display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-sans); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-muted); background: #fff; border: 1px solid var(--stone); border-radius: 999px; padding: 6px 12px; line-height: 1; cursor: pointer; min-height: 32px; transition: border-color .15s, color .15s; }
+/* invisible expanded hit area → ≥44px touch target without changing the visual pill */
+.lp-mkt-btn::after { content: ""; position: absolute; inset: -6px; }
 .lp-mkt-btn:hover { border-color: var(--border-strong); color: var(--navy); }
+/* very narrow phones: compact the pill so long market names don't crowd the logo */
+@media (max-width: 380px) { .lp-mkt-btn { font-size: 11px; letter-spacing: 0.05em; padding: 6px 9px; gap: 4px; } }
 
 /* ---------- modal overlay + panel (used by ZipModal / QuoteModal) ---------- */
 @keyframes lp-fade { from { opacity: 0; } to { opacity: 1; } }
@@ -202,7 +209,11 @@ em { font-style: normal; }
   .lp-hero-h1 { font-size: clamp(32px, 8vw, 44px); }
   .lp-hero-sub { font-size: 17px; }
   .lp-hero-form-col { justify-content: stretch; }
+  /* desktop keeps one line; narrow screens must wrap instead of clipping */
+  .lp-hero-trust { flex-wrap: wrap; white-space: normal; row-gap: 6px; }
 }
+/* when trust items stack one-per-line, the · separators dangle — hide them */
+@media (max-width: 480px) { .lp-hero-trust .lp-sold-proof-dot { display: none; } }
 
 /* ---------- FormCard (#quote-form) ---------- */
 .lp-fc { background: #fff; border-radius: 20px; box-shadow: var(--shadow-md); padding: 32px; width: 100%; max-width: 400px; }
@@ -235,7 +246,9 @@ em { font-style: normal; }
 .lp-sold-proof { display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-sans); font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-muted); line-height: 1; }
 .lp-sold-proof-dot { font-size: 11px; color: var(--navy-15); line-height: 1; }
 .lp-sold-row { list-style: none; display: flex; gap: 16px; margin: 28px 0 0; padding: 0; }
-.lp-sold-card { flex: 1 1 0; min-width: 180px; background: #fff; border-radius: 12px; box-shadow: var(--shadow-sm); overflow: hidden; }
+/* min-width: 0 (not 180px) — a fixed floor made 5 cards overflow the shell
+   between 861–1028px; letting them shrink keeps the row contained */
+.lp-sold-card { flex: 1 1 0; min-width: 0; background: #fff; border-radius: 12px; box-shadow: var(--shadow-sm); overflow: hidden; }
 .lp-sold-photo { position: relative; height: 140px; overflow: hidden; }
 /* amber-120 (not base amber) so 11px white text clears WCAG AA (≈5:1) */
 .lp-sold-pill { position: absolute; top: 10px; left: 10px; display: inline-flex; align-items: center; gap: 5px; background: var(--amber-120); color: #fff; font-family: var(--font-sans); font-size: 11px; font-weight: 800; letter-spacing: 0.02em; padding: 5px 10px 5px 8px; border-radius: 999px; line-height: 1; }
@@ -268,14 +281,15 @@ em { font-style: normal; }
 @media (max-width: 640px) { .lp-closer { padding: 56px 0; } .lp-closer-cta .lp-btn { width: 100%; justify-content: center; } }
 
 /* ============================================================ STICKY BOTTOM BAR */
-.lp-sticky { position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-sticky); background: var(--navy); transform: translateY(100%); opacity: 0; visibility: hidden; transition: transform var(--dur-base) var(--ease-out), opacity var(--dur-base) var(--ease-out); }
+.lp-sticky { position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-sticky); background: var(--navy); padding-bottom: env(safe-area-inset-bottom, 0px); transform: translateY(100%); opacity: 0; visibility: hidden; transition: transform var(--dur-base) var(--ease-out), opacity var(--dur-base) var(--ease-out); }
 .lp-sticky.show { transform: translateY(0); opacity: 1; visibility: visible; }
 .lp-sticky-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; }
 .lp-sticky-txt { font-family: var(--font-sans); font-size: 14px; font-weight: 400; color: rgba(255, 255, 255, 0.75); }
 .lp-sticky-cta { display: inline-flex; align-items: center; gap: 7px; background: var(--amber); color: #fff; border: 0; border-radius: 999px; font-family: var(--font-sans); font-size: 14px; font-weight: 700; padding: 10px 20px; min-height: 40px; cursor: pointer; white-space: nowrap; transition: background var(--dur-base) var(--ease-out); }
 .lp-sticky-cta:hover { background: var(--amber-110); }
 @media (max-width: 640px) {
-  .lp-sticky-inner { flex-direction: column; gap: 8px; padding: 10px 0; min-height: 0; }
+  /* padding-top/bottom only — shorthand would clobber .lp-shell's side padding */
+  .lp-sticky-inner { flex-direction: column; gap: 8px; padding-top: 10px; padding-bottom: 10px; min-height: 0; }
   .lp-sticky-txt { font-size: 12.5px; text-align: center; }
   .lp-sticky-cta { width: 100%; justify-content: center; min-height: 44px; }
 }
@@ -297,6 +311,8 @@ em { font-style: normal; }
 .lp-hsm-title { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--amber); margin-top: 5px; }
 .lp-hsm-bio { font-size: 13px; line-height: 1.5; color: var(--fg-muted); margin: 11px 0 0; }
 .lp-hsm-stats { display: flex; gap: 10px 16px; margin: 16px 0 0; flex-wrap: nowrap; padding-bottom: 15px; border-bottom: 1px solid var(--stone); }
+/* one line on desktop (by design); wrap on narrow phones instead of clipping */
+@media (max-width: 420px) { .lp-hsm-stats { flex-wrap: wrap; } }
 .lp-hsm-stats span { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 600; color: var(--navy); white-space: nowrap; }
 .lp-dot-wrap { display: inline-flex; align-items: center; justify-content: center; width: 15px; flex: none; }
 .lp-dot { display: inline-block; width: 9px; height: 9px; border-radius: 999px; background: var(--fg-subtle); }
