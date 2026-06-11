@@ -48,6 +48,10 @@ const SLUG_TO_CRM_MARKET: Record<string, string> = {
   "southern-maryland": "South Maryland",
   "baltimore": "Baltimore",
   "maryland-suburbs": "Baltimore",
+  "nova": "NOVA",
+  "south-maryland": "South Maryland",
+  "la": "Los Angeles",
+  "los-angeles-ca": "Los Angeles",
 };
 
 function toCrmMarket(slug: string | null | undefined): string | null {
