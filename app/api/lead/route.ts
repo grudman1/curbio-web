@@ -155,7 +155,16 @@ export async function POST(req: Request) {
   const webhook = process.env.CURBIO_CRM_WEBHOOK_URL;
   if (webhook) {
     try {
-      console.log("[lead] posting to CRM:", webhook, JSON.stringify(payload));
+      const crmPayload = {
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        email: payload.email,
+        phone: payload.phone,
+        zip: payload.zip,
+        market: payload.market,
+        referralSourceId: payload.referralSourceId,
+      };
+      console.log("[lead] posting to CRM:", webhook, JSON.stringify(crmPayload));
       const res = await fetch(webhook, {
         method: "POST",
         headers: {
@@ -164,7 +173,7 @@ export async function POST(req: Request) {
             ? { authorization: `Bearer ${process.env.CURBIO_CRM_API_KEY}` }
             : {}),
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(crmPayload),
       });
       if (!res.ok) {
         console.error("[lead] CRM webhook failed", res.status, await res.text().catch(() => ""));
