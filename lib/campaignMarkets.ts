@@ -111,12 +111,13 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
     // market, or folder name.
     slug: "baltimore",
     name: "Baltimore",
+    // No placeholder: true — all five listings have verified sale prices.
     sold: [
-      { neighborhood: "Bethesda",     photo: "/sold/baltimore/9213Cedarcrest_Bethesda.jpg" },
-      { neighborhood: "Silver Spring", photo: "/sold/baltimore/13607Wendover_SilverSpring.webp" },
-      { neighborhood: "Pikesville",   photo: "/sold/baltimore/8216McDonogh_Pikesville.webp" },
-      { neighborhood: "Potomac",      photo: "/sold/baltimore/8250Buckspark_Potomac.jpg" },
-      { neighborhood: "Ellicott City", photo: "/sold/baltimore/13339Ridgewood_EllicotCity.webp" },
+      { neighborhood: "Bethesda",      price: "$1,075,000", photo: "/sold/baltimore/9213Cedarcrest_Bethesda.jpg" },
+      { neighborhood: "Silver Spring", price: "$640,000",   photo: "/sold/baltimore/13607Wendover_SilverSpring.webp" },
+      { neighborhood: "Pikesville",    price: "$449,000",   photo: "/sold/baltimore/8216McDonogh_Pikesville.webp" },
+      { neighborhood: "Potomac",       price: "$1,610,000", photo: "/sold/baltimore/8250Buckspark_Potomac.jpg" },
+      { neighborhood: "Ellicott City", price: "$1,100,000", photo: "/sold/baltimore/13339Ridgewood_EllicotCity.webp" },
     ],
   },
 ];
