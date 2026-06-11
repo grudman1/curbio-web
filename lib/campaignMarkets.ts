@@ -70,13 +70,12 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
   {
     slug: "northern-virginia",
     name: "Northern Virginia",
-    placeholder: true,
     sold: [
-      { neighborhood: "Arlington" },
-      { neighborhood: "Alexandria" },
-      { neighborhood: "Fairfax" },
-      { neighborhood: "Falls Church" },
-      { neighborhood: "McLean" },
+      { neighborhood: "Woodbridge",    price: "$525,000",   photo: "/sold/northern-virginia/1257EverettAve_Woodbridge.jpg" },
+      { neighborhood: "Fairfax",       price: "$931,444",   photo: "/sold/northern-virginia/5398QuincyMarr_Fairfax.jpg" },
+      { neighborhood: "Great Falls",   price: "$1,800,000", photo: "/sold/northern-virginia/9420BianJac_GreatFalls.jpg" },
+      { neighborhood: "Fredericksburg", price: "$582,000",  photo: "/sold/northern-virginia/12305GladeDr_Fredericksburg.webp" },
+      { neighborhood: "Leesburg",      price: "$1,225,000", photo: "/sold/northern-virginia/43170ParkersRidge_Leesburg.webp" },
     ],
   },
   {
