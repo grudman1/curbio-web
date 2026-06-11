@@ -91,13 +91,12 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
   {
     slug: "southern-maryland",
     name: "Southern Maryland",
-    placeholder: true,
     sold: [
-      { neighborhood: "Waldorf" },
-      { neighborhood: "Clinton" },
-      { neighborhood: "Upper Marlboro" },
-      { neighborhood: "La Plata" },
-      { neighborhood: "Bowie" },
+      { neighborhood: "District Heights", price: "$390,000", photo: "/sold/southern-maryland/2108Weber_DistrictHeights.jpg" },
+      { neighborhood: "Temple Hills",     price: "$600,000", photo: "/sold/southern-maryland/4601Brinkley_TempleHills.jpg" },
+      { neighborhood: "Clinton",          price: "$405,000", photo: "/sold/southern-maryland/6608SpringbrookLn_Clinton.jpg" },
+      { neighborhood: "Fort Washington",  price: "$460,000", photo: "/sold/southern-maryland/9113DorisDr_FortWashington.jpg" },
+      { neighborhood: "Waldorf",          price: "$629,300", photo: "/sold/southern-maryland/12053Bayswater_Waldorf.webp" },
     ],
   },
   {
