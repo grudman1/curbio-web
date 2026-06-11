@@ -115,7 +115,7 @@ export async function POST(req: Request) {
         `Source:      ${payload.source}`,
       ].join("\n");
       const data = await resend.emails.send({
-        from: "Curbio Leads <leads@curbio.com>",
+        from: "Curbio Leads <onboarding@resend.dev>",
         to: resendTo,
         subject,
         text,
