@@ -38,6 +38,23 @@ function isValidEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 }
 
+const SLUG_TO_CRM_MARKET: Record<string, string> = {
+  "atlanta": "Atlanta",
+  "dallas": "Dallas",
+  "los-angeles": "Los Angeles",
+  "riverside": "Riverside",
+  "northern-virginia": "NOVA",
+  "washington-dc": "DC",
+  "southern-maryland": "South Maryland",
+  "baltimore": "Baltimore",
+  "maryland-suburbs": "Baltimore",
+};
+
+function toCrmMarket(slug: string | null | undefined): string | null {
+  if (!slug) return null;
+  return SLUG_TO_CRM_MARKET[slug] ?? slug;
+}
+
 export async function POST(req: Request) {
   let body: LeadBody;
   try {
@@ -72,7 +89,7 @@ export async function POST(req: Request) {
     email: body.email!.trim(),
     zip: body.zip ? body.zip.replace(/\D/g, "").slice(0, 5) : "",
     description: body.description?.trim() ?? "",
-    market: body.market ?? null,
+    market: toCrmMarket(body.market),
     source: body.source ?? "quote",
     variant: body.variant ?? null,
     magnet: body.magnet ?? null,
