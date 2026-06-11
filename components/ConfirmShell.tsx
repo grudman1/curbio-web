@@ -90,8 +90,16 @@ export default function ConfirmShell({
     gaEvent("booking_view", { market: market.slug || "unknown" });
   }, [market.slug]);
 
-  // True goal event: Calendly's inline iframe posts a message when the invitee
-  // schedules. Only trust messages from calendly.com origins.
+  // The iframe must grow to fit Calendly's content — it ships scrolling="no",
+  // so a fixed height makes everything below the fold unreachable (the
+  // "Enter Details" step is far taller than the calendar view). Calendly
+  // posts calendly.page_height for exactly this purpose; we track it here.
+  const [calHeight, setCalHeight] = useState(700);
+
+  // Calendly's inline iframe posts lifecycle messages to the parent:
+  //   calendly.page_height    → resize the iframe to fit (handled above)
+  //   calendly.event_scheduled → true goal event (booking_complete)
+  // Only trust messages from calendly.com origins.
   useEffect(() => {
     function onMessage(e: MessageEvent) {
       let origin = "";
@@ -101,7 +109,14 @@ export default function ConfirmShell({
         return;
       }
       if (origin !== "calendly.com" && !origin.endsWith(".calendly.com")) return;
-      if ((e.data as { event?: string } | null)?.event === "calendly.event_scheduled") {
+
+      const data = e.data as { event?: string; payload?: { height?: string | number } } | null;
+      if (data?.event === "calendly.page_height") {
+        // payload.height arrives as "1090px" (or a number) — parse defensively.
+        const h = parseInt(String(data.payload?.height ?? ""), 10);
+        if (Number.isFinite(h) && h > 0) setCalHeight(h);
+      }
+      if (data?.event === "calendly.event_scheduled") {
         gaEvent("booking_complete", { market: market.slug || "unknown" });
       }
     }
@@ -196,13 +211,18 @@ export default function ConfirmShell({
                 {/* Direct iframe — no widget script. Rendered once embedDomain
                     resolves (client mount) so the URL carries embed_domain and
                     Calendly emits its postMessage lifecycle events. */}
+                {/* No scrolling="no": when Calendly's page_height resize keeps
+                    the iframe taller than its content there is no inner
+                    scrollbar anyway, and if a height message is ever missed
+                    the user can still scroll inside the frame to reach the
+                    submit button (scrolling="no" made the lower form
+                    unreachable). */}
                 {iframeSrc && (
                   <iframe
                     src={iframeSrc}
                     width="100%"
-                    height="700"
+                    height={calHeight}
                     frameBorder="0"
-                    scrolling="no"
                     title={`Schedule a call with ${hsm?.hsm.firstName ?? "your local manager"}`}
                     style={{ border: 0, display: "block", borderRadius: 8 }}
                   />
