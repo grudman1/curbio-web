@@ -58,13 +58,12 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
   {
     slug: "riverside",
     name: "Riverside",
-    placeholder: true,
     sold: [
-      { neighborhood: "Riverside" },
-      { neighborhood: "Corona" },
-      { neighborhood: "Moreno Valley" },
-      { neighborhood: "Temecula" },
-      { neighborhood: "Rancho Cucamonga" },
+      { neighborhood: "Rancho Mirage",   price: "$549,000", photo: "/sold/riverside/24KevinLeeLane_RanchMirage.jpg" },
+      { neighborhood: "Riverside",       price: "$565,000", photo: "/sold/riverside/4064ViaSanJose_Riverside.webp" },
+      { neighborhood: "Cucamonga",       price: "$950,000", photo: "/sold/riverside/5785Campanella_Cucamonga.webp" },
+      { neighborhood: "Canyon Lake",     price: "$615,000", photo: "/sold/riverside/30287Skipjack_CanyonLake.jpg" },
+      { neighborhood: "Temecula",        price: "$924,000", photo: "/sold/riverside/32049CorteCanel_Temecula.webp" },
     ],
   },
   {
