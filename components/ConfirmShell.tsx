@@ -94,15 +94,6 @@ export default function ConfirmShell({
   // schedules. Only trust messages from calendly.com origins.
   useEffect(() => {
     function onMessage(e: MessageEvent) {
-      // TEMPORARY DEBUG — log every message event so we can see exactly what
-      // Calendly posts (event name + payload shape). Remove after verifying
-      // booking_complete in GA4 DebugView.
-      try {
-        console.log("[calendly-debug]", e.origin, JSON.stringify(e.data)?.slice(0, 300));
-      } catch {
-        console.log("[calendly-debug]", e.origin, "(unserializable)");
-      }
-
       let origin = "";
       try {
         origin = new URL(e.origin).hostname;
