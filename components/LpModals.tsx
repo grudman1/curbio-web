@@ -100,7 +100,7 @@ export function ZipModal({
             marginBottom: 9,
           }}
         >
-          Don&apos;t see your area? Enter your ZIP
+          Not sure? Enter your ZIP
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           <input
