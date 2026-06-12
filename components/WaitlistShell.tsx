@@ -15,12 +15,11 @@ export default function WaitlistShell({
   geoRegion?: string;
 }) {
   const [zipOpen, setZipOpen] = useState(false);
-  // Show default (Atlanta) in the header while on the waitlist page
   const defaultMarket = getCampaignMarket();
 
   return (
     <>
-      <Header market={defaultMarket} onPickerClick={() => setZipOpen(true)} />
+      <Header market={defaultMarket} />
       <main>
         <WaitlistPage
           zip={outZip ?? ""}

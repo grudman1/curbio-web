@@ -1,56 +1,37 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { track } from "@vercel/analytics";
-import { captureAttribution, gaEvent, getGaClientId, getStoredUtms } from "@/lib/analytics";
 import { Icon, Eyebrow, AmberRule, PillButton } from "./LpKit";
+import { ZipModalTrigger } from "./ZipModalTrigger";
+import { FormCard } from "./FormCard";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 import type { CtaVariant } from "@/lib/flags";
 
-const LOGO_NAVY = "/logo/curbio-navy.svg";
-
-// Smooth-scroll to the form and focus the first input (honors reduced-motion).
-function scrollToForm() {
-  const el = document.getElementById("quote-form");
-  if (!el) return;
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
-  window.setTimeout(
-    () => document.getElementById("fc-name")?.focus({ preventScroll: true }),
-    reduce ? 0 : 480
-  );
-}
+// Re-export extracted client components so existing importers keep working.
+export { StickyBar } from "./StickyBar";
+export { WaitlistPage } from "./WaitlistPage";
 
 // ── Header (chrome) ──
 export function Header({
   market,
   neutral = false,
-  onPickerClick,
+  initialPickerOpen = false,
 }: {
   market: CampaignMarket;
   neutral?: boolean;
-  onPickerClick: () => void;
+  initialPickerOpen?: boolean;
 }) {
   const pillLabel = neutral ? "Choose your market" : market.name;
   return (
     <header className="lp-header">
       <div className="lp-shell lp-header-inner">
-        {/* Logo links back to the home/default-market page */}
         <a href="/" aria-label="Curbio — return to home">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={LOGO_NAVY} alt="Curbio" className="lp-header-logo" />
+          <img src="/logo/curbio-navy.svg" alt="Curbio" className="lp-header-logo" />
         </a>
-        <button
-          className="lp-mkt-btn"
-          onClick={onPickerClick}
-          aria-label={neutral ? "Choose your market" : `Market: ${market.name}. Change market`}
-        >
-          <Icon name="pin" size={13} color="var(--fg-muted)" stroke={1.75} />
-          {pillLabel}
-          <Icon name="chevronDown" size={14} color="var(--fg-muted)" stroke={2} style={{ marginLeft: 1 }} />
-        </button>
+        <ZipModalTrigger
+          label={pillLabel}
+          marketSlug={neutral ? null : market.slug}
+          initialOpen={initialPickerOpen}
+        />
       </div>
     </header>
   );
@@ -110,179 +91,17 @@ export function Hero({
           </div>
         </div>
         <div className="lp-hero-form-col">
-          <FormCard market={market} crmMarketName={crmMarketName} variant={variant} ctaCopy={ctaCopy} prefillName={prefillName} prefillEmail={prefillEmail} />
+          <FormCard
+            market={market}
+            crmMarketName={crmMarketName}
+            variant={variant}
+            ctaCopy={ctaCopy}
+            prefillName={prefillName}
+            prefillEmail={prefillEmail}
+          />
         </div>
       </div>
     </section>
-  );
-}
-
-// ── FormCard (#quote-form) ──
-function FormCard({
-  market,
-  crmMarketName = null,
-  variant,
-  ctaCopy,
-  prefillName = "",
-  prefillEmail = "",
-}: {
-  market: CampaignMarket;
-  crmMarketName?: string | null;
-  variant: CtaVariant;
-  ctaCopy: string;
-  prefillName?: string;
-  prefillEmail?: string;
-}) {
-  const [f, setF] = useState({ name: prefillName, email: prefillEmail, phone: "" });
-  const [nameEdited,  setNameEdited]  = useState(false);
-  const [emailEdited, setEmailEdited] = useState(false);
-  const [errs, setErrs] = useState<{ name?: string; email?: string; server?: string }>({});
-  const [pending, setPending] = useState(false);
-  const router = useRouter();
-
-  useEffect(() => {
-    // ORDER IS LOAD-BEARING: captureAttribution() reads utm_* from the live
-    // URL, persists them, and queues the GA4 page_view — all synchronously —
-    // BEFORE the strip below wipes the query string for the clean URL.
-    captureAttribution();
-    window.history.replaceState({}, "", window.location.pathname);
-  }, []);
-
-  const onChange = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setF((s) => ({ ...s, [k]: e.target.value }));
-    setErrs((p) => ({ ...p, [k]: undefined }));
-    if (k === "name")  setNameEdited(true);
-    if (k === "email") setEmailEdited(true);
-  };
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (pending) return;
-    const next: typeof errs = {};
-    if (!f.name.trim()) next.name = "Please enter your name.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim()))
-      next.email = "Please enter a valid email address.";
-    if (next.name || next.email) {
-      setErrs(next);
-      return;
-    }
-    setPending(true);
-    setErrs({});
-    const full = f.name.trim();
-    try {
-      // GA client_id + stored UTMs ride along to the CRM as the join key for
-      // future lead → closed-job reporting. getGaClientId resolves null fast
-      // when GA4 is absent/blocked, so it never holds up the submit.
-      const gaClientId = await getGaClientId();
-      const utms = getStoredUtms();
-      const res = await fetch("/api/lead", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          name: full,
-          firstName: full.split(/\s+/)[0],
-          email: f.email.trim(),
-          phone: f.phone.trim() || undefined,
-          source: `email-campaign-${market.slug || "unknown"}`,
-          market: market.slug || null,
-          crmMarketName: crmMarketName ?? null,
-          variant,
-          submittedAt: new Date().toISOString(),
-          gaClientId,
-          ...utms,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) throw new Error(data.error || "Something went wrong. Please try again.");
-      track("lead_submit", { variant });
-      // Primary conversion → GA4, with market + stored UTMs (no PII).
-      gaEvent("lead_submit", { market: market.slug || "unknown", variant });
-      // Navigate to the confirmation page, carrying prefill values for Calendly.
-      // phone is omitted when empty so Calendly's field stays blank rather than
-      // showing an empty string.
-      const qs = new URLSearchParams();
-      if (market.slug) qs.set("market", market.slug);
-      qs.set("name", f.name.trim());
-      qs.set("email", f.email.trim());
-      if (f.phone.trim()) qs.set("phone", f.phone.trim());
-      router.push(`/confirm?${qs.toString()}`);
-    } catch (err) {
-      setErrs({ server: err instanceof Error ? err.message : "Something went wrong." });
-    } finally {
-      setPending(false);
-    }
-  }
-
-  return (
-    <form className="lp-fc" id="quote-form" onSubmit={submit} noValidate>
-      <div className="lp-fc-field">
-        <label className="lp-fc-label" htmlFor="fc-name">Name</label>
-        <input
-          id="fc-name"
-          className={"lp-input" + (errs.name ? " lp-input-err" : prefillName && !nameEdited ? " lp-input-prefilled" : "")}
-          type="text"
-          value={f.name}
-          onChange={onChange("name")}
-          placeholder="Your name"
-          autoComplete="name"
-          aria-invalid={!!errs.name}
-          aria-describedby={errs.name ? "fc-name-err" : undefined}
-        />
-        {errs.name && <span id="fc-name-err" className="lp-fc-err" role="alert">{errs.name}</span>}
-      </div>
-
-      <div className="lp-fc-field">
-        <label className="lp-fc-label" htmlFor="fc-email">Email</label>
-        <input
-          id="fc-email"
-          className={"lp-input" + (errs.email ? " lp-input-err" : prefillEmail && !emailEdited ? " lp-input-prefilled" : "")}
-          type="email"
-          value={f.email}
-          onChange={onChange("email")}
-          placeholder="you@brokerage.com"
-          autoComplete="email"
-          aria-invalid={!!errs.email}
-          aria-describedby={errs.email ? "fc-email-err" : undefined}
-        />
-        {errs.email && <span id="fc-email-err" className="lp-fc-err" role="alert">{errs.email}</span>}
-      </div>
-
-      <div className="lp-fc-field">
-        <label className="lp-fc-label" htmlFor="fc-phone">
-          Phone <span className="lp-fc-optional">(optional)</span>
-        </label>
-        <input
-          id="fc-phone"
-          className="lp-input"
-          type="tel"
-          inputMode="tel"
-          value={f.phone}
-          onChange={onChange("phone")}
-          placeholder="(555) 555-5555"
-          autoComplete="tel"
-        />
-      </div>
-
-      {errs.server && <p className="lp-fc-server" role="alert">{errs.server}</p>}
-
-      <button className="lp-fc-submit" type="submit" disabled={pending} aria-busy={pending}>
-        {pending ? (
-          <>
-            <span className="lp-spinner" aria-hidden /> Sending…
-          </>
-        ) : (
-          ctaCopy
-        )}
-      </button>
-
-      <p className="lp-fc-tcpa">
-        By submitting, you agree to our{" "}
-        <a href="https://curbio.com/privacy-policy" target="_blank" rel="noreferrer noopener">
-          Privacy Policy
-        </a>
-        {" "}and consent to calls and texts from Curbio. Reply STOP to opt out.
-      </p>
-    </form>
   );
 }
 
@@ -303,9 +122,6 @@ export function SoldProofStrip({ market }: { market: CampaignMarket }) {
                     src={p.photo}
                     alt={`${p.neighborhood} home prepped by Curbio`}
                     fill
-                    // Card widths: ≤520px → 78vw, ≤860px → 64vw, desktop ≈ 1/5
-                    // of the 1200px shell. Keeps the served file at card size
-                    // instead of shipping the raw upload.
                     sizes="(max-width: 520px) 78vw, (max-width: 860px) 64vw, 230px"
                     style={{ objectFit: "cover" }}
                   />
@@ -374,41 +190,13 @@ export function Closer({ ctaCopy }: { ctaCopy: string }) {
           One listing. You&apos;ll wonder <em>why you waited.</em>
         </h2>
         <div className="lp-closer-cta">
-          <PillButton size="lg" icon="arrow" onClick={scrollToForm}>
+          {/* href="#quote-form" — native anchor scroll, no JS needed */}
+          <PillButton size="lg" icon="arrow" href="#quote-form">
             {ctaCopy}
           </PillButton>
         </div>
       </div>
     </section>
-  );
-}
-
-// ── Sticky bottom bar (chrome) ──
-export function StickyBar({ ctaCopy }: { ctaCopy: string }) {
-  const [show, setShow] = useState(false);
-  useEffect(() => {
-    const form = document.getElementById("quote-form");
-    if (!form) return;
-    // Show the bar whenever the form is NOT in view (hero scrolled past),
-    // hide it when the form re-enters view.
-    const io = new IntersectionObserver(
-      ([entry]) => setShow(!entry.isIntersecting),
-      { threshold: 0, rootMargin: "0px 0px -10% 0px" }
-    );
-    io.observe(form);
-    return () => io.disconnect();
-  }, []);
-
-  return (
-    <div className={"lp-sticky" + (show ? " show" : "")} aria-hidden={!show}>
-      <div className="lp-shell lp-sticky-inner">
-        <span className="lp-sticky-txt">Your seller pays nothing until the home sells.</span>
-        <button className="lp-sticky-cta" onClick={scrollToForm} tabIndex={show ? 0 : -1}>
-          {ctaCopy}
-          <Icon name="arrow" size={17} color="currentColor" />
-        </button>
-      </div>
-    </div>
   );
 }
 
@@ -423,160 +211,5 @@ export function Footer() {
         <span className="lp-foot-legal">© Curbio. Licensed &amp; insured.</span>
       </div>
     </footer>
-  );
-}
-
-// ── Waitlist page (out-of-area state) ──────────────────────────────────────
-export function WaitlistPage({
-  zip,
-  geoCity: _geoCity,
-  geoRegion: _geoRegion,
-  onChooseMarket,
-}: {
-  zip: string;
-  geoCity?: string;
-  geoRegion?: string;
-  onChooseMarket: () => void;
-}) {
-  const [f, setF] = useState({ name: "", email: "", zip: zip });
-  const [sent, setSent] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [serverErr, setServerErr] = useState<string | null>(null);
-
-  useEffect(() => { setF((s) => ({ ...s, zip })); }, [zip]);
-
-  const set = (k: keyof typeof f) => (v: string) => setF((s) => ({ ...s, [k]: v }));
-  const validEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
-  const valid = f.name.trim().length > 0 && validEmail(f.email) && f.zip.replace(/\D/g, "").length === 5;
-
-  async function submit() {
-    if (!valid || pending) return;
-    setPending(true);
-    setServerErr(null);
-    try {
-      const res = await fetch("/api/lead", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          name: f.name.trim(),
-          email: f.email.trim(),
-          zip: f.zip.replace(/\D/g, "").slice(0, 5),
-          source: "waitlist",
-          submittedAt: new Date().toISOString(),
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data.ok) throw new Error(data.error || "Something went wrong. Please try again.");
-      setSent(true);
-    } catch (e) {
-      setServerErr(e instanceof Error ? e.message : "Something went wrong.");
-    } finally {
-      setPending(false);
-    }
-  }
-
-  const displayZip = f.zip.replace(/\D/g, "").slice(0, 5) || zip || "your area";
-
-  return (
-    <section className="lp-waitlist">
-      <div className="lp-shell lp-waitlist-inner">
-        {!sent ? (
-          <>
-            <Eyebrow amber style={{ marginBottom: 14 }}>Coming to your area</Eyebrow>
-            <h1 className="lp-waitlist-h1">
-              Curbio isn&apos;t in your area <em>yet.</em>
-            </h1>
-            <p className="lp-waitlist-sub">
-              We&apos;re expanding fast. Add your details and we&apos;ll reach out the
-              moment a local Curbio team covers your area.
-            </p>
-            <AmberRule width={56} style={{ margin: "22px 0 26px" }} />
-            <div className="lp-waitlist-fields">
-              <div className="lp-fc-field">
-                <label className="lp-fc-label" htmlFor="wl-name">Full name</label>
-                <input
-                  id="wl-name"
-                  className="lp-input"
-                  type="text"
-                  value={f.name}
-                  onChange={(e) => set("name")(e.target.value)}
-                  placeholder="Your name"
-                  autoComplete="name"
-                  required
-                />
-              </div>
-              <div className="lp-fc-field">
-                <label className="lp-fc-label" htmlFor="wl-email">Work email</label>
-                <input
-                  id="wl-email"
-                  className="lp-input"
-                  type="email"
-                  value={f.email}
-                  onChange={(e) => set("email")(e.target.value)}
-                  placeholder="you@brokerage.com"
-                  autoComplete="email"
-                  required
-                />
-              </div>
-              <div className="lp-fc-field">
-                <label className="lp-fc-label" htmlFor="wl-zip">ZIP code</label>
-                <input
-                  id="wl-zip"
-                  className="lp-input"
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={5}
-                  value={f.zip}
-                  onChange={(e) => set("zip")(e.target.value.replace(/\D/g, "").slice(0, 5))}
-                  placeholder="e.g. 80202"
-                  required
-                />
-              </div>
-            </div>
-            {serverErr && (
-              <p role="alert" className="lp-fc-server">{serverErr}</p>
-            )}
-            <button
-              className="lp-fc-submit"
-              onClick={submit}
-              disabled={!valid || pending}
-            >
-              {pending ? "Joining…" : "Join the waitlist"}
-            </button>
-            <p className="lp-fc-tcpa" style={{ marginTop: 12 }}>
-              By submitting you agree to receive email updates from Curbio. We never share your information.
-            </p>
-            <div className="lp-waitlist-alt">
-              <span style={{ fontSize: 14, color: "var(--fg-muted)" }}>Already in a Curbio market?</span>{" "}
-              <button
-                onClick={onChooseMarket}
-                style={{ fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 700, color: "var(--amber)", background: "none", border: 0, cursor: "pointer", padding: 0 }}
-              >
-                Choose your market →
-              </button>
-            </div>
-          </>
-        ) : (
-          <div style={{ textAlign: "center", maxWidth: 440, margin: "0 auto", padding: "20px 0" }}>
-            <div style={{ width: 62, height: 62, borderRadius: 999, background: "var(--stone)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 22px" }}>
-              <Icon name="check" size={28} color="var(--amber)" stroke={2.5} />
-            </div>
-            <h2 style={{ fontFamily: "var(--font-serif)", fontSize: 28, fontWeight: 600, color: "var(--navy)", margin: "0 0 12px", lineHeight: 1.1 }}>
-              You&apos;re on the list.
-            </h2>
-            <p style={{ fontSize: 15, color: "var(--fg-muted)", lineHeight: 1.6, margin: "0 0 28px" }}>
-              We&apos;ll let you know the moment Curbio reaches{" "}
-              <strong style={{ color: "var(--navy)" }}>{displayZip}</strong>.
-            </p>
-            <button
-              onClick={onChooseMarket}
-              style={{ fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 700, color: "var(--amber)", background: "none", border: 0, cursor: "pointer" }}
-            >
-              See our current markets →
-            </button>
-          </div>
-        )}
-      </div>
-    </section>
   );
 }

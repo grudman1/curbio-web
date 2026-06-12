@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Header,
   Hero,
@@ -8,7 +7,6 @@ import {
   HowItWorks,
   Closer,
 } from "./LpSections";
-import { ZipModal } from "./LpModals";
 import type { CtaVariant } from "@/lib/flags";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 
@@ -33,18 +31,23 @@ export default function PageShell({
   prefillName?: string;
   prefillEmail?: string;
 }) {
-  const [zipOpen, setZipOpen] = useState(showPicker);
-
   return (
     <>
-      <Header market={market} neutral={neutral} onPickerClick={() => setZipOpen(true)} />
+      <Header market={market} neutral={neutral} initialPickerOpen={showPicker} />
       <main>
-        <Hero market={market} crmMarketName={crmMarketName} neutral={neutral} variant={variant} ctaCopy={ctaCopy} prefillName={prefillName} prefillEmail={prefillEmail} />
+        <Hero
+          market={market}
+          crmMarketName={crmMarketName}
+          neutral={neutral}
+          variant={variant}
+          ctaCopy={ctaCopy}
+          prefillName={prefillName}
+          prefillEmail={prefillEmail}
+        />
         {!neutral && <SoldProofStrip market={market} />}
         <HowItWorks />
         <Closer ctaCopy={ctaCopy} />
       </main>
-      <ZipModal open={zipOpen} onClose={() => setZipOpen(false)} current={neutral ? null : market} />
     </>
   );
 }

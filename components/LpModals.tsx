@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, startTransition } from "react";
 import { MARKET_CARDS, type ResolvedMarket } from "@/lib/markets";
 import { Modal, Eyebrow, PillButton, Field, Icon } from "./LpKit";
 
@@ -27,7 +27,7 @@ export function ZipModal({
 
   function go(slug: string) {
     onClose();
-    router.push(`/?market=${slug}`);
+    startTransition(() => { router.push(`/?market=${slug}`); });
   }
 
   function submitZip() {
@@ -38,7 +38,7 @@ export function ZipModal({
     }
     setErr("");
     onClose();
-    router.push(`/?zip=${digits}`);
+    startTransition(() => { router.push(`/?zip=${digits}`); });
   }
 
   return (

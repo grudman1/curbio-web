@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Header } from "./LpSections";
-import { ZipModal } from "./LpModals";
 import { Icon } from "./LpKit";
 import { gaEvent } from "@/lib/analytics";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
@@ -76,8 +76,6 @@ export default function ConfirmShell({
    *  window.location.host on the client if the prop is missing. */
   embedDomain?: string;
 }) {
-  const [zipOpen, setZipOpen] = useState(false);
-
   // Initialise with the server-provided host so iframeSrc is non-null on first
   // render (SSR). The useEffect is a safety-net for edge cases where the prop
   // is absent or differs from the real client host — Calendly's postMessage
@@ -146,7 +144,7 @@ export default function ConfirmShell({
 
   return (
     <>
-      <Header market={market} onPickerClick={() => setZipOpen(true)} />
+      <Header market={market} />
 
       <main className="lp-confirm">
         <div className="lp-shell lp-confirm-grid">
@@ -158,15 +156,12 @@ export default function ConfirmShell({
               <div className="lp-hsm">
                 <div className="lp-hsm-photo">
                   {hsm.hsm.photo ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={hsm.hsm.photo}
                       alt={`${hsm.hsm.name}, ${hsm.hsm.title}`}
-                      style={{
-                        position: "absolute", inset: 0,
-                        width: "100%", height: "100%",
-                        objectFit: "cover", objectPosition: "center top",
-                      }}
+                      fill
+                      priority={false}
+                      style={{ objectFit: "cover", objectPosition: "center top" }}
                     />
                   ) : (
                     <div style={{ position: "absolute", inset: 0, background: "var(--stone)" }} />
@@ -236,6 +231,7 @@ export default function ConfirmShell({
                       height={calHeight}
                       frameBorder="0"
                       title={`Schedule a call with ${hsm?.hsm.firstName ?? "your local manager"}`}
+                      {...{ fetchpriority: "high" }}
                       style={{ border: 0, display: "block", borderRadius: 8 }}
                       onLoad={() => setIframeLoaded(true)}
                     />
@@ -263,7 +259,6 @@ export default function ConfirmShell({
         </div>
       </main>
 
-      <ZipModal open={zipOpen} onClose={() => setZipOpen(false)} current={market} />
     </>
   );
 }
