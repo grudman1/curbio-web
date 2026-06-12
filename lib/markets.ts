@@ -299,6 +299,46 @@ function slugify(s: string): string {
 }
 
 /**
+ * Build a minimal ResolvedMarket from the static catalog alone — no API call.
+ * Used when the operator API fails in step 1 so that a ?market= email link
+ * always lands on the correct market page regardless of API health.
+ * isBusinessHours is conservatively false; HSM phone/calendly are empty.
+ */
+export function buildResolvedMarketFromSlug(
+  slug: string | null | undefined
+): ResolvedMarket | null {
+  const s = canonicalSlug(slug);
+  if (!s) return null;
+  const cat = BY_SLUG[s];
+  if (!cat) return null;
+  const hsmStatic = SLUG_HSM[s] ?? null;
+  const firstName = hsmStatic?.first ?? "";
+  const label = cat.label;
+  const member = firstName ? Object.values(TEAM).find((m) => m.bio.includes(firstName)) ?? null : null;
+  return {
+    slug: s,
+    name: label,
+    displayName: labelWithState(label, cat.state),
+    region: cat.region,
+    cities: cat.cities,
+    isBusinessHours: false,
+    hsm: {
+      firstName,
+      name: firstName || "Your local team",
+      title: member?.title ?? "Home Services Manager",
+      bio: (
+        member?.bio ??
+        `${firstName || "Your local manager"} helps ${label}-area agents and sellers get listings market-ready — on time and on budget.`
+      ).replace(/\{market\}/g, label),
+      photo: hsmStatic?.photo ?? null,
+      phone: "",
+      phoneRaw: "",
+      calendlyUrl: "#",
+    },
+  };
+}
+
+/**
  * Turn a live OperatorLead into the page view model. Returns null for
  * out-of-market / incomplete leads so the caller shows the neutral state.
  * Unknown market names (not in the catalog) still personalize from the API.

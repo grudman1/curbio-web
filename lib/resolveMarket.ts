@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { getOperatorLead } from "./operator";
 import {
   buildResolvedMarket,
+  buildResolvedMarketFromSlug,
   canonicalZipForSlug,
   nearestServedMarket,
   type ResolvedMarket,
@@ -62,13 +63,26 @@ export async function resolveMarket(searchParams: {
     }
   }
 
-  // 1. ?market= campaign slug → canonical zip → live API.
+  // 1. ?market= campaign slug → always wins, regardless of API outcome.
+  // The operator API is called for live HSM data but a failure must never
+  // cause fallthrough to geo — the email link is the authoritative signal.
   if (searchParams.market) {
     const zip = canonicalZipForSlug(searchParams.market);
     if (zip) {
       const lead = await getOperatorLead(zip);
       const market = buildResolvedMarket(lead);
-      if (market) return { market, source: "param", crmMarketName: lead?.marketName ?? null };
+      if (market) {
+        // Happy path: API returned good data.
+        return { market, source: "param", crmMarketName: lead?.marketName ?? null };
+      }
+      // API failed or returned unrecognizable data — fall back to the static
+      // catalog so the agent still lands on the correct market page.
+      const staticMarket = buildResolvedMarketFromSlug(searchParams.market);
+      if (staticMarket) {
+        return { market: staticMarket, source: "param", crmMarketName: null };
+      }
+      // Slug had a canonical zip but no catalog entry — do not fall through to geo.
+      return { market: null, source: "none" };
     }
   }
 

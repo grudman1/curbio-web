@@ -5,7 +5,7 @@ import { ctaCopyFlag, CTA_COPY, type CtaVariant } from "@/lib/flags";
 import { getCampaignMarket, NEUTRAL_MARKET } from "@/lib/campaignMarkets";
 import { resolveMarket } from "@/lib/resolveMarket";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 type SearchParams = Promise<{ market?: string; zip?: string; code?: string; status?: string; n?: string; e?: string }>;
 
