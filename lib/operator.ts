@@ -41,7 +41,7 @@ export async function getOperatorLead(
     const res = await fetch(`${ENDPOINT}?code=${code}`, {
       headers: { accept: "application/json" },
       signal: controller.signal,
-      next: { revalidate: 300 },
+      next: { revalidate: 120 },
     });
     if (!res.ok) return null;
     const data = (await res.json()) as Partial<OperatorLead>;

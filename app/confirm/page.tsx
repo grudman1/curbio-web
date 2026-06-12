@@ -4,7 +4,7 @@ import { buildResolvedMarket, canonicalZipForSlug } from "@/lib/markets";
 import { getCampaignMarket } from "@/lib/campaignMarkets";
 import ConfirmShell from "@/components/ConfirmShell";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function ConfirmPage({
   searchParams,

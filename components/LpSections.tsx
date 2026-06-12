@@ -24,8 +24,15 @@ export function Header({
     <header className="lp-header">
       <div className="lp-shell lp-header-inner">
         <a href="/" aria-label="Curbio — return to home">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo/curbio-navy.svg" alt="Curbio" className="lp-header-logo" />
+          <Image
+            src="/logo/curbio-navy.svg"
+            alt="Curbio"
+            width={500}
+            height={130}
+            priority
+            unoptimized
+            className="lp-header-logo"
+          />
         </a>
         <ZipModalTrigger
           label={pillLabel}

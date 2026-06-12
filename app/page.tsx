@@ -1,32 +1,52 @@
+import { Suspense } from "react";
 import PageShell from "@/components/PageShell";
 import WaitlistShell from "@/components/WaitlistShell";
 import { ctaCopyFlag, CTA_COPY, type CtaVariant } from "@/lib/flags";
 import { getCampaignMarket, NEUTRAL_MARKET } from "@/lib/campaignMarkets";
 import { resolveMarket } from "@/lib/resolveMarket";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
-export default async function Page({
-  searchParams,
-}: {
-  searchParams: Promise<{ market?: string; zip?: string; code?: string; status?: string; n?: string; e?: string }>;
-}) {
+type SearchParams = Promise<{ market?: string; zip?: string; code?: string; status?: string; n?: string; e?: string }>;
+
+function PageSkeleton() {
+  return (
+    <div aria-hidden>
+      <header className="lp-header">
+        <div className="lp-shell lp-header-inner">
+          <div style={{ height: 26, width: 100, background: "var(--stone)", borderRadius: 4 }} />
+          <div style={{ height: 32, width: 140, background: "var(--stone)", borderRadius: 999 }} />
+        </div>
+      </header>
+      <main>
+        <section className="lp-hero">
+          <div className="lp-shell lp-hero-grid">
+            <div className="lp-hero-copy">
+              <div style={{ height: 14, width: 110, background: "var(--stone)", borderRadius: 4, marginBottom: 18 }} />
+              <div style={{ height: 100, width: "85%", background: "var(--stone)", borderRadius: 6, marginBottom: 22 }} />
+              <div style={{ height: 3, width: 48, background: "var(--stone)", marginBottom: 22 }} />
+              <div style={{ height: 44, width: "65%", background: "var(--stone)", borderRadius: 4 }} />
+            </div>
+            <div className="lp-hero-form-col">
+              <div style={{ height: 420, background: "var(--stone)", borderRadius: 12 }} />
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
+async function MarketResolver({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
 
   const prefillName  = (params.n ?? "").trim();
   const prefillEmail = (params.e ?? "").trim();
 
-  // Resolve the A/B flag once — drives both the form button and any future sticky
   let variant: CtaVariant = "control";
   try { variant = await ctaCopyFlag(); } catch { variant = "control"; }
   const ctaCopy = CTA_COPY[variant];
 
-  // Always run the full resolver:
-  //   ?market=      → canonical zip → live operator API   (priority 1)
-  //   ?zip=/?code=  → live operator API                   (priority 2)
-  //   ?status=waitlist → waitlist view                    (priority 0)
-  //   no params     → Vercel IP geo → nearest market      (priority 3)
-  //   geo miss      → "none" → show market-chooser modal  (priority 4)
   const { market: resolved, source, outZip, geoCity, geoRegion, crmMarketName } = await resolveMarket({
     market: params.market,
     zip: params.zip,
@@ -34,19 +54,22 @@ export default async function Page({
     status: params.status,
   });
 
-  // Confirmed out-of-area → show the waitlist page with the ZIP prefilled
   if (source === "out-of-area") {
     return <WaitlistShell outZip={outZip} geoCity={geoCity} geoRegion={geoRegion} />;
   }
 
-  // Resolved via param, zip, or geo → show that market's landing page
   if (resolved) {
     const market = getCampaignMarket(resolved.slug);
     return <PageShell market={market} crmMarketName={crmMarketName ?? null} variant={variant} ctaCopy={ctaCopy} prefillName={prefillName} prefillEmail={prefillEmail} />;
   }
 
-  // source === "none": cold/unidentifiable traffic (no campaign link, no served
-  // ZIP, geo miss) → brand-neutral backdrop with the market picker auto-opened.
-  // No market-specific branding until the visitor picks.
   return <PageShell market={NEUTRAL_MARKET} crmMarketName={null} neutral variant={variant} ctaCopy={ctaCopy} showPicker prefillName={prefillName} prefillEmail={prefillEmail} />;
+}
+
+export default function Page({ searchParams }: { searchParams: SearchParams }) {
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <MarketResolver searchParams={searchParams} />
+    </Suspense>
+  );
 }

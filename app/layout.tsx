@@ -13,7 +13,7 @@ const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID;
 
 const lora = Lora({
   subsets: ["latin"],
-  weight: ["400", "600", "700"],
+  weight: ["600"],
   display: "swap",
   variable: "--font-serif",
 });
@@ -53,6 +53,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {/* Warm the Calendly connection before the iframe is parsed so
             DNS + TLS are resolved by the time the request fires. */}
+        <link rel="preconnect" href="https://app.curbio.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://app.curbio.com" />
         <link rel="preconnect" href="https://calendly.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://assets.calendly.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://calendly.com" />
