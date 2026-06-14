@@ -1,12 +1,12 @@
-"use client";
-
 import {
   Header,
   Hero,
   SoldProofStrip,
   HowItWorks,
   Closer,
+  Footer,
 } from "./LpSections";
+import { StickyBar } from "./StickyBar";
 import type { CtaVariant } from "@/lib/flags";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 
@@ -48,6 +48,8 @@ export default function PageShell({
         <HowItWorks />
         <Closer ctaCopy={ctaCopy} />
       </main>
+      <Footer />
+      <StickyBar ctaCopy={ctaCopy} />
     </>
   );
 }
