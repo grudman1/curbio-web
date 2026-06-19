@@ -34,7 +34,14 @@ export function FormCard({
     // URL, persists them, and queues the GA4 page_view — all synchronously —
     // BEFORE the strip below wipes the query string for the clean URL.
     captureAttribution();
-    window.history.replaceState({}, "", window.location.pathname);
+    // Keep ?market= so a browser refresh re-resolves the correct market via the
+    // server (geo would otherwise win on reload). Strip everything else: PII
+    // (n, e), utm_* already captured above, and any other params.
+    const marketSlug = new URLSearchParams(window.location.search).get("market");
+    const cleanUrl = marketSlug
+      ? `${window.location.pathname}?market=${encodeURIComponent(marketSlug)}`
+      : window.location.pathname;
+    window.history.replaceState({}, "", cleanUrl);
   }, []);
 
   const onChange = useCallback(
