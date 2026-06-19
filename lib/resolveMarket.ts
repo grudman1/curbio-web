@@ -66,6 +66,8 @@ export async function resolveMarket(searchParams: {
   // 1. ?market= campaign slug → always wins, regardless of API outcome.
   // The operator API is called for live HSM data but a failure must never
   // cause fallthrough to geo — the email link is the authoritative signal.
+  // A present ?market= param (even with an unrecognized slug) suppresses geo
+  // entirely; the visitor sees neutral rather than the wrong market.
   if (searchParams.market) {
     const zip = canonicalZipForSlug(searchParams.market);
     if (zip) {
@@ -81,9 +83,10 @@ export async function resolveMarket(searchParams: {
       if (staticMarket) {
         return { market: staticMarket, source: "param", crmMarketName: null };
       }
-      // Slug had a canonical zip but no catalog entry — do not fall through to geo.
-      return { market: null, source: "none" };
     }
+    // Slug present but unrecognized (or no canonical zip, or no catalog entry).
+    // Do NOT fall through to geo — show neutral so the wrong market never wins.
+    return { market: null, source: "none" };
   }
 
   // 2. Explicit zip entry (?zip= or ?code=).
