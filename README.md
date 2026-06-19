@@ -102,7 +102,7 @@ the live Curbio operator API — matched ZIPs show the right market, unmatched
 ZIPs route to the waitlist.
 
 **Served markets:** Atlanta · Dallas · Los Angeles · Riverside ·
-Northern Virginia · Washington DC · Maryland Suburbs
+Northern Virginia · Washington DC · Maryland
 
 Sold listings and proof data per market: `lib/campaignMarkets.ts`.
 Other markets currently show placeholder proof — add real sold data there.

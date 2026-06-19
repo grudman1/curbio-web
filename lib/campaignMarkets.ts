@@ -89,22 +89,8 @@ export const CAMPAIGN_MARKETS: CampaignMarket[] = [
     ],
   },
   {
-    slug: "southern-maryland",
-    name: "Southern Maryland",
-    sold: [
-      { neighborhood: "District Heights", price: "$390,000", photo: "/sold/southern-maryland/2108Weber_DistrictHeights.jpg" },
-      { neighborhood: "Temple Hills",     price: "$600,000", photo: "/sold/southern-maryland/4601Brinkley_TempleHills.jpg" },
-      { neighborhood: "Clinton",          price: "$405,000", photo: "/sold/southern-maryland/6608SpringbrookLn_Clinton.jpg" },
-      { neighborhood: "Fort Washington",  price: "$460,000", photo: "/sold/southern-maryland/9113DorisDr_FortWashington.jpg" },
-      { neighborhood: "Waldorf",          price: "$629,300", photo: "/sold/southern-maryland/12053Bayswater_Waldorf.webp" },
-    ],
-  },
-  {
-    // The market is BALTIMORE. "Maryland Suburbs" is only the secondary label
-    // on the Baltimore picker card (region in lib/markets.ts) — never a slug,
-    // market, or folder name.
     slug: "baltimore",
-    name: "Baltimore",
+    name: "Maryland",
     // No placeholder: true — all five listings have verified sale prices.
     sold: [
       { neighborhood: "Bethesda",      price: "$1,075,000", photo: "/sold/baltimore/9213Cedarcrest_Bethesda.jpg" },
@@ -131,7 +117,7 @@ export const NEUTRAL_MARKET: CampaignMarket = {
 // Tolerated inbound aliases only — each resolves TO the canonical slug.
 const SLUG_ALIASES: Record<string, string> = {
   "maryland-suburbs": "baltimore", // legacy links; canonical market is baltimore
-  "south-maryland": "southern-maryland",
+  maryland: "baltimore",
   nova: "northern-virginia",
 };
 

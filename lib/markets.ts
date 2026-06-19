@@ -29,9 +29,9 @@ const BY_MARKET_NAME: Record<string, CatalogEntry> = {
     canonicalZip: "30002",
     cities: ["Atlanta", "Marietta", "Alpharetta", "Decatur", "Sandy Springs"],
   },
-  Baltimore: {
+  Maryland: {
     slug: "baltimore",
-    label: "Baltimore",
+    label: "Maryland",
     state: "MD",
     region: "Baltimore · Maryland Suburbs",
     canonicalZip: "21201",
@@ -69,14 +69,6 @@ const BY_MARKET_NAME: Record<string, CatalogEntry> = {
     canonicalZip: "22030",
     cities: ["Arlington", "Alexandria", "Fairfax", "Reston", "Vienna"],
   },
-  "South Maryland": {
-    slug: "southern-maryland",
-    label: "Southern Maryland",
-    state: "MD",
-    region: "Waldorf · Clinton",
-    canonicalZip: "20601",
-    cities: ["Waldorf", "Bowie", "Upper Marlboro", "La Plata"],
-  },
   // Keyed by the API's exact marketName — it returns "DC", not "Washington DC".
   DC: {
     slug: "washington-dc",
@@ -97,7 +89,7 @@ export const SLUG_ALIASES: Record<string, string> = {
   nova: "northern-virginia",
   "los-angeles-ca": "los-angeles",
   la: "los-angeles",
-  "south-maryland": "southern-maryland",
+  maryland: "baltimore",
   "maryland-suburbs": "baltimore",
 };
 
@@ -134,7 +126,6 @@ const SLUG_HSM: Record<string, { first: string; photo: string | null }> = {
   "los-angeles": { first: "Trevor", photo: "/hsm/trevor-laramee.jpg" },
   riverside: { first: "Trevor", photo: "/hsm/trevor-laramee.jpg" },
   "northern-virginia": { first: "Joshua", photo: "/hsm/joshua-collins.jpg" },
-  "southern-maryland": { first: "Joshua", photo: "/hsm/joshua-collins.jpg" },
   "washington-dc": { first: "Joshua", photo: "/hsm/joshua-collins.jpg" },
 };
 
@@ -155,7 +146,6 @@ const CARD_ORDER = [
   "baltimore",
   "northern-virginia",
   "los-angeles",
-  "southern-maryland",
   "riverside",
 ];
 
@@ -182,7 +172,6 @@ const MARKET_COORDS: Record<string, { lat: number; lng: number }> = {
   "los-angeles": { lat: 34.0522, lng: -118.2437 },
   riverside: { lat: 33.9533, lng: -117.3962 },
   "northern-virginia": { lat: 38.8462, lng: -77.3064 },
-  "southern-maryland": { lat: 38.7, lng: -76.85 }, // Charles + PG counties
   "washington-dc": { lat: 38.9072, lng: -77.0369 },
 };
 
@@ -270,9 +259,9 @@ const TEAM: Record<string, TeamMember> = {
 
 export type ResolvedMarket = {
   slug: string;
-  name: string; // friendly market label, e.g. "Baltimore"
-  displayName: string; // e.g. "Baltimore, MD"
-  region: string; // e.g. "Baltimore · Maryland suburbs"
+  name: string; // friendly market label, e.g. "Maryland"
+  displayName: string; // e.g. "Maryland, MD"
+  region: string; // e.g. "Baltimore · Maryland Suburbs"
   cities: string[];
   isBusinessHours: boolean;
   hsm: {

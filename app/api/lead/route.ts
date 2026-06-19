@@ -46,11 +46,10 @@ const SLUG_TO_CRM_MARKET: Record<string, string> = {
   "riverside": "Riverside",
   "northern-virginia": "NOVA",
   "washington-dc": "DC",
-  "southern-maryland": "South Maryland",
   "baltimore": "Baltimore",
   "maryland-suburbs": "Baltimore",
+  "maryland": "Baltimore",
   "nova": "NOVA",
-  "south-maryland": "South Maryland",
   "la": "Los Angeles",
   "los-angeles-ca": "Los Angeles",
 };
