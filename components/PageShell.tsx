@@ -6,7 +6,6 @@ import {
   Closer,
   Footer,
 } from "./LpSections";
-import { StickyBar } from "./StickyBar";
 import type { CtaVariant } from "@/lib/flags";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 
@@ -49,7 +48,6 @@ export default function PageShell({
         <Closer ctaCopy={ctaCopy} />
       </main>
       <Footer />
-      <StickyBar ctaCopy={ctaCopy} />
     </>
   );
 }
