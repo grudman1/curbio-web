@@ -51,6 +51,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${lora.variable} ${libre.variable}`}>
       <head>
+        {/* Preload the logo so it's in cache when PageSkeleton renders,
+            making the skeleton's <img> paint immediately as FCP. */}
+        <link rel="preload" href="/logo/curbio-navy.svg" as="image" type="image/svg+xml" />
         {/* Warm the Calendly connection before the iframe is parsed so
             DNS + TLS are resolved by the time the request fires. */}
         <link rel="preconnect" href="https://app.curbio.com" crossOrigin="anonymous" />
