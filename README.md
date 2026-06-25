@@ -4,7 +4,7 @@ Single-purpose conversion page for Curbio pre-listing home improvement campaigns
 Built with **Next.js 15 (App Router) · TypeScript · Tailwind CSS · Vercel**.
 
 **Live:** https://curbiolandingpage.vercel.app  
-**Repo:** https://github.com/grudman1/curbiolandingpage
+**Repo:** https://github.com/grudman1/curbio-web
 
 ---
 

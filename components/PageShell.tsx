@@ -4,7 +4,6 @@ import {
   SoldProofStrip,
   HowItWorks,
   Closer,
-  Footer,
 } from "./LpSections";
 import type { CtaVariant } from "@/lib/flags";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
@@ -47,7 +46,6 @@ export default function PageShell({
         <HowItWorks />
         <Closer ctaCopy={ctaCopy} />
       </main>
-      <Footer />
     </>
   );
 }
