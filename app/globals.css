@@ -351,19 +351,21 @@ em { font-style: normal; }
 
 /* ── /exp partner page ───────────────────────────────────────────────────── */
 
-/* Header: Curbio logo + divider + eXp Solutions logo (left) + badge (right) */
+/* Header: Curbio logo + divider + eXp Solutions logo (left), market picker (right) */
 .exp-header-logos { display: flex; align-items: center; gap: 16px; }
 .exp-solutions-logo { height: 20px; width: auto; display: block; }
 .exp-header-divider { display: block; width: 1px; height: 22px; background: var(--navy-85); flex-shrink: 0; }
-.exp-badge-header { height: 44px; width: auto; display: block; }
 
-/* Hero: badge + market name eyebrow */
-.exp-badge-eyebrow { display: inline-flex; align-items: center; gap: 11px; margin-bottom: 18px; }
-.exp-badge-img { height: 32px; width: auto; display: block; }
-.exp-badge-label { font-family: var(--font-sans); font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-muted); }
+/* Hero: prominent co-brand lockup */
+.exp-cobrand-lockup { display: inline-flex; align-items: center; gap: 18px; background: var(--sage-50); border: 1px solid var(--sage-110); border-radius: 14px; padding: 16px 22px; margin-bottom: 28px; }
+.exp-cobrand-badge-lg { height: 80px; width: 80px; display: block; flex-shrink: 0; }
+.exp-cobrand-text { display: flex; flex-direction: column; gap: 3px; }
+.exp-cobrand-overline { font-family: var(--font-sans); font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--fg-muted); }
+.exp-cobrand-title { font-family: var(--font-sans); font-size: 17px; font-weight: 700; color: var(--navy); line-height: 1.2; }
+.exp-cobrand-market { font-family: var(--font-sans); font-size: 13px; color: var(--fg-muted); margin-top: 2px; }
 
 @media (max-width: 640px) {
   .exp-solutions-logo { height: 16px; }
-  .exp-badge-header { height: 36px; }
-  .exp-badge-img { height: 26px; }
+  .exp-cobrand-badge-lg { height: 60px; width: 60px; }
+  .exp-cobrand-title { font-size: 15px; }
 }
