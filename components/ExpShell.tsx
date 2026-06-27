@@ -14,7 +14,7 @@ function ExpHeader() {
         {/* Logo links to curbio.com (external WordPress home) — update when replatforming is complete */}
         <a href="https://curbio.com" aria-label="Curbio — visit curbio.com">
           <Image
-            src="/logo/curbio-navy.svg"
+            src="/logo/curbio-white.svg"
             alt="Curbio"
             width={500}
             height={130}

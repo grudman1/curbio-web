@@ -29,7 +29,7 @@ export function Header({
       <div className="lp-shell lp-header-inner">
         <a href={logoHref} aria-label="Curbio — return to home">
           <Image
-            src="/logo/curbio-navy.svg"
+            src="/logo/curbio-white.svg"
             alt="Curbio"
             width={500}
             height={130}

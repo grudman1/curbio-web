@@ -32,7 +32,7 @@ function ExpPageSkeleton() {
       <header className="lp-header">
         <div className="lp-shell lp-header-inner">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo/curbio-navy.svg" alt="Curbio" className="lp-header-logo" width={100} height={26} />
+          <img src="/logo/curbio-white.svg" alt="Curbio" className="lp-header-logo" width={100} height={26} />
           <div style={{ height: 48, width: 140, background: "var(--stone)", borderRadius: 6 }} />
         </div>
       </header>

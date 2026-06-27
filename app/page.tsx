@@ -17,8 +17,8 @@ function PageSkeleton() {
           {/* Real logo — <img> triggers FCP so the browser doesn't wait for
               streamed content. Colored divs don't count as "contentful". */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo/curbio-navy.svg" alt="Curbio" className="lp-header-logo" width={100} height={26} />
-          <div style={{ height: 32, width: 140, background: "var(--stone)", borderRadius: 999 }} />
+          <img src="/logo/curbio-white.svg" alt="Curbio" className="lp-header-logo" width={100} height={26} />
+          <div style={{ height: 32, width: 140, background: "var(--navy-85)", borderRadius: 999 }} />
         </div>
       </header>
       <main>

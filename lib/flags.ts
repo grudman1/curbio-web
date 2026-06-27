@@ -19,8 +19,8 @@ import { flag } from "flags/next";
 export type CtaVariant = "control" | "treatment";
 
 export const CTA_COPY: Record<CtaVariant, string> = {
-  control: "See how we'd prep your listing",
-  treatment: "Show me how you'd prep my listing",
+  control: "Get your free estimate",
+  treatment: "Get your free estimate",
 };
 
 // Small, stable string hash (djb2) → used to bucket a visitor id 50/50.

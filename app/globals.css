@@ -152,7 +152,7 @@ em { font-style: normal; }
 .lp-ph-navy { background: repeating-linear-gradient(45deg, #13294f, #13294f 14px, #0f2347 14px, #0f2347 28px); }
 
 /* ============================================================ HEADER */
-.lp-header { background: var(--cloud-white); border-bottom: 1px solid var(--stone); }
+.lp-header { background: var(--navy); border-bottom: none; }
 /* padding-top/bottom only — the shorthand `padding: 14px 0` was clobbering
    .lp-shell's horizontal padding (same element), leaving the header flush
    against the screen edge below the 1200px max-width */
@@ -161,10 +161,10 @@ em { font-style: normal; }
 @media (max-width: 600px) { .lp-header-inner { padding-top: 12px; padding-bottom: 12px; } .lp-header-logo { height: 23px; } }
 
 /* ---------- market picker button (header tag) ---------- */
-.lp-mkt-btn { position: relative; display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-sans); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-muted); background: #fff; border: 1px solid var(--stone); border-radius: 999px; padding: 6px 12px; line-height: 1; cursor: pointer; min-height: 32px; transition: border-color .15s, color .15s; }
+.lp-mkt-btn { position: relative; display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-sans); font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--navy-15); background: transparent; border: 1px solid var(--navy-85); border-radius: 999px; padding: 6px 12px; line-height: 1; cursor: pointer; min-height: 32px; transition: border-color .15s, color .15s; }
 /* invisible expanded hit area → ≥44px touch target without changing the visual pill */
 .lp-mkt-btn::after { content: ""; position: absolute; inset: -6px; }
-.lp-mkt-btn:hover { border-color: var(--border-strong); color: var(--navy); }
+.lp-mkt-btn:hover { border-color: #fff; color: #fff; }
 /* very narrow phones: compact the pill so long market names don't crowd the logo */
 @media (max-width: 380px) { .lp-mkt-btn { font-size: 11px; letter-spacing: 0.05em; padding: 6px 9px; gap: 4px; } }
 
