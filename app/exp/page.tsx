@@ -85,7 +85,7 @@ async function ExpMarketResolver({ searchParams }: { searchParams: SearchParams 
       market={market}
       crmMarketName={crmMarketName ?? null}
       neutral={!resolved}
-      showPicker={source === "geo-neutral" || source === "neutral"}
+      showPicker={source === "none"}
       variant={variant}
       ctaCopy={ctaCopy}
     />
