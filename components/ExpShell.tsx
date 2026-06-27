@@ -1,16 +1,17 @@
 import Image from "next/image";
 import { FormCard } from "./FormCard";
-import { Closer } from "./LpSections";
-import { Icon, Eyebrow, AmberRule, PillButton } from "./LpKit";
+import { HowItWorks, Closer } from "./LpSections";
+import { Icon, Eyebrow, AmberRule } from "./LpKit";
 import { EXP_PARTNER } from "@/lib/partners";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 import type { CtaVariant } from "@/lib/flags";
 
-// ── Header — co-brand: Curbio + divider + eXp Solutions logo + amber CTA ──
-function ExpHeader() {
+// ── Header — co-brand: Curbio + eXp Solutions logo + Trusted Provider badge ──
+export function ExpHeader() {
   return (
     <header className="lp-header">
       <div className="lp-shell lp-header-inner">
+        {/* Left: Curbio logo + divider + eXp Solutions logo */}
         <div className="exp-header-logos">
           <a href="https://curbio.com" aria-label="Curbio — visit curbio.com">
             <Image
@@ -33,31 +34,43 @@ function ExpHeader() {
             className="exp-solutions-logo"
           />
         </div>
-        <PillButton size="sm" href="#lead-form" icon="arrow">
-          Get your free estimate
-        </PillButton>
+        {/* Right: Trusted Provider badge (required by eXp brand guidelines) */}
+        <Image
+          src={EXP_PARTNER.badgePath!}
+          alt="eXp Solutions Trusted Provider"
+          width={500}
+          height={500}
+          unoptimized
+          className="exp-badge-header"
+        />
       </div>
     </header>
   );
 }
 
-// ── Hero ──
+// ── Hero — identical to email page except eyebrow shows the eXp badge ──
 function ExpHero({
   market,
   crmMarketName,
+  neutral,
   variant,
   ctaCopy,
+  prefillName,
+  prefillEmail,
 }: {
   market: CampaignMarket;
-  crmMarketName: string | null;
+  crmMarketName?: string | null;
+  neutral?: boolean;
   variant: CtaVariant;
   ctaCopy: string;
+  prefillName?: string;
+  prefillEmail?: string;
 }) {
   return (
     <section className="lp-hero" id="hero">
       <div className="lp-shell lp-hero-grid">
         <div className="lp-hero-copy">
-          {/* eXp Trusted Provider badge — required by eXp brand guidelines */}
+          {/* eXp badge eyebrow replaces the "[Market] agents" text eyebrow */}
           <div className="exp-badge-eyebrow">
             <Image
               src={EXP_PARTNER.badgePath!}
@@ -67,27 +80,24 @@ function ExpHero({
               unoptimized
               className="exp-badge-img"
             />
-            <span className="exp-badge-label">An official eXp Solution</span>
+            <span className="exp-badge-label">
+              {neutral ? "For eXp Realty agents" : `${market.name} eXp agents`}
+            </span>
           </div>
+          {/* H1 identical to email page */}
           <h1 className="lp-hero-h1">
+            We do the <em>prep.</em>
+            <br />
             You make the <em>sale.</em>
             <br />
-            We do the <em>work.</em>
-            <br />
-            Your seller pays <em>at close.</em>
+            Seller pays <em>at close.</em>
           </h1>
           <AmberRule width={48} style={{ margin: "22px 0" }} />
           <p className="lp-hero-sub">
-            Move-in ready sells. Curbio gets your eXp listings market-ready
-            before they hit the market — and qualified sellers pay nothing until
-            the home closes.
+            Move-in ready sells. Your seller pays nothing until it closes.
           </p>
+          {/* Trust chips identical to email page */}
           <div className="lp-hero-trust">
-            <span className="lp-sold-proof">
-              <Icon name="check" size={12} color="var(--fg-muted)" stroke={2.5} />
-              Pay at closing
-            </span>
-            <span className="lp-sold-proof-dot" aria-hidden>·</span>
             <span className="lp-sold-proof">
               <Icon name="home" size={12} color="var(--fg-muted)" stroke={2} />
               8,000+ homes prepped
@@ -97,6 +107,11 @@ function ExpHero({
               <Icon name="shield" size={12} color="var(--fg-muted)" stroke={2} />
               1-year warranty
             </span>
+            <span className="lp-sold-proof-dot" aria-hidden>·</span>
+            <span className="lp-sold-proof">
+              <Icon name="check" size={12} color="var(--fg-muted)" stroke={2.5} />
+              Licensed &amp; insured
+            </span>
           </div>
         </div>
         <div className="lp-hero-form-col">
@@ -105,10 +120,11 @@ function ExpHero({
             crmMarketName={crmMarketName}
             variant={variant}
             ctaCopy={ctaCopy}
+            prefillName={prefillName}
+            prefillEmail={prefillEmail}
             referralSourceId={EXP_PARTNER.referralSourceId}
             source={`exp-realty-${market.slug || "unknown"}`}
             showZip
-            showAddress
           />
         </div>
       </div>
@@ -116,73 +132,17 @@ function ExpHero({
   );
 }
 
-// ── Trusted Provider strip (sage) ──
-function ExpTrustStrip() {
-  return (
-    <aside className="exp-trust-strip">
-      <div className="lp-shell exp-trust-strip-inner">
-        <p className="exp-trust-strip-text">
-          <strong>Curbio is a Trusted Provider in the eXp Solutions program</strong>
-          {" "}— vetted and recommended to eXp agents, so you know it&apos;s a
-          sanctioned eXp Solution, not a cold vendor.
-        </p>
-      </div>
-    </aside>
-  );
-}
-
-// ── How it works ──
-const EXP_STEPS = [
-  {
-    icon: "clipboardCheck",
-    title: "We walk the property.",
-    body: "A local Curbio manager builds a full prep plan — what to fix, what to skip, and what moves the needle.",
-  },
-  {
-    icon: "wrench",
-    title: "We do the work.",
-    body: "Paint, repairs, staging — managed end to end. One team, one timeline, with full-service project management.",
-  },
-  {
-    icon: "dollar",
-    title: "Seller pays at close.",
-    body: "Nothing due upfront. Qualified sellers pay from proceeds when the home sells — subject to credit approval.",
-  },
-];
-
-function ExpHowItWorks() {
-  return (
-    <section className="lp-how" id="how">
-      <div className="lp-shell">
-        <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <Eyebrow style={{ color: "var(--fg-muted)", marginBottom: 10 }}>
-            From start to finish
-          </Eyebrow>
-          <h2 className="exp-section-h" style={{ margin: 0 }}>How it works</h2>
-        </div>
-        <ol className="lp-how-steps">
-          {EXP_STEPS.map((s) => (
-            <li className="lp-how-step" key={s.title}>
-              <span className="lp-icon-disc">
-                <Icon name={s.icon} size={22} color="var(--navy)" stroke={1.75} />
-              </span>
-              <h3 className="lp-how-step-h">{s.title}</h3>
-              <p className="lp-how-step-b">{s.body}</p>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </section>
-  );
-}
-
-// ── Sold proof strip — "Prepped by Curbio. Sold by eXp agents." ──
+// ── Sold proof strip — same layout, eXp eyebrow ──
 function ExpSoldProofStrip({ market }: { market: CampaignMarket }) {
   return (
     <section className="lp-sold" id="sold">
       <div className="lp-shell">
         <Eyebrow style={{ textAlign: "center", color: "var(--fg-muted)" }}>
-          Prepped by Curbio. Sold by eXp agents.
+          Prepped by Curbio.{" "}
+          <span style={{ color: "var(--amber)" }}>
+            Sold by eXp agents
+          </span>
+          {" "}in {market.name}.
         </Eyebrow>
         <ul className="lp-sold-row">
           {market.sold.map((p) => (
@@ -208,43 +168,43 @@ function ExpSoldProofStrip({ market }: { market: CampaignMarket }) {
             </li>
           ))}
         </ul>
-        {/* Testimonial */}
-        <blockquote className="exp-testimonial">
-          <p className="exp-testimonial-quote">
-            &ldquo;Our Curbio project manager was awesome to work with. Great
-            communication, timely delivery of the work, and prompt to come back
-            for minor touch-ups upon request.&rdquo;
-          </p>
-          <footer className="exp-testimonial-byline">
-            <Icon name="check" size={13} color="var(--teal)" stroke={2.5} />
-            <strong>Chris McNamara</strong>
-            <span className="exp-testimonial-role">eXp Realty agent</span>
-          </footer>
-        </blockquote>
       </div>
     </section>
   );
 }
 
-// ── Shell — composes all /exp sections ──
+// ── Shell ──
 export default function ExpShell({
   market,
   crmMarketName = null,
+  neutral = false,
   variant,
   ctaCopy,
+  prefillName,
+  prefillEmail,
 }: {
   market: CampaignMarket;
   crmMarketName?: string | null;
+  neutral?: boolean;
   variant: CtaVariant;
   ctaCopy: string;
+  prefillName?: string;
+  prefillEmail?: string;
 }) {
   return (
     <>
       <ExpHeader />
       <main>
-        <ExpHero market={market} crmMarketName={crmMarketName} variant={variant} ctaCopy={ctaCopy} />
-        <ExpTrustStrip />
-        <ExpHowItWorks />
+        <ExpHero
+          market={market}
+          crmMarketName={crmMarketName}
+          neutral={neutral}
+          variant={variant}
+          ctaCopy={ctaCopy}
+          prefillName={prefillName}
+          prefillEmail={prefillEmail}
+        />
+        <HowItWorks />
         <ExpSoldProofStrip market={market} />
         <Closer ctaCopy={ctaCopy} />
       </main>

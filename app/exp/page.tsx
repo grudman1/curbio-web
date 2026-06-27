@@ -80,6 +80,7 @@ async function ExpMarketResolver({ searchParams }: { searchParams: SearchParams 
     <ExpShell
       market={market}
       crmMarketName={crmMarketName ?? null}
+      neutral={!resolved}
       variant={variant}
       ctaCopy={ctaCopy}
     />

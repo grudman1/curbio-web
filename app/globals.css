@@ -351,34 +351,19 @@ em { font-style: normal; }
 
 /* ── /exp partner page ───────────────────────────────────────────────────── */
 
-/* Header: co-brand logos + amber CTA */
+/* Header: Curbio logo + divider + eXp Solutions logo (left) + badge (right) */
 .exp-header-logos { display: flex; align-items: center; gap: 16px; }
-.exp-solutions-logo { height: 22px; width: auto; display: block; }
-.exp-header-divider { display: block; width: 1px; height: 24px; background: var(--navy-85); flex-shrink: 0; }
+.exp-solutions-logo { height: 20px; width: auto; display: block; }
+.exp-header-divider { display: block; width: 1px; height: 22px; background: var(--navy-85); flex-shrink: 0; }
+.exp-badge-header { height: 44px; width: auto; display: block; }
 
-/* Hero: badge eyebrow */
-.exp-badge-eyebrow { display: inline-flex; align-items: center; gap: 11px; margin-bottom: 22px; }
-.exp-badge-img { height: 36px; width: auto; display: block; }
-.exp-badge-label { font-family: var(--font-sans); font-weight: 700; font-size: 12px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--navy); }
-
-/* Trusted Provider strip (sage background) */
-.exp-trust-strip { background: var(--sage); border-top: 1px solid var(--sage-110); border-bottom: 1px solid var(--sage-110); padding: 18px 0; }
-.exp-trust-strip-inner { display: flex; justify-content: center; }
-.exp-trust-strip-text { font-size: 14.5px; line-height: 1.55; color: var(--navy); margin: 0; text-align: center; max-width: 640px; }
-
-/* How it works: section heading */
-.exp-section-h { font-family: var(--font-serif); font-weight: 600; font-size: clamp(22px, 2.4vw, 32px); color: var(--navy); text-align: center; margin: 0 0 40px; }
-
-/* Sold / testimonial */
-.exp-testimonial { background: var(--white); border: 1px solid var(--stone); border-radius: 12px; box-shadow: var(--shadow-md); max-width: 680px; margin: 44px auto 0; padding: 32px 36px; }
-.exp-testimonial-quote { font-size: 17px; line-height: 1.6; color: var(--navy); margin: 0 0 20px; font-style: italic; }
-.exp-testimonial-byline { display: flex; align-items: center; gap: 10px; }
-.exp-testimonial-byline strong { font-family: var(--font-sans); font-size: 14px; color: var(--navy); }
-.exp-testimonial-role { font-size: 13px; color: var(--fg-muted); }
+/* Hero: badge + market name eyebrow */
+.exp-badge-eyebrow { display: inline-flex; align-items: center; gap: 11px; margin-bottom: 18px; }
+.exp-badge-img { height: 32px; width: auto; display: block; }
+.exp-badge-label { font-family: var(--font-sans); font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--fg-muted); }
 
 @media (max-width: 640px) {
-  .exp-solutions-logo { height: 18px; }
-  .exp-badge-img { height: 28px; }
-  .exp-testimonial { padding: 24px 20px; }
-  .exp-testimonial-quote { font-size: 15px; }
+  .exp-solutions-logo { height: 16px; }
+  .exp-badge-header { height: 36px; }
+  .exp-badge-img { height: 26px; }
 }
