@@ -32,8 +32,12 @@ function ExpPageSkeleton() {
       <header className="lp-header">
         <div className="lp-shell lp-header-inner">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo/curbio-white.svg" alt="Curbio" className="lp-header-logo" width={100} height={26} />
-          <div style={{ height: 48, width: 140, background: "var(--stone)", borderRadius: 6 }} />
+          <div className="exp-header-logos">
+            <img src="/logo/curbio-white.svg" alt="Curbio" className="lp-header-logo" width={100} height={26} />
+            <div style={{ width: 1, height: 22, background: "var(--navy-85)" }} />
+            <div style={{ height: 20, width: 120, background: "var(--navy-85)", borderRadius: 3 }} />
+          </div>
+          <div style={{ height: 32, width: 140, background: "var(--navy-85)", borderRadius: 999 }} />
         </div>
       </header>
       <main>
@@ -81,6 +85,7 @@ async function ExpMarketResolver({ searchParams }: { searchParams: SearchParams 
       market={market}
       crmMarketName={crmMarketName ?? null}
       neutral={!resolved}
+      showPicker={source === "geo-neutral" || source === "neutral"}
       variant={variant}
       ctaCopy={ctaCopy}
     />

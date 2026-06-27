@@ -57,6 +57,10 @@ export function Hero({
   ctaCopy,
   prefillName,
   prefillEmail,
+  eyebrowContent,
+  referralSourceId,
+  source,
+  showZip = false,
 }: {
   market: CampaignMarket;
   crmMarketName?: string | null;
@@ -65,14 +69,24 @@ export function Hero({
   ctaCopy: string;
   prefillName?: string;
   prefillEmail?: string;
+  /** Replaces the default "[Market] agents" eyebrow. Pass any React node. */
+  eyebrowContent?: React.ReactNode;
+  /** Forwarded to FormCard — override referralSourceId for partner pages. */
+  referralSourceId?: string;
+  /** Forwarded to FormCard — override lead source string for partner pages. */
+  source?: string;
+  /** Forwarded to FormCard — show a ZIP field. */
+  showZip?: boolean;
 }) {
   return (
     <section className="lp-hero" id="hero">
       <div className="lp-shell lp-hero-grid">
         <div className="lp-hero-copy">
-          <Eyebrow style={{ marginBottom: 18, color: "var(--fg-muted)" }}>
-            {neutral ? "For listing agents" : `${market.name} agents`}
-          </Eyebrow>
+          {eyebrowContent ?? (
+            <Eyebrow style={{ marginBottom: 18, color: "var(--fg-muted)" }}>
+              {neutral ? "For listing agents" : `${market.name} agents`}
+            </Eyebrow>
+          )}
           <h1 className="lp-hero-h1">
             We do the <em>prep.</em>
             <br />
@@ -109,6 +123,9 @@ export function Hero({
             ctaCopy={ctaCopy}
             prefillName={prefillName}
             prefillEmail={prefillEmail}
+            referralSourceId={referralSourceId}
+            source={source}
+            showZip={showZip}
           />
         </div>
       </div>
@@ -117,12 +134,20 @@ export function Hero({
 }
 
 // ── b. Sold-proof strip ──
-export function SoldProofStrip({ market }: { market: CampaignMarket }) {
+export function SoldProofStrip({
+  market,
+  soldByLine,
+}: {
+  market: CampaignMarket;
+  /** Replaces "Sold by {market.name} REALTORS®". Pass any React node. */
+  soldByLine?: React.ReactNode;
+}) {
   return (
     <section className="lp-sold" id="sold">
       <div className="lp-shell">
         <Eyebrow style={{ textAlign: "center", color: "var(--fg-muted)" }}>
-          Prepped by Curbio. Sold by {market.name} REALTORS&reg;
+          Prepped by Curbio.{" "}
+          {soldByLine ?? <>Sold by {market.name} REALTORS&reg;</>}
         </Eyebrow>
         <ul className="lp-sold-row">
           {market.sold.map((p) => (
