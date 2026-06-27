@@ -15,7 +15,9 @@ export type Partner = {
 export const EXP_PARTNER: Partner = {
   id: "exp",
   name: "eXp Realty",
-  logoPath: "/partners/exp-logo.svg",
-  badgePath: "/partners/exp-badge.svg",
+  /** eXp Solutions logo (white) — shown in co-branded header beside Curbio logo */
+  logoPath: "/partners/exp-solutions-white.svg",
+  /** eXp Solutions Trusted Provider badge (white) — displayed in hero eyebrow per eXp brand rules */
+  badgePath: "/partners/exp-badge-trusted-white.png",
   referralSourceId: "eXp realty",
 };
