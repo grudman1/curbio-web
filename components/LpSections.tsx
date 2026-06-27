@@ -14,16 +14,20 @@ export function Header({
   market,
   neutral = false,
   initialPickerOpen = false,
+  logoHref = "/",
 }: {
   market: CampaignMarket;
   neutral?: boolean;
   initialPickerOpen?: boolean;
+  /** Where the top-left Curbio logo links. Defaults to "/" (internal). Use an
+   *  absolute URL on partner pages where the logo should return to curbio.com. */
+  logoHref?: string;
 }) {
   const pillLabel = neutral ? "Choose your market" : market.name;
   return (
     <header className="lp-header">
       <div className="lp-shell lp-header-inner">
-        <a href="/" aria-label="Curbio — return to home">
+        <a href={logoHref} aria-label="Curbio — return to home">
           <Image
             src="/logo/curbio-navy.svg"
             alt="Curbio"

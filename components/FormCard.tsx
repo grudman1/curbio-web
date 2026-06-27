@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { captureAttribution, gaEvent, getGaClientId, getStoredUtms } from "@/lib/analytics";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 import type { CtaVariant } from "@/lib/flags";
+
+const VALID_CHANNELS = new Set(["email", "partnership", "organic", "paid", "social", "referral", "direct"]);
 
 export function FormCard({
   market,
@@ -14,6 +16,10 @@ export function FormCard({
   ctaCopy,
   prefillName = "",
   prefillEmail = "",
+  referralSourceId,
+  source,
+  showZip = false,
+  showAddress = false,
 }: {
   market: CampaignMarket;
   crmMarketName?: string | null;
@@ -21,23 +27,40 @@ export function FormCard({
   ctaCopy: string;
   prefillName?: string;
   prefillEmail?: string;
+  /** Default referralSourceId for this page. Overridden by ?referral_source_id= URL param if present. */
+  referralSourceId?: string;
+  /** Override the lead source string. Defaults to "email-campaign-<market-slug>". */
+  source?: string;
+  /** Show a ZIP code field labeled "Property or Agent ZIP Code." */
+  showZip?: boolean;
+  /** Show an optional address field labeled "Property Street Address." */
+  showAddress?: boolean;
 }) {
-  const [f, setF] = useState({ name: prefillName, email: prefillEmail, phone: "" });
+  const [f, setF] = useState({ name: prefillName, email: prefillEmail, phone: "", zip: "", address: "" });
   const [nameEdited, setNameEdited] = useState(false);
   const [emailEdited, setEmailEdited] = useState(false);
   const [errs, setErrs] = useState<{ name?: string; email?: string; server?: string }>({});
   const [pending, setPending] = useState(false);
   const router = useRouter();
 
+  // Holds the resolved referral source ID: URL param wins over prop default.
+  // Initialized from prop so /exp attribution survives URL strips on returning visitors.
+  const refIdRef = useRef<string | undefined>(referralSourceId);
+
   useEffect(() => {
     // ORDER IS LOAD-BEARING: captureAttribution() reads utm_* from the live
     // URL, persists them, and queues the GA4 page_view — all synchronously —
     // BEFORE the strip below wipes the query string for the clean URL.
     captureAttribution();
+    // Capture referral_source_id now, before the strip erases it.
+    // URL param takes precedence over the prop default (e.g. ?referral_source_id=eXp%20realty).
+    const params = new URLSearchParams(window.location.search);
+    const urlRefId = params.get("referral_source_id");
+    if (urlRefId) refIdRef.current = urlRefId;
     // Keep ?market= so a browser refresh re-resolves the correct market via the
     // server (geo would otherwise win on reload). Strip everything else: PII
     // (n, e), utm_* already captured above, and any other params.
-    const marketSlug = new URLSearchParams(window.location.search).get("market");
+    const marketSlug = params.get("market");
     const cleanUrl = marketSlug
       ? `${window.location.pathname}?market=${encodeURIComponent(marketSlug)}`
       : window.location.pathname;
@@ -45,7 +68,7 @@ export function FormCard({
   }, []);
 
   const onChange = useCallback(
-    (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       setF((s) => ({ ...s, [k]: e.target.value }));
       setErrs((p) => ({ ...p, [k]: undefined }));
       if (k === "name") setNameEdited(true);
@@ -76,6 +99,9 @@ export function FormCard({
 
       const full = f.name.trim();
       const utms = getStoredUtms();
+      const derivedChannel = utms.utm_source && VALID_CHANNELS.has(utms.utm_source.toLowerCase())
+        ? utms.utm_source.toLowerCase()
+        : undefined;
 
       try {
         // 3. Resolve GA client ID and POST in parallel so neither blocks the other
@@ -89,12 +115,15 @@ export function FormCard({
               firstName: full.split(/\s+/)[0],
               email: f.email.trim(),
               phone: f.phone.trim() || undefined,
-              source: `email-campaign-${market.slug || "unknown"}`,
+              source: source ?? `email-campaign-${market.slug || "unknown"}`,
               market: market.slug || null,
               crmMarketName: crmMarketName ?? null,
               variant,
               submittedAt: new Date().toISOString(),
               gaClientId: null, // resolved concurrently; used below for analytics only
+              referralSourceId: refIdRef.current,
+              ...(f.zip && { zip: f.zip.replace(/\D/g, "").slice(0, 5) }),
+              ...(f.address.trim() && { address: f.address.trim() }),
               ...utms,
             }),
           }),
@@ -106,7 +135,13 @@ export function FormCard({
         // 4. Analytics off the critical path — yield to the browser first
         setTimeout(() => {
           track("lead_submit", { variant });
-          gaEvent("lead_submit", { market: market.slug || "unknown", variant, ga_client_id: gaClientId ?? undefined });
+          gaEvent("lead_submit", {
+            market: market.slug || "unknown",
+            variant,
+            ga_client_id: gaClientId ?? undefined,
+            channel: derivedChannel,
+            referral_source_id: refIdRef.current,
+          });
         }, 0);
 
         // 5. Navigate immediately after successful POST
@@ -174,6 +209,40 @@ export function FormCard({
           autoComplete="tel"
         />
       </div>
+
+      {showZip && (
+        <div className="lp-fc-field">
+          <label className="lp-fc-label" htmlFor="fc-zip">Property or Agent ZIP Code</label>
+          <input
+            id="fc-zip"
+            className="lp-input"
+            type="text"
+            inputMode="numeric"
+            value={f.zip}
+            onChange={onChange("zip")}
+            placeholder="ZIP code"
+            autoComplete="postal-code"
+            maxLength={10}
+          />
+        </div>
+      )}
+
+      {showAddress && (
+        <div className="lp-fc-field">
+          <label className="lp-fc-label" htmlFor="fc-address">
+            Property Street Address <span className="lp-fc-optional">(optional)</span>
+          </label>
+          <input
+            id="fc-address"
+            className="lp-input"
+            type="text"
+            value={f.address}
+            onChange={onChange("address")}
+            placeholder="123 Main St"
+            autoComplete="street-address"
+          />
+        </div>
+      )}
 
       {errs.server && <p className="lp-fc-server" role="alert">{errs.server}</p>}
 

@@ -8,6 +8,7 @@ type LeadBody = {
   firstName?: string;
   phone?: string;
   zip?: string;
+  address?: string;
   email?: string;
   description?: string;
   market?: string | null;
@@ -27,6 +28,8 @@ type LeadBody = {
   utm_campaign?: string;
   utm_content?: string;
   utm_term?: string;
+  // Partner attribution. Passed through verbatim — never normalised (e.g. "eXp realty" space + casing are load-bearing for CRM comparability).
+  referralSourceId?: string;
 };
 
 const MAGNET_FILES: Record<string, string> = {
@@ -57,6 +60,14 @@ const SLUG_TO_CRM_MARKET: Record<string, string> = {
 function toCrmMarket(slug: string | null | undefined): string | null {
   if (!slug) return null;
   return SLUG_TO_CRM_MARKET[slug] ?? slug;
+}
+
+const VALID_CHANNELS = new Set(["email", "partnership", "organic", "paid", "social", "referral", "direct"]);
+
+function deriveChannel(utmSource: string | null | undefined): string | null {
+  if (!utmSource) return null;
+  const lower = utmSource.toLowerCase();
+  return VALID_CHANNELS.has(lower) ? lower : null;
 }
 
 export async function POST(req: Request) {
@@ -92,6 +103,7 @@ export async function POST(req: Request) {
     phone: body.phone?.trim() ?? "",
     email: body.email!.trim(),
     zip: body.zip ? body.zip.replace(/\D/g, "").slice(0, 5) : "",
+    address: body.address?.trim() ?? "",
     description: body.description?.trim() ?? "",
     market: body.crmMarketName ?? toCrmMarket(body.market),
     source: body.source ?? "quote",
@@ -106,7 +118,10 @@ export async function POST(req: Request) {
     utm_campaign: body.utm_campaign ?? null,
     utm_content: body.utm_content ?? null,
     utm_term: body.utm_term ?? null,
-    referralSourceId: "landing page",
+    // Passed through verbatim — never normalised (space + casing are load-bearing for CRM comparability).
+    referralSourceId: body.referralSourceId ?? "landing page",
+    // Derived from utm_source; validated against the closed channel list.
+    channel: deriveChannel(body.utm_source),
   };
 
   // ── 1. Email notification (always fires first, never blocks the response) ──
@@ -160,8 +175,13 @@ export async function POST(req: Request) {
         email: payload.email,
         phone: payload.phone,
         zip: payload.zip,
+        address: payload.address,
         market: payload.market,
         referralSourceId: payload.referralSourceId,
+        channel: payload.channel,
+        utmSource: payload.utm_source,
+        utmMedium: payload.utm_medium,
+        utmCampaign: payload.utm_campaign,
       };
       console.log("[lead] posting to CRM:", webhook, JSON.stringify(crmPayload));
       const res = await fetch(webhook, {
