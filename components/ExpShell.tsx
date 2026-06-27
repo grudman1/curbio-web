@@ -51,25 +51,23 @@ export function ExpHeader({
   );
 }
 
-// ── Hero co-brand lockup: prominent badge + "Trusted Provider" framing ──
-function ExpCoBrandLockup({ market, neutral }: { market: CampaignMarket; neutral: boolean }) {
+// ── Hero co-brand mark: seal + single line, no container ──
+function ExpCoBrandMark({ market, neutral }: { market: CampaignMarket; neutral: boolean }) {
   return (
-    <div className="exp-cobrand-lockup">
+    <div className="exp-cobrand-mark">
       <Image
         src={EXP_PARTNER.badgePathDark!}
         alt="eXp Solutions Trusted Provider"
         width={500}
         height={500}
         unoptimized
-        className="exp-cobrand-badge-lg"
+        className="exp-cobrand-seal"
       />
-      <div className="exp-cobrand-text">
-        <span className="exp-cobrand-overline">An official eXp Solution</span>
-        <span className="exp-cobrand-title">Trusted Provider</span>
-        <span className="exp-cobrand-market">
-          {neutral ? "For eXp Realty agents" : `${market.name} eXp Realty`}
-        </span>
-      </div>
+      <span className="exp-cobrand-line">
+        {neutral ? "For eXp Realty agents" : `${market.name} eXp Realty`}
+        <span className="exp-cobrand-dot" aria-hidden> · </span>
+        Trusted Provider
+      </span>
     </div>
   );
 }
@@ -106,7 +104,7 @@ export default function ExpShell({
           ctaCopy={ctaCopy}
           prefillName={prefillName}
           prefillEmail={prefillEmail}
-          eyebrowContent={<ExpCoBrandLockup market={market} neutral={neutral} />}
+          eyebrowContent={<ExpCoBrandMark market={market} neutral={neutral} />}
           referralSourceId={EXP_PARTNER.referralSourceId}
           source={`exp-realty-${market.slug || "unknown"}`}
         />
