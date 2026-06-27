@@ -141,7 +141,9 @@ export async function resolveMarket(searchParams: {
     if (nearSlug) {
       const zip = canonicalZipForSlug(nearSlug);
       const nearLead = zip ? await getOperatorLead(zip) : null;
-      const market = nearLead ? buildResolvedMarket(nearLead) : null;
+      const market = nearLead
+        ? buildResolvedMarket(nearLead)
+        : buildResolvedMarketFromSlug(nearSlug);
       if (market) return { market, source: "geo", crmMarketName: nearLead?.marketName ?? null };
     }
   } catch {
