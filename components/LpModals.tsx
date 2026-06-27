@@ -14,20 +14,26 @@ export function ZipModal({
   open,
   onClose,
   current,
+  basePath = "/",
 }: {
   open: boolean;
   onClose: () => void;
   /** Only the slug is needed to highlight the active card. Accepts any object
    *  with a `slug` string (ResolvedMarket, CampaignMarket, or a plain object). */
   current: { slug: string } | null;
+  /** Base path for market navigation. Use "/exp" on the eXp page so the picker
+   *  stays within /exp when switching markets. Defaults to "/". */
+  basePath?: string;
 }) {
   const router = useRouter();
   const [zip, setZip] = useState("");
   const [err, setErr] = useState("");
 
+  const base = basePath.replace(/\/$/, ""); // strip trailing slash
+
   function go(slug: string) {
     onClose();
-    startTransition(() => { router.push(`/?market=${slug}`); });
+    startTransition(() => { router.push(`${base}/?market=${slug}`); });
   }
 
   function submitZip() {
@@ -38,7 +44,7 @@ export function ZipModal({
     }
     setErr("");
     onClose();
-    startTransition(() => { router.push(`/?zip=${digits}`); });
+    startTransition(() => { router.push(`${base}/?zip=${digits}`); });
   }
 
   return (
@@ -66,7 +72,7 @@ export function ZipModal({
           return (
             <a
               key={m.slug}
-              href={`/?market=${m.slug}`}
+              href={`${base}/?market=${m.slug}`}
               className={"lp-mkt-card" + (active ? " active" : "")}
               onClick={(e) => {
                 e.preventDefault();
@@ -128,7 +134,7 @@ export function ZipModal({
       <div style={{ marginTop: 16, textAlign: "center" }}>
         <span style={{ fontSize: 13, color: "var(--fg-subtle)" }}>Outside these areas?</span>{" "}
         <button
-          onClick={() => { onClose(); router.push("/?status=waitlist"); }}
+          onClick={() => { onClose(); router.push(`${base}/?status=waitlist`); }}
           style={{
             fontFamily: "var(--font-sans)",
             fontSize: 13,

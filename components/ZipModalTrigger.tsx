@@ -8,10 +8,12 @@ export function ZipModalTrigger({
   label,
   marketSlug,
   initialOpen = false,
+  basePath = "/",
 }: {
   label: string;
   marketSlug: string | null;
   initialOpen?: boolean;
+  basePath?: string;
 }) {
   const [open, setOpen] = useState(initialOpen);
   return (
@@ -29,6 +31,7 @@ export function ZipModalTrigger({
         open={open}
         onClose={() => setOpen(false)}
         current={marketSlug ? { slug: marketSlug } : null}
+        basePath={basePath}
       />
     </>
   );

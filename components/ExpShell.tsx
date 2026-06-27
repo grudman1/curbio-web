@@ -44,6 +44,7 @@ export function ExpHeader({
           label={neutral ? "Choose your market" : market.name}
           marketSlug={neutral ? null : market.slug}
           initialOpen={initialPickerOpen}
+          basePath="/exp"
         />
       </div>
     </header>
