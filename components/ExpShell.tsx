@@ -65,10 +65,10 @@ function ExpCoBrandMark({ market, neutral }: { market: CampaignMarket; neutral: 
       />
       <div className="exp-cobrand-text">
         <span className="exp-cobrand-serving">
-          {neutral ? "For eXp agents" : `Serving ${market.name}`}
+          {neutral ? "For eXp Realty agents" : `Serving ${market.name} eXp Realty`}
         </span>
         <span className="exp-cobrand-title">
-          eXp Realty<br />Trusted Provider
+          A Trusted Provider for<br />eXp Realty agents
         </span>
       </div>
     </div>

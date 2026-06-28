@@ -157,7 +157,7 @@ em { font-style: normal; }
    .lp-shell's horizontal padding (same element), leaving the header flush
    against the screen edge below the 1200px max-width */
 .lp-header-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 14px; padding-bottom: 14px; }
-.lp-header-logo { height: 26px; width: auto; display: block; }
+.lp-header-logo { height: 30px; width: auto; display: block; }
 @media (max-width: 600px) { .lp-header-inner { padding-top: 12px; padding-bottom: 12px; } .lp-header-logo { height: 23px; } }
 
 /* ---------- market picker button (header tag) ---------- */
@@ -353,37 +353,32 @@ em { font-style: normal; }
 
 /* Header: Curbio logo + divider + eXp Solutions logo (left), market picker (right) */
 .exp-header-logos { display: flex; align-items: center; gap: 16px; }
-.exp-solutions-logo { height: 20px; width: auto; display: block; }
+.exp-solutions-logo { height: 24px; width: auto; display: block; }
 .exp-header-divider { display: block; width: 1px; height: 22px; background: var(--navy-85); flex-shrink: 0; }
 
 /* Hero: co-brand mark — large seal + text lockup */
-.exp-cobrand-mark { display: inline-flex; align-items: center; gap: 18px; margin-bottom: 24px; }
-.exp-cobrand-seal { height: 96px; width: 96px; display: block; flex-shrink: 0; }
-.exp-cobrand-text { display: flex; flex-direction: column; gap: 4px; }
+.exp-cobrand-mark { display: inline-flex; align-items: center; gap: 22px; margin-bottom: 28px; }
+.exp-cobrand-seal { height: 130px; width: 130px; display: block; flex-shrink: 0; }
+.exp-cobrand-text { display: flex; flex-direction: column; gap: 6px; }
 .exp-cobrand-serving {
-  display: inline-block;
   font-family: var(--font-sans);
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--white);
-  background: var(--amber);
-  padding: 2px 7px;
-  border-radius: 3px;
-  line-height: 1.6;
-  align-self: flex-start;
+  color: var(--amber);
+  line-height: 1.4;
 }
 .exp-cobrand-title {
   font-family: var(--font-serif);
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 600;
   color: var(--navy);
-  line-height: 1.2;
+  line-height: 1.18;
 }
 
 @media (max-width: 640px) {
   .exp-solutions-logo { height: 16px; }
-  .exp-cobrand-seal { height: 72px; width: 72px; }
-  .exp-cobrand-title { font-size: 18px; }
+  .exp-cobrand-seal { height: 90px; width: 90px; }
+  .exp-cobrand-title { font-size: 22px; }
 }
