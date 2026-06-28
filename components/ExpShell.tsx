@@ -51,7 +51,7 @@ export function ExpHeader({
   );
 }
 
-// ── Hero co-brand mark: seal + single line, no container ──
+// ── Hero co-brand mark: large seal + text lockup ──
 function ExpCoBrandMark({ market, neutral }: { market: CampaignMarket; neutral: boolean }) {
   return (
     <div className="exp-cobrand-mark">
@@ -63,11 +63,14 @@ function ExpCoBrandMark({ market, neutral }: { market: CampaignMarket; neutral: 
         unoptimized
         className="exp-cobrand-seal"
       />
-      <span className="exp-cobrand-line">
-        {neutral ? "For eXp Realty agents" : `${market.name} eXp Realty`}
-        <span className="exp-cobrand-dot" aria-hidden> · </span>
-        Trusted Provider
-      </span>
+      <div className="exp-cobrand-text">
+        <span className="exp-cobrand-serving">
+          {neutral ? "For eXp agents" : `Serving ${market.name}`}
+        </span>
+        <span className="exp-cobrand-title">
+          eXp Realty<br />Trusted Provider
+        </span>
+      </div>
     </div>
   );
 }
