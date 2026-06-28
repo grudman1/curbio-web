@@ -58,6 +58,7 @@ export function Hero({
   prefillName,
   prefillEmail,
   eyebrowContent,
+  heroSub,
   referralSourceId,
   source,
   showZip = false,
@@ -71,6 +72,8 @@ export function Hero({
   prefillEmail?: string;
   /** Replaces the default "[Market] agents" eyebrow. Pass any React node. */
   eyebrowContent?: React.ReactNode;
+  /** Replaces the default hero subheader paragraph. */
+  heroSub?: React.ReactNode;
   /** Forwarded to FormCard — override referralSourceId for partner pages. */
   referralSourceId?: string;
   /** Forwarded to FormCard — override lead source string for partner pages. */
@@ -96,7 +99,7 @@ export function Hero({
           </h1>
           <AmberRule width={48} style={{ margin: "22px 0" }} />
           <p className="lp-hero-sub">
-            Move-in ready sells. Your seller pays nothing until it closes.
+            {heroSub ?? "Move-in ready sells. Your seller pays nothing until it closes."}
           </p>
           <div className="lp-hero-trust">
             <span className="lp-sold-proof">
