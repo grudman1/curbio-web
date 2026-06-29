@@ -124,7 +124,14 @@ export default function ConfirmShell({
       if (data?.event === "calendly.page_height") {
         // payload.height arrives as "1090px" (or a number) — parse defensively.
         const h = parseInt(String(data.payload?.height ?? ""), 10);
-        if (Number.isFinite(h) && h > 0) setCalHeight(h);
+        if (Number.isFinite(h) && h > 0) {
+          // On desktop, cap the iframe so the "No thanks" button stays on-screen.
+          // Overhead = header (64) + confirm padding (32) + eyebrow (28) + button+gap (70) + buffer (30).
+          // On mobile the page scrolls naturally so no cap is needed.
+          const isDesktop = window.innerWidth > 860;
+          const max = isDesktop ? window.innerHeight - 224 : Infinity;
+          setCalHeight(Math.min(h, max));
+        }
       }
       if (data?.event === "calendly.event_scheduled") {
         gaEvent("booking_complete", { market: market.slug || "unknown" });
@@ -239,7 +246,7 @@ export default function ConfirmShell({
                       frameBorder="0"
                       title={`Schedule a call with ${hsm?.hsm.firstName ?? "your local manager"}`}
                       {...{ fetchpriority: "high" }}
-                      style={{ border: 0, display: "block", borderRadius: 8 }}
+                      style={{ border: 0, display: "block", borderRadius: 8, overflowY: "auto" }}
                       onLoad={() => setIframeLoaded(true)}
                     />
                   </div>
