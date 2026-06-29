@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Header } from "./LpSections";
+import { ExpHeader } from "./ExpShell";
 import { Icon } from "./LpKit";
 import { gaEvent } from "@/lib/analytics";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
@@ -67,6 +68,7 @@ export default function ConfirmShell({
   hsm,
   prefill = {},
   embedDomain: embedDomainProp = "",
+  partner,
 }: {
   market: CampaignMarket;
   hsm: ResolvedMarket | null;
@@ -75,6 +77,8 @@ export default function ConfirmShell({
    *  browser starts fetching Calendly before JS hydrates. Falls back to
    *  window.location.host on the client if the prop is missing. */
   embedDomain?: string;
+  /** Partner slug — when "exp", renders the eXp co-brand header instead of plain Curbio. */
+  partner?: string;
 }) {
   // Initialise with the server-provided host so iframeSrc is non-null on first
   // render (SSR). The useEffect is a safety-net for edge cases where the prop
@@ -100,7 +104,7 @@ export default function ConfirmShell({
   // so a fixed height makes everything below the fold unreachable (the
   // "Enter Details" step is far taller than the calendar view). Calendly
   // posts calendly.page_height for exactly this purpose; we track it here.
-  const [calHeight, setCalHeight] = useState(700);
+  const [calHeight, setCalHeight] = useState(550);
 
   // Calendly's inline iframe posts lifecycle messages to the parent:
   //   calendly.page_height    → resize the iframe to fit (handled above)
@@ -144,7 +148,10 @@ export default function ConfirmShell({
 
   return (
     <>
-      <Header market={market} />
+      {partner === "exp"
+        ? <ExpHeader market={market} neutral={false} initialPickerOpen={false} />
+        : <Header market={market} />
+      }
 
       <main className="lp-confirm">
         <div className="lp-shell lp-confirm-grid">

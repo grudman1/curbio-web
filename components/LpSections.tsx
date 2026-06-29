@@ -62,6 +62,7 @@ export function Hero({
   referralSourceId,
   source,
   showZip = false,
+  partnerSlug,
 }: {
   market: CampaignMarket;
   crmMarketName?: string | null;
@@ -80,6 +81,8 @@ export function Hero({
   source?: string;
   /** Forwarded to FormCard — show a ZIP field. */
   showZip?: boolean;
+  /** Forwarded to FormCard — carried to /confirm so partner branding shows there too. */
+  partnerSlug?: string;
 }) {
   return (
     <section className="lp-hero" id="hero">
@@ -129,6 +132,7 @@ export function Hero({
             referralSourceId={referralSourceId}
             source={source}
             showZip={showZip}
+            partnerSlug={partnerSlug}
           />
         </div>
       </div>

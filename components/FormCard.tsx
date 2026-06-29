@@ -20,6 +20,7 @@ export function FormCard({
   source,
   showZip = false,
   showAddress = false,
+  partnerSlug,
 }: {
   market: CampaignMarket;
   crmMarketName?: string | null;
@@ -35,6 +36,8 @@ export function FormCard({
   showZip?: boolean;
   /** Show an optional address field labeled "Property Street Address." */
   showAddress?: boolean;
+  /** Partner slug to carry through to the confirm page (e.g. "exp"). */
+  partnerSlug?: string;
 }) {
   const [f, setF] = useState({ name: prefillName, email: prefillEmail, phone: "", zip: "", address: "" });
   const [nameEdited, setNameEdited] = useState(false);
@@ -150,6 +153,7 @@ export function FormCard({
         qs.set("name", f.name.trim());
         qs.set("email", f.email.trim());
         if (f.phone.trim()) qs.set("phone", f.phone.trim());
+        if (partnerSlug) qs.set("partner", partnerSlug);
         router.push(`/confirm?${qs.toString()}`);
       } catch (err) {
         setErrs({ server: err instanceof Error ? err.message : "Something went wrong." });

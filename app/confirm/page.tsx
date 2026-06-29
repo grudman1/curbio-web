@@ -14,9 +14,10 @@ export default async function ConfirmPage({
     name?: string;
     email?: string;
     phone?: string;
+    partner?: string;
   }>;
 }) {
-  const [{ market: slug, name, email, phone }, requestHeaders] = await Promise.all([
+  const [{ market: slug, name, email, phone, partner }, requestHeaders] = await Promise.all([
     searchParams,
     headers(),
   ]);
@@ -41,6 +42,7 @@ export default async function ConfirmPage({
       hsm={hsm}
       prefill={{ name, email, phone }}
       embedDomain={embedDomain}
+      partner={partner}
     />
   );
 }

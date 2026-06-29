@@ -110,6 +110,7 @@ export default function ExpShell({
           eyebrowContent={<ExpCoBrandMark market={market} neutral={neutral} />}
           heroSub="Walk into every listing appointment with a better offer: the eXp prep solution. Repairs, landscaping, staging — and nothing due from your seller until close."
           referralSourceId={EXP_PARTNER.referralSourceId}
+          partnerSlug={EXP_PARTNER.id}
           source={`exp-realty-${market.slug || "unknown"}`}
         />
         {!neutral && (
