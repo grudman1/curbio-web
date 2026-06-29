@@ -144,8 +144,8 @@ const CARD_ORDER = [
   "washington-dc",
   "dallas",
   "baltimore",
-  "northern-virginia",
   "los-angeles",
+  "northern-virginia",
   "riverside",
 ];
 
