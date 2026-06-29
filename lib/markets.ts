@@ -74,7 +74,7 @@ const BY_MARKET_NAME: Record<string, CatalogEntry> = {
     slug: "washington-dc",
     label: "Washington, DC",
     state: "DC",
-    region: "DC Metro · Northern MD",
+    region: "All DC Areas",
     canonicalZip: "20001",
     cities: ["Washington", "Georgetown", "Capitol Hill", "Navy Yard"],
   },
