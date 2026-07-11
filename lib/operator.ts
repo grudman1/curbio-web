@@ -34,8 +34,12 @@ export async function getOperatorLead(
   const code = (zip ?? "").replace(/\D/g, "").slice(0, 5);
   if (code.length !== 5) return null;
 
+  // 800ms budget: a slow third-party API must never cost more than this on
+  // any path that can face a visitor. Every caller has an acceptable static
+  // fallback (buildResolvedMarketFromSlug / neutral), and the 120s data cache
+  // means most calls never leave the data cache anyway.
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 2500);
+  const timeout = setTimeout(() => controller.abort(), 800);
 
   try {
     const res = await fetch(`${ENDPOINT}?code=${code}`, {
