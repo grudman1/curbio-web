@@ -70,11 +70,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* GA4 loader only — gtag init/config happens in lib/analytics.ts so
             the manual page_view (with explicit UTM params, captured before the
             URL strip) is always queued ahead of any event. send_page_view is
-            disabled there. */}
+            disabled there. lazyOnload keeps it off the paint path entirely:
+            the dataLayer queue is drained whenever gtag.js arrives, so
+            attribution is timing-independent by design. */}
         {IS_PROD && GA_ID && (
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-            strategy="afterInteractive"
+            strategy="lazyOnload"
           />
         )}
         {/* Microsoft Clarity — default input masking stays ON (form collects
