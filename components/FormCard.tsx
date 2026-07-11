@@ -40,6 +40,9 @@ export function FormCard({
   partnerSlug?: string;
 }) {
   const [f, setF] = useState({ name: prefillName, email: prefillEmail, phone: "", zip: "", address: "" });
+  // Which fields were prefilled (via props, or via ?n=/?e= read on mount) —
+  // drives the amber "prefilled" border until the visitor edits the field.
+  const [prefilled, setPrefilled] = useState({ name: !!prefillName, email: !!prefillEmail });
   const [nameEdited, setNameEdited] = useState(false);
   const [emailEdited, setEmailEdited] = useState(false);
   const [errs, setErrs] = useState<{ name?: string; email?: string; server?: string }>({});
@@ -60,6 +63,19 @@ export function FormCard({
     const params = new URLSearchParams(window.location.search);
     const urlRefId = params.get("referral_source_id");
     if (urlRefId) refIdRef.current = urlRefId;
+    // Prefill (?n= / ?e=) is read client-side, before the strip below — the
+    // page is prerendered (one HTML for all visitors), so the server can no
+    // longer inject per-visitor values. Never overwrite anything already set.
+    const urlName = (params.get("n") ?? "").trim();
+    const urlEmail = (params.get("e") ?? "").trim();
+    if (urlName || urlEmail) {
+      setF((s) => ({
+        ...s,
+        name: s.name || urlName,
+        email: s.email || urlEmail,
+      }));
+      setPrefilled((p) => ({ name: p.name || !!urlName, email: p.email || !!urlEmail }));
+    }
     // Keep ?market= so a browser refresh re-resolves the correct market via the
     // server (geo would otherwise win on reload). Strip everything else: PII
     // (n, e), utm_* already captured above, and any other params.
@@ -170,7 +186,7 @@ export function FormCard({
         <label className="lp-fc-label" htmlFor="fc-name">Name</label>
         <input
           id="fc-name"
-          className={"lp-input" + (errs.name ? " lp-input-err" : prefillName && !nameEdited ? " lp-input-prefilled" : "")}
+          className={"lp-input" + (errs.name ? " lp-input-err" : prefilled.name && !nameEdited ? " lp-input-prefilled" : "")}
           type="text"
           value={f.name}
           onChange={onChange("name")}
@@ -186,7 +202,7 @@ export function FormCard({
         <label className="lp-fc-label" htmlFor="fc-email">Email</label>
         <input
           id="fc-email"
-          className={"lp-input" + (errs.email ? " lp-input-err" : prefillEmail && !emailEdited ? " lp-input-prefilled" : "")}
+          className={"lp-input" + (errs.email ? " lp-input-err" : prefilled.email && !emailEdited ? " lp-input-prefilled" : "")}
           type="email"
           value={f.email}
           onChange={onChange("email")}

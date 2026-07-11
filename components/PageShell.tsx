@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import {
   Header,
   Hero,
@@ -5,30 +8,32 @@ import {
   HowItWorks,
   Closer,
 } from "./LpSections";
-import type { CtaVariant } from "@/lib/flags";
+import { CTA_COPY, readVariantFromCookie, type CtaVariant } from "@/lib/ctaVariant";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 
 export default function PageShell({
   market,
   crmMarketName = null,
-  variant,
-  ctaCopy,
   showPicker = false,
   neutral = false,
-  prefillName = "",
-  prefillEmail = "",
 }: {
   market: CampaignMarket;
   crmMarketName?: string | null;
-  variant: CtaVariant;
-  ctaCopy: string;
   /** Auto-open the market chooser on mount (used when geo resolves to "none"). */
   showPicker?: boolean;
   /** Brand-neutral backdrop: no market name anywhere, no sold-proof strip. */
   neutral?: boolean;
-  prefillName?: string;
-  prefillEmail?: string;
 }) {
+  // A/B variant, bucketed on the curbio_vid middleware cookie. Computed
+  // client-side because this shell renders on prerendered pages — one HTML
+  // for every visitor. SSR emits the control copy; both variants currently
+  // share identical copy, so nothing flashes (see lib/ctaVariant.ts).
+  const [variant, setVariant] = useState<CtaVariant>("control");
+  useEffect(() => {
+    setVariant(readVariantFromCookie());
+  }, []);
+  const ctaCopy = CTA_COPY[variant];
+
   return (
     <>
       <Header market={market} neutral={neutral} initialPickerOpen={showPicker} />
@@ -39,8 +44,6 @@ export default function PageShell({
           neutral={neutral}
           variant={variant}
           ctaCopy={ctaCopy}
-          prefillName={prefillName}
-          prefillEmail={prefillEmail}
         />
         {!neutral && <SoldProofStrip market={market} />}
         <HowItWorks />

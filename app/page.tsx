@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import PageShell from "@/components/PageShell";
 import WaitlistShell from "@/components/WaitlistShell";
-import { ctaCopyFlag, CTA_COPY, type CtaVariant } from "@/lib/flags";
 import { getCampaignMarket, NEUTRAL_MARKET } from "@/lib/campaignMarkets";
 import { resolveMarket } from "@/lib/resolveMarket";
 
@@ -43,13 +42,6 @@ function PageSkeleton() {
 async function MarketResolver({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
 
-  const prefillName  = (params.n ?? "").trim();
-  const prefillEmail = (params.e ?? "").trim();
-
-  let variant: CtaVariant = "control";
-  try { variant = await ctaCopyFlag(); } catch { variant = "control"; }
-  const ctaCopy = CTA_COPY[variant];
-
   const { market: resolved, source, outZip, geoCity, geoRegion, crmMarketName } = await resolveMarket({
     market: params.market,
     zip: params.zip,
@@ -63,10 +55,10 @@ async function MarketResolver({ searchParams }: { searchParams: SearchParams }) 
 
   if (resolved) {
     const market = getCampaignMarket(resolved.slug);
-    return <PageShell market={market} crmMarketName={crmMarketName ?? null} variant={variant} ctaCopy={ctaCopy} prefillName={prefillName} prefillEmail={prefillEmail} />;
+    return <PageShell market={market} crmMarketName={crmMarketName ?? null} />;
   }
 
-  return <PageShell market={NEUTRAL_MARKET} crmMarketName={null} neutral variant={variant} ctaCopy={ctaCopy} showPicker prefillName={prefillName} prefillEmail={prefillEmail} />;
+  return <PageShell market={NEUTRAL_MARKET} crmMarketName={null} neutral showPicker />;
 }
 
 export default function Page({ searchParams }: { searchParams: SearchParams }) {
