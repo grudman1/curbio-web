@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import HomeClient from "@/components/HomeClient";
+import PageSkeleton from "@/components/PageSkeleton";
 
 // `/` is fully prerendered and served from the CDN edge — the request never
 // invokes a serverless function, so email-burst cold starts can't touch TTFB.
@@ -11,5 +13,11 @@ import HomeClient from "@/components/HomeClient";
 // Do NOT read searchParams / headers / cookies here: any of them would flip
 // the route back to per-request rendering (ƒ in the build route table).
 export default function Page() {
-  return <HomeClient />;
+  // Suspense is required for useSearchParams inside HomeClient to coexist
+  // with prerendering; the fallback IS the prerendered HTML (and first paint).
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <HomeClient />
+    </Suspense>
+  );
 }

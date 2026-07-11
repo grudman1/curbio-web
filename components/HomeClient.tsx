@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import PageShell from "./PageShell";
 import WaitlistShell from "./WaitlistShell";
 import PageSkeleton from "./PageSkeleton";
@@ -23,6 +24,11 @@ import { canonicalSlug } from "@/lib/markets";
 // branch below is the safety net — it preserves the resolution priority
 // (?market= always wins; unrecognized slug → neutral, NEVER geo) even if
 // the rewrite is somehow skipped.
+//
+// useSearchParams (not a mount-only window.location read) so client-side
+// navigations that STAY on this route re-resolve — e.g. the market picker's
+// ZIP field firing router.push("/?zip=…") from the neutral view. It requires
+// the Suspense boundary in app/page.tsx to keep the route prerenderable.
 // ─────────────────────────────────────────────────────────────────────────────
 
 type Resolution =
@@ -30,15 +36,30 @@ type Resolution =
   | { view: "neutral" }
   | { view: "waitlist"; outZip?: string; geoCity?: string; geoRegion?: string };
 
+const RESOLUTION_KEYS = ["market", "zip", "code", "status"] as const;
+
 export default function HomeClient() {
   const [res, setRes] = useState<Resolution | null>(null);
+  const searchParams = useSearchParams();
+  const search = searchParams.toString();
+  // The search string the current view was resolved from — null until the
+  // first resolution kicks off.
+  const lastResolved = useRef<string | null>(null);
 
   useEffect(() => {
+    const params = new URLSearchParams(search);
+    const hasResolutionParams = RESOLUTION_KEYS.some((k) => params.has(k));
+
+    // This effect re-runs on client navigations AND on FormCard's clean-URL
+    // replaceState strip (Next syncs useSearchParams for both). A strip only
+    // ever REMOVES params — so once a view is resolved, a search string with
+    // no resolution-relevant params must NOT re-trigger geo and stomp the
+    // view the visitor's explicit ?zip=/?market= produced.
+    if (lastResolved.current !== null && !hasResolutionParams) return;
+    if (lastResolved.current === search) return;
+    lastResolved.current = search;
+
     let cancelled = false;
-    // Read the query string directly (not useSearchParams) — this must be the
-    // original landing URL, and FormCard's clean-URL strip only runs after the
-    // resolved shell (and FormCard with it) mounts, so the params are intact.
-    const params = new URLSearchParams(window.location.search);
 
     const marketParam = params.get("market");
     if (marketParam) {
@@ -48,6 +69,8 @@ export default function HomeClient() {
       setRes(slug ? { view: "market", slug, crmMarketName: null } : { view: "neutral" });
       return;
     }
+
+    setRes(null); // hold the skeleton while (re-)resolution is in flight
 
     const qs = new URLSearchParams();
     for (const k of ["zip", "code", "status"] as const) {
@@ -78,7 +101,7 @@ export default function HomeClient() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [search]);
 
   if (!res) return <PageSkeleton />;
 
