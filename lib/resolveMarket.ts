@@ -122,29 +122,33 @@ export async function resolveMarket(searchParams: {
     const h = await headers();
     const postal = h.get("x-vercel-ip-postal-code");
 
-    // 3a. Exact postal-code match — most precise when the geo ZIP is served.
-    if (postal) {
-      const geoLead = await getOperatorLead(postal);
-      const market = buildResolvedMarket(geoLead);
-      if (market) return { market, source: "geo", crmMarketName: geoLead?.marketName ?? null };
-    }
-
-    // 3b. Nearest served market by coordinates. IP geo is approximate, so a
-    // metro visitor's ZIP often isn't exactly served — match them to the
-    // closest market within 75 mi instead of dropping to neutral.
+    // 3a. Nearest served market by coordinates — a pure, free computation, so
+    // it runs BEFORE any network call. IP geo is approximate, so a metro
+    // visitor's ZIP often isn't exactly served — match them to the closest
+    // market within 75 mi instead of dropping to neutral.
     // IMPORTANT: if there is no match within 75 mi, return NEUTRAL, never
     // out-of-area — IP imprecision means we can't be confident.
     const lat = parseFloat(h.get("x-vercel-ip-latitude") ?? "");
     const lng = parseFloat(h.get("x-vercel-ip-longitude") ?? "");
     const region = h.get("x-vercel-ip-country-region");
     const nearSlug = nearestServedMarket(lat, lng, region);
+
+    // 3b. At most ONE operator call on the geo path (each can cost the full
+    // fetch timeout). Prefer the exact geo postal code — most precise when
+    // that ZIP is served — else the nearest market's canonical zip.
+    const zipToQuery = postal ?? (nearSlug ? canonicalZipForSlug(nearSlug) : null);
+    if (zipToQuery) {
+      const geoLead = await getOperatorLead(zipToQuery);
+      const market = buildResolvedMarket(geoLead);
+      if (market) return { market, source: "geo", crmMarketName: geoLead?.marketName ?? null };
+    }
+
+    // 3c. The single live call missed (API failure, or the postal ZIP itself
+    // isn't served) — fall back to the static catalog for the nearest market
+    // rather than firing a second live call.
     if (nearSlug) {
-      const zip = canonicalZipForSlug(nearSlug);
-      const nearLead = zip ? await getOperatorLead(zip) : null;
-      const market = nearLead
-        ? buildResolvedMarket(nearLead)
-        : buildResolvedMarketFromSlug(nearSlug);
-      if (market) return { market, source: "geo", crmMarketName: nearLead?.marketName ?? null };
+      const market = buildResolvedMarketFromSlug(nearSlug);
+      if (market) return { market, source: "geo", crmMarketName: null };
     }
   } catch {
     // headers() unavailable (local dev) — treat as no geo.
