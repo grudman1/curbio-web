@@ -1,9 +1,12 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Hero, SoldProofStrip, HowItWorks, Closer } from "./LpSections";
 import { ZipModalTrigger } from "./ZipModalTrigger";
 import { EXP_PARTNER } from "@/lib/partners";
+import { CTA_COPY, readVariantFromCookie, type CtaVariant } from "@/lib/ctaVariant";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
-import type { CtaVariant } from "@/lib/flags";
 
 // ── Co-branded header: Curbio + eXp Solutions logo (left), market picker (right) ──
 export function ExpHeader({
@@ -81,20 +84,21 @@ export default function ExpShell({
   crmMarketName = null,
   neutral = false,
   showPicker = false,
-  variant,
-  ctaCopy,
-  prefillName = "",
-  prefillEmail = "",
 }: {
   market: CampaignMarket;
   crmMarketName?: string | null;
   neutral?: boolean;
   showPicker?: boolean;
-  variant: CtaVariant;
-  ctaCopy: string;
-  prefillName?: string;
-  prefillEmail?: string;
 }) {
+  // A/B variant, bucketed on the curbio_vid middleware cookie — client-side
+  // because this shell renders on prerendered pages (see lib/ctaVariant.ts,
+  // same pattern as PageShell).
+  const [variant, setVariant] = useState<CtaVariant>("control");
+  useEffect(() => {
+    setVariant(readVariantFromCookie());
+  }, []);
+  const ctaCopy = CTA_COPY[variant];
+
   return (
     <>
       <ExpHeader market={market} neutral={neutral} initialPickerOpen={showPicker} />
@@ -105,8 +109,6 @@ export default function ExpShell({
           neutral={neutral}
           variant={variant}
           ctaCopy={ctaCopy}
-          prefillName={prefillName}
-          prefillEmail={prefillEmail}
           eyebrowContent={<ExpCoBrandMark market={market} neutral={neutral} />}
           heroSub="Walk into every listing appointment with a better offer: the eXp prep solution. Repairs, landscaping, staging — and nothing due from your seller until close."
           referralSourceId={EXP_PARTNER.referralSourceId}
