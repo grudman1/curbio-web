@@ -3,25 +3,37 @@ import { canonicalSlug } from "./lib/markets";
 
 // Two jobs, both on the edge:
 //
-// 1. Campaign-link rewrite: /?market=<slug> → /m/<slug> (REWRITE, not
-//    redirect — the address bar keeps the original URL and query string, so
-//    captureAttribution() and the ?n=/?e= prefill still read them). The
-//    /m/<slug> pages are prerendered, so campaign traffic is served from the
-//    CDN edge instead of invoking a serverless function. Unrecognized slugs
-//    are NOT rewritten: the prerendered `/` renders neutral for them (never
-//    geo — see components/HomeClient.tsx).
+// 1. Campaign-link rewrite: /?market=<slug> → /m/<slug>, and
+//    /exp?market=<slug> → /exp/m/<slug> (REWRITE, not redirect — the address
+//    bar keeps the original URL and query string, so captureAttribution()
+//    and the ?n=/?e= prefill still read them). The rewrite targets are
+//    prerendered, so campaign traffic is served from the CDN edge instead of
+//    invoking a serverless function. Unrecognized slugs are NOT rewritten:
+//    the prerendered base page renders neutral for them (never geo — see
+//    components/useMarketResolution.ts).
 //
 // 2. Assigns a stable anonymous visitor id used to bucket the cta-copy A/B
 //    test (see lib/ctaVariant.ts). Set once, read on every subsequent request
 //    so a visitor keeps the same variant across reloads and email sends.
+
+// Base path → prerendered per-market directory.
+const MARKET_REWRITES: Record<string, string> = {
+  "/": "/m",
+  "/exp": "/exp/m",
+};
+
 export function middleware(req: NextRequest) {
   let res: NextResponse | undefined;
 
-  if (req.nextUrl.pathname === "/") {
+  // Normalize a possible trailing slash (the picker navigates to "/exp/?market=…").
+  const pathname = req.nextUrl.pathname;
+  const normalized = pathname.length > 1 && pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
+  const marketBase = MARKET_REWRITES[normalized];
+  if (marketBase) {
     const slug = canonicalSlug(req.nextUrl.searchParams.get("market"));
     if (slug) {
       const dest = req.nextUrl.clone();
-      dest.pathname = `/m/${slug}`;
+      dest.pathname = `${marketBase}/${slug}`;
       dest.search = "";
       res = NextResponse.rewrite(dest);
     }

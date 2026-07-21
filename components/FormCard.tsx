@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { captureAttribution, gaEvent, getGaClientId, getStoredUtms } from "@/lib/analytics";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
-import type { CtaVariant } from "@/lib/flags";
+import type { CtaVariant } from "@/lib/ctaVariant";
 
 const VALID_CHANNELS = new Set(["email", "partnership", "organic", "paid", "social", "referral", "direct"]);
 

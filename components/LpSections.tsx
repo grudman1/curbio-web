@@ -3,7 +3,7 @@ import { Icon, Eyebrow, AmberRule, PillButton } from "./LpKit";
 import { ZipModalTrigger } from "./ZipModalTrigger";
 import { FormCard } from "./FormCard";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
-import type { CtaVariant } from "@/lib/flags";
+import type { CtaVariant } from "@/lib/ctaVariant";
 
 // Re-export extracted client components so existing importers keep working.
 export { StickyBar } from "./StickyBar";

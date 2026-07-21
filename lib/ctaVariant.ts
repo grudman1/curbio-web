@@ -6,9 +6,7 @@
 // Assignment is stable per visitor via the `curbio_vid` cookie set in
 // middleware.ts (deterministic 50/50 by hash). The landing pages are
 // prerendered (one HTML for every visitor), so the variant is bucketed
-// CLIENT-side from the cookie — see PageShell. The server-side flag in
-// lib/flags.ts wraps the same bucket() for routes that still render
-// per-request (/exp).
+// CLIENT-side from the cookie — see PageShell and ExpShell.
 //
 // IMPORTANT: prerendered HTML carries the control copy until hydration. Both
 // variants currently share identical copy, so nothing flashes. If the copy
@@ -24,8 +22,8 @@ export const CTA_COPY: Record<CtaVariant, string> = {
 };
 
 // Small, stable string hash (djb2) → used to bucket a visitor id 50/50.
-// Must stay in lockstep with any server-side bucketing (lib/flags.ts) —
-// the same visitor id must always land in the same bucket.
+// The same visitor id must always land in the same bucket — never change
+// this hash while the experiment is running.
 export function bucket(id: string): CtaVariant {
   let h = 5381;
   for (let i = 0; i < id.length; i++) h = ((h << 5) + h + id.charCodeAt(i)) | 0;
