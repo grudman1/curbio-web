@@ -152,17 +152,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
   }
 
-  // ── 0c. Time trap: sub-2-second render→submit is bot speed. Both
-  // timestamps come from the CLIENT clock (renderedAt via Date.now(),
-  // submittedAt via new Date()), so clock skew vs the server can't eat real
-  // leads. Absent/invalid values pass — tripwire, not a wall.
+  // ── 0c. Time trap: NON-BLOCKING. Sub-2-second render→submit is unusual,
+  // but a real visitor clicking a browser-autofill suggestion (one click
+  // populates every field) and submitting immediately after can legitimately
+  // land under 2s — confirmed live: a real submission logged elapsedMs:1861
+  // the same day this shipped. Given the honeypot incident earlier today
+  // (a silent, ok:true discard on a bad heuristic ate real leads for two
+  // deploys before anyone noticed), this signal is logged for visibility
+  // only and never discards — see .env.example / PR history for the
+  // reasoning. Both timestamps come from the CLIENT clock (renderedAt via
+  // Date.now(), submittedAt via new Date()), so clock skew can't affect this.
   const renderedAt = Number(body.renderedAt);
   const submittedMs = body.submittedAt ? Date.parse(body.submittedAt) : NaN;
   if (Number.isFinite(renderedAt) && renderedAt > 0 && Number.isFinite(submittedMs)) {
     const elapsed = submittedMs - renderedAt;
     if (elapsed >= 0 && elapsed < 2000) {
-      console.log("[lead] discarded: time trap", { elapsedMs: elapsed });
-      return NextResponse.json({ ok: true, pdf: null });
+      console.log("[lead] fast submission — kept", { elapsedMs: elapsed });
     }
   }
 
