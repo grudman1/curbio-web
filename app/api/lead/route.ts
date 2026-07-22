@@ -35,9 +35,10 @@ type LeadBody = {
   utm_term?: string;
   // Partner attribution. Passed through verbatim — never normalised (e.g. "eXp realty" space + casing are load-bearing for CRM comparability).
   referralSourceId?: string;
-  // Spam tripwires — honeypot field (humans never see it) and the client-side
-  // form-render timestamp. See the checks at the top of POST.
-  company?: string;
+  // Spam tripwire — client-side form-render timestamp. See the check at the
+  // top of POST. (A honeypot field also lived here briefly — removed: named
+  // `company`, it was silently autofilled by real visitors' browsers from a
+  // saved address/business profile, discarding every real lead as a "bot".)
   renderedAt?: number | string;
 };
 
@@ -149,13 +150,6 @@ export async function POST(req: Request) {
   // ── 0a. Origin tripwire ──
   if (!originAllowed(req)) {
     return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
-  }
-
-  // ── 0b. Honeypot: the hidden `company` field arrived non-empty → bot.
-  // Silent discard — return the normal success shape, never tip off the bot.
-  if (typeof body.company === "string" && body.company.trim() !== "") {
-    console.log("[lead] discarded: honeypot");
-    return NextResponse.json({ ok: true, pdf: null });
   }
 
   // ── 0c. Time trap: sub-2-second render→submit is bot speed. Both
