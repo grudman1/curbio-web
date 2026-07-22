@@ -127,7 +127,7 @@ export default function ExpShell({
           />
         )}
         <HowItWorks />
-        <Closer ctaCopy={ctaCopy} />
+        <Closer ctaCopy={ctaCopy} marketSlug={market.slug} />
       </main>
     </>
   );

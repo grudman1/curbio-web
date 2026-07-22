@@ -1,12 +1,18 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { track } from "@vercel/analytics";
 import { Icon } from "./LpKit";
+import { gaEvent } from "@/lib/analytics";
+import { readVariantFromCookie } from "@/lib/ctaVariant";
 
-export function StickyBar({ ctaCopy }: { ctaCopy: string }) {
+export function StickyBar({ ctaCopy, marketSlug }: { ctaCopy: string; marketSlug?: string }) {
   const [show, setShow] = useState(false);
 
   const handleCta = useCallback(() => {
+    const params = { cta_id: "sticky_bar", market: marketSlug || "unknown", variant: readVariantFromCookie() };
+    gaEvent("cta_click", params);
+    track("cta_click", params);
     const el = document.getElementById("quote-form");
     if (!el) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -15,7 +21,7 @@ export function StickyBar({ ctaCopy }: { ctaCopy: string }) {
       () => document.getElementById("fc-name")?.focus({ preventScroll: true }),
       reduce ? 0 : 480
     );
-  }, []);
+  }, [marketSlug]);
 
   useEffect(() => {
     const form = document.getElementById("quote-form");

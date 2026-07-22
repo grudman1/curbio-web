@@ -1,7 +1,10 @@
 import Image from "next/image";
+import { track } from "@vercel/analytics";
 import { Icon, Eyebrow, AmberRule, PillButton } from "./LpKit";
 import { ZipModalTrigger } from "./ZipModalTrigger";
 import { FormCard } from "./FormCard";
+import { gaEvent } from "@/lib/analytics";
+import { readVariantFromCookie } from "@/lib/ctaVariant";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 import type { CtaVariant } from "@/lib/ctaVariant";
 
@@ -225,7 +228,7 @@ export function HowItWorks() {
 }
 
 // ── Navy CTA closer ──
-export function Closer({ ctaCopy }: { ctaCopy: string }) {
+export function Closer({ ctaCopy, marketSlug }: { ctaCopy: string; marketSlug?: string }) {
   return (
     <section className="lp-closer" id="closer">
       <div className="lp-shell lp-closer-inner">
@@ -233,8 +236,18 @@ export function Closer({ ctaCopy }: { ctaCopy: string }) {
           One listing. You&apos;ll wonder <em>why you waited.</em>
         </h2>
         <div className="lp-closer-cta">
-          {/* href="#quote-form" — native anchor scroll, no JS needed */}
-          <PillButton size="lg" icon="arrow" href="#quote-form">
+          {/* href="#quote-form" — native anchor scroll, no JS needed; the
+              onClick only fires analytics (no preventDefault). */}
+          <PillButton
+            size="lg"
+            icon="arrow"
+            href="#quote-form"
+            onClick={() => {
+              const params = { cta_id: "closer", market: marketSlug || "unknown", variant: readVariantFromCookie() };
+              gaEvent("cta_click", params);
+              track("cta_click", params);
+            }}
+          >
             {ctaCopy}
           </PillButton>
         </div>
