@@ -3,11 +3,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
-import { captureAttribution, gaEvent, getGaClientId, getStoredUtms } from "@/lib/analytics";
+import { captureAttribution, gaEvent, getFirstTouch, getGaClientId, getStoredUtms } from "@/lib/analytics";
+import { deriveChannel } from "@/lib/channels";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 import type { CtaVariant } from "@/lib/ctaVariant";
-
-const VALID_CHANNELS = new Set(["email", "partnership", "organic", "paid", "social", "referral", "direct"]);
 
 export function FormCard({
   market,
@@ -47,13 +46,31 @@ export function FormCard({
   const [emailEdited, setEmailEdited] = useState(false);
   const [errs, setErrs] = useState<{ name?: string; email?: string; server?: string }>({});
   const [pending, setPending] = useState(false);
+  // Honeypot — humans never see or fill this field; bots auto-filling every
+  // input do. The lead route silently discards submissions where it's non-empty.
+  const [hp, setHp] = useState("");
   const router = useRouter();
+
+  // Spam time-trap: when this form became interactive. Sent as `renderedAt`
+  // so the route can discard sub-2-second (bot-speed) submissions. Set on
+  // mount (client clock) — the route compares it against the client-clock
+  // submittedAt, never against the server clock, so skew can't eat real leads.
+  const renderedAtRef = useRef(0);
+
+  // form_start fires once per mount, on the first focus of any field.
+  const formStartFired = useRef(false);
+  const onFormFocus = useCallback(() => {
+    if (formStartFired.current) return;
+    formStartFired.current = true;
+    gaEvent("form_start", { form_id: "quote-form", market: market.slug || "unknown", variant });
+  }, [market.slug, variant]);
 
   // Holds the resolved referral source ID: URL param wins over prop default.
   // Initialized from prop so /exp attribution survives URL strips on returning visitors.
   const refIdRef = useRef<string | undefined>(referralSourceId);
 
   useEffect(() => {
+    renderedAtRef.current = Date.now();
     // ORDER IS LOAD-BEARING: captureAttribution() reads utm_* from the live
     // URL, persists them, and queues the GA4 page_view — all synchronously —
     // BEFORE the strip below wipes the query string for the clean URL.
@@ -118,9 +135,10 @@ export function FormCard({
 
       const full = f.name.trim();
       const utms = getStoredUtms();
-      const derivedChannel = utms.utm_source && VALID_CHANNELS.has(utms.utm_source.toLowerCase())
-        ? utms.utm_source.toLowerCase()
-        : undefined;
+      // Closed-list channel from the shared taxonomy — "direct" when utm_source
+      // is absent or unrecognized (never null, never a phantom channel).
+      const derivedChannel = deriveChannel(utms.utm_source);
+      const firstTouch = getFirstTouch();
 
       try {
         // 3. Resolve GA client ID and POST in parallel so neither blocks the other
@@ -131,7 +149,6 @@ export function FormCard({
             headers: { "content-type": "application/json" },
             body: JSON.stringify({
               name: full,
-              firstName: full.split(/\s+/)[0],
               email: f.email.trim(),
               phone: f.phone.trim() || undefined,
               source: source ?? `email-campaign-${market.slug || "unknown"}`,
@@ -139,8 +156,16 @@ export function FormCard({
               crmMarketName: crmMarketName ?? null,
               variant,
               submittedAt: new Date().toISOString(),
-              gaClientId: null, // resolved concurrently; used below for analytics only
               referralSourceId: refIdRef.current,
+              // Attribution model (Curbio Attribution System spec): channel is
+              // derived server-side from utm_source; these travel alongside.
+              entryPoint: "web_form",
+              medium: utms.utm_medium ?? null,
+              firstTouchChannel: firstTouch?.channel ?? null,
+              firstTouchCampaign: firstTouch?.campaign ?? null,
+              // Spam tripwires — see the lead route.
+              company: hp,
+              renderedAt: renderedAtRef.current,
               ...(f.zip && { zip: f.zip.replace(/\D/g, "").slice(0, 5) }),
               ...(f.address.trim() && { address: f.address.trim() }),
               ...utms,
@@ -163,25 +188,46 @@ export function FormCard({
           });
         }, 0);
 
-        // 5. Navigate immediately after successful POST
+        // 5. Navigate immediately after successful POST. PII travels to
+        // /confirm in a short-lived, path-scoped cookie — NEVER in the URL,
+        // which would land in browser history, Vercel request logs, and
+        // Clarity session metadata (input masking doesn't cover URLs).
+        // /confirm reads it server-side so the Calendly iframe src is still
+        // prefilled in the first SSR HTML, then expires it on mount.
+        const prefillJson = JSON.stringify({
+          name: f.name.trim(),
+          email: f.email.trim(),
+          ...(f.phone.trim() && { phone: f.phone.trim() }),
+        });
+        document.cookie =
+          `curbio_confirm_prefill=${encodeURIComponent(prefillJson)}; path=/confirm; max-age=120; samesite=lax`;
         const qs = new URLSearchParams();
         if (market.slug) qs.set("market", market.slug);
-        qs.set("name", f.name.trim());
-        qs.set("email", f.email.trim());
-        if (f.phone.trim()) qs.set("phone", f.phone.trim());
         if (partnerSlug) qs.set("partner", partnerSlug);
-        router.push(`/confirm?${qs.toString()}`);
+        router.push(`/confirm${qs.size ? `?${qs.toString()}` : ""}`);
       } catch (err) {
         setErrs({ server: err instanceof Error ? err.message : "Something went wrong." });
       } finally {
         setPending(false);
       }
     },
-    [pending, f, market, crmMarketName, variant, router]
+    [pending, f, hp, market, crmMarketName, variant, source, partnerSlug, router]
   );
 
   return (
-    <form className="lp-fc" id="quote-form" onSubmit={submit} noValidate>
+    <form className="lp-fc" id="quote-form" onSubmit={submit} onFocusCapture={onFormFocus} noValidate>
+      {/* Honeypot — visually hidden and unfocusable; real visitors never fill
+          it, autofilling bots do. Named plausibly so bots take the bait. */}
+      <input
+        type="text"
+        name="company"
+        value={hp}
+        onChange={(e) => setHp(e.target.value)}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        style={{ position: "absolute", left: "-9999px", width: 1, height: 1, overflow: "hidden" }}
+      />
       <div className="lp-fc-field">
         <label className="lp-fc-label" htmlFor="fc-name">Name</label>
         <input

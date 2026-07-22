@@ -100,6 +100,25 @@ export default function ConfirmShell({
     gaEvent("booking_view", { market: market.slug || "unknown" });
   }, [market.slug]);
 
+  // PII hygiene — runs once, after the server has already read everything:
+  // 1. Expire the prefill handoff cookie (a page can't set cookies server-
+  //    side, so the client clears it). The iframe src was built during SSR;
+  //    the cookie has done its job.
+  // 2. Legacy fallback: pre-deploy links carried name/email/phone in the
+  //    query string — the server still honors them, then we scrub them from
+  //    the address bar so they don't linger in history.
+  useEffect(() => {
+    document.cookie = "curbio_confirm_prefill=; path=/confirm; max-age=0; samesite=lax";
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("name") || params.has("email") || params.has("phone")) {
+      params.delete("name");
+      params.delete("email");
+      params.delete("phone");
+      const qs = params.toString();
+      window.history.replaceState({}, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
+    }
+  }, []);
+
   // The iframe must grow to fit Calendly's content — it ships scrolling="no",
   // so a fixed height makes everything below the fold unreachable (the
   // "Enter Details" step is far taller than the calendar view). Calendly
@@ -251,6 +270,8 @@ export default function ConfirmShell({
                     />
                   </div>
                 )}
+                {/* Deliberate full navigation — resets landing-page state. */}
+                {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
                 <a href="/" className="lp-confirm-nothx">
                   No thanks, I&apos;ll wait
                 </a>
@@ -263,6 +284,8 @@ export default function ConfirmShell({
                     business day to find a time that works for you.
                   </p>
                 </div>
+                {/* Deliberate full navigation — resets landing-page state. */}
+                {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
                 <a href="/" className="lp-confirm-nothx">
                   No thanks, I&apos;ll wait
                 </a>

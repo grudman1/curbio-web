@@ -47,7 +47,7 @@ export default function PageShell({
         />
         {!neutral && <SoldProofStrip market={market} />}
         <HowItWorks />
-        <Closer ctaCopy={ctaCopy} />
+        <Closer ctaCopy={ctaCopy} marketSlug={market.slug} />
       </main>
     </>
   );

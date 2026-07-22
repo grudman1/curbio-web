@@ -173,7 +173,9 @@ export function PillButton({
   );
   if (href && !disabled) {
     return (
-      <a className={cls} href={href} target={target} rel={target ? "noreferrer noopener" : undefined} style={merged}>
+      // onClick fires alongside (not instead of) the native anchor navigation
+      // — used for analytics; never call preventDefault in handlers passed here.
+      <a className={cls} href={href} target={target} rel={target ? "noreferrer noopener" : undefined} style={merged} onClick={onClick}>
         {inner}
       </a>
     );

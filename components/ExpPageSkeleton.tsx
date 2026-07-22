@@ -6,8 +6,9 @@ export default function ExpPageSkeleton() {
     <div aria-hidden>
       <header className="lp-header">
         <div className="lp-shell lp-header-inner">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <div className="exp-header-logos">
+            {/* Real logo — <img> triggers FCP; the SVG needs no optimizer. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo/curbio-white.svg" alt="Curbio" className="lp-header-logo" width={100} height={26} />
             <div style={{ width: 1, height: 22, background: "var(--navy-85)" }} />
             <div style={{ height: 20, width: 120, background: "var(--navy-85)", borderRadius: 3 }} />

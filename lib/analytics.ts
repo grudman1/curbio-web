@@ -18,6 +18,8 @@
 // variant, and the GA client id.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { deriveChannel } from "./channels";
+
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 const UTM_KEYS = [
@@ -32,6 +34,34 @@ export type Utms = Partial<Record<(typeof UTM_KEYS)[number], string>>;
 
 const STORAGE_KEY = "curbio_utms";
 
+// First-touch attribution — separate from the sessionStorage UTMs above,
+// which are deliberately last-touch. Written ONCE on the visitor's first
+// arrival carrying UTMs and never overwritten, so a visitor who first came
+// from an email and later returns via a partner link still reports
+// firstTouchChannel: "email". localStorage so it survives the session;
+// ~90-day expiry enforced on read (localStorage has no TTL of its own).
+const FIRST_TOUCH_KEY = "curbio_first_touch";
+const FIRST_TOUCH_TTL_MS = 90 * 24 * 60 * 60 * 1000;
+
+export type FirstTouch = { channel: string; campaign: string | null; ts: number };
+
+/** First-touch attribution captured on the visitor's first UTM-carrying
+ *  arrival. Null when never captured, expired (>90d), or storage unavailable. */
+export function getFirstTouch(): FirstTouch | null {
+  try {
+    const raw = localStorage.getItem(FIRST_TOUCH_KEY);
+    if (!raw) return null;
+    const ft = JSON.parse(raw) as FirstTouch;
+    if (typeof ft?.ts !== "number" || Date.now() - ft.ts > FIRST_TOUCH_TTL_MS) {
+      localStorage.removeItem(FIRST_TOUCH_KEY);
+      return null;
+    }
+    return ft;
+  } catch {
+    return null;
+  }
+}
+
 // GA4 only runs in production builds with a measurement ID configured;
 // everything no-ops cleanly in dev/preview when the ID is absent.
 function gaEnabled(): boolean {
@@ -42,13 +72,14 @@ function gaEnabled(): boolean {
   );
 }
 
-/* eslint-disable prefer-rest-params, @typescript-eslint/no-explicit-any */
+/* eslint-disable prefer-rest-params, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 // gtag.js requires the literal `arguments` object on the dataLayer (an array
-// does not work) — hence a `function` declaration, not an arrow.
+// does not work) — hence a `function` declaration, not an arrow. `_args`
+// exists only to give the signature an arity; `arguments` is what's pushed.
 function gtag(..._args: any[]) {
   (window as any).dataLayer.push(arguments);
 }
-/* eslint-enable prefer-rest-params, @typescript-eslint/no-explicit-any */
+/* eslint-enable prefer-rest-params, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 
 // Idempotent gtag bootstrap: stub the dataLayer and send the config exactly
 // once per page. send_page_view is DISABLED — page_view is sent manually with
@@ -100,6 +131,22 @@ export function captureAttribution(): void {
     }
   } catch {
     // sessionStorage unavailable (private mode) — events just go un-attributed.
+  }
+
+  // 2b. First-touch capture: write-once, only on a UTM-carrying arrival.
+  //     getFirstTouch() returning non-null means a live (unexpired) record
+  //     exists — never overwrite it (that's the whole point of first-touch).
+  try {
+    if (Object.keys(utms).length && !getFirstTouch()) {
+      const ft: FirstTouch = {
+        channel: deriveChannel(utms.utm_source),
+        campaign: utms.utm_campaign ?? null,
+        ts: Date.now(),
+      };
+      localStorage.setItem(FIRST_TOUCH_KEY, JSON.stringify(ft));
+    }
+  } catch {
+    // localStorage unavailable — leads just go without first-touch fields.
   }
 
   // 3. Queue the manual page_view with explicit campaign params. Queued on the
