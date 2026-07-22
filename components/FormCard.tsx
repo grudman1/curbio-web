@@ -46,9 +46,6 @@ export function FormCard({
   const [emailEdited, setEmailEdited] = useState(false);
   const [errs, setErrs] = useState<{ name?: string; email?: string; server?: string }>({});
   const [pending, setPending] = useState(false);
-  // Honeypot — humans never see or fill this field; bots auto-filling every
-  // input do. The lead route silently discards submissions where it's non-empty.
-  const [hp, setHp] = useState("");
   const router = useRouter();
 
   // Spam time-trap: when this form became interactive. Sent as `renderedAt`
@@ -163,8 +160,7 @@ export function FormCard({
               medium: utms.utm_medium ?? null,
               firstTouchChannel: firstTouch?.channel ?? null,
               firstTouchCampaign: firstTouch?.campaign ?? null,
-              // Spam tripwires — see the lead route.
-              company: hp,
+              // Spam tripwire — see the lead route.
               renderedAt: renderedAtRef.current,
               ...(f.zip && { zip: f.zip.replace(/\D/g, "").slice(0, 5) }),
               ...(f.address.trim() && { address: f.address.trim() }),
@@ -211,23 +207,11 @@ export function FormCard({
         setPending(false);
       }
     },
-    [pending, f, hp, market, crmMarketName, variant, source, partnerSlug, router]
+    [pending, f, market, crmMarketName, variant, source, partnerSlug, router]
   );
 
   return (
     <form className="lp-fc" id="quote-form" onSubmit={submit} onFocusCapture={onFormFocus} noValidate>
-      {/* Honeypot — visually hidden and unfocusable; real visitors never fill
-          it, autofilling bots do. Named plausibly so bots take the bait. */}
-      <input
-        type="text"
-        name="company"
-        value={hp}
-        onChange={(e) => setHp(e.target.value)}
-        tabIndex={-1}
-        autoComplete="off"
-        aria-hidden="true"
-        style={{ position: "absolute", left: "-9999px", width: 1, height: 1, overflow: "hidden" }}
-      />
       <div className="lp-fc-field">
         <label className="lp-fc-label" htmlFor="fc-name">Name</label>
         <input

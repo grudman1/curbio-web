@@ -19,8 +19,7 @@ export function WaitlistPage({
   const [sent, setSent] = useState(false);
   const [pending, setPending] = useState(false);
   const [serverErr, setServerErr] = useState<string | null>(null);
-  // Honeypot + time-trap — same spam tripwires as FormCard; see the lead route.
-  const [hp, setHp] = useState("");
+  // Time-trap — same spam tripwire as FormCard; see the lead route.
   const renderedAtRef = useRef(0);
   useEffect(() => { renderedAtRef.current = Date.now(); }, []);
 
@@ -64,7 +63,6 @@ export function WaitlistPage({
           firstTouchCampaign: firstTouch?.campaign ?? null,
           detectedCity: geoCity,
           detectedRegion: geoRegion,
-          company: hp,
           renderedAt: renderedAtRef.current,
           ...utms,
         }),
@@ -96,17 +94,6 @@ export function WaitlistPage({
             </p>
             <AmberRule width={56} style={{ margin: "22px 0 26px" }} />
             <div className="lp-waitlist-fields" onFocusCapture={onFormFocus}>
-              {/* Honeypot — visually hidden and unfocusable; bots fill it, humans can't. */}
-              <input
-                type="text"
-                name="company"
-                value={hp}
-                onChange={(e) => setHp(e.target.value)}
-                tabIndex={-1}
-                autoComplete="off"
-                aria-hidden="true"
-                style={{ position: "absolute", left: "-9999px", width: 1, height: 1, overflow: "hidden" }}
-              />
               <div className="lp-fc-field">
                 <label className="lp-fc-label" htmlFor="wl-name">Full name</label>
                 <input
