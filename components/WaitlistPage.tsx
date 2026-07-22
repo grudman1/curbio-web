@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Icon, Eyebrow, AmberRule } from "./LpKit";
+import { gaEvent, getFirstTouch, getStoredUtms } from "@/lib/analytics";
 
 export function WaitlistPage({
   zip,
-  geoCity: _geoCity,
-  geoRegion: _geoRegion,
+  geoCity,
+  geoRegion,
   onChooseMarket,
 }: {
   zip: string;
@@ -18,8 +19,20 @@ export function WaitlistPage({
   const [sent, setSent] = useState(false);
   const [pending, setPending] = useState(false);
   const [serverErr, setServerErr] = useState<string | null>(null);
+  // Honeypot + time-trap — same spam tripwires as FormCard; see the lead route.
+  const [hp, setHp] = useState("");
+  const renderedAtRef = useRef(0);
+  useEffect(() => { renderedAtRef.current = Date.now(); }, []);
 
   useEffect(() => { setF((s) => ({ ...s, zip })); }, [zip]);
+
+  // form_start fires once per mount, on the first focus of any field.
+  const formStartFired = useRef(false);
+  const onFormFocus = () => {
+    if (formStartFired.current) return;
+    formStartFired.current = true;
+    gaEvent("form_start", { form_id: "waitlist" });
+  };
 
   const set = (k: keyof typeof f) => (v: string) => setF((s) => ({ ...s, [k]: v }));
   const validEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
@@ -30,6 +43,12 @@ export function WaitlistPage({
     setPending(true);
     setServerErr(null);
     try {
+      // Same attribution model as FormCard: stored UTMs (channel is derived
+      // server-side from utm_source), first-touch fields, and the geo the
+      // shell already resolved — the waitlist IS the expansion-demand signal
+      // detectedCity/detectedRegion exist for.
+      const utms = getStoredUtms();
+      const firstTouch = getFirstTouch();
       const res = await fetch("/api/lead", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -39,6 +58,15 @@ export function WaitlistPage({
           zip: f.zip.replace(/\D/g, "").slice(0, 5),
           source: "waitlist",
           submittedAt: new Date().toISOString(),
+          entryPoint: "web_form",
+          medium: utms.utm_medium ?? null,
+          firstTouchChannel: firstTouch?.channel ?? null,
+          firstTouchCampaign: firstTouch?.campaign ?? null,
+          detectedCity: geoCity,
+          detectedRegion: geoRegion,
+          company: hp,
+          renderedAt: renderedAtRef.current,
+          ...utms,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -67,7 +95,18 @@ export function WaitlistPage({
               moment a local Curbio team covers your area.
             </p>
             <AmberRule width={56} style={{ margin: "22px 0 26px" }} />
-            <div className="lp-waitlist-fields">
+            <div className="lp-waitlist-fields" onFocusCapture={onFormFocus}>
+              {/* Honeypot — visually hidden and unfocusable; bots fill it, humans can't. */}
+              <input
+                type="text"
+                name="company"
+                value={hp}
+                onChange={(e) => setHp(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                style={{ position: "absolute", left: "-9999px", width: 1, height: 1, overflow: "hidden" }}
+              />
               <div className="lp-fc-field">
                 <label className="lp-fc-label" htmlFor="wl-name">Full name</label>
                 <input
