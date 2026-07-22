@@ -77,9 +77,16 @@ function toCrmMarket(slug: string | null | undefined): string | null {
 const LEADS_KEY = "leads:v1";
 const LEADS_MAX = 5000; // capped index — newest first, oldest trimmed
 
+// Var names match what the Vercel × Upstash Marketplace integration actually
+// provisions for this project (confirmed in the dashboard) — NOT Upstash's own
+// "UPSTASH_REDIS_REST_URL/TOKEN" convention, which Redis.fromEnv() expects.
+// The custom install prefix "UPSTASH_REDIS_REST" got prepended to Upstash's
+// own default names, doubling the "REST" segment. Of the 5 vars the
+// integration creates, these two are the read-write REST API pair — not
+// _KV_URL/_REDIS_URL (different protocols) and not _READ_ONLY_TOKEN (can't LPUSH).
 function getRedis(): Redis | null {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = process.env.UPSTASH_REDIS_REST_KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_KV_REST_API_TOKEN;
   return url && token ? new Redis({ url, token }) : null;
 }
 
