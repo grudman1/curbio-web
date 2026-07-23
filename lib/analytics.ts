@@ -19,6 +19,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { deriveChannel } from "./channels";
+import { getConsentState, onConsentChange, type ConsentState } from "./consent";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
@@ -81,6 +82,20 @@ function gtag(..._args: any[]) {
 }
 /* eslint-enable prefer-rest-params, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 
+// Google Consent Mode v2 — maps our two-category ConsentState (lib/consent.ts)
+// onto the four gtag consent signals. Advertising isn't otherwise used by this
+// site (no ad pixels), but Consent Mode expects all four keys together.
+function consentModeParams(state: ConsentState) {
+  const analytics = state.analytics ? "granted" : "denied";
+  const advertising = state.advertising ? "granted" : "denied";
+  return {
+    analytics_storage: analytics,
+    ad_storage: advertising,
+    ad_user_data: advertising,
+    ad_personalization: advertising,
+  };
+}
+
 // Idempotent gtag bootstrap: stub the dataLayer and send the config exactly
 // once per page. send_page_view is DISABLED — page_view is sent manually with
 // explicit campaign params (see captureAttribution).
@@ -90,8 +105,25 @@ function ensureGa(): boolean {
   w.dataLayer = w.dataLayer || [];
   if (!w.__curbioGaInit) {
     w.__curbioGaInit = true;
+
+    // Consent Mode v2 default — MUST be the first thing pushed onto the
+    // dataLayer queue, before "js"/"config"/any event. This function is the
+    // ONLY place anything gets pushed onto that queue (gtag() always writes
+    // here), so this ordering is a build-time guarantee, not a race against
+    // when gtag.js itself finishes loading (it loads lazily — see
+    // layout.tsx — and drains the whole queue, in order, whenever it does).
+    // getConsentState() already encodes the full priority chain: GPC signal
+    // → existing CookieYes decision cookie → CONSENT_DEFAULT.
+    gtag("consent", "default", consentModeParams(getConsentState()));
+
     gtag("js", new Date());
     gtag("config", GA_ID, { send_page_view: false });
+
+    // Keep Consent Mode in sync with the banner for the rest of this page's
+    // lifetime. CookieYes fires its update event on accept/reject/save.
+    onConsentChange((state) => {
+      gtag("consent", "update", consentModeParams(state));
+    });
   }
   return true;
 }

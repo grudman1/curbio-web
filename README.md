@@ -172,6 +172,60 @@ Auto-deploys to Vercel on push to `main` via GitHub integration.
 
 ---
 
+## Consent & privacy
+
+CookieYes (`NEXT_PUBLIC_COOKIEYES_ID`) is the consent banner and the sole
+consent cookie store. `lib/consent.ts` is the single authority the rest of
+the app reads it through — `getConsentState()`, `hasGpc()`, `onConsentChange()`.
+Nothing else touches the CookieYes cookie or its APIs directly.
+
+**Gated on consent:**
+
+| Signal | Mechanism |
+|---|---|
+| GA4 (`NEXT_PUBLIC_GA_ID`) | Google Consent Mode v2 — a `consent` `default`/`update` signal pushed onto the gtag dataLayer queue in `lib/analytics.ts`, ahead of `config` by construction. The GA4 *script* always loads; Consent Mode is what tells it to stay cookieless when denied, rather than the script being blocked outright. |
+| Microsoft Clarity (`NEXT_PUBLIC_CLARITY_ID`) | Full injection gate (`components/ClarityLoader.tsx`) — Clarity has no consent-mode equivalent, so it is simply never injected until analytics consent is `true`. `clarity('stop')` fires if consent is revoked after injection. |
+
+**Deliberately NOT gated** (first-party, functional, or cookieless — no
+consent gate applies):
+
+- **Vercel Analytics** (`<Analytics />` in `app/layout.tsx`) — cookieless by design.
+- **Lead attribution** — UTM capture, `channel` derivation (`lib/channels.ts`),
+  first-touch `localStorage` (`lib/analytics.ts`), and the `/api/lead`
+  payload. First-party data collection under the site's own privacy policy,
+  not third-party tracking.
+- **IP / market resolution** — `/api/resolve`, `lib/resolveMarket.ts`, the
+  middleware `?market=` rewrite, and all ZIP/geo handling. Entirely
+  server-side and cookie-independent; a visitor who declines everything
+  still gets their market resolved and their HSM shown.
+- **Form prefill and the `/confirm` handoff** — the `?n=`/`?e=` merge-tag
+  prefill, `captureAttribution()`'s ordering relative to the URL strip, and
+  the `curbio_confirm_prefill` cookie that carries name/email/phone to
+  `/confirm` for the Calendly iframe. All first-party functional behavior;
+  none of it is analytics or advertising.
+
+**Pre-banner default:** `CONSENT_DEFAULT` in `lib/consent.ts` — the state
+used before a visitor has interacted with the banner and no GPC signal is
+present. Currently `"granted"` (US state-privacy-law opt-out posture).
+**Legal owns this value** — it's the one line to check or change.
+
+**Global Privacy Control (GPC):** a GPC signal (`navigator.globalPrivacyControl
+=== true`) always overrides everything else, including an existing "yes"
+decision cookie. Under GPC: Consent Mode reports `denied` for all four
+signals, Clarity never injects, and there is no separate custom UI — CookieYes's
+own GPC handling (dashboard setting, see below) additionally records the
+opt-out against the visitor's session.
+
+**CookieYes dashboard checklist** (screenshot this section for legal):
+
+- [ ] Banner template: **US State Laws** (matches `CONSENT_DEFAULT: "granted"` — switch both together if the posture ever changes to GDPR-style).
+- [ ] **Respect GPC** enabled.
+- [ ] Opt-out preference center enabled and linked (footer or banner).
+- [ ] Categories in use: **Analytics**, **Advertisement** (mapped 1:1 in `lib/consent.ts`).
+- [ ] Auto-blocking: **off / not relied upon** — this app gates its own scripts in code; CookieYes is banner UI + cookie store only.
+
+---
+
 ## Open flags
 
 - **Acworth $497,000** — marked `unverified: true` in `campaignMarkets.ts`.

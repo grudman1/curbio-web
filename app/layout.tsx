@@ -3,13 +3,17 @@ import Script from "next/script";
 import { Lora, Libre_Franklin } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import ClarityLoader from "@/components/ClarityLoader";
 import "./globals.css";
 
 // Analytics run only in production builds and only when the ID is configured —
 // dev/preview without env vars renders nothing and errors nowhere.
 const IS_PROD = process.env.NODE_ENV === "production";
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
-const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID;
+// From the CookieYes dashboard → sell.curbio.com site entry → "Custom-coded
+// site" install snippet. Renders the consent banner; see lib/consent.ts for
+// how the rest of the app reads its decision.
+const COOKIEYES_ID = process.env.NEXT_PUBLIC_COOKIEYES_ID;
 
 const lora = Lora({
   subsets: ["latin"],
@@ -67,29 +71,40 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <Analytics />
         <SpeedInsights />
+        {/* CookieYes — banner UI + the consent cookie/GPC handling lib/consent.ts
+            reads. afterInteractive (never beforeInteractive — must not delay
+            paint) and NOT relied on for automatic script blocking: our own
+            scripts gate themselves on consent state in their own code (Google
+            Consent Mode v2 in lib/analytics.ts; ClarityLoader below). The
+            fixed-position banner overlay causes no CLS — verified. */}
+        {IS_PROD && COOKIEYES_ID && (
+          <Script
+            id="cookieyes"
+            src={`https://cdn-cookieyes.com/client_data/${COOKIEYES_ID}/script.js`}
+            strategy="afterInteractive"
+          />
+        )}
         {/* GA4 loader only — gtag init/config happens in lib/analytics.ts so
             the manual page_view (with explicit UTM params, captured before the
             URL strip) is always queued ahead of any event. send_page_view is
             disabled there. lazyOnload keeps it off the paint path entirely:
             the dataLayer queue is drained whenever gtag.js arrives, so
-            attribution is timing-independent by design. */}
+            attribution is timing-independent by design. Consent Mode v2
+            defaults are pushed before "js"/"config" in that same file, so
+            gtag.js respects the visitor's consent state from its first tick
+            regardless of when this script actually finishes loading. GA4
+            itself is NOT consent-gated at the script level — that's the
+            point of Consent Mode: it always loads and runs cookieless/pinged
+            when denied, rather than being blocked outright. */}
         {IS_PROD && GA_ID && (
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
             strategy="lazyOnload"
           />
         )}
-        {/* Microsoft Clarity — default input masking stays ON (form collects
-            PII; it must never appear in session recordings). */}
-        {IS_PROD && CLARITY_ID && (
-          <Script id="ms-clarity" strategy="lazyOnload">
-            {`(function(c,l,a,r,i,t,y){
-              c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-              t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-              y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-            })(window, document, "clarity", "script", "${CLARITY_ID}");`}
-          </Script>
-        )}
+        {/* Microsoft Clarity has no consent-mode equivalent — it is only
+            injected once analytics consent is true. See ClarityLoader. */}
+        <ClarityLoader />
       </body>
     </html>
   );
