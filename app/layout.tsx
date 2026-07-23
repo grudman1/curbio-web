@@ -72,16 +72,29 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Analytics />
         <SpeedInsights />
         {/* CookieYes — banner UI + the consent cookie/GPC handling lib/consent.ts
-            reads. afterInteractive (never beforeInteractive — must not delay
-            paint) and NOT relied on for automatic script blocking: our own
-            scripts gate themselves on consent state in their own code (Google
-            Consent Mode v2 in lib/analytics.ts; ClarityLoader below). The
-            fixed-position banner overlay causes no CLS — verified. */}
+            reads. NOT relied on for automatic script blocking: our own scripts
+            gate themselves on consent state in their own code (Google Consent
+            Mode v2 in lib/analytics.ts; ClarityLoader below).
+
+            strategy="beforeInteractive": Next.js injects this into the actual
+            server-rendered HTML <head> (present in the raw response, before
+            any client JS runs), rather than adding it to the DOM via
+            client-side JS after hydration the way afterInteractive/lazyOnload
+            do. CookieYes's own installation checker does a plain HTTP fetch
+            with no JS execution — it cannot see a script that only exists
+            because client-side React inserted it, which is exactly why
+            afterInteractive here read as "not installed" to that checker.
+            beforeInteractive is Next.js's own documented pattern for consent
+            managers specifically, for this reason.
+
+            The fixed-position banner overlay causes no CLS — reverified after
+            this change (id="cookieyes" is REQUIRED — CookieYes's own script
+            looks for this exact element id). */}
         {IS_PROD && COOKIEYES_ID && (
           <Script
             id="cookieyes"
             src={`https://cdn-cookieyes.com/client_data/${COOKIEYES_ID}/script.js`}
-            strategy="afterInteractive"
+            strategy="beforeInteractive"
           />
         )}
         {/* GA4 loader only — gtag init/config happens in lib/analytics.ts so
