@@ -72,11 +72,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             after <head>" instruction implies. React renders this JSX verbatim
             into the SSR'd <head>, which is what finally satisfies it.
 
-            One deviation from their copy-paste snippet: `async`, so a
-            synchronous head script can't block HTML parsing (FCP/LCP).
-            Checkers match on src, not script timing attributes. If their
-            Verify ever regresses over this, dropping async is the fallback —
-            measure the paint cost first.
+            ATTRIBUTE ORDER IS LOAD-BEARING. Their Verify also rejected a
+            plain element with just id + src — the only hypothesis left after
+            three rejections (no tag / URL-as-text / id+src element) is a
+            strict regex derived from their exact snippet:
+              <script id="cookieyes" type="text/javascript" src="...">
+            React renders JSX attributes in written order, so the order below
+            reproduces that snippet byte-for-byte as a contiguous prefix —
+            id, type, src — with our one deviation, `async`, appended AFTER
+            src, outside any prefix-anchored match. async keeps a synchronous
+            head script from blocking HTML parsing (FCP/LCP); the preconnect
+            below pre-pays the connection in case Verify ever forces us to
+            drop it (measure paint cost first if so — and if a byte-identical
+            snippet still fails, that's a CookieYes support ticket, not code).
 
             id="cookieyes" is REQUIRED — their script locates its own tag by
             this exact id. Env-gated like GA/Clarity: absent = no banner, no
@@ -84,9 +92,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {IS_PROD && COOKIEYES_ID && (
           <script
             id="cookieyes"
+            type="text/javascript"
             src={`https://cdn-cookieyes.com/client_data/${COOKIEYES_ID}/script.js`}
             async
           />
+        )}
+        {IS_PROD && COOKIEYES_ID && (
+          <>
+            <link rel="preconnect" href="https://cdn-cookieyes.com" />
+            <link rel="dns-prefetch" href="https://cdn-cookieyes.com" />
+          </>
         )}
         {/* Preload the logo so it's in cache when PageSkeleton renders,
             making the skeleton's <img> paint immediately as FCP. */}
