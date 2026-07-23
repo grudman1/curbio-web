@@ -55,6 +55,39 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${lora.variable} ${libre.variable}`}>
       <head>
+        {/* CookieYes — banner UI + the consent cookie/GPC handling that
+            lib/consent.ts reads. NOT relied on for automatic script blocking:
+            our own scripts gate themselves on consent state in their own code
+            (Google Consent Mode v2 in lib/analytics.ts; ClarityLoader in body).
+
+            This is a PLAIN <script> tag, deliberately not next/script:
+            CookieYes's installation checker parses the raw HTML for a literal
+            <script src="cdn-cookieyes..."> ELEMENT. next/script never renders
+            one — afterInteractive injects client-side (nothing in the HTML at
+            all), and even beforeInteractive only emits a preload hint plus an
+            inline bootstrap push that Next's runtime turns into a script
+            element later. Confirmed empirically: with beforeInteractive the
+            URL appeared 3× in the raw response as text and their checker
+            still failed — it wants the element, exactly as their "paste right
+            after <head>" instruction implies. React renders this JSX verbatim
+            into the SSR'd <head>, which is what finally satisfies it.
+
+            One deviation from their copy-paste snippet: `async`, so a
+            synchronous head script can't block HTML parsing (FCP/LCP).
+            Checkers match on src, not script timing attributes. If their
+            Verify ever regresses over this, dropping async is the fallback —
+            measure the paint cost first.
+
+            id="cookieyes" is REQUIRED — their script locates its own tag by
+            this exact id. Env-gated like GA/Clarity: absent = no banner, no
+            crash, in any environment. */}
+        {IS_PROD && COOKIEYES_ID && (
+          <script
+            id="cookieyes"
+            src={`https://cdn-cookieyes.com/client_data/${COOKIEYES_ID}/script.js`}
+            async
+          />
+        )}
         {/* Preload the logo so it's in cache when PageSkeleton renders,
             making the skeleton's <img> paint immediately as FCP. */}
         <link rel="preload" href="/logo/curbio-white.svg" as="image" type="image/svg+xml" />
@@ -71,32 +104,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <Analytics />
         <SpeedInsights />
-        {/* CookieYes — banner UI + the consent cookie/GPC handling lib/consent.ts
-            reads. NOT relied on for automatic script blocking: our own scripts
-            gate themselves on consent state in their own code (Google Consent
-            Mode v2 in lib/analytics.ts; ClarityLoader below).
-
-            strategy="beforeInteractive": Next.js injects this into the actual
-            server-rendered HTML <head> (present in the raw response, before
-            any client JS runs), rather than adding it to the DOM via
-            client-side JS after hydration the way afterInteractive/lazyOnload
-            do. CookieYes's own installation checker does a plain HTTP fetch
-            with no JS execution — it cannot see a script that only exists
-            because client-side React inserted it, which is exactly why
-            afterInteractive here read as "not installed" to that checker.
-            beforeInteractive is Next.js's own documented pattern for consent
-            managers specifically, for this reason.
-
-            The fixed-position banner overlay causes no CLS — reverified after
-            this change (id="cookieyes" is REQUIRED — CookieYes's own script
-            looks for this exact element id). */}
-        {IS_PROD && COOKIEYES_ID && (
-          <Script
-            id="cookieyes"
-            src={`https://cdn-cookieyes.com/client_data/${COOKIEYES_ID}/script.js`}
-            strategy="beforeInteractive"
-          />
-        )}
         {/* GA4 loader only — gtag init/config happens in lib/analytics.ts so
             the manual page_view (with explicit UTM params, captured before the
             URL strip) is always queued ahead of any event. send_page_view is
