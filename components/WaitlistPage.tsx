@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Icon, Eyebrow, AmberRule } from "./LpKit";
-import { gaEvent, getFirstTouch, getStoredUtms } from "@/lib/analytics";
+import { getFirstTouch, getStoredUtms } from "@/lib/analytics";
+import { trackEvent } from "@/lib/events";
 
 export function WaitlistPage({
   zip,
@@ -30,7 +31,7 @@ export function WaitlistPage({
   const onFormFocus = () => {
     if (formStartFired.current) return;
     formStartFired.current = true;
-    gaEvent("form_start", { form_id: "waitlist" });
+    trackEvent("form_start", { form_id: "waitlist" });
   };
 
   const set = (k: keyof typeof f) => (v: string) => setF((s) => ({ ...s, [k]: v }));

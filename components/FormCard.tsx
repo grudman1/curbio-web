@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
-import { captureAttribution, gaEvent, getFirstTouch, getGaClientId, getStoredUtms } from "@/lib/analytics";
+import { captureAttribution, getFirstTouch, getGaClientId, getStoredUtms } from "@/lib/analytics";
+import { trackEvent } from "@/lib/events";
 import { deriveChannel } from "@/lib/channels";
 import { campaignBaseFor, campaignHref } from "@/lib/campaignBase";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
@@ -60,7 +61,7 @@ export function FormCard({
   const onFormFocus = useCallback(() => {
     if (formStartFired.current) return;
     formStartFired.current = true;
-    gaEvent("form_start", { form_id: "quote-form", market: market.slug || "unknown", variant });
+    trackEvent("form_start", { form_id: "quote-form", market: market.slug || "unknown", variant });
   }, [market.slug, variant]);
 
   // Holds the resolved referral source ID: URL param wins over prop default.
@@ -176,7 +177,7 @@ export function FormCard({
         // 4. Analytics off the critical path — yield to the browser first
         setTimeout(() => {
           track("lead_submit", { variant });
-          gaEvent("lead_submit", {
+          trackEvent("lead_submit", {
             market: market.slug || "unknown",
             variant,
             ga_client_id: gaClientId ?? undefined,

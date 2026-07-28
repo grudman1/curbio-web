@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Header } from "./LpSections";
 import { PartnerHeader } from "./campaign/PartnerHeader";
 import { Icon } from "./LpKit";
-import { gaEvent } from "@/lib/analytics";
+import { trackEvent } from "@/lib/events";
 import { useCampaignBase } from "@/lib/campaignBase";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 import type { ResolvedMarket } from "@/lib/markets";
@@ -103,7 +103,7 @@ export default function ConfirmShell({
 
   // Funnel: the Calendly step was reached. Stored UTMs attach automatically.
   useEffect(() => {
-    gaEvent("booking_view", { market: market.slug || "unknown" });
+    trackEvent("booking_view", { market: market.slug || "unknown" });
   }, [market.slug]);
 
   // PII hygiene — runs once, after the server has already read everything:
@@ -159,7 +159,7 @@ export default function ConfirmShell({
         }
       }
       if (data?.event === "calendly.event_scheduled") {
-        gaEvent("booking_complete", { market: market.slug || "unknown" });
+        trackEvent("booking_complete", { market: market.slug || "unknown" });
       }
     }
     window.addEventListener("message", onMessage);
