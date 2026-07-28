@@ -1,167 +1,252 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// THE MARKET LIST
+// THE MARKET LIST — the only place in this codebase a market is named.
 //
-// Adding a market is A ROW BELOW. Not a page, not a nav entry, not a sitemap
-// entry, not a redirect — those all derive from this array.
+// Adding a market is A ROW BELOW. Nothing else. The market page, nav entry,
+// footer column, sitemap URL, picker card, campaign sold-proof strip, operator
+// API lookup, CRM payload and legacy 301s all derive from this array.
 //
-// This exists because the WordPress site grew three incompatible slug
-// conventions by hand (/markets/dmv-maryland/, /markets/wdc/,
-// /markets/dallas-ft-worth/), plus /markets/baltimore/ 404ing after a rename
-// and /markets/riverside/ 301ing to nothing. Every one of those was a market
-// added as code rather than as data. The rule that prevents a repeat:
+// ── Why five name fields and not one ─────────────────────────────────────────
 //
-//   NO PER-MARKET SPECIAL CASES ANYWHERE. If something is true of one market
-//   and not another, it is a FIELD, not a branch. Any `if (slug === "…")` in
-//   this codebase is a bug against this file.
+// One string doing five jobs is what produced the mess this replaces. Six
+// separate lists had drifted, and the Maryland market alone carried SEVEN
+// spellings: `Maryland` (operator API), `baltimore` (two local lists),
+// `Baltimore` (CRM map), `maryland-suburbs` (an untracked markets.json),
+// `dmv-maryland` (live WordPress URL), and a `/markets/baltimore/` URL that
+// 404s while 19 internal links still point at it.
 //
-// Only the seven live markets are listed. We do not know the next ones, so
-// nothing here is speculative. Fields we don't have real data for are left
-// EMPTY — an empty array is honest, a plausible-looking guess is not.
+// Three systems name markets, and only ONE of them is authoritative for the
+// public slug:
+//
+//   slug + displayName + coverage   sell.curbio.com's market modal. Marketing
+//                                   chose these deliberately; they are live and
+//                                   converting. THE source of truth for public
+//                                   naming. Verbatim, do not "tidy".
+//   operatorName                    app.curbio.com's internal ZIP→HSM lookup
+//                                   key. Never a public slug — it is why
+//                                   /markets/wdc/ exists.
+//   crmName                         what the CRM expects in the lead payload.
+//
+// WordPress /markets/ slugs are LEGACY URLS, not naming input. They live in
+// `legacySlugs` and 301 away.
+//
+// ── The rule ────────────────────────────────────────────────────────────────
+//
+// NO PER-MARKET SPECIAL CASES ANYWHERE. If something is true of one market and
+// not another, it is a FIELD here, not a branch there. Any `if (slug === "…")`
+// in this codebase is a bug against this file.
+//
+// Array ORDER is the market-picker display order, interleaved so one HSM's
+// markets aren't clustered side by side.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type Hsm = {
-  /** Full name as displayed. */
-  name: string;
-  /** E.164 or formatted — whatever the operator API returns. */
-  phone: string;
-  /** Path under /public, or null when no portrait exists. */
-  photo: string | null;
+/** A sold listing shown in the campaign sold-proof strip. */
+export type SoldListing = {
+  neighborhood: string;
+  /** Omit where no verified sale price exists. NEVER invent prices. */
+  price?: string;
+  /** Price is a Zestimate, not a confirmed sale. */
+  unverified?: boolean;
+  /** /sold/*.jpg — undefined shows a striped placeholder. */
+  photo?: string;
 };
 
 export type Market = {
-  /**
-   * URL segment. The ONLY slug, and it is MARKETING's name for the market —
-   * never the operator API's. Those diverge (the API says "NOVA" and "DC";
-   * marketing says Northern Virginia and Washington, DC), and letting a third
-   * party's internal naming decide curbio.com's URLs is how /markets/wdc/
-   * happened. Old spellings go in `legacySlugs`.
-   */
+  /** Public URL segment. Marketing's name. Old spellings go in legacySlugs. */
   slug: string;
-  /** Human label used in nav, headings, and the market picker. */
+  /**
+   * SHORT marketing label — "Atlanta", "Washington, DC". This is the string
+   * that appears in campaign copy, headings and the lead payload's market
+   * field. Distinct from displayName on purpose; both are live text.
+   */
+  name: string;
+  /** Human label — "Atlanta, GA". Carries the state, so don't append it again. */
   displayName: string;
-  /** Two-letter state/territory code. */
+  /** Service-area line under the market name — "Metro Atlanta · North GA". */
+  coverage: string;
+  /** EXACT `marketName` string the operator API returns. Internal, never public. */
+  operatorName: string;
+  /** EXACT market string the CRM expects in the lead payload. */
+  crmName: string;
+  /** Two-letter state code, used for same-state geo disambiguation. */
   state: string;
-  /**
-   * This market's slug in the CAMPAIGN catalog (lib/markets.ts), which is
-   * keyed off the operator API's `marketName`. Present so the two surfaces can
-   * be mapped without either dictating the other's naming — the site list owns
-   * public URLs, the campaign catalog owns the API contract, and
-   * config/markets.guard.ts asserts the mapping stays total.
-   */
-  campaignSlug: string;
-  /**
-   * Serviced ZIPs.
-   *
-   * INCOMPLETE — currently holds only the representative ZIP used for operator
-   * API lookups, which is the sole ZIP data that actually exists today. Do NOT
-   * use this for coverage checks or "do you serve my ZIP" logic until it is
-   * populated properly; it will silently answer "no" for real coverage.
-   */
-  zips: string[];
-  /**
-   * Home Services Manager. `null` for every market on purpose: HSM identity is
-   * resolved LIVE from the operator API (lib/operator.ts) per request, because
-   * it changes with staffing and business hours. This field exists so a market
-   * CAN carry a static override if the API ever lacks one — it is not a cache.
-   */
-  hsm: Hsm | null;
-  /** Approximate market centre, used for nearest-market geo resolution. */
+  /** Representative ZIP used for operator API lookups. */
+  canonicalZip: string;
+  /** Approximate metro centroid for nearest-market geo fallback. */
   coordinates: { lat: number; lng: number };
+  /** Representative cities, for copy. */
+  cities: string[];
   /**
-   * Brokerage partner logos shown on the market page.
-   * Empty for every market — we have no logo assets and no permission record.
-   * Populate with paths under /public/partners once both exist.
+   * Static HSM assignment for the market picker, so cards render without an
+   * API call each. The AUTHORITATIVE HSM identity (name, phone, Calendly,
+   * business hours) still comes live from the operator API per request — this
+   * is a display convenience, not a cache.
    */
+  hsm: { firstName: string; photo: string | null };
+  /** Brokerage partner logos. Empty everywhere — no assets, no permissions. */
   brokerageLogos: { name: string; src: string }[];
   /**
-   * Slugs this market has been published under before. Drives the 301 set at
-   * cutover so no existing inbound link or index entry breaks. Append here
-   * when a slug changes; never rename `slug` without adding the old value.
+   * Every slug this market has been published under. Drives the 301s.
+   * Append when a slug changes; never rename `slug` without adding the old one.
    */
   legacySlugs: string[];
+  /** Campaign sold-proof listings. */
+  sold: SoldListing[];
 };
 
 export const MARKETS: Market[] = [
   {
     slug: "atlanta",
-    displayName: "Atlanta",
+    name: "Atlanta",
+    displayName: "Atlanta, GA",
+    coverage: "Metro Atlanta · North GA",
+    operatorName: "Atlanta",
+    crmName: "Atlanta",
     state: "GA",
-    campaignSlug: "atlanta",
-    zips: ["30002"],
-    hsm: null,
+    canonicalZip: "30002",
     coordinates: { lat: 33.749, lng: -84.388 },
+    cities: ["Atlanta", "Marietta", "Alpharetta", "Decatur", "Sandy Springs"],
+    hsm: { firstName: "Christine", photo: "/hsm/christine-harvey.jpg" },
     brokerageLogos: [],
     legacySlugs: [],
-  },
-  {
-    // Deliberately renamed AWAY from Baltimore to reflect broader coverage;
-    // the live page is titled "Maryland Suburbs". The operator API still calls
-    // this market "Maryland" and the campaign catalog still slugs it
-    // "baltimore" — neither gets to decide the public URL.
-    slug: "maryland",
-    displayName: "Maryland Suburbs",
-    state: "MD",
-    campaignSlug: "baltimore",
-    zips: ["21201"],
-    hsm: null,
-    coordinates: { lat: 39.13, lng: -76.85 },
-    brokerageLogos: [],
-    legacySlugs: ["dmv-maryland", "baltimore", "maryland-suburbs"],
-  },
-  {
-    slug: "dallas",
-    displayName: "Dallas",
-    state: "TX",
-    campaignSlug: "dallas",
-    zips: ["75201"],
-    hsm: null,
-    coordinates: { lat: 32.7767, lng: -96.797 },
-    brokerageLogos: [],
-    legacySlugs: ["dallas-ft-worth"],
-  },
-  {
-    slug: "los-angeles",
-    displayName: "Los Angeles",
-    state: "CA",
-    campaignSlug: "los-angeles",
-    zips: ["90001"],
-    hsm: null,
-    coordinates: { lat: 34.0522, lng: -118.2437 },
-    brokerageLogos: [],
-    legacySlugs: ["la", "los-angeles-ca"],
-  },
-  {
-    slug: "riverside",
-    displayName: "Riverside",
-    state: "CA",
-    campaignSlug: "riverside",
-    zips: ["92503"],
-    hsm: null,
-    coordinates: { lat: 33.9533, lng: -117.3962 },
-    brokerageLogos: [],
-    legacySlugs: [],
-  },
-  {
-    slug: "northern-virginia",
-    displayName: "Northern Virginia",
-    state: "VA",
-    campaignSlug: "northern-virginia",
-    zips: ["22030"],
-    hsm: null,
-    coordinates: { lat: 38.8462, lng: -77.3064 },
-    brokerageLogos: [],
-    legacySlugs: ["nova"],
+    sold: [
+      { neighborhood: "Intown Atlanta", price: "$665,000", photo: "/sold/atlanta/959Berne_Intown.jpeg" },
+      { neighborhood: "Marietta", price: "$365,000", photo: "/sold/atlanta/680Smithstone_Marietta.webp" },
+      { neighborhood: "Roswell", price: "$785,000", photo: "/sold/atlanta/905Windsor_Roswell.webp" },
+      { neighborhood: "Acworth", price: "$497,000", photo: "/sold/atlanta/5076OakBranch_Acworth.webp" },
+      { neighborhood: "Lawrenceville", price: "$354,000", photo: "/sold/atlanta/772Bostonian_Lawrenceville.webp" },
+    ],
   },
   {
     slug: "washington-dc",
+    name: "Washington, DC",
     displayName: "Washington, DC",
+    coverage: "All DC Areas",
+    operatorName: "DC",
+    crmName: "DC",
     state: "DC",
-    campaignSlug: "washington-dc",
-    zips: ["20001"],
-    hsm: null,
+    canonicalZip: "20001",
     coordinates: { lat: 38.9072, lng: -77.0369 },
+    cities: ["Washington", "Georgetown", "Capitol Hill", "Navy Yard"],
+    hsm: { firstName: "Joshua", photo: "/hsm/joshua-collins.jpg" },
     brokerageLogos: [],
     legacySlugs: ["wdc"],
+    sold: [
+      { neighborhood: "Bellevue",    price: "$430,000",   photo: "/sold/washington-dc/303AtlanticStreet_Bellevue.jpg" },
+      { neighborhood: "Park View",   price: "$785,000",   photo: "/sold/washington-dc/639NWColumbia_Park View.avif" },
+      { neighborhood: "Woodridge",   price: "$852,000",   photo: "/sold/washington-dc/300920thSt_Woodridge.jpg" },
+      { neighborhood: "Chevy Chase", price: "$1,480,000", photo: "/sold/washington-dc/543132ndStreet_ChevyChase.webp" },
+      { neighborhood: "Capitol Hill", price: "$996,500",  photo: "/sold/washington-dc/1217DStreetNE_CapitolHill.jpeg" },
+    ],
+  },
+  {
+    slug: "dallas",
+    name: "Dallas",
+    displayName: "Dallas, TX",
+    coverage: "DFW Metroplex",
+    operatorName: "Dallas",
+    crmName: "Dallas",
+    state: "TX",
+    canonicalZip: "75201",
+    coordinates: { lat: 32.7767, lng: -96.797 },
+    cities: ["Dallas", "Plano", "Frisco", "Arlington", "Fort Worth"],
+    hsm: { firstName: "Miguel", photo: "/hsm/miguel-picart.jpg" },
+    brokerageLogos: [],
+    legacySlugs: ["dallas-ft-worth"],
+    sold: [
+      { neighborhood: "Dallas",         price: "$875,000",   photo: "/sold/dallas/221SEdgefield_Dallas.webp" },
+      { neighborhood: "Plano",          price: "$592,000",   photo: "/sold/dallas/2913TrophyDrive_Plano.jpeg" },
+      { neighborhood: "Frisco",         price: "$880,000",   photo: "/sold/dallas/4613ShadowRidge_Frisco.webp" },
+      { neighborhood: "McKinney",       price: "$1,199,900", photo: "/sold/dallas/6558SparrowPoint_McKinney.webp" },
+      { neighborhood: "Lake Highlands", price: "$325,000",   photo: "/sold/dallas/11111QuailRunSt_LakeHighlands.webp" },
+    ],
+  },
+  {
+    slug: "maryland",
+    name: "Maryland",
+    displayName: "Maryland, MD",
+    coverage: "Baltimore · Maryland Suburbs",
+    operatorName: "Maryland",
+    crmName: "Maryland",
+    state: "MD",
+    canonicalZip: "21201",
+    coordinates: { lat: 39.13, lng: -76.85 },
+    cities: ["Baltimore", "Bethesda", "Rockville", "Silver Spring", "Columbia"],
+    hsm: { firstName: "Lisa", photo: "/hsm/lisa-tucker.jpg" },
+    brokerageLogos: [],
+    legacySlugs: ["dmv-maryland", "baltimore", "maryland-suburbs"],
+    sold: [
+      { neighborhood: "Bethesda",      price: "$1,075,000", photo: "/sold/baltimore/9213Cedarcrest_Bethesda.jpg" },
+      { neighborhood: "Silver Spring", price: "$640,000",   photo: "/sold/baltimore/13607Wendover_SilverSpring.webp" },
+      { neighborhood: "Pikesville",    price: "$449,000",   photo: "/sold/baltimore/8216McDonogh_Pikesville.webp" },
+      { neighborhood: "Potomac",       price: "$1,610,000", photo: "/sold/baltimore/8250Buckspark_Potomac.jpg" },
+      { neighborhood: "Ellicott City", price: "$1,100,000", photo: "/sold/baltimore/13339Ridgewood_EllicotCity.webp" },
+    ],
+  },
+  {
+    slug: "los-angeles",
+    name: "Los Angeles",
+    displayName: "Los Angeles, CA",
+    coverage: "Greater Los Angeles",
+    operatorName: "Los Angeles",
+    crmName: "Los Angeles",
+    state: "CA",
+    canonicalZip: "90001",
+    coordinates: { lat: 34.0522, lng: -118.2437 },
+    cities: ["Los Angeles", "Long Beach", "Pasadena", "Glendale", "Santa Monica"],
+    hsm: { firstName: "Trevor", photo: "/hsm/trevor-laramee.jpg" },
+    brokerageLogos: [],
+    legacySlugs: ["la", "los-angeles-ca"],
+    sold: [
+      { neighborhood: "Hollywood Hills",  price: "$2,825,000", photo: "/sold/los-angeles/2276LaGranada_HollywoodHills.jpg" },
+      { neighborhood: "Laguna Niguel",    price: "$5,020,000", photo: "/sold/los-angeles/6Riverstone_Pasadena.webp" },
+      { neighborhood: "South OC",         price: "$1,159,000", photo: "/sold/los-angeles/7MonticelloLn_SouthOC.webp" },
+      { neighborhood: "Pasadena",         price: "$2,695,000", photo: "/sold/los-angeles/541MartosDr_Pasadena.jpg" },
+      { neighborhood: "Hermosa Beach",    price: "$2,350,000", photo: "/sold/los-angeles/1256OwossoAve_HermosaBeach.webp" },
+    ],
+  },
+  {
+    slug: "northern-virginia",
+    name: "Northern Virginia",
+    displayName: "Northern Virginia, VA",
+    coverage: "Arlington · Manassas",
+    operatorName: "NOVA",
+    crmName: "NOVA",
+    state: "VA",
+    canonicalZip: "22030",
+    coordinates: { lat: 38.8462, lng: -77.3064 },
+    cities: ["Arlington", "Alexandria", "Fairfax", "Reston", "Vienna"],
+    hsm: { firstName: "Joshua", photo: "/hsm/joshua-collins.jpg" },
+    brokerageLogos: [],
+    legacySlugs: ["nova"],
+    sold: [
+      { neighborhood: "Woodbridge",    price: "$525,000",   photo: "/sold/northern-virginia/1257EverettAve_Woodbridge.jpg" },
+      { neighborhood: "Fairfax",       price: "$931,444",   photo: "/sold/northern-virginia/5398QuincyMarr_Fairfax.jpg" },
+      { neighborhood: "Great Falls",   price: "$1,800,000", photo: "/sold/northern-virginia/9420BianJac_GreatFalls.jpg" },
+      { neighborhood: "Fredericksburg", price: "$582,000",  photo: "/sold/northern-virginia/12305GladeDr_Fredericksburg.webp" },
+      { neighborhood: "Leesburg",      price: "$1,225,000", photo: "/sold/northern-virginia/43170ParkersRidge_Leesburg.webp" },
+    ],
+  },
+  {
+    slug: "riverside",
+    name: "Riverside",
+    displayName: "Riverside, CA",
+    coverage: "Inland Empire · Riverside",
+    operatorName: "Riverside",
+    crmName: "Riverside",
+    state: "CA",
+    canonicalZip: "92503",
+    coordinates: { lat: 33.9533, lng: -117.3962 },
+    cities: ["Riverside", "Corona", "Moreno Valley", "Temecula"],
+    hsm: { firstName: "Trevor", photo: "/hsm/trevor-laramee.jpg" },
+    brokerageLogos: [],
+    legacySlugs: [],
+    sold: [
+      { neighborhood: "Rancho Mirage",   price: "$549,000", photo: "/sold/riverside/24KevinLeeLane_RanchMirage.jpg" },
+      { neighborhood: "Riverside",       price: "$565,000", photo: "/sold/riverside/4064ViaSanJose_Riverside.webp" },
+      { neighborhood: "Cucamonga",       price: "$950,000", photo: "/sold/riverside/5785Campanella_Cucamonga.webp" },
+      { neighborhood: "Canyon Lake",     price: "$615,000", photo: "/sold/riverside/30287Skipjack_CanyonLake.jpg" },
+      { neighborhood: "Temecula",        price: "$924,000", photo: "/sold/riverside/32049CorteCanel_Temecula.webp" },
+    ],
   },
 ];
 
@@ -169,20 +254,33 @@ export const MARKET_BY_SLUG: Record<string, Market> = Object.fromEntries(
   MARKETS.map((m) => [m.slug, m])
 );
 
-/** Every legacy slug → its current slug. Drives the market 301s at cutover. */
+/** Operator API `marketName` → market. The API is keyed by its own names. */
+export const MARKET_BY_OPERATOR_NAME: Record<string, Market> = Object.fromEntries(
+  MARKETS.map((m) => [m.operatorName, m])
+);
+
+/** Every legacy spelling → its current slug. Drives the 301s and ?market= aliases. */
 export const LEGACY_SLUG_REDIRECTS: Record<string, string> = Object.fromEntries(
   MARKETS.flatMap((m) => m.legacySlugs.map((old) => [old, m.slug]))
 );
 
-/** Public path for a market page. One definition — nav, sitemap, and the page
- *  route all call this, so the URL shape can never disagree with itself. */
+/** Public path for a market page. One definition, so nav, sitemap and the route
+ *  can never disagree about the URL shape. */
 export function marketPath(slug: string): string {
   return `/markets/${slug}`;
 }
 
+/** Canonical slug for any input — current slug or legacy spelling. Null if unknown. */
 export function resolveMarketSlug(input: string | null | undefined): string | null {
   if (!input) return null;
   const s = input.trim().toLowerCase();
   const resolved = LEGACY_SLUG_REDIRECTS[s] ?? s;
   return MARKET_BY_SLUG[resolved] ? resolved : null;
+}
+
+/** CRM market string for a slug (or legacy spelling). Null when unrecognised —
+ *  callers must NOT invent one; the CRM rejects unknown markets. */
+export function crmNameForSlug(input: string | null | undefined): string | null {
+  const slug = resolveMarketSlug(input);
+  return slug ? MARKET_BY_SLUG[slug].crmName : null;
 }

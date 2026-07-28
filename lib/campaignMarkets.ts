@@ -1,17 +1,20 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// Campaign markets for the email landing page. The header market picker switches
-// between these via ?market=<slug>; every market-named string on the page reads
-// from here. Atlanta has real, named sold listings. Other markets currently show
-// city-level proof WITHOUT prices (placeholder) until real sold data lands —
-// see `placeholder: true`. Do not invent prices.
+// Campaign market view — DERIVED from config/markets.ts.
+//
+// This file used to declare its own list of markets with its own slugs, names
+// and alias table — one of the six lists that had drifted, and the second
+// place the slug "baltimore" was written down. It declares no market now: the
+// header picker, every market-named string on the campaign pages, and the
+// sold-proof strip all read the single list.
+//
+// The TYPE stays because the campaign components are written against it, and
+// NEUTRAL_MARKET stays because "no market" is a real state that no row in the
+// market list can represent.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type SoldListing = {
-  neighborhood: string;
-  price?: string; // omit where no verified sale price exists
-  unverified?: boolean; // price is a Zestimate, not a confirmed sale
-  photo?: string; // /sold/*.jpg — leave undefined to show striped placeholder
-};
+import { MARKETS, MARKET_BY_SLUG, resolveMarketSlug, type SoldListing } from "@/config/markets";
+
+export type { SoldListing };
 
 export type CampaignMarket = {
   slug: string;
@@ -21,86 +24,11 @@ export type CampaignMarket = {
   sold: SoldListing[];
 };
 
-export const CAMPAIGN_MARKETS: CampaignMarket[] = [
-  {
-    slug: "atlanta",
-    name: "Atlanta",
-    sold: [
-      { neighborhood: "Intown Atlanta", price: "$665,000", photo: "/sold/atlanta/959Berne_Intown.jpeg" },
-      { neighborhood: "Marietta", price: "$365,000", photo: "/sold/atlanta/680Smithstone_Marietta.webp" },
-      { neighborhood: "Roswell", price: "$785,000", photo: "/sold/atlanta/905Windsor_Roswell.webp" },
-      { neighborhood: "Acworth", price: "$497,000", photo: "/sold/atlanta/5076OakBranch_Acworth.webp" },
-      { neighborhood: "Lawrenceville", price: "$354,000", photo: "/sold/atlanta/772Bostonian_Lawrenceville.webp" },
-    ],
-  },
-  {
-    slug: "dallas",
-    name: "Dallas",
-    sold: [
-      { neighborhood: "Dallas",         price: "$875,000",   photo: "/sold/dallas/221SEdgefield_Dallas.webp" },
-      { neighborhood: "Plano",          price: "$592,000",   photo: "/sold/dallas/2913TrophyDrive_Plano.jpeg" },
-      { neighborhood: "Frisco",         price: "$880,000",   photo: "/sold/dallas/4613ShadowRidge_Frisco.webp" },
-      { neighborhood: "McKinney",       price: "$1,199,900", photo: "/sold/dallas/6558SparrowPoint_McKinney.webp" },
-      { neighborhood: "Lake Highlands", price: "$325,000",   photo: "/sold/dallas/11111QuailRunSt_LakeHighlands.webp" },
-    ],
-  },
-  {
-    slug: "los-angeles",
-    name: "Los Angeles",
-    sold: [
-      { neighborhood: "Hollywood Hills",  price: "$2,825,000", photo: "/sold/los-angeles/2276LaGranada_HollywoodHills.jpg" },
-      { neighborhood: "Laguna Niguel",    price: "$5,020,000", photo: "/sold/los-angeles/6Riverstone_Pasadena.webp" },
-      { neighborhood: "South OC",         price: "$1,159,000", photo: "/sold/los-angeles/7MonticelloLn_SouthOC.webp" },
-      { neighborhood: "Pasadena",         price: "$2,695,000", photo: "/sold/los-angeles/541MartosDr_Pasadena.jpg" },
-      { neighborhood: "Hermosa Beach",    price: "$2,350,000", photo: "/sold/los-angeles/1256OwossoAve_HermosaBeach.webp" },
-    ],
-  },
-  {
-    slug: "riverside",
-    name: "Riverside",
-    sold: [
-      { neighborhood: "Rancho Mirage",   price: "$549,000", photo: "/sold/riverside/24KevinLeeLane_RanchMirage.jpg" },
-      { neighborhood: "Riverside",       price: "$565,000", photo: "/sold/riverside/4064ViaSanJose_Riverside.webp" },
-      { neighborhood: "Cucamonga",       price: "$950,000", photo: "/sold/riverside/5785Campanella_Cucamonga.webp" },
-      { neighborhood: "Canyon Lake",     price: "$615,000", photo: "/sold/riverside/30287Skipjack_CanyonLake.jpg" },
-      { neighborhood: "Temecula",        price: "$924,000", photo: "/sold/riverside/32049CorteCanel_Temecula.webp" },
-    ],
-  },
-  {
-    slug: "northern-virginia",
-    name: "Northern Virginia",
-    sold: [
-      { neighborhood: "Woodbridge",    price: "$525,000",   photo: "/sold/northern-virginia/1257EverettAve_Woodbridge.jpg" },
-      { neighborhood: "Fairfax",       price: "$931,444",   photo: "/sold/northern-virginia/5398QuincyMarr_Fairfax.jpg" },
-      { neighborhood: "Great Falls",   price: "$1,800,000", photo: "/sold/northern-virginia/9420BianJac_GreatFalls.jpg" },
-      { neighborhood: "Fredericksburg", price: "$582,000",  photo: "/sold/northern-virginia/12305GladeDr_Fredericksburg.webp" },
-      { neighborhood: "Leesburg",      price: "$1,225,000", photo: "/sold/northern-virginia/43170ParkersRidge_Leesburg.webp" },
-    ],
-  },
-  {
-    slug: "washington-dc",
-    name: "Washington, DC",
-    sold: [
-      { neighborhood: "Bellevue",    price: "$430,000",   photo: "/sold/washington-dc/303AtlanticStreet_Bellevue.jpg" },
-      { neighborhood: "Park View",   price: "$785,000",   photo: "/sold/washington-dc/639NWColumbia_Park View.avif" },
-      { neighborhood: "Woodridge",   price: "$852,000",   photo: "/sold/washington-dc/300920thSt_Woodridge.jpg" },
-      { neighborhood: "Chevy Chase", price: "$1,480,000", photo: "/sold/washington-dc/543132ndStreet_ChevyChase.webp" },
-      { neighborhood: "Capitol Hill", price: "$996,500",  photo: "/sold/washington-dc/1217DStreetNE_CapitolHill.jpeg" },
-    ],
-  },
-  {
-    slug: "baltimore",
-    name: "Maryland",
-    // No placeholder: true — all five listings have verified sale prices.
-    sold: [
-      { neighborhood: "Bethesda",      price: "$1,075,000", photo: "/sold/baltimore/9213Cedarcrest_Bethesda.jpg" },
-      { neighborhood: "Silver Spring", price: "$640,000",   photo: "/sold/baltimore/13607Wendover_SilverSpring.webp" },
-      { neighborhood: "Pikesville",    price: "$449,000",   photo: "/sold/baltimore/8216McDonogh_Pikesville.webp" },
-      { neighborhood: "Potomac",       price: "$1,610,000", photo: "/sold/baltimore/8250Buckspark_Potomac.jpg" },
-      { neighborhood: "Ellicott City", price: "$1,100,000", photo: "/sold/baltimore/13339Ridgewood_EllicotCity.webp" },
-    ],
-  },
-];
+export const CAMPAIGN_MARKETS: CampaignMarket[] = MARKETS.map((m) => ({
+  slug: m.slug,
+  name: m.name,
+  sold: m.sold,
+}));
 
 export const DEFAULT_MARKET_SLUG = "atlanta";
 
@@ -114,20 +42,23 @@ export const NEUTRAL_MARKET: CampaignMarket = {
   sold: [],
 };
 
-// Tolerated inbound aliases only — each resolves TO the canonical slug.
-const SLUG_ALIASES: Record<string, string> = {
-  "maryland-suburbs": "baltimore", // legacy links; canonical market is baltimore
-  maryland: "baltimore",
-  nova: "northern-virginia",
-};
-
+/**
+ * Campaign market for a slug. Every legacy spelling is tolerated via the single
+ * list's `legacySlugs`, so the local alias table this file used to keep is gone.
+ *
+ * Fallback behaviour is UNCHANGED and deliberate: absent or unrecognised slugs
+ * return the default market, not the neutral one. The neutral state is chosen
+ * upstream by useMarketResolution when it genuinely cannot identify a visitor;
+ * returning it from here instead would blank the page for anyone arriving on a
+ * campaign link with a typo'd slug.
+ */
 export function getCampaignMarket(slug?: string | null): CampaignMarket {
-  if (!slug) return CAMPAIGN_MARKETS.find((m) => m.slug === DEFAULT_MARKET_SLUG)!;
-  const resolved = SLUG_ALIASES[slug] ?? slug;
-  return (
-    CAMPAIGN_MARKETS.find((m) => m.slug === resolved) ??
-    CAMPAIGN_MARKETS.find((m) => m.slug === DEFAULT_MARKET_SLUG)!
-  );
+  const fallback = CAMPAIGN_MARKETS.find((m) => m.slug === DEFAULT_MARKET_SLUG)!;
+  if (!slug) return fallback;
+  const canonical = resolveMarketSlug(slug);
+  if (!canonical) return fallback;
+  const m = MARKET_BY_SLUG[canonical];
+  return { slug: m.slug, name: m.name, sold: m.sold };
 }
 
 export const MARKET_OPTIONS = CAMPAIGN_MARKETS.map((m) => ({ slug: m.slug, name: m.name }));

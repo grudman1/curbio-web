@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { Redis } from "@upstash/redis";
 import { deriveChannel } from "@/lib/channels";
+import { crmNameForSlug } from "@/config/markets";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NOTHING IN THIS ROUTE MAY REJECT A SUBMISSION IT CANNOT PROVE IS FAKE.
@@ -75,24 +76,18 @@ function isValidEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 }
 
-const SLUG_TO_CRM_MARKET: Record<string, string> = {
-  "atlanta": "Atlanta",
-  "dallas": "Dallas",
-  "los-angeles": "Los Angeles",
-  "riverside": "Riverside",
-  "northern-virginia": "NOVA",
-  "washington-dc": "DC",
-  "baltimore": "Baltimore",
-  "maryland-suburbs": "Baltimore",
-  "maryland": "Baltimore",
-  "nova": "NOVA",
-  "la": "Los Angeles",
-  "los-angeles-ca": "Los Angeles",
-};
-
+// Slug → the exact market string the CRM expects, from the single market list
+// (config/markets.ts `crmName`). This replaced a hand-maintained map that sent
+// "Baltimore" — a market the CRM has never had, and which the operator API
+// calls "Maryland". It only ever fired on the fallback path (crmMarketName from
+// the live API takes precedence), so it silently mis-tagged exactly those leads
+// where the API had already failed to resolve.
+//
+// Returns null rather than passing the slug through when unrecognised: sending
+// the CRM a market it does not know is worse than sending none, because it
+// looks like data.
 function toCrmMarket(slug: string | null | undefined): string | null {
-  if (!slug) return null;
-  return SLUG_TO_CRM_MARKET[slug] ?? slug;
+  return crmNameForSlug(slug);
 }
 
 // ── Upstash Redis (Vercel Marketplace) — durable lead store.

@@ -7,6 +7,60 @@ Newest first.
 
 ---
 
+## config/markets.ts is the only place a market is named
+
+Six lists had drifted. The Maryland market alone carried SEVEN spellings:
+
+| where | spelling |
+|---|---|
+| operator API `marketName` | `Maryland` |
+| `lib/markets.ts` slug | `baltimore` |
+| `lib/campaignMarkets.ts` slug | `baltimore` |
+| CRM name map | `Baltimore` |
+| `markets.json` (untracked) | `maryland-suburbs` |
+| live WordPress URL | `dmv-maryland` |
+| live WordPress 404 | `baltimore` (19 internal links still point at it) |
+
+`baltimore` did NOT come from the operator API — verified: every Maryland ZIP
+including Baltimore city itself returns `"Maryland"`. It came from the
+WordPress site's old page slug and was copied into the initial commit
+(`c70001d`, 2026-06-04), then propagated into four files.
+
+**Three systems name markets; only one is authoritative for public naming.**
+
+- **sell.curbio.com's market modal** — marketing's names, chosen deliberately,
+  live and converting. THE source of truth for `slug`, `displayName`,
+  `coverage`. Verbatim; do not "tidy" them.
+- **WordPress `/markets/` slugs** — legacy URLs needing 301s. Never naming input.
+- **Operator API** — internal ZIP→HSM lookup keys (`NOVA`, `DC`, `Maryland`).
+  Never a public slug. Letting it decide URLs is why `/markets/wdc/` exists.
+
+Five name fields per market, because one string doing five jobs is what
+produced this: `slug`, `displayName`, `coverage`, `operatorName`, `crmName`.
+
+`lib/markets.ts`, `lib/campaignMarkets.ts`, the coordinates map, the HSM/card
+maps and the CRM name map all DERIVE from it now. Reconciling six lists still
+leaves six lists.
+
+## markets.json is deleted
+
+An untracked 5.7 KB file at the repo root, dated 2 June — two days before the
+initial commit. Nothing read it, nothing wrote it, it was never in version
+control, and its only reference was the `.gitignore` line hiding it. It was a
+naming authority that looked official and answered to nobody. A gitignored
+source of truth is how the drift above happened; if per-market data is needed
+it belongs in `config/markets.ts`, in git.
+
+## No market drift monitoring
+
+No daily CI job, no live-URL guard, no operator API call at build time.
+
+At seven markets a human makes every change, so this would be monitoring for a
+problem nothing can introduce automatically. And build-time third-party calls
+have already broken this project once — a hung operator fetch failed every
+deploy on 2026-07-23 (see `lib/operator.ts`). The only gate is
+`config/markets.guard.ts`: offline, deterministic, internal-consistency only.
+
 ## Two styling systems coexist, on purpose (Phase 2)
 
 `globals.css` holds ~385 lines of hand-written `lp-*` rules with hardcoded

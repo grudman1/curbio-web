@@ -51,10 +51,10 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
   return (
     <div className="mx-auto max-w-container px-6 py-16">
       <p className="text-label font-black uppercase tracking-[var(--tracking-label)] text-content-muted">
-        {market.state}
+        {market.displayName}
       </p>
       <h1 className="mt-2 font-serif text-h2 font-semibold text-content">
-        Pre-listing home improvement in {market.displayName}
+        Pre-listing home improvement in {market.name}
       </h1>
 
       <dl className="mt-12 grid gap-8 sm:grid-cols-2">
@@ -74,12 +74,12 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
         </div>
         <div>
           <dt className="text-label font-black uppercase tracking-[var(--tracking-label)] text-content-subtle">
-            ZIPs
+            Coverage
           </dt>
           <dd className="mt-1 text-body text-content">
-            {market.zips.length ? market.zips.join(", ") : "—"}
+            {market.coverage}
             <span className="block text-micro text-content-muted">
-              Incomplete — representative ZIP only. Not a coverage list.
+              {market.cities.join(" · ")}
             </span>
           </dd>
         </div>
@@ -88,9 +88,9 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
             Home Services Manager
           </dt>
           <dd className="mt-1 text-body text-content">
-            {market.hsm?.name ?? "—"}
+            {market.hsm.firstName || "—"}
             <span className="block text-micro text-content-muted">
-              Resolved live from the operator API per request.
+              Full identity resolves live from the operator API per request.
             </span>
           </dd>
         </div>

@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { MARKETS, marketPath } from "@/config/markets";
 import { routeMetadata } from "@/config/routes";
-import { assertMarketListsAgree } from "@/config/markets.guard";
+import { assertMarketListIsCoherent } from "@/config/markets.guard";
 
 // Runs at BUILD time (this page is prerendered), so a market added to one list
 // and not the other fails CI rather than surfacing as a 404 months later.
-assertMarketListsAgree();
+assertMarketListIsCoherent();
 
 // Market index. Renders MARKETS — no list here either.
 export const metadata: Metadata = {

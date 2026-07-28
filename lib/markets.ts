@@ -1,14 +1,18 @@
 import type { OperatorLead } from "./operator";
+import { MARKETS, MARKET_BY_SLUG, MARKET_BY_OPERATOR_NAME, LEGACY_SLUG_REDIRECTS, type Market } from "@/config/markets";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Market catalog
+// Market catalog — DERIVED. config/markets.ts is the only place a market is
+// named; everything below is a projection of that list plus the live operator
+// API.
 //
-// HSM identity (name / phone / Calendly), market name, and in-market/business-
-// hours status all come LIVE from the operator API (lib/operator.ts). This
-// catalog only supplies the editorial trimmings the API doesn't return — a
-// stable slug, a friendly label + state, a canonical zip to query for ?market=
-// campaign links, and a few representative cities. Keyed by the API's exact
-// `marketName` string.
+// This file used to declare its own catalog keyed by the operator API's
+// `marketName` strings, which is how the slug "baltimore" entered the codebase
+// for a market the API calls "Maryland" and marketing calls Maryland. Nothing
+// here declares a market any more.
+//
+// What remains here is BEHAVIOUR, not data: slug canonicalisation, nearest-
+// market geo, and the view model the page components render.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type CatalogEntry = {
@@ -20,78 +24,28 @@ export type CatalogEntry = {
   cities: string[];
 };
 
-const BY_MARKET_NAME: Record<string, CatalogEntry> = {
-  Atlanta: {
-    slug: "atlanta",
-    label: "Atlanta",
-    state: "GA",
-    region: "Metro Atlanta · North GA",
-    canonicalZip: "30002",
-    cities: ["Atlanta", "Marietta", "Alpharetta", "Decatur", "Sandy Springs"],
-  },
-  Maryland: {
-    slug: "baltimore",
-    label: "Maryland",
-    state: "MD",
-    region: "Baltimore · Maryland Suburbs",
-    canonicalZip: "21201",
-    cities: ["Baltimore", "Bethesda", "Rockville", "Silver Spring", "Columbia"],
-  },
-  Dallas: {
-    slug: "dallas",
-    label: "Dallas",
-    state: "TX",
-    region: "DFW Metroplex",
-    canonicalZip: "75201",
-    cities: ["Dallas", "Plano", "Frisco", "Arlington", "Fort Worth"],
-  },
-  "Los Angeles": {
-    slug: "los-angeles",
-    label: "Los Angeles",
-    state: "CA",
-    region: "Greater Los Angeles",
-    canonicalZip: "90001",
-    cities: ["Los Angeles", "Long Beach", "Pasadena", "Glendale", "Santa Monica"],
-  },
-  Riverside: {
-    slug: "riverside",
-    label: "Riverside",
-    state: "CA",
-    region: "Inland Empire · Riverside",
-    canonicalZip: "92503",
-    cities: ["Riverside", "Corona", "Moreno Valley", "Temecula"],
-  },
-  NOVA: {
-    slug: "northern-virginia",
-    label: "Northern Virginia",
-    state: "VA",
-    region: "Arlington · Manassas",
-    canonicalZip: "22030",
-    cities: ["Arlington", "Alexandria", "Fairfax", "Reston", "Vienna"],
-  },
-  // Keyed by the API's exact marketName — it returns "DC", not "Washington DC".
-  DC: {
-    slug: "washington-dc",
-    label: "Washington, DC",
-    state: "DC",
-    region: "All DC Areas",
-    canonicalZip: "20001",
-    cities: ["Washington", "Georgetown", "Capitol Hill", "Navy Yard"],
-  },
-};
+function toCatalogEntry(m: Market): CatalogEntry {
+  return {
+    slug: m.slug,
+    label: m.name,
+    state: m.state,
+    region: m.coverage,
+    canonicalZip: m.canonicalZip,
+    cities: m.cities,
+  };
+}
 
-export const BY_SLUG: Record<string, CatalogEntry> = Object.fromEntries(
-  Object.values(BY_MARKET_NAME).map((e) => [e.slug, e])
+/** Keyed by the operator API's exact `marketName`. */
+const BY_MARKET_NAME: Record<string, CatalogEntry> = Object.fromEntries(
+  Object.entries(MARKET_BY_OPERATOR_NAME).map(([k, m]) => [k, toCatalogEntry(m)])
 );
 
-// Tolerate older/alternate campaign slugs so existing ?market= links keep working.
-export const SLUG_ALIASES: Record<string, string> = {
-  nova: "northern-virginia",
-  "los-angeles-ca": "los-angeles",
-  la: "los-angeles",
-  maryland: "baltimore",
-  "maryland-suburbs": "baltimore",
-};
+export const BY_SLUG: Record<string, CatalogEntry> = Object.fromEntries(
+  MARKETS.map((m) => [m.slug, toCatalogEntry(m)])
+);
+
+/** Legacy spellings tolerated on ?market= links. Derived from legacySlugs. */
+export const SLUG_ALIASES: Record<string, string> = { ...LEGACY_SLUG_REDIRECTS };
 
 export function canonicalSlug(slug: string | null | undefined): string | null {
   if (!slug) return null;
@@ -111,23 +65,13 @@ function labelWithState(label: string, state: string): string {
   return label.endsWith(`, ${state}`) ? label : `${label}, ${state}`;
 }
 
-// Static list for the footer "markets we serve" links.
-export const ALL_MARKETS: { slug: string; displayName: string }[] = Object.values(
-  BY_MARKET_NAME
-).map((e) => ({ slug: e.slug, displayName: labelWithState(e.label, e.state) }));
+// Footer "markets we serve" links.
+export const ALL_MARKETS: { slug: string; displayName: string }[] = MARKETS.map((m) => ({
+  slug: m.slug,
+  displayName: m.displayName,
+}));
 
-// Which HSM (and headshot) staffs each market — stable assignment used by the
-// market chooser so it can render without an API call per card. Photo is null
-// where we don't yet have a headshot (e.g. Joshua's DC-metro markets).
-const SLUG_HSM: Record<string, { first: string; photo: string | null }> = {
-  atlanta: { first: "Christine", photo: "/hsm/christine-harvey.jpg" },
-  baltimore: { first: "Lisa", photo: "/hsm/lisa-tucker.jpg" },
-  dallas: { first: "Miguel", photo: "/hsm/miguel-picart.jpg" },
-  "los-angeles": { first: "Trevor", photo: "/hsm/trevor-laramee.jpg" },
-  riverside: { first: "Trevor", photo: "/hsm/trevor-laramee.jpg" },
-  "northern-virginia": { first: "Joshua", photo: "/hsm/joshua-collins.jpg" },
-  "washington-dc": { first: "Joshua", photo: "/hsm/joshua-collins.jpg" },
-};
+
 
 export type MarketCard = {
   slug: string;
@@ -137,27 +81,17 @@ export type MarketCard = {
   photo: string | null;
 };
 
-// Display order for the chooser grid (2 rows × 4 on desktop) — interleaved so
-// the same HSM's markets aren't clustered side by side.
-const CARD_ORDER = [
-  "atlanta",
-  "washington-dc",
-  "dallas",
-  "baltimore",
-  "los-angeles",
-  "northern-virginia",
-  "riverside",
-];
 
-export const MARKET_CARDS: MarketCard[] = [...Object.values(BY_MARKET_NAME)]
-  .sort((a, b) => CARD_ORDER.indexOf(a.slug) - CARD_ORDER.indexOf(b.slug))
-  .map((e) => ({
-    slug: e.slug,
-    label: labelWithState(e.label, e.state),
-    region: e.region,
-    hsmFirst: SLUG_HSM[e.slug]?.first ?? "",
-    photo: SLUG_HSM[e.slug]?.photo ?? null,
-  }));
+
+// Picker order is the ORDER OF config/markets.ts — interleaved there so one
+// HSM's markets aren't clustered. No second ordering list.
+export const MARKET_CARDS: MarketCard[] = MARKETS.map((m) => ({
+  slug: m.slug,
+  label: m.displayName,
+  region: m.coverage,
+  hsmFirst: m.hsm.firstName,
+  photo: m.hsm.photo,
+}));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Geo fallback — approximate service-area centers, used to match a visitor to
@@ -165,15 +99,9 @@ export const MARKET_CARDS: MarketCard[] = [...Object.values(BY_MARKET_NAME)]
 // (IP geolocation is imprecise, so strict ZIP matching alone misses most metro
 // visitors). Coordinates are rough metro centroids.
 // ─────────────────────────────────────────────────────────────────────────────
-const MARKET_COORDS: Record<string, { lat: number; lng: number }> = {
-  atlanta: { lat: 33.749, lng: -84.388 },
-  baltimore: { lat: 39.13, lng: -76.85 }, // Baltimore + Montgomery MD suburbs
-  dallas: { lat: 32.7767, lng: -96.797 },
-  "los-angeles": { lat: 34.0522, lng: -118.2437 },
-  riverside: { lat: 33.9533, lng: -117.3962 },
-  "northern-virginia": { lat: 38.8462, lng: -77.3064 },
-  "washington-dc": { lat: 38.9072, lng: -77.0369 },
-};
+const MARKET_COORDS: Record<string, { lat: number; lng: number }> = Object.fromEntries(
+  MARKETS.map((m) => [m.slug, m.coordinates])
+);
 
 const GEO_NEAREST_MILES = 75;
 
@@ -300,8 +228,8 @@ export function buildResolvedMarketFromSlug(
   if (!s) return null;
   const cat = BY_SLUG[s];
   if (!cat) return null;
-  const hsmStatic = SLUG_HSM[s] ?? null;
-  const firstName = hsmStatic?.first ?? "";
+  const hsmStatic = MARKET_BY_SLUG[s]?.hsm ?? null;
+  const firstName = hsmStatic?.firstName ?? "";
   const label = cat.label;
   const member = firstName ? Object.values(TEAM).find((m) => m.bio.includes(firstName)) ?? null : null;
   return {
