@@ -1,8 +1,31 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { Redis } from "@upstash/redis";
-import { Ratelimit } from "@upstash/ratelimit";
 import { deriveChannel } from "@/lib/channels";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NOTHING IN THIS ROUTE MAY REJECT A SUBMISSION IT CANNOT PROVE IS FAKE.
+//
+// This endpoint has now lost four separate "anti-abuse" mechanisms, every one
+// of which ate real leads before anyone noticed:
+//
+//   1. Honeypot field (`company`) — browsers autofilled it from saved
+//      address/business profiles. Silently discarded real leads with ok:true.
+//   2. Blocking time trap — a real visitor using one-click autofill submits in
+//      under 2s. Now log-only (kept below); never discards.
+//   3. Per-IP rate limit (5/min) — one brokerage office behind a single shared
+//      NAT'd wifi egress IP is a completely ordinary five-agents-in-a-minute
+//      burst. Removed.
+//   4. Origin/referer allowlist — privacy tools, corporate proxies, webview
+//      wrappers and some email clients strip or rewrite these headers, and a
+//      403 there is indistinguishable from an outage to the visitor. Removed.
+//
+// Curbio receives no spam. The expected value of blocking a bot here is
+// approximately zero; the cost of blocking one agent is a lost listing.
+//
+// If filtering is ever genuinely needed: QUARANTINE AND ALERT — write the
+// submission to Redis, flag it, notify a human. Never discard, never 4xx.
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const runtime = "nodejs";
 
@@ -72,7 +95,7 @@ function toCrmMarket(slug: string | null | undefined): string | null {
   return SLUG_TO_CRM_MARKET[slug] ?? slug;
 }
 
-// ── Upstash Redis (Vercel Marketplace) — durable lead store + rate limiting.
+// ── Upstash Redis (Vercel Marketplace) — durable lead store.
 // Env-gated exactly like Resend/CRM below: absent env = log-and-continue in
 // dev, never a crash. The leads:v1 list also feeds the future /admin lead log.
 const LEADS_KEY = "leads:v1";
@@ -89,41 +112,6 @@ function getRedis(): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_KV_REST_API_URL;
   const token = process.env.UPSTASH_REDIS_REST_KV_REST_API_TOKEN;
   return url && token ? new Redis({ url, token }) : null;
-}
-
-// One limiter instance per warm lambda — cheap, and sliding-window state
-// itself lives in Redis so cold starts don't reset it.
-let ratelimit: Ratelimit | null | undefined;
-function getRatelimit(): Ratelimit | null {
-  if (ratelimit !== undefined) return ratelimit;
-  const redis = getRedis();
-  ratelimit = redis
-    ? new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(5, "1 m"), prefix: "rl:lead" })
-    : null;
-  return ratelimit;
-}
-
-/** Origin/referer tripwire: allow same-host, *.curbio.com, *.vercel.app, and
- *  ABSENT headers (some privacy tools strip them — tripwire, not a wall). */
-function originAllowed(req: Request): boolean {
-  const reqHost = new URL(req.url).host;
-  for (const header of ["origin", "referer"] as const) {
-    const value = req.headers.get(header);
-    if (!value) continue;
-    let host: string;
-    try {
-      host = new URL(value).host;
-    } catch {
-      return false; // present but unparseable — treat as hostile
-    }
-    const ok =
-      host === reqHost ||
-      host === "curbio.com" ||
-      host.endsWith(".curbio.com") ||
-      host.endsWith(".vercel.app");
-    if (!ok) return false;
-  }
-  return true;
 }
 
 // Non-PII log line for a lead. Name/email/phone/address must NEVER appear in
@@ -147,12 +135,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
   }
 
-  // ── 0a. Origin tripwire ──
-  if (!originAllowed(req)) {
-    return NextResponse.json({ ok: false, error: "Forbidden" }, { status: 403 });
-  }
-
-  // ── 0c. Time trap: NON-BLOCKING. Sub-2-second render→submit is unusual,
+  // ── 0. Time trap: NON-BLOCKING. Sub-2-second render→submit is unusual,
   // but a real visitor clicking a browser-autofill suggestion (one click
   // populates every field) and submitting immediately after can legitimately
   // land under 2s — confirmed live: a real submission logged elapsedMs:1861
@@ -168,25 +151,6 @@ export async function POST(req: Request) {
     const elapsed = submittedMs - renderedAt;
     if (elapsed >= 0 && elapsed < 2000) {
       console.log("[lead] fast submission — kept", { elapsedMs: elapsed });
-    }
-  }
-
-  // ── 0d. Per-IP rate limit (env-gated on Upstash) ──
-  const limiter = getRatelimit();
-  if (limiter) {
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    try {
-      const { success } = await limiter.limit(ip);
-      if (!success) {
-        console.log("[lead] rate limited");
-        return NextResponse.json(
-          { ok: false, error: "Too many requests — please try again in a minute." },
-          { status: 429 }
-        );
-      }
-    } catch {
-      // Rate limiter unavailable must never block a real lead.
-      console.log("[lead] rate limiter unavailable — skipping");
     }
   }
 
