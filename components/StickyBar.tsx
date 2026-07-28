@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { track } from "@vercel/analytics";
 import { Icon } from "./LpKit";
-import { gaEvent } from "@/lib/analytics";
+import { trackEvent } from "@/lib/events";
 import { readVariantFromCookie } from "@/lib/ctaVariant";
 
 export function StickyBar({ ctaCopy, marketSlug }: { ctaCopy: string; marketSlug?: string }) {
@@ -11,7 +11,7 @@ export function StickyBar({ ctaCopy, marketSlug }: { ctaCopy: string; marketSlug
 
   const handleCta = useCallback(() => {
     const params = { cta_id: "sticky_bar", market: marketSlug || "unknown", variant: readVariantFromCookie() };
-    gaEvent("cta_click", params);
+    trackEvent("cta_click", params);
     track("cta_click", params);
     const el = document.getElementById("quote-form");
     if (!el) return;

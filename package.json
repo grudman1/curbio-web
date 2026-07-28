@@ -17,6 +17,7 @@
     "@vercel/functions": "^1.5.0",
     "@vercel/speed-insights": "^2.0.0",
     "next": "^15.0.3",
+    "posthog-js": "^1.407.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "resend": "^6.12.4"

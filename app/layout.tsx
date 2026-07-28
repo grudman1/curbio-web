@@ -4,6 +4,8 @@ import { Lora, Libre_Franklin } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import ClarityLoader from "@/components/ClarityLoader";
+import { PostHogProvider } from "@/components/PostHogProvider";
+import { ScrollDepth } from "@/components/ScrollDepth";
 import { SITE_ORIGIN } from "@/config/routes";
 import "./globals.css";
 // Semantic token layer, imported AFTER the primitives it references. Order is
@@ -153,6 +155,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Microsoft Clarity has no consent-mode equivalent — it is only
             injected once analytics consent is true. See ClarityLoader. */}
         <ClarityLoader />
+        {/* PostHog, gated on the SAME consent state as Clarity (not GA4's
+            consent-mode posture — PostHog has no cookieless mode either).
+            Lives here in the root layout so no page ever needs retrofitting,
+            and captures pageviews manually on route change because the App
+            Router does not fire them for client-side navigations. Env-gated:
+            absent NEXT_PUBLIC_POSTHOG_KEY = no-op everywhere. */}
+        <PostHogProvider />
+        <ScrollDepth />
       </body>
     </html>
   );

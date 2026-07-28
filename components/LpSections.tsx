@@ -3,7 +3,7 @@ import { track } from "@vercel/analytics";
 import { Icon, Eyebrow, AmberRule, PillButton } from "./LpKit";
 import { ZipModalTrigger } from "./ZipModalTrigger";
 import { FormCard } from "./FormCard";
-import { gaEvent } from "@/lib/analytics";
+import { trackEvent } from "@/lib/events";
 import { readVariantFromCookie } from "@/lib/ctaVariant";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 import type { CtaVariant } from "@/lib/ctaVariant";
@@ -250,7 +250,7 @@ export function Closer({ ctaCopy, marketSlug }: { ctaCopy: string; marketSlug?: 
             href="#quote-form"
             onClick={() => {
               const params = { cta_id: "closer", market: marketSlug || "unknown", variant: readVariantFromCookie() };
-              gaEvent("cta_click", params);
+              trackEvent("cta_click", params);
               track("cta_click", params);
             }}
           >

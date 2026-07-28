@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, startTransition } from "react";
 import { MARKET_CARDS, type ResolvedMarket } from "@/lib/markets";
 import { Modal, Eyebrow, PillButton, Field, Icon } from "./LpKit";
+import { trackEvent } from "@/lib/events";
 
 function isValidEmail(s: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
@@ -32,6 +33,10 @@ export function ZipModal({
   const base = basePath.replace(/\/$/, ""); // strip trailing slash
 
   function go(slug: string) {
+    // Fired here rather than on the destination page: this is the one place
+    // that knows the choice was DELIBERATE. A ?market= landing could equally
+    // be a campaign link the visitor never chose.
+    trackEvent("market_select", { market: slug, method: "picker" });
     onClose();
     startTransition(() => { router.push(`${base}/?market=${slug}`); });
   }
@@ -43,6 +48,7 @@ export function ZipModal({
       return;
     }
     setErr("");
+    trackEvent("market_select", { method: "zip" });
     onClose();
     startTransition(() => { router.push(`${base}/?zip=${digits}`); });
   }
