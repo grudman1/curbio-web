@@ -17,35 +17,44 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * CLOSED LIST. Referral source is the worst data field we have — 20+ hand-typed
- * variants across the CRM, this app, curbio.com, AtlantaLP and KWOfferings, and
- * ~72% of leads carrying nothing usable. Free text in a config file is exactly
- * how that happened, one page at a time.
+ * KNOWN referral sources. This is a RECOGNITION list, not a filter.
  *
- * Adding a value is a DELIBERATE edit here, not something a new page can do on
- * its way past. Casing and spacing are load-bearing — historical eXp leads
- * carry "eXp realty" verbatim and must never be normalised.
+ * Referral source is the worst data field we have — 20+ hand-typed variants
+ * across the CRM, this app, curbio.com, AtlantaLP and KWOfferings, with ~72% of
+ * leads carrying nothing usable. Typing it here stops NEW pages minting new
+ * variants on their way past.
  *
- * NOTE: this closes the CONFIG surface, not every surface. FormCard still lets
- * a `?referral_source_id=` URL param override it at runtime, which remains
- * free text. See the note in components/FormCard.tsx.
+ * It does NOT gate what a lead may carry. The ~40 partner vanity redirects on
+ * go.curbio.com pass hand-written values today —
+ * `?referral_source_id=Keller Williams Realty Boston Northwest` — and
+ * validating those against this list would silently strip attribution from
+ * every live partner link. That is the honeypot failure mode pointed at
+ * attribution instead of leads: a filter discarding real data because it does
+ * not recognise it.
+ *
+ * The rule is KEEP AND TAG, never drop. /api/lead passes every value through
+ * untouched and records whether it matched this list, so what is actually
+ * arriving is visible before anything gets closed. Captured and inferred
+ * attribution stay distinguishable rather than being silently averaged.
+ *
+ * Casing and spacing are load-bearing — historical eXp leads carry
+ * "eXp realty" verbatim and must never be normalised.
  */
-export type ReferralSourceId =
-  | "landing page" // default for owned campaign pages
-  | "eXp realty"; // partner: eXp. Casing verbatim — do not tidy.
+export const REFERRAL_SOURCE_IDS = [
+  "landing page", // default for owned campaign pages
+  "eXp realty", // partner: eXp. Casing verbatim — do not tidy.
+] as const;
 
-/**
- * Hero headline, written as INLINE MARKUP rather than nested arrays:
- *
- *   "We do the *prep.*\nYou make the *sale.*"
- *
- *   *…*   amber emphasis (renders <em>, which globals.css styles as colour
- *         only, upright — never italic)
- *   \n    line break (<br />)
- *
- * Chosen so copy can be written and read quickly without counting brackets.
- * The renderer is components/campaign/RichText.tsx.
- */
+/** Values a CONFIG may set. Inbound URL params are deliberately not limited to
+ *  this — see the note above. */
+export type ReferralSourceId = (typeof REFERRAL_SOURCE_IDS)[number];
+
+/** Did this value match the known list? Recorded on every lead; never used to
+ *  reject one. */
+export function isKnownReferralSource(value: string | null | undefined): boolean {
+  return !!value && (REFERRAL_SOURCE_IDS as readonly string[]).includes(value);
+}
+
 export type RichLine = string;
 
 export type CampaignPage = {
