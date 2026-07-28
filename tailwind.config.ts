@@ -1,83 +1,165 @@
 import type { Config } from "tailwindcss";
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Every value below is a var() onto app/tokens.css. Nothing here is a literal.
+//
+// That is the point: a rebrand changes primitive values in globals.css :root,
+// the semantic layer in tokens.css re-points, and every utility class follows
+// without a single component edit.
+//
+// TWO NAMESPACES, deliberately:
+//
+//   SEMANTIC   `bg-surface-raised`, `text-muted`, `shadow-card` — role-named,
+//              backed by tokens.css. USE THESE for all new work.
+//
+//   PRIMITIVE  `navy`, `amber`, `stone`, … — appearance-named, retained only
+//              so the legacy lp-* era stays buildable and so /design-system
+//              can show the palette underneath. Do not reach for these in new
+//              components; they are the thing Phase 3 replaces.
+//
+// Breakpoints are intentionally NOT tokenized — CSS custom properties don't
+// work in @media conditions. The 14 existing widths stay in globals.css.
+// ─────────────────────────────────────────────────────────────────────────────
+
 const config: Config = {
-  content: [
-    "./app/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-  ],
+  // config/** is deliberately absent: those files are DATA, and Tailwind's
+  // scanner reads bare token-name strings there ("text-body", "duration-fast")
+  // as class names, emitting phantom utilities nothing uses.
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
+        // ── semantic ──
+        brand: {
+          DEFAULT: "var(--color-brand)",
+          muted: "var(--color-brand-muted)",
+          subtle: "var(--color-brand-subtle)",
+        },
+        accent: {
+          DEFAULT: "var(--color-accent)",
+          hover: "var(--color-accent-hover)",
+          active: "var(--color-accent-active)",
+          subtle: "var(--color-accent-subtle)",
+          ring: "var(--color-accent-ring)",
+        },
+        surface: {
+          DEFAULT: "var(--color-surface)",
+          raised: "var(--color-surface-raised)",
+          sunken: "var(--color-surface-sunken)",
+          inverse: "var(--color-surface-inverse)",
+          accent: "var(--color-surface-accent)",
+        },
+        content: {
+          DEFAULT: "var(--color-text)",
+          muted: "var(--color-text-muted)",
+          subtle: "var(--color-text-subtle)",
+          inverse: "var(--color-text-inverse)",
+          accent: "var(--color-text-accent)",
+          "on-accent": "var(--color-text-on-accent)",
+        },
+        edge: {
+          DEFAULT: "var(--color-border)",
+          strong: "var(--color-border-strong)",
+          accent: "var(--color-border-accent)",
+          inverse: "var(--color-border-inverse)",
+        },
+        state: {
+          error: "var(--color-state-error)",
+          success: "var(--color-state-success)",
+          warning: "var(--color-state-warning)",
+          info: "var(--color-state-info)",
+        },
+
+        // ── primitives (legacy; see header) ──
         navy: {
-          DEFAULT: "#0D254D",
-          95: "#1A335E",
-          85: "#2E466F",
-          30: "#8A98AE",
-          15: "#C7CFDB",
-          "08": "#E4E8EE",
+          DEFAULT: "var(--navy)",
+          95: "var(--navy-95)",
+          85: "var(--navy-85)",
+          30: "var(--navy-30)",
+          15: "var(--navy-15)",
+          "08": "var(--navy-08)",
         },
         amber: {
-          DEFAULT: "#CD8629",
-          110: "#B5731F",
-          120: "#9D6118",
-          30: "#F0DAB8",
-          10: "#FAF1E3",
+          DEFAULT: "var(--amber)",
+          110: "var(--amber-110)",
+          120: "var(--amber-120)",
+          30: "var(--amber-30)",
+          10: "var(--amber-10)",
         },
-        teal: {
-          DEFAULT: "#176C67",
-          110: "#105752",
-          30: "#B1CCC9",
-        },
-        sage: {
-          DEFAULT: "#E2EBE5",
-          110: "#C9D6CE",
-          50: "#EFF4F1",
-        },
-        stone: { DEFAULT: "#DFDCDA" },
-        cloud: "#F7F7F7",
-        ink: "#0D254D",
-        "fg-muted": "#4A5A75",
-        "fg-subtle": "#8A98AE",
-        "border-strong": "#BFBCBA",
+        teal: { DEFAULT: "var(--teal)", 110: "var(--teal-110)", 30: "var(--teal-30)" },
+        sage: { DEFAULT: "var(--sage)", 110: "var(--sage-110)", 50: "var(--sage-50)" },
+        stone: { DEFAULT: "var(--stone)" },
+        cloud: "var(--cloud-white)",
       },
+      // Points at the PRIMITIVES, not the semantic aliases. Tailwind's
+      // preflight writes fontFamily into `html`, so using the alias here would
+      // change a rule that ships on the live pages. Same computed value either
+      // way — but this keeps the emitted CSS byte-identical to what is in
+      // production today, which is worth more than naming consistency in a
+      // config nothing currently consumes.
       fontFamily: {
         serif: ["var(--font-serif)", "Georgia", "serif"],
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
       },
       fontSize: {
-        hero: ["clamp(48px, 6.4vw, 88px)", { lineHeight: "1.05", letterSpacing: "-0.015em" }],
-        h1: ["clamp(40px, 4.6vw, 64px)", { lineHeight: "1.1", letterSpacing: "-0.01em" }],
-        h2: ["clamp(30px, 3.2vw, 44px)", { lineHeight: "1.2", letterSpacing: "-0.01em" }],
-        h3: ["22px", { lineHeight: "1.2" }],
-        h4: ["18px", { lineHeight: "1.3" }],
-        body: ["16px", { lineHeight: "1.55" }],
-        small: ["14px", { lineHeight: "1.5" }],
-        label: ["12px", { lineHeight: "1.3", letterSpacing: "0.14em" }],
-        micro: ["11px", { lineHeight: "1.3" }],
+        hero: ["var(--text-hero)", { lineHeight: "var(--leading-tight)", letterSpacing: "var(--tracking-tight)" }],
+        h1: ["var(--text-h1)", { lineHeight: "var(--leading-tight)", letterSpacing: "var(--tracking-heading)" }],
+        h2: ["var(--text-h2)", { lineHeight: "var(--leading-heading)", letterSpacing: "var(--tracking-heading)" }],
+        h3: ["var(--text-h3)", { lineHeight: "var(--leading-heading)" }],
+        h4: ["var(--text-h4)", { lineHeight: "var(--leading-heading)" }],
+        body: ["var(--text-body)", { lineHeight: "var(--leading-body)" }],
+        small: ["var(--text-small)", { lineHeight: "var(--leading-body)" }],
+        label: ["var(--text-label)", { lineHeight: "var(--leading-heading)", letterSpacing: "var(--tracking-label)" }],
+        micro: ["var(--text-micro)", { lineHeight: "var(--leading-heading)" }],
+      },
+      fontWeight: {
+        regular: "var(--weight-regular)",
+        semibold: "var(--weight-semibold)",
+        bold: "var(--weight-bold)",
+        black: "var(--weight-black)",
+      },
+      spacing: {
+        0: "var(--space-0)",
+        1: "var(--space-1)",
+        2: "var(--space-2)",
+        3: "var(--space-3)",
+        4: "var(--space-4)",
+        5: "var(--space-5)",
+        6: "var(--space-6)",
+        8: "var(--space-8)",
+        10: "var(--space-10)",
+        12: "var(--space-12)",
+        16: "var(--space-16)",
+        20: "var(--space-20)",
+        24: "var(--space-24)",
       },
       borderRadius: {
-        sm: "4px",
-        md: "8px",
-        lg: "12px",
-        xl: "20px",
-        pill: "999px",
+        sm: "var(--radius-sm)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-lg)",
+        xl: "var(--radius-xl)",
+        pill: "var(--radius-pill)",
       },
       boxShadow: {
-        sm: "0 1px 2px rgba(13,37,77,0.06), 0 1px 1px rgba(13,37,77,0.04)",
-        md: "0 4px 12px rgba(13,37,77,0.08), 0 1px 2px rgba(13,37,77,0.04)",
-        lg: "0 16px 40px -12px rgba(13,37,77,0.18), 0 4px 12px rgba(13,37,77,0.06)",
-        amber: "0 8px 24px -8px rgba(205,134,41,0.45)",
+        raised: "var(--elevation-raised)",
+        card: "var(--elevation-card)",
+        overlay: "var(--elevation-overlay)",
+        accent: "var(--elevation-accent)",
       },
-      maxWidth: {
-        container: "1180px",
-      },
+      maxWidth: { container: "var(--container-max)" },
       transitionTimingFunction: {
-        "calm-out": "cubic-bezier(0.22,0.61,0.36,1)",
+        out: "var(--easing-out)",
+        "in-out": "var(--easing-in-out)",
       },
       transitionDuration: {
-        fast: "120ms",
-        base: "220ms",
-        slow: "420ms",
+        fast: "var(--duration-fast)",
+        base: "var(--duration-base)",
+        slow: "var(--duration-slow)",
+      },
+      zIndex: {
+        header: "var(--z-header)",
+        sticky: "var(--z-sticky-bar)",
+        overlay: "var(--z-overlay)",
       },
     },
   },

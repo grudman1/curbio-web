@@ -6,6 +6,11 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import ClarityLoader from "@/components/ClarityLoader";
 import { SITE_ORIGIN } from "@/config/routes";
 import "./globals.css";
+// Semantic token layer, imported AFTER the primitives it references. Order is
+// immaterial to correctness (var() resolves at use, not at definition) but
+// reads in dependency order. Kept a separate import rather than an @import
+// inside globals.css so that file is untouched — see DECISIONS.md.
+import "./tokens.css";
 
 // Analytics run only in production builds and only when the ID is configured —
 // dev/preview without env vars renders nothing and errors nowhere.

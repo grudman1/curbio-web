@@ -155,12 +155,18 @@ export function PillButton({
     lineHeight: 1.1,
     textDecoration: "none",
   };
+  // Literal #fff replaced with the semantic token — same computed value
+  // (#ffffff), and these are real CSS properties so var() resolves reliably.
+  // The rgba() values below are legacy alpha compositions with no semantic
+  // equivalent; they belong to the lp-* system Phase 3 replaces, and minting
+  // tokens for them would grow the semantic layer with values the new design
+  // won't inherit. See DECISIONS.md.
   const variants: Record<Variant, CSSProperties> = {
-    primary: { background: "var(--amber)", color: "#fff" },
+    primary: { background: "var(--color-accent)", color: "var(--color-text-on-accent)" },
     secondary: { background: "transparent", color: "var(--navy)", border: "1.5px solid var(--navy)" },
-    ghostNavy: { background: "rgba(255,255,255,0.10)", color: "#fff", border: "1px solid rgba(255,255,255,0.22)" },
-    white: { background: "#fff", color: "var(--navy)", border: "1px solid var(--stone)" },
-    navySolid: { background: "var(--navy)", color: "#fff" },
+    ghostNavy: { background: "rgba(255,255,255,0.10)", color: "var(--color-text-on-accent)", border: "1px solid rgba(255,255,255,0.22)" },
+    white: { background: "var(--color-surface-raised)", color: "var(--navy)", border: "1px solid var(--stone)" },
+    navySolid: { background: "var(--color-surface-inverse)", color: "var(--color-text-on-accent)" },
   };
   const v = variants[variant];
   const cls = `lp-btn lp-btn-${variant}${disabled ? " lp-btn-disabled" : ""}`;
