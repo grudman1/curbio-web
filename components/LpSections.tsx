@@ -19,6 +19,7 @@ export function Header({
   initialPickerOpen = false,
   logoHref = "/",
   basePath = "/",
+  showMarketPicker = true,
 }: {
   market: CampaignMarket;
   neutral?: boolean;
@@ -30,6 +31,9 @@ export function Header({
    *  production; the physical prefix only when campaign HTML is served at its
    *  QA path. See lib/campaignBase.ts. */
   basePath?: string;
+  /** False on fixed-market pages — they have one market and must not offer a
+   *  switch that would navigate the visitor off the campaign they landed on. */
+  showMarketPicker?: boolean;
 }) {
   const pillLabel = neutral ? "Choose your market" : market.name;
   return (
@@ -46,12 +50,14 @@ export function Header({
             className="lp-header-logo"
           />
         </a>
+        {showMarketPicker && (
         <ZipModalTrigger
           label={pillLabel}
           marketSlug={neutral ? null : market.slug}
           initialOpen={initialPickerOpen}
           basePath={basePath}
         />
+        )}
       </div>
     </header>
   );
@@ -67,6 +73,8 @@ export function Hero({
   prefillName,
   prefillEmail,
   eyebrowContent,
+  headline,
+  trust,
   heroSub,
   referralSourceId,
   source,
@@ -82,6 +90,10 @@ export function Hero({
   prefillEmail?: string;
   /** Replaces the default "[Market] agents" eyebrow. Pass any React node. */
   eyebrowContent?: React.ReactNode;
+  /** Replaces the default h1. Supplied by the campaign template from config. */
+  headline?: React.ReactNode;
+  /** Replaces the three trust-row items. Icons stay fixed per position. */
+  trust?: [string, string, string];
   /** Replaces the default hero subheader paragraph. */
   heroSub?: React.ReactNode;
   /** Forwarded to FormCard — override referralSourceId for partner pages. */
@@ -103,11 +115,15 @@ export function Hero({
             </Eyebrow>
           )}
           <h1 className="lp-hero-h1">
-            We do the <em>prep.</em>
-            <br />
-            You make the <em>sale.</em>
-            <br />
-            Seller pays <em>at close.</em>
+            {headline ?? (
+              <>
+                We do the <em>prep.</em>
+                <br />
+                You make the <em>sale.</em>
+                <br />
+                Seller pays <em>at close.</em>
+              </>
+            )}
           </h1>
           <AmberRule width={48} style={{ margin: "22px 0" }} />
           <p className="lp-hero-sub">
@@ -116,17 +132,17 @@ export function Hero({
           <div className="lp-hero-trust">
             <span className="lp-sold-proof">
               <Icon name="home" size={12} color="var(--fg-muted)" stroke={2} />
-              8,000+ homes prepped
+              {trust?.[0] ?? "8,000+ homes prepped"}
             </span>
             <span className="lp-sold-proof-dot" aria-hidden>·</span>
             <span className="lp-sold-proof">
               <Icon name="shield" size={12} color="var(--fg-muted)" stroke={2} />
-              1-year warranty
+              {trust?.[1] ?? "1-year warranty"}
             </span>
             <span className="lp-sold-proof-dot" aria-hidden>·</span>
             <span className="lp-sold-proof">
               <Icon name="check" size={12} color="var(--fg-muted)" stroke={2.5} />
-              Licensed &amp; insured
+              {trust?.[2] ?? "Licensed & insured"}
             </span>
           </div>
         </div>
@@ -234,12 +250,25 @@ export function HowItWorks() {
 }
 
 // ── Navy CTA closer ──
-export function Closer({ ctaCopy, marketSlug }: { ctaCopy: string; marketSlug?: string }) {
+export function Closer({
+  ctaCopy,
+  marketSlug,
+  headline,
+}: {
+  ctaCopy: string;
+  marketSlug?: string;
+  /** Replaces the default closer headline. Supplied from campaign config. */
+  headline?: React.ReactNode;
+}) {
   return (
     <section className="lp-closer" id="closer">
       <div className="lp-shell lp-closer-inner">
         <h2 className="lp-closer-h">
-          One listing. You&apos;ll wonder <em>why you waited.</em>
+          {headline ?? (
+            <>
+              One listing. You&apos;ll wonder <em>why you waited.</em>
+            </>
+          )}
         </h2>
         <div className="lp-closer-cta">
           {/* href="#quote-form" — native anchor scroll, no JS needed; the
