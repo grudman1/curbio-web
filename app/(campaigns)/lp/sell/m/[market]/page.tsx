@@ -3,6 +3,7 @@ import PageShell from "@/components/PageShell";
 import { getCampaignMarket } from "@/lib/campaignMarkets";
 import { BY_SLUG } from "@/lib/markets";
 import { resolveMarket } from "@/lib/resolveMarket";
+import { routeMetadata } from "@/config/routes";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Prerendered per-market pages. The middleware rewrites /?market=<slug> here,
@@ -19,11 +20,11 @@ export const revalidate = 120;
 // aliases before rewriting. Anything else → 404.
 export const dynamicParams = false;
 
-// These URLs are internal rewrite targets, never linked publicly — point
-// search engines at the real landing URL.
-export const metadata: Metadata = {
-  alternates: { canonical: "https://sell.curbio.com/" },
-};
+// Campaign tier: noindex, no canonical — both derived from config/routes.ts so
+// indexability and canonical can never drift apart. The previous hardcoded
+// canonical (https://sell.curbio.com/) would have pointed at a 301 SOURCE the
+// moment DNS moves to curbio.com; a noindex page needs no canonical at all.
+export const metadata: Metadata = routeMetadata("/m/:market");
 
 export function generateStaticParams() {
   return Object.keys(BY_SLUG).map((market) => ({ market }));

@@ -4,6 +4,7 @@ import { Lora, Libre_Franklin } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import ClarityLoader from "@/components/ClarityLoader";
+import { SITE_ORIGIN } from "@/config/routes";
 import "./globals.css";
 
 // Analytics run only in production builds and only when the ID is configured —
@@ -36,6 +37,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  // Resolves every relative metadata URL (OG images, canonicals) against the
+  // origin everything consolidates onto — NOT the host that served the
+  // request. Without this, Next resolves relative URLs against localhost:3000
+  // and silently emits wrong absolute URLs with no error; the only reason
+  // nothing was broken before is that the single canonical in the app was
+  // hardcoded absolute. See config/routes.ts.
+  metadataBase: new URL(SITE_ORIGIN),
   title: "Curbio — Get your home market-ready",
   description:
     "Curbio is the pre-listing home improvement partner real estate agents trust. Repairs, refreshes, and staging — fully managed, with pay-at-closing for qualified sellers.",

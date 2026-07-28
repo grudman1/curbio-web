@@ -6,6 +6,7 @@ import { Header } from "./LpSections";
 import { ExpHeader } from "./ExpShell";
 import { Icon } from "./LpKit";
 import { gaEvent } from "@/lib/analytics";
+import { useCampaignBase } from "@/lib/campaignBase";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 import type { ResolvedMarket } from "@/lib/markets";
 
@@ -84,6 +85,11 @@ export default function ConfirmShell({
   // render (SSR). The useEffect is a safety-net for edge cases where the prop
   // is absent or differs from the real client host — Calendly's postMessage
   // target origin is derived from embed_domain so the value must match exactly.
+  // "No thanks, I'll wait" returns to the landing page. "/" on sell.curbio.com
+  // and during SSR — the prefix only when this HTML is served at its QA path,
+  // so QA doesn't fall out of the campaign tier. See lib/campaignBase.ts.
+  const backHref = useCampaignBase();
+
   const [embedDomain, setEmbedDomain] = useState<string>(embedDomainProp);
   useEffect(() => {
     // Only override if the server didn't supply a value (shouldn't happen in
@@ -272,7 +278,7 @@ export default function ConfirmShell({
                 )}
                 {/* Deliberate full navigation — resets landing-page state. */}
                 {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-                <a href="/" className="lp-confirm-nothx">
+                <a href={backHref} className="lp-confirm-nothx">
                   No thanks, I&apos;ll wait
                 </a>
               </div>
@@ -286,7 +292,7 @@ export default function ConfirmShell({
                 </div>
                 {/* Deliberate full navigation — resets landing-page state. */}
                 {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-                <a href="/" className="lp-confirm-nothx">
+                <a href={backHref} className="lp-confirm-nothx">
                   No thanks, I&apos;ll wait
                 </a>
               </>

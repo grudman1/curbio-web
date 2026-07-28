@@ -3,6 +3,7 @@ import ExpShell from "@/components/ExpShell";
 import { getCampaignMarket } from "@/lib/campaignMarkets";
 import { BY_SLUG } from "@/lib/markets";
 import { resolveMarket } from "@/lib/resolveMarket";
+import { routeMetadata } from "@/config/routes";
 
 // Prerendered per-market pages for the eXp co-branded route — the /exp twin
 // of app/m/[market]/page.tsx. The middleware rewrites /exp?market=<slug>
@@ -15,13 +16,17 @@ export const revalidate = 120;
 // aliases before rewriting. Anything else → 404.
 export const dynamicParams = false;
 
-// Same noindex stance as /exp itself (internal rewrite targets besides).
+// Same tier as /exp, and flips with it. These are rewrite targets rendering
+// the SAME content as the parent, so config/routes.ts gives them an explicit
+// canonicalPath of "/exp" — the moment indexing is switched on they would
+// otherwise compete with /exp for identical content, which is precisely the
+// kind of failure that stays invisible until it has already cost rankings.
 export const metadata: Metadata = {
   title: "Curbio for eXp Realty — Pre-listing Home Improvement",
   description:
     "Curbio is the preferred pre-listing home improvement partner for eXp Realty agents. " +
     "Repairs, refreshes, and staging — fully managed, with pay-at-closing for qualified sellers.",
-  robots: { index: false, follow: false },
+  ...routeMetadata("/exp/m/:market"),
 };
 
 export function generateStaticParams() {
