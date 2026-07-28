@@ -101,6 +101,16 @@ function toCrmMarket(slug: string | null | undefined): string | null {
 const LEADS_KEY = "leads:v1";
 const LEADS_MAX = 5000; // capped index — newest first, oldest trimmed
 
+// Delivery outcomes, keyed by the `leadId` now carried on every leads:v1
+// record. A SEPARATE key on purpose: leads:v1 is written BEFORE any delivery
+// is attempted (that ordering is the whole recoverability guarantee), so the
+// outcome cannot be known at write time, and rewriting the list entry
+// afterwards would mean an index-based LSET that concurrent LPUSHes shift out
+// from under us. A hash sidesteps both — the list write path is untouched and
+// /admin joins the two on leadId. Records written before this shipped simply
+// have no entry here; the viewer renders those as "unknown", not "failed".
+const DELIVERY_KEY = "leads:delivery:v1";
+
 // Var names match what the Vercel × Upstash Marketplace integration actually
 // provisions for this project (confirmed in the dashboard) — NOT Upstash's own
 // "UPSTASH_REDIS_REST_URL/TOKEN" convention, which Redis.fromEnv() expects.
@@ -112,6 +122,19 @@ function getRedis(): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_KV_REST_API_URL;
   const token = process.env.UPSTASH_REDIS_REST_KV_REST_API_TOKEN;
   return url && token ? new Redis({ url, token }) : null;
+}
+
+/** Strip this lead's own PII out of a third-party response body before it goes
+ *  anywhere near a log line. The CRM echoes submitted values back in some of
+ *  its error responses, and Vercel log drains are not a PII-safe destination —
+ *  the same rule leadLogContext() enforces, applied to text we didn't author.
+ *  Longest-first so "name" can't partially match inside "email". */
+function redactPii(text: string, secrets: (string | null | undefined)[]): string {
+  let out = text;
+  for (const s of [...secrets].filter((v): v is string => !!v && v.length > 3).sort((a, b) => b.length - a.length)) {
+    out = out.split(s).join("[redacted]");
+  }
+  return out;
 }
 
 // Non-PII log line for a lead. Name/email/phone/address must NEVER appear in
@@ -175,6 +198,9 @@ export async function POST(req: Request) {
   const lastName = nameParts.slice(1).join(" "); // empty string for single-word names
 
   const payload = {
+    // Join key between the leads:v1 record and its leads:delivery:v1 outcome.
+    // Generated here so it is stored WITH the lead on the persist-first write.
+    leadId: crypto.randomUUID(),
     name: body.name!.trim(),
     firstName,
     lastName,
@@ -273,6 +299,11 @@ export async function POST(req: Request) {
     return true;
   }
 
+  // Captured inside postToCrm so the delivery record below can store the exact
+  // status/body rather than re-deriving them from a stringified Error.
+  let crmStatus: number | null = null;
+  let crmBody: string | null = null;
+
   async function postToCrm(): Promise<boolean> {
     const webhook = process.env.CURBIO_CRM_WEBHOOK_URL;
     if (!webhook) {
@@ -308,8 +339,17 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify(crmPayload),
     });
+    crmStatus = res.status;
     if (!res.ok) {
-      throw new Error(`CRM webhook returned ${res.status}`);
+      // Log the RESPONSE BODY, not just the status. A bare "returned 403" cost
+      // an hour of investigation that a one-line body would have closed
+      // immediately (the CRM rejects @curbio.com addresses outright — an
+      // internal-domain guard, indistinguishable from an auth failure by
+      // status code alone). Redacted and capped: the body is third-party text
+      // that may echo submitted values, and log lines are not a PII sink.
+      const raw = await res.text().catch(() => "");
+      crmBody = redactPii(raw, [payload.email, payload.name, payload.phone, payload.address]).trim().slice(0, 500);
+      throw new Error(`CRM webhook returned ${res.status}${crmBody ? ` — ${crmBody}` : " — (empty body)"}`);
     }
     console.log("[lead] CRM ok", res.status);
     return true;
@@ -347,6 +387,33 @@ export async function POST(req: Request) {
       console.log("[lead] CRM-failure alert sent", logCtx);
     } catch (err) {
       console.error("[lead] CRM-failure alert FAILED", logCtx, err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  // ── 3b. Delivery record — what actually happened to this lead, keyed by
+  // leadId. Purely additive: leads:v1 and its write path are untouched. Runs
+  // AFTER deliveries (their outcome is the point) but BEFORE the response, so
+  // the serverless runtime can't be frozen mid-write. Wrapped so a Redis
+  // hiccup here can never turn a successful lead into an error for the
+  // visitor — this is diagnostics, and diagnostics never outrank a lead.
+  if (redis) {
+    try {
+      await redis.hset(DELIVERY_KEY, {
+        [payload.leadId]: JSON.stringify({
+          leadId: payload.leadId,
+          submittedAt: payload.submittedAt,
+          persistOk,
+          resendAttempted,
+          resendOk,
+          crmAttempted,
+          crmOk,
+          crmStatus,
+          crmError: crmOk ? null : crmBody,
+          recordedAt: new Date().toISOString(),
+        }),
+      });
+    } catch (err) {
+      console.error("[lead] delivery-record write failed (lead itself is safe)", logCtx, err instanceof Error ? err.message : String(err));
     }
   }
 
