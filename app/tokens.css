@@ -1,0 +1,143 @@
+/* ============================================================================
+   SEMANTIC DESIGN TOKENS
+   ============================================================================
+
+   Two layers, on purpose:
+
+     PRIMITIVES  the raw palette — `--navy`, `--amber`, `--stone`, … They live
+                 in globals.css :root and are ALREADY IN PRODUCTION. This file
+                 does not redefine them; it only references them.
+
+     SEMANTIC    this file. Names describe ROLE, not appearance:
+                 `--color-surface-raised`, not `--navy-800`.
+
+   Why it matters: a rebrand should be a token swap, not a find-and-replace
+   across components. Components reference roles; roles reference primitives;
+   only the primitive values change. Nothing below contains a literal colour —
+   every value is a var() onto the existing palette, so this file is provably
+   incapable of shifting a pixel on the live pages.
+
+   ── The two-system state ────────────────────────────────────────────────────
+   The legacy `lp-*` rules in globals.css consume PRIMITIVES directly and are
+   deliberately left alone (they style pages converting at ~10%, and the real
+   design lands in Phase 3). New work consumes the SEMANTIC layer below. See
+   DECISIONS.md. In Phase 3 the primitives are replaced wholesale and only the
+   mappings in this file need revisiting.
+
+   NOTE: breakpoints are intentionally absent. CSS custom properties do not
+   work in @media conditions — a spec limitation, not an oversight. The 14
+   existing widths stay in globals.css.
+   ========================================================================== */
+
+:root {
+  /* ── Brand ───────────────────────────────────────────────────────────── */
+  --color-brand: var(--navy);
+  --color-brand-muted: var(--navy-85);
+  --color-brand-subtle: var(--navy-15);
+  --color-accent: var(--amber);
+  --color-accent-hover: var(--amber-110);
+  --color-accent-active: var(--amber-120);
+  --color-accent-subtle: var(--amber-10);
+  --color-accent-ring: var(--amber-30);
+
+  /* ── Surfaces ────────────────────────────────────────────────────────── */
+  --color-surface: var(--cloud-white); /* page background */
+  --color-surface-raised: var(--white); /* cards, modals, inputs */
+  --color-surface-sunken: var(--stone); /* wells, inset strips */
+  --color-surface-inverse: var(--navy); /* header, footer, closers */
+  --color-surface-accent: var(--sage); /* tinted callouts */
+
+  /* ── Text ────────────────────────────────────────────────────────────── */
+  --color-text: var(--fg);
+  --color-text-muted: var(--fg-muted);
+  --color-text-subtle: var(--fg-subtle);
+  --color-text-inverse: var(--fg-inverse);
+  --color-text-accent: var(--fg-accent);
+  --color-text-on-accent: var(--white);
+
+  /* ── Borders ─────────────────────────────────────────────────────────── */
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-accent: var(--amber);
+  --color-border-inverse: var(--navy-85);
+
+  /* ── State ───────────────────────────────────────────────────────────── */
+  /* Mapped onto existing palette values only — no new colours invented.
+     Success reuses the green already live in globals.css `.lp-dot.on`. */
+  --color-state-error: var(--error);
+  --color-state-success: #2e7d52;
+  --color-state-warning: var(--amber);
+  --color-state-info: var(--teal);
+
+  /* ── Type scale ──────────────────────────────────────────────────────── */
+  --font-family-serif: var(--font-serif);
+  --font-family-sans: var(--font-sans);
+
+  --text-hero: clamp(48px, 6.4vw, 88px);
+  --text-h1: clamp(40px, 4.6vw, 64px);
+  --text-h2: clamp(30px, 3.2vw, 44px);
+  --text-h3: 22px;
+  --text-h4: 18px;
+  --text-body: 16px;
+  --text-small: 14px;
+  --text-label: 12px;
+  --text-micro: 11px;
+
+  --leading-tight: 1.1;
+  --leading-heading: 1.2;
+  --leading-body: 1.55;
+
+  --tracking-tight: -0.015em;
+  --tracking-heading: -0.01em;
+  --tracking-label: 0.14em;
+
+  --weight-regular: 400;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-black: 800;
+
+  /* ── Spacing — 4px base ──────────────────────────────────────────────── */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* ── Radii ───────────────────────────────────────────────────────────── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* ── Elevation ───────────────────────────────────────────────────────── */
+  --elevation-flat: none;
+  --elevation-raised: var(--shadow-sm);
+  --elevation-card: var(--shadow-md);
+  --elevation-overlay: var(--shadow-lg);
+  --elevation-accent: var(--shadow-amber);
+
+  /* ── Motion ──────────────────────────────────────────────────────────── */
+  --duration-fast: var(--dur-fast);
+  --duration-base: var(--dur-base);
+  --duration-slow: 420ms;
+  --easing-out: var(--ease-out);
+  --easing-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* ── Layout ──────────────────────────────────────────────────────────── */
+  --container-max: 1180px;
+  --container-gutter: var(--space-8);
+
+  /* ── Z-index ─────────────────────────────────────────────────────────── */
+  --z-header: 40;
+  --z-sticky-bar: var(--z-sticky);
+  --z-overlay: 200;
+}
