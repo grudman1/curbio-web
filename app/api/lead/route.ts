@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import { Redis } from "@upstash/redis";
 import { deriveChannel } from "@/lib/channels";
 import { crmNameForSlug } from "@/config/markets";
+import { isKnownReferralSource } from "@/config/campaigns/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NOTHING IN THIS ROUTE MAY REJECT A SUBMISSION IT CANNOT PROVE IS FAKE.
@@ -134,7 +135,16 @@ function redactPii(text: string, secrets: (string | null | undefined)[]): string
 
 // Non-PII log line for a lead. Name/email/phone/address must NEVER appear in
 // server logs (they land in Vercel's log drain) — only attribution + flags.
-function leadLogContext(p: { source: string; market: string | null; channel: string; utm_source: string | null; utm_campaign: string | null; submittedAt: string }) {
+function leadLogContext(p: {
+  source: string;
+  market: string | null;
+  channel: string;
+  utm_source: string | null;
+  utm_campaign: string | null;
+  submittedAt: string;
+  referralSourceId: string;
+  referralSourceVerified: boolean;
+}) {
   return {
     source: p.source,
     market: p.market,
@@ -142,6 +152,11 @@ function leadLogContext(p: { source: string; market: string | null; channel: str
     utm_source: p.utm_source,
     utm_campaign: p.utm_campaign,
     submittedAt: p.submittedAt,
+    // Non-PII: a brokerage/partner name, not personal data. Logged so the
+    // spread of unverified values arriving from the ~40 partner vanity
+    // redirects is visible without waiting on the admin viewer.
+    referralSourceId: p.referralSourceId,
+    referralSourceVerified: p.referralSourceVerified,
   };
 }
 
@@ -216,8 +231,18 @@ export async function POST(req: Request) {
     utm_campaign: body.utm_campaign ?? null,
     utm_content: body.utm_content ?? null,
     utm_term: body.utm_term ?? null,
-    // Passed through verbatim — never normalised (space + casing are load-bearing for CRM comparability).
+    // Passed through VERBATIM — never normalised (space + casing are
+    // load-bearing for CRM comparability), and never rejected. The ~40 partner
+    // vanity redirects on go.curbio.com pass hand-written values
+    // ("Keller Williams Realty Boston Northwest" and similar); validating them
+    // against the known list would silently strip attribution from every live
+    // partner link — the honeypot failure mode aimed at attribution.
     referralSourceId: body.referralSourceId ?? "landing page",
+    // KEEP AND TAG. Records whether the value matched config/campaigns/types.ts
+    // REFERRAL_SOURCE_IDS, so captured and inferred attribution stay
+    // distinguishable in Redis and the /admin viewer rather than being
+    // silently averaged together. Never gates anything.
+    referralSourceVerified: isKnownReferralSource(body.referralSourceId ?? "landing page"),
     // Derived from utm_source against the closed channel list (lib/channels.ts).
     // Always a valid channel — "direct" when utm_source is absent/unrecognized.
     channel: deriveChannel(body.utm_source),
