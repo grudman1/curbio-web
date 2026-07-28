@@ -9,6 +9,7 @@ import {
   Closer,
 } from "./LpSections";
 import { CTA_COPY, readVariantFromCookie, type CtaVariant } from "@/lib/ctaVariant";
+import { useCampaignBase } from "@/lib/campaignBase";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 
 export default function PageShell({
@@ -33,10 +34,13 @@ export default function PageShell({
     setVariant(readVariantFromCookie());
   }, []);
   const ctaCopy = CTA_COPY[variant];
+  // "/" on sell.curbio.com and during SSR; the physical prefix only when this
+  // prerendered HTML is being QA'd directly at /lp/sell. See lib/campaignBase.
+  const base = useCampaignBase();
 
   return (
     <>
-      <Header market={market} neutral={neutral} initialPickerOpen={showPicker} />
+      <Header market={market} neutral={neutral} initialPickerOpen={showPicker} logoHref={base} basePath={base} />
       <main>
         <Hero
           market={market}

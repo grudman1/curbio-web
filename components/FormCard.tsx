@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { captureAttribution, gaEvent, getFirstTouch, getGaClientId, getStoredUtms } from "@/lib/analytics";
 import { deriveChannel } from "@/lib/channels";
+import { campaignBaseFor, campaignHref } from "@/lib/campaignBase";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 import type { CtaVariant } from "@/lib/ctaVariant";
 
@@ -200,7 +201,12 @@ export function FormCard({
         const qs = new URLSearchParams();
         if (market.slug) qs.set("market", market.slug);
         if (partnerSlug) qs.set("partner", partnerSlug);
-        router.push(`/confirm${qs.size ? `?${qs.toString()}` : ""}`);
+        // Resolved at navigation time, not render time: on sell.curbio.com the
+        // pathname is "/" and this yields "/confirm" exactly as before, while
+        // the QA shape (/lp/sell) keeps the visitor inside the campaign tier
+        // instead of escaping into the site group. See lib/campaignBase.ts.
+        const confirmPath = campaignHref(campaignBaseFor(window.location.pathname), "/confirm");
+        router.push(`${confirmPath}${qs.size ? `?${qs.toString()}` : ""}`);
       } catch (err) {
         setErrs({ server: err instanceof Error ? err.message : "Something went wrong." });
       } finally {

@@ -2,14 +2,19 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import ExpHomeClient from "@/components/ExpHomeClient";
 import ExpPageSkeleton from "@/components/ExpPageSkeleton";
+import { routeMetadata } from "@/config/routes";
 
-// Noindex until DNS cutover and go.curbio.com/exp redirect are verified.
+// PARTNER tier — the first of ~50. Lives in the site group at a real path
+// because it earns inbound links and must be indexable, unlike the campaign
+// tier behind /lp/. Indexability and canonical both come from
+// config/routes.ts: flipping `indexed` to true there at DNS cutover removes
+// the noindex AND emits the canonical in the same edit.
 export const metadata: Metadata = {
   title: "Curbio for eXp Realty — Pre-listing Home Improvement",
   description:
     "Curbio is the preferred pre-listing home improvement partner for eXp Realty agents. " +
     "Repairs, refreshes, and staging — fully managed, with pay-at-closing for qualified sellers.",
-  robots: { index: false, follow: false },
+  ...routeMetadata("/exp"),
 };
 
 // /exp is fully prerendered and served from the CDN edge, same architecture

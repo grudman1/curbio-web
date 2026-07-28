@@ -18,6 +18,7 @@ export function Header({
   neutral = false,
   initialPickerOpen = false,
   logoHref = "/",
+  basePath = "/",
 }: {
   market: CampaignMarket;
   neutral?: boolean;
@@ -25,6 +26,10 @@ export function Header({
   /** Where the top-left Curbio logo links. Defaults to "/" (internal). Use an
    *  absolute URL on partner pages where the logo should return to curbio.com. */
   logoHref?: string;
+  /** Base the market picker builds its ?market= links from. "/" everywhere in
+   *  production; the physical prefix only when campaign HTML is served at its
+   *  QA path. See lib/campaignBase.ts. */
+  basePath?: string;
 }) {
   const pillLabel = neutral ? "Choose your market" : market.name;
   return (
@@ -45,6 +50,7 @@ export function Header({
           label={pillLabel}
           marketSlug={neutral ? null : market.slug}
           initialOpen={initialPickerOpen}
+          basePath={basePath}
         />
       </div>
     </header>
