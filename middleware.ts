@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { canonicalSlug } from "./lib/markets";
 import { CAMPAIGN_HOSTS, CAMPAIGN_PREFIX, SITE_HOSTS } from "./config/routes";
+import { LEGACY_SLUG_REDIRECTS, marketPath } from "./config/markets";
 
 // Three jobs, all on the edge:
 //
@@ -84,6 +85,22 @@ export function middleware(req: NextRequest) {
   const rawPath = req.nextUrl.pathname;
   const pathname = rawPath.length > 1 && rawPath.endsWith("/") ? rawPath.slice(0, -1) : rawPath;
 
+  // 0. Legacy market slugs → 301 to the current slug. Derived from each
+  //    market's `legacySlugs` in config/markets.ts, so renaming a market and
+  //    recording the old spelling is all it takes to keep inbound links and
+  //    index entries alive. The WordPress site accrued three slug conventions
+  //    plus a 404 and a redirect-to-nothing precisely because this was manual.
+  //    A REDIRECT, not a rewrite: the old URL should stop existing.
+  const legacyMatch = /^\/markets\/([^/]+)\/?$/.exec(req.nextUrl.pathname);
+  if (legacyMatch) {
+    const target = LEGACY_SLUG_REDIRECTS[legacyMatch[1].toLowerCase()];
+    if (target) {
+      const url = req.nextUrl.clone();
+      url.pathname = marketPath(target);
+      return NextResponse.redirect(url, 301);
+    }
+  }
+
   // 1. Host → physical path.
   const host = req.headers.get("host") ?? "";
   const physical = servesCampaignRoot(host) ? toPhysicalPath(pathname) : pathname;
@@ -122,6 +139,16 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Run on pages only; skip static assets and API.
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|logo|hsm|sold|proof|markets|hero).*)"],
+  // Run on PAGES only; skip the API and anything with a file extension.
+  //
+  // This replaced a hardcoded list of public/ directory names
+  // (logo|hsm|sold|proof|markets|hero), which was a latent trap: the moment a
+  // real route shared a name with an asset folder, middleware silently stopped
+  // running on it. That is exactly what happened when /markets/ was added —
+  // the legacy-slug redirects 404'd because `markets` was an exclusion.
+  //
+  // Matching on "has a file extension" is name-independent, so it cannot
+  // collide with a future route. Verified safe: every file under public/ has
+  // an extension, and there are no extensionless files there at all.
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.[\\w]+$).*)"],
 };

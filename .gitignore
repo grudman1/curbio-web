@@ -36,4 +36,3 @@ pnpm-debug.log*
 # local reference docs (kept on disk, excluded from the deployed repo)
 /Curbio Website Design Brief (standalone).html
 /curbio-claude-code-brief.md
-/markets.json
