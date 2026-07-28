@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Header } from "./LpSections";
-import { ExpHeader } from "./ExpShell";
+import { PartnerHeader } from "./campaign/PartnerHeader";
 import { Icon } from "./LpKit";
 import { gaEvent } from "@/lib/analytics";
 import { useCampaignBase } from "@/lib/campaignBase";
@@ -181,7 +181,7 @@ export default function ConfirmShell({
   return (
     <>
       {partner === "exp"
-        ? <ExpHeader market={market} neutral={false} initialPickerOpen={false} />
+        ? <PartnerHeader partnerId={partner!} market={market} neutral={false} initialPickerOpen={false} basePath={backHref} />
         : <Header market={market} />
       }
 
