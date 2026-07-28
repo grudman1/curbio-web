@@ -3,6 +3,13 @@ import { getOperatorLead } from "@/lib/operator";
 import { buildResolvedMarket, canonicalZipForSlug } from "@/lib/markets";
 import { getCampaignMarket } from "@/lib/campaignMarkets";
 import ConfirmShell from "@/components/ConfirmShell";
+import type { Metadata } from "next";
+import { routeMetadata } from "@/config/routes";
+
+// Campaign tier: noindex, no canonical — same rule as the rest of the tier,
+// derived from config/routes.ts. This page is reachable only after a form
+// submission and must never be indexed.
+export const metadata: Metadata = routeMetadata("/confirm");
 
 // Intentionally dynamic (no revalidate): every render needs the per-visitor
 // prefill cookie and the request Host header for Calendly's embed_domain.
