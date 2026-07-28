@@ -78,6 +78,59 @@ function toPhysicalPath(pathname: string): string {
   return pathname;
 }
 
+
+/**
+ * /admin gate — a single shared secret, not a user system.
+ *
+ * HTTP Basic, so the browser supplies the native prompt and there is no login
+ * page, no session, no cookie and no logout to get wrong. Any username is
+ * accepted; only the password is checked, against ADMIN_SECRET.
+ *
+ * FAIL CLOSED: with no ADMIN_SECRET configured the route 404s rather than
+ * opening. An admin surface that becomes public when an env var is missing is
+ * worse than one that is unreachable.
+ *
+ * This runs in MIDDLEWARE, which is why /admin can be a plain server component
+ * that reads Redis directly instead of needing an API route — the middleware
+ * matcher deliberately excludes /api, so an admin API route would have to
+ * re-implement this check itself. Not having one is the safer shape.
+ */
+function adminResponse(req: NextRequest): NextResponse | null {
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret) {
+    return new NextResponse("Not found", { status: 404 });
+  }
+
+  const header = req.headers.get("authorization") ?? "";
+  const [scheme, encoded] = header.split(" ");
+  if (scheme === "Basic" && encoded) {
+    let supplied = "";
+    try {
+      supplied = atob(encoded).split(":").slice(1).join(":");
+    } catch {
+      supplied = "";
+    }
+    if (timingSafeEqual(supplied, secret)) return null; // authorised
+  }
+
+  return new NextResponse("Authentication required", {
+    status: 401,
+    headers: {
+      "WWW-Authenticate": 'Basic realm="Curbio admin", charset="UTF-8"',
+      // Belt and braces alongside the page's own noindex metadata.
+      "X-Robots-Tag": "noindex, nofollow",
+    },
+  });
+}
+
+/** Constant-time compare so a wrong secret cannot be found byte by byte. */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 export function middleware(req: NextRequest) {
   let res: NextResponse | undefined;
 
@@ -85,7 +138,14 @@ export function middleware(req: NextRequest) {
   const rawPath = req.nextUrl.pathname;
   const pathname = rawPath.length > 1 && rawPath.endsWith("/") ? rawPath.slice(0, -1) : rawPath;
 
-  // 0. Legacy market slugs → 301 to the current slug. Derived from each
+  // 0a. /admin gate — before anything else, so no admin path is ever routed,
+  //     rewritten or served without the secret.
+  if (rawPath === "/admin" || rawPath.startsWith("/admin/")) {
+    const denied = adminResponse(req);
+    if (denied) return denied;
+  }
+
+  // 0b. Legacy market slugs → 301 to the current slug. Derived from each
   //    market's `legacySlugs` in config/markets.ts, so renaming a market and
   //    recording the old spelling is all it takes to keep inbound links and
   //    index entries alive. The WordPress site accrued three slug conventions
