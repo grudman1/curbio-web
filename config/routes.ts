@@ -48,7 +48,7 @@ export const SITE_HOSTS = ["curbio.com", "www.curbio.com"] as const;
 /** Physical prefix for the campaign tier. Public URLs never show it. */
 export const CAMPAIGN_PREFIX = "/lp/sell";
 
-export type Tier = "campaign" | "partner";
+export type Tier = "campaign" | "partner" | "site";
 
 export type RouteEntry = {
   /** Path as visitors see it on sell.curbio.com today. `:market` is dynamic. */
@@ -113,6 +113,26 @@ export const ROUTES: RouteEntry[] = [
     group: "site",
     indexed: false, // ← flip at cutover; canonical follows automatically
   },
+  // ── site tier — curbio.com proper. noindex until DNS cutover, because
+  // curbio.com is still served by WordPress and these must not compete with
+  // the pages currently ranking. Flips with the partner tier.
+  {
+    publicPath: "/markets",
+    internalPath: "/markets",
+    cutoverPath: "/markets",
+    tier: "site",
+    group: "site",
+    indexed: false,
+  },
+  {
+    publicPath: "/markets/:slug",
+    internalPath: "/markets/:slug",
+    cutoverPath: "/markets/:slug",
+    tier: "site",
+    group: "site",
+    indexed: false,
+  },
+
   {
     publicPath: "/exp/m/:market",
     internalPath: "/exp/m/:market",

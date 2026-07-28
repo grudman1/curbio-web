@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 export default function SiteHome() {
   return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: "64px 24px" }}>
+    <div className="mx-auto max-w-container px-6 py-16">
       <h1>Curbio — site group</h1>
       <p style={{ color: "var(--fg-muted)", marginTop: 12 }}>
         Phase 2 foundation. Marketing pages are not built yet. This placeholder
@@ -52,6 +52,6 @@ export default function SiteHome() {
           </span>
         </li>
       </ul>
-    </main>
+    </div>
   );
 }
