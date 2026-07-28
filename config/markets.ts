@@ -29,12 +29,26 @@ export type Hsm = {
 };
 
 export type Market = {
-  /** URL segment. The ONLY slug. Old spellings go in `legacySlugs`. */
+  /**
+   * URL segment. The ONLY slug, and it is MARKETING's name for the market —
+   * never the operator API's. Those diverge (the API says "NOVA" and "DC";
+   * marketing says Northern Virginia and Washington, DC), and letting a third
+   * party's internal naming decide curbio.com's URLs is how /markets/wdc/
+   * happened. Old spellings go in `legacySlugs`.
+   */
   slug: string;
   /** Human label used in nav, headings, and the market picker. */
   displayName: string;
   /** Two-letter state/territory code. */
   state: string;
+  /**
+   * This market's slug in the CAMPAIGN catalog (lib/markets.ts), which is
+   * keyed off the operator API's `marketName`. Present so the two surfaces can
+   * be mapped without either dictating the other's naming — the site list owns
+   * public URLs, the campaign catalog owns the API contract, and
+   * config/markets.guard.ts asserts the mapping stays total.
+   */
+  campaignSlug: string;
   /**
    * Serviced ZIPs.
    *
@@ -72,6 +86,7 @@ export const MARKETS: Market[] = [
     slug: "atlanta",
     displayName: "Atlanta",
     state: "GA",
+    campaignSlug: "atlanta",
     zips: ["30002"],
     hsm: null,
     coordinates: { lat: 33.749, lng: -84.388 },
@@ -79,22 +94,25 @@ export const MARKETS: Market[] = [
     legacySlugs: [],
   },
   {
-    slug: "baltimore",
-    displayName: "Maryland",
+    // Deliberately renamed AWAY from Baltimore to reflect broader coverage;
+    // the live page is titled "Maryland Suburbs". The operator API still calls
+    // this market "Maryland" and the campaign catalog still slugs it
+    // "baltimore" — neither gets to decide the public URL.
+    slug: "maryland",
+    displayName: "Maryland Suburbs",
     state: "MD",
+    campaignSlug: "baltimore",
     zips: ["21201"],
     hsm: null,
     coordinates: { lat: 39.13, lng: -76.85 },
     brokerageLogos: [],
-    // NOTE: displayName is "Maryland" while the slug is "baltimore" — that
-    // mismatch is inherited from the operator API's market naming and is
-    // exactly why this market accumulated the most legacy spellings.
-    legacySlugs: ["dmv-maryland", "maryland", "maryland-suburbs"],
+    legacySlugs: ["dmv-maryland", "baltimore", "maryland-suburbs"],
   },
   {
     slug: "dallas",
     displayName: "Dallas",
     state: "TX",
+    campaignSlug: "dallas",
     zips: ["75201"],
     hsm: null,
     coordinates: { lat: 32.7767, lng: -96.797 },
@@ -105,6 +123,7 @@ export const MARKETS: Market[] = [
     slug: "los-angeles",
     displayName: "Los Angeles",
     state: "CA",
+    campaignSlug: "los-angeles",
     zips: ["90001"],
     hsm: null,
     coordinates: { lat: 34.0522, lng: -118.2437 },
@@ -115,6 +134,7 @@ export const MARKETS: Market[] = [
     slug: "riverside",
     displayName: "Riverside",
     state: "CA",
+    campaignSlug: "riverside",
     zips: ["92503"],
     hsm: null,
     coordinates: { lat: 33.9533, lng: -117.3962 },
@@ -125,6 +145,7 @@ export const MARKETS: Market[] = [
     slug: "northern-virginia",
     displayName: "Northern Virginia",
     state: "VA",
+    campaignSlug: "northern-virginia",
     zips: ["22030"],
     hsm: null,
     coordinates: { lat: 38.8462, lng: -77.3064 },
@@ -135,6 +156,7 @@ export const MARKETS: Market[] = [
     slug: "washington-dc",
     displayName: "Washington, DC",
     state: "DC",
+    campaignSlug: "washington-dc",
     zips: ["20001"],
     hsm: null,
     coordinates: { lat: 38.9072, lng: -77.0369 },
