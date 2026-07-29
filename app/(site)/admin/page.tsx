@@ -1,61 +1,50 @@
 import type { Metadata } from "next";
 import { readRecentLeads, maskName, deliveryState, type LeadRow } from "@/lib/adminLeads";
 import { buildPageRegistry, type RegistryEntry } from "@/config/pageRegistry";
+import { logout } from "./login/actions";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// /admin — the control room. CONCEPT SCREEN, first reviewable piece.
+// /admin — the Control Room.
 //
-// One dense screen, designed to be left open on a second monitor:
-//   1. an alert strip that is silent when healthy and impossible to miss when
-//      the CRM rejects a lead
-//   2. the numbers that answer "is anything wrong" in one glance
-//   3. the attribution question this page uniquely answers: what raw
-//      referralSourceId values are actually arriving, verified vs not
-//   4. the lead feed, compact
-//   5. the site itself — live, script-less previews of every page that exists,
-//      and ghost cards for every page the nav promises but the app lacks
+// One dense screen, left open on a second monitor: alert strip (silent when
+// healthy, unmissable on CRM rejections) → the numbers → what referral values
+// are actually arriving → the lead feed → the site itself as live previews →
+// the nav-promised backlog as ghost cards.
 //
-// PREVIEWS are sandboxed iframes with NO scripts (sandbox=""). Three reasons:
-//   - genuinely current: it is the real deployed page, not a screenshot
-//   - no analytics pollution: GA4/PostHog/Clarity never boot, so admin visits
-//     can't inflate pageviews on the pages being previewed
-//   - cheap: no JS executes in any of them; CSS+images only, lazy-loaded
-// Consequence: picker-mode roots (/lp/sell, /exp) render only their skeleton
-// server-side, so their cards preview a CONCRETE per-market variant, labelled.
-// Truthfulness note: what you see is the server HTML — for picker pages the
-// live visitor additionally gets client-side market resolution on top.
+// Styled to the Curbio design system — cloud-white canvas, white cards, Lora
+// headline with the amber rule, eyebrow labels, amber as accent only. Same
+// system as the landing pages; this is the daytime version of it, not a
+// separate dark aesthetic.
 //
-// Auth is still HTTP Basic in this piece; the login system is the next piece.
-// Reads stay on the READ-ONLY Upstash credential via lib/adminLeads.
+// PREVIEWS are iframes sandboxed WITHOUT allow-scripts: genuinely current
+// (the real deployed page, not a screenshot) and analytics can never fire
+// from them — no JS runs. allow-same-origin is granted only so stylesheets
+// apply; with scripting disabled the document cannot act on that origin.
+// Picker-mode roots render only a skeleton server-side, so their cards
+// preview a concrete per-market variant, labelled. What you see is the
+// server HTML — live visitors additionally get client-side market resolution.
+//
+// Auth: middleware session gate (lib/adminSession.ts). Reads stay on the
+// READ-ONLY Upstash credential — this page cannot write to the lead store.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: "Control room — Curbio",
+  title: "Control Room — Curbio",
   robots: { index: false, follow: false },
 };
 
-// Dark theme built from the navy primitives — the one place the marketing
-// palette is used at night strength. Internal surface; deliberately not the
-// marketing site's look.
-const C = {
-  bg: "var(--navy)",
-  panel: "var(--navy-95)",
-  edge: "var(--navy-85)",
-  text: "#ffffff",
-  dim: "var(--navy-15)",
-  faint: "var(--navy-30)",
-  amber: "var(--amber)",
-  ok: "#4caf7d",
-  fail: "var(--error)",
-};
-
 const mono = "ui-monospace, SFMono-Regular, Menlo, monospace";
+const OK = "var(--color-state-success)";
+const FAIL = "var(--color-state-error)";
+const WARN = "var(--color-accent)";
+const MUTED = "var(--color-text-muted)";
+const SUBTLE = "var(--color-text-subtle)";
 
 // How many recent leads feed the aggregates. Labelled everywhere it is shown —
-// these are "last N" numbers, not all-time analytics.
+// these are "last N" numbers, never dressed up as all-time analytics.
 const SCAN = 200;
 
 type Aggregates = {
@@ -125,16 +114,10 @@ function aggregate(rows: LeadRow[]): Aggregates {
 }
 
 // ── Previews ────────────────────────────────────────────────────────────────
-// Registry path → the concrete URL worth looking at. Per-market rows fold into
-// their parent card (as a "×7 markets" badge) instead of printing seven
-// near-identical thumbnails per campaign.
+// Registry path → the concrete URL worth looking at. Per-market rows fold
+// into their parent card as a "×7 markets" badge.
 function previewPlan(entries: RegistryEntry[]) {
-  const cards: {
-    entry: RegistryEntry;
-    src: string | null;
-    note?: string;
-    variants?: number;
-  }[] = [];
+  const cards: { entry: RegistryEntry; src: string | null; note?: string; variants?: number }[] = [];
   for (const e of entries) {
     if (e.status === "planned") continue;
     if (e.path.includes(":market")) {
@@ -160,7 +143,7 @@ function previewPlan(entries: RegistryEntry[]) {
       cards.push({ entry: e, src: "/lp/sell/confirm?market=atlanta", note: "shown: sell/atlanta" });
       continue;
     }
-    cards.push({ entry: e, src: e.path });
+    cards.push({ entry: e, src: e.path, note: e.note });
   }
   return cards;
 }
@@ -172,14 +155,10 @@ function Frame({ src }: { src: string }) {
         width: "100%",
         aspectRatio: "16 / 10",
         overflow: "hidden",
-        background: "#fff",
-        position: "relative",
+        background: "var(--color-surface-raised)",
+        borderBottom: "1px solid var(--color-border)",
       }}
     >
-      {/* sandbox WITHOUT allow-scripts: no JS ever runs, so GA4/PostHog/
-          Clarity can never fire from a preview. allow-same-origin only lets
-          the document keep its origin so stylesheets/fonts apply normally —
-          with scripting disabled it cannot act on that origin. */}
       <iframe
         src={src}
         title={src}
@@ -203,14 +182,15 @@ function Chip({ text, color, dashed = false }: { text: string; color: string; da
     <span
       style={{
         fontSize: 10,
-        fontWeight: 700,
+        fontWeight: 800,
         letterSpacing: "0.06em",
         textTransform: "uppercase",
         color,
         border: `1px ${dashed ? "dashed" : "solid"} ${color}`,
-        borderRadius: 999,
+        borderRadius: "var(--radius-pill)",
         padding: "2px 8px",
         whiteSpace: "nowrap",
+        background: "var(--color-surface-raised)",
       }}
     >
       {text}
@@ -219,13 +199,20 @@ function Chip({ text, color, dashed = false }: { text: string; color: string; da
 }
 
 function statusChip(e: RegistryEntry) {
-  // "draft" in the registry means the template renders publicly but its
-  // marketing content is not written — surfaced here as "stub" because a page
-  // you can visit is not a draft in any useful sense.
-  if (e.status === "live") return <Chip text="live" color={C.ok} />;
-  if (e.status === "draft") return <Chip text="stub · renders" color={C.amber} />;
-  return <Chip text="planned" color={C.faint} dashed />;
+  if (e.status === "live") return <Chip text="live" color={OK} />;
+  if (e.status === "stub") return <Chip text="stub · renders" color={WARN} />;
+  return <Chip text="planned" color={SUBTLE} dashed />;
 }
+
+const eyebrow: React.CSSProperties = {
+  fontFamily: "var(--font-sans)",
+  fontSize: "var(--text-label)",
+  fontWeight: 800,
+  letterSpacing: "var(--tracking-label)",
+  textTransform: "uppercase",
+  color: MUTED,
+  margin: 0,
+};
 
 function Panel({
   title,
@@ -239,10 +226,11 @@ function Panel({
   return (
     <section
       style={{
-        background: C.panel,
-        border: `1px solid ${C.edge}`,
-        borderRadius: 10,
-        padding: 16,
+        background: "var(--color-surface-raised)",
+        border: "1px solid var(--color-border)",
+        borderRadius: "var(--radius-lg)",
+        boxShadow: "var(--elevation-raised)",
+        padding: "var(--space-4) var(--space-5)",
       }}
     >
       <div
@@ -254,19 +242,7 @@ function Panel({
           marginBottom: 12,
         }}
       >
-        <h2
-          style={{
-            fontFamily: "var(--font-sans)",
-            fontSize: 11,
-            fontWeight: 800,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: C.dim,
-            margin: 0,
-          }}
-        >
-          {title}
-        </h2>
+        <h2 style={eyebrow}>{title}</h2>
         {right}
       </div>
       {children}
@@ -274,15 +250,31 @@ function Panel({
   );
 }
 
+function Meta({ children }: { children: React.ReactNode }) {
+  return <span style={{ fontSize: "var(--text-micro)", color: SUBTLE }}>{children}</span>;
+}
+
 function Stat({ label, value, tone }: { label: string; value: React.ReactNode; tone?: string }) {
   return (
-    <div style={{ minWidth: 90 }}>
-      <div style={{ fontFamily: mono, fontSize: 26, fontWeight: 600, color: tone ?? C.text, lineHeight: 1 }}>
+    <div style={{ minWidth: 86 }}>
+      <div
+        style={{
+          fontFamily: mono,
+          fontSize: 28,
+          fontWeight: 600,
+          color: tone ?? "var(--color-text)",
+          lineHeight: 1,
+        }}
+      >
         {value}
       </div>
-      <div style={{ fontSize: 11, color: C.faint, marginTop: 4 }}>{label}</div>
+      <div style={{ fontSize: "var(--text-micro)", color: SUBTLE, marginTop: 5 }}>{label}</div>
     </div>
   );
+}
+
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return <h2 style={{ ...eyebrow, margin: "0 0 10px" }}>{children}</h2>;
 }
 
 export default async function AdminPage() {
@@ -300,158 +292,241 @@ export default async function AdminPage() {
   const renderedAt = new Date().toISOString().replace("T", " ").replace(/\..*/, " UTC");
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bg, color: C.text, fontFamily: "var(--font-sans)" }}>
-      <main style={{ maxWidth: 1400, margin: "0 auto", padding: "24px 28px 96px" }}>
-        {/* ── top bar ── */}
-        <header
-          style={{
-            display: "flex",
-            alignItems: "baseline",
-            gap: 16,
-            flexWrap: "wrap",
-            marginBottom: 20,
-          }}
-        >
-          {/* Explicit color: globals.css paints every h1 navy, which is
-              invisible on this navy surface. */}
-          <h1 style={{ fontFamily: "var(--font-serif)", fontSize: 26, fontWeight: 600, margin: 0, color: C.text }}>
-            Control room
-          </h1>
-          <span style={{ fontFamily: mono, fontSize: 12, color: C.faint }}>
-            build {process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local"} ·{" "}
-            {process.env.VERCEL_ENV ?? "dev"} · rendered {renderedAt}
-          </span>
-          <span style={{ marginLeft: "auto", fontSize: 12, color: C.faint }}>
-            read-only · identities masked
-          </span>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "var(--color-surface)",
+        color: "var(--color-text)",
+        fontFamily: "var(--font-sans)",
+      }}
+    >
+      <main style={{ maxWidth: 1400, margin: "0 auto", padding: "28px 28px 96px" }}>
+        {/* ── header ── */}
+        <header style={{ marginBottom: "var(--space-6)" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 16, flexWrap: "wrap" }}>
+            <h1
+              style={{
+                fontFamily: "var(--font-family-serif)",
+                fontSize: 30,
+                fontWeight: 600,
+                letterSpacing: "var(--tracking-heading)",
+                color: "var(--color-text)",
+                margin: 0,
+              }}
+            >
+              Control Room
+            </h1>
+            <span style={{ fontFamily: mono, fontSize: 12, color: SUBTLE }}>
+              build {process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local"} ·{" "}
+              {process.env.VERCEL_ENV ?? "dev"} · rendered {renderedAt}
+            </span>
+            <form action={logout} style={{ marginLeft: "auto" }}>
+              <button
+                type="submit"
+                style={{
+                  fontFamily: "var(--font-sans)",
+                  fontSize: 12.5,
+                  fontWeight: 700,
+                  color: "var(--color-text)",
+                  background: "transparent",
+                  border: "1.5px solid var(--color-text)",
+                  borderRadius: "var(--radius-pill)",
+                  padding: "7px 16px",
+                  cursor: "pointer",
+                }}
+              >
+                Sign out
+              </button>
+            </form>
+          </div>
+          <span
+            aria-hidden
+            style={{
+              display: "block",
+              width: 48,
+              height: 3,
+              background: "var(--color-accent)",
+              borderRadius: 2,
+              marginTop: 12,
+            }}
+          />
+          <p style={{ fontSize: "var(--text-micro)", color: SUBTLE, margin: "8px 0 0" }}>
+            read-only · identities masked · aggregates cover the last {agg.scanned || SCAN} leads
+          </p>
         </header>
 
-        {/* ── alert strip: silent when healthy, loud when not ── */}
+        {/* ── alert strip: silent when healthy ── */}
         {leads.configured && leads.error ? (
           <div
             style={{
-              background: "rgba(226,75,74,0.15)",
-              border: `1px solid ${C.fail}`,
-              borderRadius: 10,
+              background: "rgba(226,75,74,0.08)",
+              border: `1px solid ${FAIL}`,
+              borderRadius: "var(--radius-lg)",
               padding: "14px 18px",
-              marginBottom: 20,
-              fontSize: 14,
+              marginBottom: "var(--space-5)",
+              fontSize: "var(--text-small)",
             }}
           >
-            <strong style={{ color: C.fail }}>Lead store unreadable:</strong> {leads.error} — this is
+            <strong style={{ color: FAIL }}>Lead store unreadable:</strong> {leads.error} — this is
             an admin read failure, not proof the pipeline is down. Check /api/lead logs before
             assuming leads are lost.
           </div>
         ) : agg.failed > 0 ? (
           <div
             style={{
-              background: "rgba(226,75,74,0.15)",
-              border: `2px solid ${C.fail}`,
-              borderRadius: 10,
+              background: "rgba(226,75,74,0.08)",
+              border: `2px solid ${FAIL}`,
+              borderRadius: "var(--radius-lg)",
               padding: "16px 20px",
-              marginBottom: 20,
+              marginBottom: "var(--space-5)",
             }}
           >
-            <div style={{ fontSize: 16, fontWeight: 800, color: C.fail, marginBottom: 8 }}>
-              ⚠ {agg.failed} CRM rejection{agg.failed > 1 ? "s" : ""} in the last {agg.scanned} leads
+            <div style={{ fontSize: 16, fontWeight: 800, color: FAIL, marginBottom: 8 }}>
+              ⚠ {agg.failed} CRM rejection{agg.failed > 1 ? "s" : ""} in the last {agg.scanned}{" "}
+              leads
             </div>
             {agg.failures.slice(0, 5).map(({ lead, delivery }, i) => (
-              <div key={lead.leadId ?? i} style={{ fontFamily: mono, fontSize: 12, color: C.dim, padding: "2px 0" }}>
+              <div
+                key={lead.leadId ?? i}
+                style={{ fontFamily: mono, fontSize: 12, color: MUTED, padding: "2px 0" }}
+              >
                 {lead.submittedAt?.slice(0, 16).replace("T", " ")} · {lead.market ?? "?"} ·{" "}
-                {lead.source ?? "?"} · HTTP {delivery?.crmStatus ?? "?"} — {delivery?.crmError ?? "no body"}
+                {lead.source ?? "?"} · HTTP {delivery?.crmStatus ?? "?"} —{" "}
+                {delivery?.crmError ?? "no body"}
               </div>
             ))}
-            <div style={{ fontSize: 12, color: C.dim, marginTop: 6 }}>
+            <div style={{ fontSize: "var(--text-micro)", color: MUTED, marginTop: 6 }}>
               Every one is persisted in Redis and alerted by email — recoverable, not lost.
             </div>
           </div>
         ) : null}
 
         {/* ── numbers row ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12, marginBottom: 12 }}>
-          <Panel title="Volume" right={<span style={{ fontSize: 11, color: C.faint }}>{leads.configured ? `${leads.total} stored` : "no store"}</span>}>
-            <div style={{ display: "flex", gap: 28 }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+            gap: 12,
+            marginBottom: 12,
+          }}
+        >
+          <Panel
+            title="Volume"
+            right={<Meta>{leads.configured ? `${leads.total} stored` : "no store"}</Meta>}
+          >
+            <div style={{ display: "flex", gap: 30 }}>
               <Stat label="last 24 h" value={leads.configured ? agg.last24h : "—"} />
               <Stat label="last 7 d" value={leads.configured ? agg.last7d : "—"} />
               <Stat label={`scanned (last ${agg.scanned})`} value={leads.configured ? agg.scanned : "—"} />
             </div>
           </Panel>
-          <Panel title="Delivery" right={<span style={{ fontSize: 11, color: C.faint }}>last {agg.scanned} leads</span>}>
-            <div style={{ display: "flex", gap: 28 }}>
-              <Stat label="delivered" value={agg.delivered} tone={C.ok} />
-              <Stat label="CRM failed" value={agg.failed} tone={agg.failed ? C.fail : C.text} />
-              <Stat label="pre-observability" value={agg.unknown} tone={C.faint} />
+          <Panel title="Delivery" right={<Meta>last {agg.scanned} leads</Meta>}>
+            <div style={{ display: "flex", gap: 30 }}>
+              <Stat label="delivered" value={agg.delivered} tone={OK} />
+              <Stat label="CRM failed" value={agg.failed} tone={agg.failed ? FAIL : undefined} />
+              <Stat label="pre-observability" value={agg.unknown} tone={SUBTLE} />
             </div>
           </Panel>
-          <Panel title="Attribution" right={<span style={{ fontSize: 11, color: C.faint }}>referral source tag</span>}>
-            <div style={{ display: "flex", gap: 28 }}>
-              <Stat label="verified" value={agg.verified} tone={C.ok} />
-              <Stat label="unverified" value={agg.unverified} tone={agg.unverified ? C.amber : C.text} />
-              <Stat label="untagged (pre-tag)" value={agg.untagged} tone={C.faint} />
+          <Panel title="Attribution" right={<Meta>referral source tag</Meta>}>
+            <div style={{ display: "flex", gap: 30 }}>
+              <Stat label="verified" value={agg.verified} tone={OK} />
+              <Stat label="unverified" value={agg.unverified} tone={agg.unverified ? WARN : undefined} />
+              <Stat label="untagged (pre-tag)" value={agg.untagged} tone={SUBTLE} />
             </div>
           </Panel>
         </div>
 
         {/* ── attribution detail + feed ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(320px, 2fr) minmax(420px, 3fr)", gap: 12, marginBottom: 24 }}>
-          <Panel title="Referral sources arriving" right={<span style={{ fontSize: 11, color: C.faint }}>raw values, last {agg.scanned}</span>}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(320px, 2fr) minmax(420px, 3fr)",
+            gap: 12,
+            marginBottom: "var(--space-8)",
+          }}
+        >
+          <Panel title="Referral sources arriving" right={<Meta>raw values, last {agg.scanned}</Meta>}>
             {agg.referralValues.length === 0 ? (
-              <p style={{ fontSize: 13, color: C.faint, margin: 0 }}>No referral source data in range.</p>
+              <p style={{ fontSize: "var(--text-small)", color: MUTED, margin: 0 }}>
+                No referral source data in range.
+              </p>
             ) : (
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <tbody>
                   {agg.referralValues.map((r) => (
                     <tr key={r.value}>
-                      <td style={{ padding: "5px 0", fontFamily: mono, fontSize: 13, color: C.text }}>{r.value}</td>
-                      <td style={{ padding: "5px 8px", textAlign: "right", fontFamily: mono, fontSize: 13, color: C.dim }}>
+                      <td style={{ padding: "6px 0", fontFamily: mono, fontSize: 13 }}>{r.value}</td>
+                      <td
+                        style={{
+                          padding: "6px 8px",
+                          textAlign: "right",
+                          fontFamily: mono,
+                          fontSize: 13,
+                          color: MUTED,
+                        }}
+                      >
                         {r.count}
                       </td>
-                      <td style={{ padding: "5px 0", textAlign: "right" }}>
-                        {r.known ? <Chip text="known" color={C.ok} /> : <Chip text="unrecognised" color={C.amber} />}
+                      <td style={{ padding: "6px 0", textAlign: "right" }}>
+                        {r.known ? (
+                          <Chip text="known" color={OK} />
+                        ) : (
+                          <Chip text="unrecognised" color={WARN} />
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
-            <p style={{ fontSize: 11, color: C.faint, margin: "10px 0 0" }}>
-              Every value is kept verbatim and tagged, never dropped — this list is how the ~40
+            <p style={{ fontSize: "var(--text-micro)", color: SUBTLE, margin: "10px 0 0" }}>
+              Every value is kept verbatim and tagged, never dropped — this is where the ~40
               go.curbio.com vanity-redirect values become visible before anything is standardised.
             </p>
           </Panel>
 
-          <Panel title="Lead feed" right={<span style={{ fontSize: 11, color: C.faint }}>newest 25</span>}>
+          <Panel title="Lead feed" right={<Meta>newest 25</Meta>}>
             {!leads.configured ? (
-              <p style={{ fontSize: 13, color: C.faint, margin: 0 }}>Upstash not configured in this environment.</p>
+              <p style={{ fontSize: "var(--text-small)", color: MUTED, margin: 0 }}>
+                Upstash not configured in this environment.
+              </p>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column" }}>
+              <div>
                 {rows.slice(0, 25).map(({ lead, delivery }, i) => {
                   const st = deliveryState(delivery);
-                  const tone = st.tone === "ok" ? C.ok : st.tone === "fail" ? C.fail : st.tone === "warn" ? C.amber : C.faint;
+                  const tone =
+                    st.tone === "ok" ? OK : st.tone === "fail" ? FAIL : st.tone === "warn" ? WARN : SUBTLE;
                   return (
                     <div
                       key={lead.leadId ?? i}
                       style={{
                         display: "grid",
-                        gridTemplateColumns: "110px 110px 1fr auto auto",
+                        gridTemplateColumns: "104px 110px 1fr auto auto",
                         gap: 10,
                         alignItems: "center",
                         padding: "6px 0",
-                        borderBottom: `1px solid ${C.edge}`,
-                        fontSize: 13,
+                        borderBottom: "1px solid var(--color-border)",
+                        fontSize: "var(--text-small)",
                       }}
                     >
-                      <span style={{ fontFamily: mono, fontSize: 12, color: C.faint }}>
+                      <span style={{ fontFamily: mono, fontSize: 12, color: SUBTLE }}>
                         {lead.submittedAt?.slice(5, 16).replace("T", " ") ?? "—"}
                       </span>
-                      <span style={{ color: C.dim }}>{maskName(lead)}</span>
-                      <span style={{ color: C.dim, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <span style={{ color: MUTED }}>{maskName(lead)}</span>
+                      <span
+                        style={{
+                          color: MUTED,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {lead.market ?? "—"} · {lead.source ?? "—"}
                         {lead.utm_campaign ? ` · ${lead.utm_campaign}` : ""}
                       </span>
                       <Chip text={st.label} color={tone} />
                       {lead.referralSourceVerified === false ? (
-                        <Chip text="unverified" color={C.amber} />
+                        <Chip text="unverified" color={WARN} />
                       ) : (
                         <span />
                       )}
@@ -468,20 +543,15 @@ export default async function AdminPage() {
           const inGroup = cards.filter((c) => c.entry.group === g.key);
           if (!inGroup.length) return null;
           return (
-            <section key={g.key} style={{ marginBottom: 28 }}>
-              <h2
+            <section key={g.key} style={{ marginBottom: "var(--space-8)" }}>
+              <SectionHeading>{g.label}</SectionHeading>
+              <div
                 style={{
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: "0.12em",
-                  textTransform: "uppercase",
-                  color: C.dim,
-                  margin: "0 0 10px",
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))",
+                  gap: 14,
                 }}
               >
-                {g.label}
-              </h2>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
                 {inGroup.map((c) => (
                   <a
                     key={c.entry.path}
@@ -490,12 +560,13 @@ export default async function AdminPage() {
                     rel="noreferrer"
                     style={{
                       display: "block",
-                      background: C.panel,
-                      border: `1px solid ${C.edge}`,
-                      borderRadius: 10,
+                      background: "var(--color-surface-raised)",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: "var(--radius-lg)",
+                      boxShadow: "var(--elevation-raised)",
                       overflow: "hidden",
                       textDecoration: "none",
-                      color: C.text,
+                      color: "var(--color-text)",
                     }}
                   >
                     {c.src ? (
@@ -507,20 +578,30 @@ export default async function AdminPage() {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          color: C.faint,
-                          fontSize: 13,
+                          color: SUBTLE,
+                          fontSize: "var(--text-small)",
+                          background: "var(--color-surface)",
+                          borderBottom: "1px solid var(--color-border)",
                         }}
                       >
                         {c.note ?? c.entry.path}
                       </div>
                     )}
-                    <div style={{ padding: "10px 12px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <div
+                      style={{
+                        padding: "10px 12px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        flexWrap: "wrap",
+                      }}
+                    >
                       <span style={{ fontFamily: mono, fontSize: 12.5 }}>{c.entry.path}</span>
                       {statusChip(c.entry)}
-                      {c.variants && <Chip text={`×${c.variants} markets`} color={C.dim} />}
-                      {c.entry.indexed && <Chip text="indexed" color={C.amber} />}
+                      {c.variants && <Chip text={`×${c.variants} markets`} color={MUTED} />}
+                      {c.entry.indexed && <Chip text="indexed" color={WARN} />}
                       {c.note && c.src && (
-                        <span style={{ fontSize: 10.5, color: C.faint, width: "100%" }}>{c.note}</span>
+                        <span style={{ fontSize: 10.5, color: SUBTLE, width: "100%" }}>{c.note}</span>
                       )}
                     </div>
                   </a>
@@ -532,31 +613,34 @@ export default async function AdminPage() {
 
         {/* ── the backlog: promised by the nav, not yet built ── */}
         <section>
-          <h2
+          <SectionHeading>Backlog — linked in the nav, not built ({planned.length})</SectionHeading>
+          <div
             style={{
-              fontSize: 11,
-              fontWeight: 800,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: C.dim,
-              margin: "0 0 10px",
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))",
+              gap: 10,
             }}
           >
-            Backlog — linked in the nav, not built ({planned.length})
-          </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
             {planned.map((e) => (
               <div
                 key={e.path}
                 style={{
-                  border: `1px dashed ${C.edge}`,
-                  borderRadius: 10,
+                  border: "1px dashed var(--color-border-strong)",
+                  borderRadius: "var(--radius-lg)",
                   padding: "14px 14px",
-                  color: C.faint,
                 }}
               >
-                <div style={{ fontFamily: mono, fontSize: 12.5, color: C.dim }}>{e.path}</div>
-                <div style={{ fontSize: 12, marginTop: 4 }}>{e.title}</div>
+                <div style={{ fontFamily: mono, fontSize: 12.5, color: "var(--color-text)" }}>
+                  {e.path}
+                </div>
+                <div style={{ fontSize: "var(--text-micro)", color: MUTED, marginTop: 4 }}>
+                  {e.title}
+                </div>
+                {e.note && (
+                  <div style={{ fontSize: "var(--text-micro)", color: SUBTLE, marginTop: 6 }}>
+                    {e.note}
+                  </div>
+                )}
               </div>
             ))}
           </div>
