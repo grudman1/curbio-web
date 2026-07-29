@@ -100,6 +100,11 @@ const config: Config = {
       fontFamily: {
         serif: ["var(--font-serif)", "Georgia", "serif"],
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        // No preflight concern here (unlike serif/sans above) — Tailwind's
+        // base reset never sets a mono font-family, so there is no shipped
+        // rule this could alter. Points at the primitive for consistency
+        // with the pattern above, not out of necessity.
+        mono: ["var(--font-mono)", "monospace"],
       },
       fontSize: {
         hero: ["var(--text-hero)", { lineHeight: "var(--leading-tight)", letterSpacing: "var(--tracking-tight)" }],

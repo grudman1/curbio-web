@@ -40,7 +40,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const mono = "ui-monospace, SFMono-Regular, Menlo, monospace";
+// References the token (app/globals.css) rather than duplicating the font
+// stack locally — a hardcoded copy here had drifted from the design
+// system's declared value (wrong SF Mono spelling, missing the Windows
+// Consolas fallback) until this was pointed at the single source of truth.
+const mono = "var(--font-mono)";
 const OK = "var(--color-state-success)";
 const FAIL = "var(--color-state-error)";
 const WARN = "var(--color-accent)";
@@ -326,17 +330,7 @@ function PendingRequestsPanel({ pending }: { pending: AdminUser[] }) {
                 <input type="hidden" name="email" value={u.email} />
                 <button
                   type="submit"
-                  style={{
-                    fontFamily: "var(--font-sans)",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "var(--color-text-on-accent)",
-                    background: "var(--color-accent)",
-                    border: 0,
-                    borderRadius: "var(--radius-pill)",
-                    padding: "5px 12px",
-                    cursor: "pointer",
-                  }}
+                  className="cursor-pointer rounded-pill bg-accent px-3 py-[5px] font-sans text-[12px] font-bold text-content-on-accent transition-colors duration-base ease-out hover:bg-accent-hover active:bg-accent-active"
                 >
                   Approve
                 </button>
@@ -345,17 +339,7 @@ function PendingRequestsPanel({ pending }: { pending: AdminUser[] }) {
                 <input type="hidden" name="email" value={u.email} />
                 <button
                   type="submit"
-                  style={{
-                    fontFamily: "var(--font-sans)",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: MUTED,
-                    background: "transparent",
-                    border: "1px solid var(--color-border-strong)",
-                    borderRadius: "var(--radius-pill)",
-                    padding: "5px 12px",
-                    cursor: "pointer",
-                  }}
+                  className="cursor-pointer rounded-pill border border-edge-strong bg-transparent px-3 py-[5px] font-sans text-[12px] font-bold text-content-muted transition-colors duration-base ease-out hover:border-content hover:text-content"
                 >
                   Deny
                 </button>
@@ -429,17 +413,7 @@ export default async function AdminPage() {
             <form action={logout}>
               <button
                 type="submit"
-                style={{
-                  fontFamily: "var(--font-sans)",
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  color: "var(--color-text)",
-                  background: "transparent",
-                  border: "1.5px solid var(--color-text)",
-                  borderRadius: "var(--radius-pill)",
-                  padding: "7px 16px",
-                  cursor: "pointer",
-                }}
+                className="cursor-pointer rounded-pill border-[1.5px] border-content bg-transparent px-4 py-[7px] font-sans text-[12.5px] font-bold text-content transition-colors duration-base ease-out hover:bg-content hover:text-content-on-accent"
               >
                 Sign out
               </button>

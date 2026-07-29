@@ -42,6 +42,14 @@
 
   --error: #e24b4a;
 
+  /* --font-serif and --font-sans are NOT declared here — next/font/google
+     injects them onto <html> at build time (see app/layout.tsx). --font-mono
+     has no loader (it's a system stack, not a webfont), so it's declared as
+     an ordinary primitive, matching the design system's declared value
+     exactly: ui-monospace resolves to SF Mono on Apple platforms, Consolas
+     on Windows, before falling through to the generic keyword. */
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
   --shadow-sm: 0 1px 2px rgba(13, 37, 77, 0.06), 0 1px 1px rgba(13, 37, 77, 0.04);
   --shadow-md: 0 4px 12px rgba(13, 37, 77, 0.08), 0 1px 2px rgba(13, 37, 77, 0.04);
   --shadow-lg: 0 16px 40px -12px rgba(13, 37, 77, 0.18), 0 4px 12px rgba(13, 37, 77, 0.06);
