@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { login } from "./actions";
 
 // Sign-in for the internal surface. Deliberately anonymous: no mention of
@@ -48,9 +49,11 @@ export default async function LoginPage({
   const error =
     e === "rate"
       ? "Too many attempts — try again in a few minutes."
-      : e
-        ? "Invalid email or password."
-        : null;
+      : e === "pending"
+        ? "Your access request is still pending approval."
+        : e
+          ? "Invalid email or password."
+          : null;
 
   return (
     <main
@@ -154,6 +157,21 @@ export default async function LoginPage({
               Sign in
             </button>
           </form>
+
+          <p
+            style={{
+              fontFamily: "var(--font-sans)",
+              fontSize: 13,
+              color: "var(--color-text-muted)",
+              textAlign: "center",
+              margin: "20px 0 0",
+            }}
+          >
+            Need access?{" "}
+            <Link href="/admin/signup" style={{ color: "var(--color-text)", fontWeight: 700 }}>
+              Request an account
+            </Link>
+          </p>
         </div>
       </div>
     </main>

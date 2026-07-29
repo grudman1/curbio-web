@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { readRecentLeads, maskName, deliveryState, type LeadRow } from "@/lib/adminLeads";
 import { buildPageRegistry, type RegistryEntry } from "@/config/pageRegistry";
+import { getSessionUser, listPendingUsers, sessionSecret, type AdminUser } from "@/lib/adminAuth";
+import { SESSION_COOKIE, openSession } from "@/lib/adminSession";
 import { logout } from "./login/actions";
+import { approveUserAction, denyUserAction } from "./actions";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // /admin — the Control Room.
@@ -277,6 +281,93 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   return <h2 style={{ ...eyebrow, margin: "0 0 10px" }}>{children}</h2>;
 }
 
+/**
+ * The middleware already guarantees a valid session before this page renders
+ * — this re-reads it purely for DISPLAY (whose email shows, whether the
+ * approve/deny panel appears). It is not a security boundary; the actual
+ * boundary is requireOwnerSession() in actions.ts, which re-derives role
+ * independently for every mutation rather than trusting anything rendered
+ * here.
+ */
+async function currentAdminUser(): Promise<{ email: string; role: string } | null> {
+  const jar = await cookies();
+  const opened = await openSession(jar.get(SESSION_COOKIE)?.value, sessionSecret());
+  if (!opened) return null;
+  const session = await getSessionUser(opened.sid);
+  return session ? { email: session.email, role: session.role } : null;
+}
+
+function PendingRequestsPanel({ pending }: { pending: AdminUser[] }) {
+  return (
+    <Panel title="Access requests" right={<Meta>{pending.length} pending</Meta>}>
+      {pending.length === 0 ? (
+        <p style={{ fontSize: "var(--text-small)", color: MUTED, margin: 0 }}>
+          No pending requests.
+        </p>
+      ) : (
+        <div>
+          {pending.map((u) => (
+            <div
+              key={u.email}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "8px 0",
+                borderBottom: "1px solid var(--color-border)",
+                fontSize: "var(--text-small)",
+              }}
+            >
+              <span style={{ flex: 1 }}>{u.email}</span>
+              <span style={{ fontFamily: mono, fontSize: 11, color: SUBTLE }}>
+                {u.createdAt.slice(0, 10)}
+              </span>
+              <form action={approveUserAction}>
+                <input type="hidden" name="email" value={u.email} />
+                <button
+                  type="submit"
+                  style={{
+                    fontFamily: "var(--font-sans)",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "var(--color-text-on-accent)",
+                    background: "var(--color-accent)",
+                    border: 0,
+                    borderRadius: "var(--radius-pill)",
+                    padding: "5px 12px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Approve
+                </button>
+              </form>
+              <form action={denyUserAction}>
+                <input type="hidden" name="email" value={u.email} />
+                <button
+                  type="submit"
+                  style={{
+                    fontFamily: "var(--font-sans)",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: MUTED,
+                    background: "transparent",
+                    border: "1px solid var(--color-border-strong)",
+                    borderRadius: "var(--radius-pill)",
+                    padding: "5px 12px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Deny
+                </button>
+              </form>
+            </div>
+          ))}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
 export default async function AdminPage() {
   const leads = await readRecentLeads(SCAN);
   const rows = leads.configured && !leads.error ? leads.rows : [];
@@ -284,6 +375,15 @@ export default async function AdminPage() {
   const registry = buildPageRegistry();
   const cards = previewPlan(registry);
   const planned = registry.filter((e) => e.status === "planned");
+  const [me, pending] = await Promise.all([
+    currentAdminUser(),
+    // listPendingUsers() is cheap at this scale and the panel below only
+    // renders it for owners — fetched unconditionally rather than branched
+    // so a role check bug can't accidentally show a stale/empty list instead
+    // of just not rendering the panel.
+    listPendingUsers(),
+  ]);
+  const isOwner = me?.role === "owner";
   const groups: { key: string; label: string }[] = [
     { key: "campaigns", label: "Campaign tier — sell.curbio.com" },
     { key: "site", label: "Site tier — curbio.com (post-cutover)" },
@@ -320,7 +420,13 @@ export default async function AdminPage() {
               build {process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local"} ·{" "}
               {process.env.VERCEL_ENV ?? "dev"} · rendered {renderedAt}
             </span>
-            <form action={logout} style={{ marginLeft: "auto" }}>
+            <span style={{ marginLeft: "auto", fontSize: 12.5, color: MUTED }}>
+              {me?.email}
+              {isOwner && (
+                <span style={{ color: SUBTLE }}> · owner</span>
+              )}
+            </span>
+            <form action={logout}>
               <button
                 type="submit"
                 style={{
@@ -400,6 +506,14 @@ export default async function AdminPage() {
             </div>
           </div>
         ) : null}
+
+        {/* ── pending access requests: owner-only display, but the real gate
+             is requireOwnerSession() re-checking on every mutation ── */}
+        {isOwner && pending.length > 0 && (
+          <div style={{ marginBottom: "var(--space-5)" }}>
+            <PendingRequestsPanel pending={pending} />
+          </div>
+        )}
 
         {/* ── numbers row ── */}
         <div
