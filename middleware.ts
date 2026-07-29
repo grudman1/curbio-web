@@ -2,59 +2,101 @@ import { NextResponse, type NextRequest } from "next/server";
 import { canonicalSlug } from "./lib/markets";
 import { CAMPAIGN_HOSTS, CAMPAIGN_PREFIX, SITE_HOSTS } from "./config/routes";
 import { LEGACY_SLUG_REDIRECTS, marketPath } from "./config/markets";
+import {
+  SESSION_COOKIE,
+  SESSION_IDLE_MS,
+  SESSION_REISSUE_BELOW_MS,
+  openSession,
+  sealSession,
+  type OpenedSession,
+} from "./lib/adminSession";
 
-// Three jobs, all on the edge:
+// Five jobs, all on the edge, in order:
 //
-// 1. HOSTNAME → TIER. sell.curbio.com's paths are mapped onto the campaign
-//    tier's physical prefix (/lp/sell). REWRITE, not redirect — the address
-//    bar keeps sell.curbio.com/, so nothing visitor-visible changes and
-//    captureAttribution() still reads the original URL. Partner paths (/exp)
-//    are NOT mapped: they already live at the path they keep on curbio.com,
-//    which is what makes them indexable. See config/routes.ts.
+// 1. /design-system → 301 /admin/design-system. Every internal surface lives
+//    under /admin — one door, one auth gate.
 //
-// 2. Campaign-link rewrite: ?market=<slug> → the prerendered per-market page,
-//    composed ON TOP of (1). sell.curbio.com/?market=atlanta becomes
-//    /lp/sell/m/atlanta; /exp?market=atlanta becomes /exp/m/atlanta. The
-//    targets are prerendered, so campaign traffic is served from the CDN edge
-//    instead of invoking a serverless function. Unrecognized slugs are NOT
-//    rewritten: the prerendered base page renders neutral for them (never
-//    geo — see components/useMarketResolution.ts).
+// 2. /admin GATE. Signed-session auth (see lib/adminSession.ts): middleware
+//    verifies the cookie's HMAC + idle expiry, then confirms the session
+//    record still exists in Redis — using the READ-ONLY token, so the edge
+//    can verify sessions but never mint or revoke one. Passwords are never
+//    checked here; that happens in the Node login action. FAILS CLOSED: any
+//    missing env var → 404, never open.
 //
-// 3. Assigns a stable anonymous visitor id used to bucket the cta-copy A/B
-//    test (see lib/ctaVariant.ts). Set once, read on every subsequent request
-//    so a visitor keeps the same variant across reloads and email sends.
+// 3. CAMPAIGN-HOST ALLOWLIST — the leak fix. sell.curbio.com previously used
+//    a rewrite list that mapped /, /m/* and /confirm and let EVERYTHING ELSE
+//    fall through, which publicly served /markets/*, /design-system (with no
+//    auth at all) and any future site page on the lead domain. Now only
+//    explicitly allowlisted paths exist on campaign hosts; everything else
+//    404s — unless the request carries a valid ADMIN SESSION, which passes
+//    through unchanged. That authed pass-through is what keeps site-tier
+//    pages QA-able in production (curbio.com still points at WordPress, so
+//    sell.curbio.com is the only production host until cutover) and lets the
+//    control room's live previews render them.
+//
+// 4. Legacy /markets/<old-slug> 301s, derived from config/markets.ts.
+//
+// 5. Campaign-link rewrite (?market=<slug> → prerendered per-market page) and
+//    the stable curbio_vid A/B cookie — unchanged behaviour.
 
-/** Public path → physical path, for hosts that serve the campaign tier.
- *  Longest prefix first so /m/... is matched before the "/" catch-all. */
-const CAMPAIGN_PATH_MAP: { from: string; to: string }[] = [
-  { from: "/m", to: `${CAMPAIGN_PREFIX}/m` },
-  { from: "/confirm", to: `${CAMPAIGN_PREFIX}/confirm` },
-  { from: "/", to: CAMPAIGN_PREFIX },
-];
+// ── admin session (edge side) ────────────────────────────────────────────────
 
-/** Paths that stay put on a campaign host — the partner tier lives in the site
- *  group at its real path and must never be pushed behind /lp/. */
-const TIER_EXEMPT_PREFIXES = ["/exp", "/api", "/_next", "/admin", "/design-system"];
+function adminEnvReady(): boolean {
+  return !!(
+    process.env.ADMIN_EMAIL &&
+    process.env.ADMIN_PASSWORD_HASH &&
+    process.env.ADMIN_SESSION_SECRET &&
+    process.env.UPSTASH_REDIS_REST_KV_REST_API_URL &&
+    process.env.UPSTASH_REDIS_REST_KV_REST_API_READ_ONLY_TOKEN
+  );
+}
 
-// Base path (already physical) → its per-market prerendered directory.
-const MARKET_REWRITES: Record<string, string> = {
-  [CAMPAIGN_PREFIX]: `${CAMPAIGN_PREFIX}/m`,
-  "/exp": "/exp/m",
-};
+/** Does the session record still exist? READ-ONLY token — verification only.
+ *  Throws on network failure so the caller fails closed, not open. */
+async function sessionRecordExists(sid: string): Promise<boolean> {
+  const url = process.env.UPSTASH_REDIS_REST_KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_KV_REST_API_READ_ONLY_TOKEN;
+  const res = await fetch(`${url}/get/admin:session:${sid}`, {
+    headers: { authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`session store returned ${res.status}`);
+  const data = (await res.json()) as { result: string | null };
+  return data.result != null;
+}
+
+/** Full session check: signature + idle expiry + server-side record. Null on
+ *  ANY failure, including Redis being unreachable — fail closed. */
+async function validSession(req: NextRequest): Promise<OpenedSession | null> {
+  if (!adminEnvReady()) return null;
+  const opened = await openSession(
+    req.cookies.get(SESSION_COOKIE)?.value,
+    process.env.ADMIN_SESSION_SECRET as string
+  );
+  if (!opened) return null;
+  try {
+    return (await sessionRecordExists(opened.sid)) ? opened : null;
+  } catch {
+    return null;
+  }
+}
+
+function notFoundResponse(): NextResponse {
+  return new NextResponse("Not found", {
+    status: 404,
+    headers: { "X-Robots-Tag": "noindex, nofollow" },
+  });
+}
+
+// ── campaign host mapping ────────────────────────────────────────────────────
 
 /**
  * Does this host serve sell.curbio.com's campaign tier at the root?
  *
- * FAIL-SAFE: in production, anything that is not explicitly a site host is
- * treated as a campaign host. A misconfigured or newly-added production alias
- * must never silently start serving the site placeholder at sell.curbio.com —
- * that would be a total lead-flow outage, and the failure mode of guessing
- * wrong in the other direction (a site host briefly serving campaigns) is
- * merely wrong, not revenue-ending.
- *
- * Preview and development default to the SITE, with campaigns reachable at
- * their physical /lp/sell paths — previews have no sell.curbio.com hostname,
- * so path access is the only way to QA both tiers on one deployment.
+ * FAIL-SAFE unchanged: in production, anything not explicitly a site host is
+ * a campaign host — a misconfigured alias must never serve the site
+ * placeholder at sell.curbio.com. Preview and development default to the
+ * SITE, with campaigns reachable at their physical /lp paths for QA.
  */
 function servesCampaignRoot(host: string): boolean {
   const h = host.toLowerCase().split(":")[0];
@@ -63,95 +105,102 @@ function servesCampaignRoot(host: string): boolean {
   return process.env.VERCEL_ENV === "production";
 }
 
-function toPhysicalPath(pathname: string): string {
-  if (TIER_EXEMPT_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
-    return pathname;
-  }
-  for (const { from, to } of CAMPAIGN_PATH_MAP) {
-    if (from === "/") {
-      if (pathname === "/") return to;
-      continue;
-    }
-    if (pathname === from) return to;
-    if (pathname.startsWith(`${from}/`)) return `${to}${pathname.slice(from.length)}`;
-  }
-  return pathname;
-}
-
-
 /**
- * /admin gate — a single shared secret, not a user system.
+ * ALLOWLIST for campaign hosts: the public paths that exist there, mapped to
+ * their physical routes. Returns null for everything else — which then 404s
+ * unless the request holds an admin session.
  *
- * HTTP Basic, so the browser supplies the native prompt and there is no login
- * page, no session, no cookie and no logout to get wrong. Any username is
- * accepted; only the password is checked, against ADMIN_SECRET.
+ *   /            → the sell campaign        (visitor URL never changes)
+ *   /m/*         → per-market rewrite targets
+ *   /confirm     → post-submit confirmation
+ *   /exp*        → PARTNER tier — real path on purpose, indexable at cutover
+ *   /lp/*        → physical campaign paths, for QA links
  *
- * FAIL CLOSED: with no ADMIN_SECRET configured the route 404s rather than
- * opening. An admin surface that becomes public when an env var is missing is
- * worse than one that is unreachable.
- *
- * This runs in MIDDLEWARE, which is why /admin can be a plain server component
- * that reads Redis directly instead of needing an API route — the middleware
- * matcher deliberately excludes /api, so an admin API route would have to
- * re-implement this check itself. Not having one is the safer shape.
+ * This replaced a fall-through rewrite list. The fall-through publicly served
+ * every site-tier route that happened to exist — /markets/*, an
+ * unauthenticated /design-system — on the lead domain. An allowlist fails
+ * closed when Phase 3 adds pages.
  */
-function adminResponse(req: NextRequest): NextResponse | null {
-  const secret = process.env.ADMIN_SECRET;
-  if (!secret) {
-    return new NextResponse("Not found", { status: 404 });
-  }
-
-  const header = req.headers.get("authorization") ?? "";
-  const [scheme, encoded] = header.split(" ");
-  if (scheme === "Basic" && encoded) {
-    let supplied = "";
-    try {
-      supplied = atob(encoded).split(":").slice(1).join(":");
-    } catch {
-      supplied = "";
-    }
-    if (timingSafeEqual(supplied, secret)) return null; // authorised
-  }
-
-  return new NextResponse("Authentication required", {
-    status: 401,
-    headers: {
-      "WWW-Authenticate": 'Basic realm="Curbio admin", charset="UTF-8"',
-      // Belt and braces alongside the page's own noindex metadata.
-      "X-Robots-Tag": "noindex, nofollow",
-    },
-  });
+function campaignAllowlist(pathname: string): string | null {
+  if (pathname === "/") return CAMPAIGN_PREFIX;
+  if (pathname === "/m" || pathname.startsWith("/m/")) return `${CAMPAIGN_PREFIX}${pathname}`;
+  if (pathname === "/confirm" || pathname.startsWith("/confirm/"))
+    return `${CAMPAIGN_PREFIX}${pathname}`;
+  if (pathname === "/exp" || pathname.startsWith("/exp/")) return pathname;
+  if (pathname === "/lp" || pathname.startsWith("/lp/")) return pathname;
+  return null;
 }
 
-/** Constant-time compare so a wrong secret cannot be found byte by byte. */
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
+// Base path (already physical) → its per-market prerendered directory.
+const MARKET_REWRITES: Record<string, string> = {
+  [CAMPAIGN_PREFIX]: `${CAMPAIGN_PREFIX}/m`,
+  "/exp": "/exp/m",
+};
 
-export function middleware(req: NextRequest) {
-  let res: NextResponse | undefined;
-
-  // Normalize a possible trailing slash (the picker navigates to "/exp/?market=…").
+export async function middleware(req: NextRequest) {
   const rawPath = req.nextUrl.pathname;
+  // Normalize a possible trailing slash (the picker navigates to "/exp/?market=…").
   const pathname = rawPath.length > 1 && rawPath.endsWith("/") ? rawPath.slice(0, -1) : rawPath;
 
-  // 0a. /admin gate — before anything else, so no admin path is ever routed,
-  //     rewritten or served without the secret.
-  if (rawPath === "/admin" || rawPath.startsWith("/admin/")) {
-    const denied = adminResponse(req);
-    if (denied) return denied;
+  // 1. Internal surfaces consolidated under /admin.
+  if (pathname === "/design-system" || pathname.startsWith("/design-system/")) {
+    const url = req.nextUrl.clone();
+    url.pathname = `/admin/design-system${pathname.slice("/design-system".length)}`;
+    return NextResponse.redirect(url, 301);
   }
 
-  // 0b. Legacy market slugs → 301 to the current slug. Derived from each
-  //    market's `legacySlugs` in config/markets.ts, so renaming a market and
-  //    recording the old spelling is all it takes to keep inbound links and
-  //    index entries alive. The WordPress site accrued three slug conventions
-  //    plus a 404 and a redirect-to-nothing precisely because this was manual.
-  //    A REDIRECT, not a rewrite: the old URL should stop existing.
-  const legacyMatch = /^\/markets\/([^/]+)\/?$/.exec(req.nextUrl.pathname);
+  // 2. /admin gate.
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    if (!adminEnvReady()) return notFoundResponse();
+    const session = await validSession(req);
+
+    if (pathname === "/admin/login") {
+      if (session) return NextResponse.redirect(new URL("/admin", req.url));
+      const res = NextResponse.next();
+      res.headers.set("X-Robots-Tag", "noindex, nofollow");
+      return res;
+    }
+
+    if (!session) return NextResponse.redirect(new URL("/admin/login", req.url));
+
+    const res = NextResponse.next();
+    res.headers.set("X-Robots-Tag", "noindex, nofollow");
+    // Sliding window: reissue when less than half the idle window remains.
+    if (session.exp - Date.now() < SESSION_REISSUE_BELOW_MS) {
+      res.cookies.set(
+        SESSION_COOKIE,
+        await sealSession(session.sid, process.env.ADMIN_SESSION_SECRET as string),
+        {
+          httpOnly: true,
+          secure: true,
+          sameSite: "strict",
+          path: "/",
+          maxAge: Math.floor(SESSION_IDLE_MS / 1000),
+        }
+      );
+    }
+    return res;
+  }
+
+  // 3. Campaign-host allowlist.
+  const host = req.headers.get("host") ?? "";
+  let physical = pathname;
+  if (servesCampaignRoot(host)) {
+    const mapped = campaignAllowlist(pathname);
+    if (mapped === null) {
+      // Not a campaign path. Admin session → QA pass-through; public → 404.
+      const session = await validSession(req);
+      if (!session) return notFoundResponse();
+      // physical stays the site-tier pathname, unchanged.
+    } else {
+      physical = mapped;
+    }
+  }
+
+  // 4. Legacy market slugs → 301, derived from config/markets.ts legacySlugs.
+  //    Runs after the allowlist, so on a campaign host it only fires for
+  //    admin-authed requests — the public gets a 404, not a redirect into one.
+  const legacyMatch = /^\/markets\/([^/]+)\/?$/.exec(pathname);
   if (legacyMatch) {
     const target = LEGACY_SLUG_REDIRECTS[legacyMatch[1].toLowerCase()];
     if (target) {
@@ -161,11 +210,8 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  // 1. Host → physical path.
-  const host = req.headers.get("host") ?? "";
-  const physical = servesCampaignRoot(host) ? toPhysicalPath(pathname) : pathname;
-
-  // 2. ?market= → prerendered per-market page, composed on top of (1).
+  // 5. ?market= → prerendered per-market page, composed on top of the mapping.
+  let res: NextResponse | undefined;
   const marketBase = MARKET_REWRITES[physical];
   let dest: string | null = null;
   if (marketBase) {
@@ -186,7 +232,7 @@ export function middleware(req: NextRequest) {
   res ??= NextResponse.next();
 
   if (!req.cookies.get("curbio_vid")) {
-    // Stable random id. crypto.randomUUID is available on the Edge runtime.
+    // Stable random id for the cta-copy A/B bucket (lib/ctaVariant.ts).
     const id = crypto.randomUUID();
     res.cookies.set("curbio_vid", id, {
       path: "/",
@@ -201,14 +247,10 @@ export function middleware(req: NextRequest) {
 export const config = {
   // Run on PAGES only; skip the API and anything with a file extension.
   //
-  // This replaced a hardcoded list of public/ directory names
-  // (logo|hsm|sold|proof|markets|hero), which was a latent trap: the moment a
-  // real route shared a name with an asset folder, middleware silently stopped
-  // running on it. That is exactly what happened when /markets/ was added —
-  // the legacy-slug redirects 404'd because `markets` was an exclusion.
-  //
-  // Matching on "has a file extension" is name-independent, so it cannot
-  // collide with a future route. Verified safe: every file under public/ has
-  // an extension, and there are no extensionless files there at all.
+  // This replaced a hardcoded list of public/ directory names, which silently
+  // disabled middleware on any route sharing a name with an asset folder —
+  // exactly what happened when /markets/ was added. Matching on "has a file
+  // extension" is name-independent. Verified: every file under public/ has an
+  // extension, and there are no extensionless files there at all.
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.[\\w]+$).*)"],
 };

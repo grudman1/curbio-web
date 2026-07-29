@@ -18,15 +18,21 @@ import { exp } from "./campaigns/exp";
 //                         to be. A nav entry pointing at a route that doesn't
 //                         exist is a page someone intends to build.
 //
-// That last one is what makes this a tracker rather than a list: the gap
-// between "linked in the nav" and "exists in the app" IS the backlog, and it
-// updates itself when either side changes.
+// The gap between "linked in the nav" and "exists in the app" IS the backlog,
+// and it updates itself when either side changes.
 //
-// A hand-maintained manifest would drift from the app within a week — the
-// same failure the six market lists just demonstrated at a larger scale.
+// STATUS SEMANTICS — deliberately three-valued and honest:
+//   live     built, rendering, content is real
+//   stub     built and RENDERING PUBLICLY, but the content is scaffolding —
+//            the template exists, the marketing copy does not. (Formerly
+//            "draft", which wrongly implied the page wasn't reachable.)
+//   planned  linked in the nav, no route behind it
+//
+// There is no `owner` field: one person uses this. `group` is the only
+// classification.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type PageStatus = "live" | "draft" | "planned";
+export type PageStatus = "live" | "stub" | "planned";
 export type PageGroup = "campaigns" | "site" | "internal";
 
 export type RegistryEntry = {
@@ -36,30 +42,20 @@ export type RegistryEntry = {
   status: PageStatus;
   /** Indexable today. Campaign tier never is; site/partner flip at cutover. */
   indexed: boolean;
-  owner: string;
   /** Which config produced this row — so a surprising entry is traceable. */
   derivedFrom: string;
+  /** Free-text context worth showing on the card. */
+  note?: string;
 };
 
 /**
- * Ownership. Hand-annotated because it is the one thing no config knows.
- * Keyed by path prefix, longest match wins. Unlisted paths are "unassigned",
- * which is honest — it is a real state and shows up as work to allocate.
+ * Pages the nav links to that ALREADY EXIST on the WordPress site today.
+ * User-supplied fact (2026-07-29) that lives in no config: these aren't
+ * missing pages, just ordinary migrate-or-redirect work at cutover. The lead
+ * form's TCPA consent text links to /privacy-policy, which is why it must not
+ * fall through the cracks — but it is not more urgent than any other row.
  */
-const OWNERS: { prefix: string; owner: string }[] = [
-  { prefix: "/lp", owner: "marketing" },
-  { prefix: "/exp", owner: "partnerships" },
-  { prefix: "/markets", owner: "marketing" },
-  { prefix: "/admin", owner: "engineering" },
-  { prefix: "/design-system", owner: "engineering" },
-];
-
-function ownerFor(path: string): string {
-  const match = OWNERS.filter((o) => path === o.prefix || path.startsWith(`${o.prefix}/`)).sort(
-    (a, b) => b.prefix.length - a.prefix.length
-  )[0];
-  return match?.owner ?? "unassigned";
-}
+const EXISTS_ON_WORDPRESS = new Set(["/privacy-policy", "/terms"]);
 
 /** Indexability for a path, from the tier map. Unlisted = not indexed. */
 function indexedFor(publicPath: string): boolean {
@@ -79,7 +75,6 @@ function implementedPages(): RegistryEntry[] {
       title: c.meta?.title ?? `Campaign: ${c.slug}`,
       status: "live",
       indexed: false, // campaign tier, permanently
-      owner: ownerFor(`/lp/${c.slug}`),
       derivedFrom: "config/campaigns",
     });
     if (c.market.mode === "picker") {
@@ -89,7 +84,6 @@ function implementedPages(): RegistryEntry[] {
         title: `${c.slug} — per-market (${MARKETS.length} variants)`,
         status: "live",
         indexed: false,
-        owner: ownerFor(`/lp/${c.slug}`),
         derivedFrom: "config/campaigns × config/markets",
       });
     }
@@ -100,7 +94,6 @@ function implementedPages(): RegistryEntry[] {
     title: "Booking confirmation",
     status: "live",
     indexed: false,
-    owner: ownerFor("/lp"),
     derivedFrom: "config/routes.ts",
   });
 
@@ -111,7 +104,6 @@ function implementedPages(): RegistryEntry[] {
     title: exp.meta?.title ?? "eXp partner page",
     status: "live",
     indexed: indexedFor("/exp"),
-    owner: ownerFor("/exp"),
     derivedFrom: "config/campaigns/exp.ts",
   });
   out.push({
@@ -120,7 +112,6 @@ function implementedPages(): RegistryEntry[] {
     title: `eXp — per-market (${MARKETS.length} variants)`,
     status: "live",
     indexed: indexedFor("/exp/m/:market"),
-    owner: ownerFor("/exp"),
     derivedFrom: "config/campaigns/exp.ts × config/markets",
   });
 
@@ -128,11 +119,11 @@ function implementedPages(): RegistryEntry[] {
   out.push({
     path: "/",
     group: "site",
-    title: "Homepage (placeholder)",
-    status: "draft",
+    title: "Homepage",
+    status: "stub",
     indexed: false,
-    owner: ownerFor("/"),
     derivedFrom: "app/(site)/(chrome)/page.tsx",
+    note: "placeholder — Phase 3 builds the real one",
   });
   out.push({
     path: "/markets",
@@ -140,7 +131,6 @@ function implementedPages(): RegistryEntry[] {
     title: "Markets index",
     status: "live",
     indexed: indexedFor("/markets"),
-    owner: ownerFor("/markets"),
     derivedFrom: "config/routes.ts",
   });
   for (const m of MARKETS) {
@@ -148,31 +138,29 @@ function implementedPages(): RegistryEntry[] {
       path: marketPath(m.slug),
       group: "site",
       title: `Market: ${m.displayName}`,
-      status: "draft", // template is live; the marketing content is not written
+      status: "stub", // template renders; the marketing content is not written
       indexed: indexedFor("/markets/:slug"),
-      owner: ownerFor("/markets"),
       derivedFrom: "config/markets.ts",
     });
   }
 
-  // Internal.
+  // Internal — exactly one root: /admin.
   out.push({
-    path: "/design-system",
+    path: "/admin",
+    group: "internal",
+    title: "Control Room",
+    status: "live",
+    indexed: false,
+    derivedFrom: "app/(site)/admin",
+  });
+  out.push({
+    path: "/admin/design-system",
     group: "internal",
     title: "Design system reference",
     status: "live",
     indexed: false,
-    owner: ownerFor("/design-system"),
-    derivedFrom: "app/(site)/design-system",
-  });
-  out.push({
-    path: "/admin",
-    group: "internal",
-    title: "Admin — registry + lead viewer",
-    status: "live",
-    indexed: false,
-    owner: ownerFor("/admin"),
-    derivedFrom: "app/(site)/admin",
+    derivedFrom: "app/(site)/admin/design-system",
+    note: "moved from /design-system (301s here)",
   });
 
   return out;
@@ -216,26 +204,15 @@ export function buildPageRegistry(): RegistryEntry[] {
       title: t.title,
       status: "planned",
       indexed: false,
-      owner: ownerFor(t.path),
-      // Naming the source matters: this row exists because something links to
-      // it, which is also where to go to remove it if it shouldn't.
       derivedFrom: "config/navigation.ts (linked, not built)",
+      note: EXISTS_ON_WORDPRESS.has(t.path)
+        ? "exists on WordPress today — migrate or redirect at cutover"
+        : undefined,
     });
   }
 
-  const order: Record<PageStatus, number> = { live: 0, draft: 1, planned: 2 };
+  const order: Record<PageStatus, number> = { live: 0, stub: 1, planned: 2 };
   return [...implemented, ...planned].sort(
     (a, b) => order[a.status] - order[b.status] || a.path.localeCompare(b.path)
   );
-}
-
-export function registrySummary(entries: RegistryEntry[]) {
-  return {
-    total: entries.length,
-    live: entries.filter((e) => e.status === "live").length,
-    draft: entries.filter((e) => e.status === "draft").length,
-    planned: entries.filter((e) => e.status === "planned").length,
-    indexed: entries.filter((e) => e.indexed).length,
-    unassigned: entries.filter((e) => e.owner === "unassigned").length,
-  };
 }
