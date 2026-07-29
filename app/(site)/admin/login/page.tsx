@@ -139,20 +139,13 @@ export default async function LoginPage({
                 style={field}
               />
             </div>
+            {/* Tailwind classes, not inline style — the amber hover/active
+                treatment the design system defines for every primary CTA
+                (see .lp-btn-primary in globals.css) can't be expressed as a
+                plain style object; :hover has no inline-CSS equivalent. */}
             <button
               type="submit"
-              style={{
-                width: "100%",
-                height: 52,
-                background: "var(--color-accent)",
-                color: "var(--color-text-on-accent)",
-                border: 0,
-                borderRadius: "var(--radius-pill)",
-                fontFamily: "var(--font-sans)",
-                fontSize: 15,
-                fontWeight: 700,
-                cursor: "pointer",
-              }}
+              className="h-[52px] w-full cursor-pointer rounded-pill bg-accent font-sans text-[15px] font-bold text-content-on-accent transition-colors duration-base ease-out hover:bg-accent-hover active:bg-accent-active"
             >
               Sign in
             </button>

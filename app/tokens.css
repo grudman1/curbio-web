@@ -72,6 +72,7 @@
   /* ── Type scale ──────────────────────────────────────────────────────── */
   --font-family-serif: var(--font-serif);
   --font-family-sans: var(--font-sans);
+  --font-family-mono: var(--font-mono);
 
   --text-hero: clamp(48px, 6.4vw, 88px);
   --text-h1: clamp(40px, 4.6vw, 64px);
