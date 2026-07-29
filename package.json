@@ -9,13 +9,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "admin:hash": "node scripts/admin-hash.mjs"
   },
   "dependencies": {
     "@upstash/redis": "^1.38.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/functions": "^1.5.0",
     "@vercel/speed-insights": "^2.0.0",
+    "bcryptjs": "^3.0.3",
     "next": "^15.0.3",
     "posthog-js": "^1.407.4",
     "react": "^19.0.0",
@@ -23,6 +25,7 @@
     "resend": "^6.12.4"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.9.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
