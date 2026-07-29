@@ -1,8 +1,7 @@
 "use server";
 
 import { cookies, headers } from "next/headers";
-import { redirect } from "next/navigation";
-import { notFound } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import {
   authConfigured,
   verifyCredentials,
@@ -18,7 +17,7 @@ import { SESSION_COOKIE, SESSION_IDLE_MS, sealSession, openSession } from "@/lib
 // edge middleware never verifies passwords; it only checks the session cookie
 // these actions issue.
 
-async function clientIp(): Promise<string> {
+export async function clientIp(): Promise<string> {
   const h = await headers();
   return h.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
 }
@@ -32,32 +31,28 @@ export async function login(formData: FormData): Promise<void> {
 
   // Rate limit BEFORE verification — over-limit attempts never reach bcrypt,
   // and every attempt (right or wrong) counts toward the window.
-  if (!(await loginAttemptAllowed(ip))) {
-    console.warn("[admin-auth] rate-limited login attempt", {
-      ip,
-      at: new Date().toISOString(),
-    });
+  if (!(await loginAttemptAllowed(ip, email))) {
+    console.warn("[admin-auth] rate-limited login attempt", { ip, email, at: new Date().toISOString() });
     redirect("/admin/login?e=rate");
   }
 
-  const ok = await verifyCredentials(email, password);
-  if (!ok) {
-    // Failed-attempt log: timestamp + IP + the submitted identifier (that IS
-    // the probe data). Never the password.
+  const result = await verifyCredentials(email, password);
+  if (!result.ok) {
     console.warn("[admin-auth] failed login", {
       ip,
       email,
+      reason: result.reason,
       at: new Date().toISOString(),
     });
-    redirect("/admin/login?e=1");
+    redirect(result.reason === "pending" ? "/admin/login?e=pending" : "/admin/login?e=1");
   }
 
-  const sid = await createSession();
+  const sid = await createSession(result.user.email, result.user.role);
   if (!sid) {
     console.error("[admin-auth] session store unavailable at login", { ip });
     redirect("/admin/login?e=1");
   }
-  await clearLoginCounters(ip);
+  await clearLoginCounters(ip, email);
 
   const token = await sealSession(sid, sessionSecret());
   const jar = await cookies();

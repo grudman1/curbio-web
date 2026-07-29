@@ -42,9 +42,10 @@ import {
 // ── admin session (edge side) ────────────────────────────────────────────────
 
 function adminEnvReady(): boolean {
+  // Accounts live in Redis now (lib/adminAuth.ts) — no per-person env var.
+  // ADMIN_SESSION_SECRET is the one remaining secret, and it's app-wide (it
+  // signs the cookie), not tied to any individual's credentials.
   return !!(
-    process.env.ADMIN_EMAIL &&
-    process.env.ADMIN_PASSWORD_HASH &&
     process.env.ADMIN_SESSION_SECRET &&
     process.env.UPSTASH_REDIS_REST_KV_REST_API_URL &&
     process.env.UPSTASH_REDIS_REST_KV_REST_API_READ_ONLY_TOKEN
@@ -154,7 +155,9 @@ export async function middleware(req: NextRequest) {
     if (!adminEnvReady()) return notFoundResponse();
     const session = await validSession(req);
 
-    if (pathname === "/admin/login") {
+    // Login and signup are viewable without a session; both bounce a
+    // signed-in visitor back to the Control Room rather than re-prompting.
+    if (pathname === "/admin/login" || pathname === "/admin/signup") {
       if (session) return NextResponse.redirect(new URL("/admin", req.url));
       const res = NextResponse.next();
       res.headers.set("X-Robots-Tag", "noindex, nofollow");
