@@ -95,13 +95,14 @@ const grid = (min: number) => ({
 });
 
 export default function DesignSystemPage() {
+  // Renders inside the Control Room tab shell (../layout.tsx), which already
+  // provides the page chrome — so this is a <div> in the content column, not
+  // its own <main> with its own gutters.
   return (
-    <main
+    <div
       style={{
         maxWidth: "var(--container-max)",
-        margin: "0 auto",
-        padding: "var(--space-12) var(--container-gutter) var(--space-24)",
-        background: "var(--color-surface)",
+        padding: "var(--space-2) 0 var(--space-8)",
       }}
     >
       <header style={{ marginBottom: "var(--space-12)" }}>
@@ -298,6 +299,6 @@ export default function DesignSystemPage() {
           ))}
         </div>
       </Section>
-    </main>
+    </div>
   );
 }

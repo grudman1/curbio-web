@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { Redis } from "@upstash/redis";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -75,8 +76,12 @@ export type LeadsResult =
   | { configured: false }
   | { configured: true; rows: LeadRow[]; total: number; error: string | null };
 
-/** Newest `limit` leads, joined with their delivery outcome. */
-export async function readRecentLeads(limit = 50): Promise<LeadsResult> {
+/** Newest `limit` leads, joined with their delivery outcome.
+ *
+ *  Wrapped in React cache(): the admin layout (alert banner) and the Leads
+ *  tab both call this with the same limit during one request, and should
+ *  share one Redis read rather than two. */
+export const readRecentLeads = cache(async (limit = 50): Promise<LeadsResult> => {
   const redis = getReadOnlyRedis();
   if (!redis) return { configured: false };
 
@@ -118,7 +123,7 @@ export async function readRecentLeads(limit = 50): Promise<LeadsResult> {
       error: err instanceof Error ? err.message : String(err),
     };
   }
-}
+});
 
 // ── PII minimisation ─────────────────────────────────────────────────────────
 // This viewer exists to diagnose DELIVERY and audit ATTRIBUTION, not to look up
