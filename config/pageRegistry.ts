@@ -154,6 +154,15 @@ function implementedPages(): RegistryEntry[] {
     derivedFrom: "app/(site)/admin",
   });
   out.push({
+    path: "/admin/leads",
+    group: "internal",
+    title: "Lead feed & delivery",
+    status: "live",
+    indexed: false,
+    derivedFrom: "app/(site)/admin/(dashboard)/leads",
+    note: "Leads tab of the Control Room",
+  });
+  out.push({
     path: "/admin/design-system",
     group: "internal",
     title: "Design system reference",
