@@ -83,13 +83,20 @@ export type MarketCard = {
 
 
 
+/** "Joshua Collins" → "Joshua". The config stores the full name (it is the
+ *  TEAM registry's key); every first-name display derives from it, so the two
+ *  can never drift apart. */
+export function firstNameOf(fullName: string): string {
+  return fullName.trim().split(/\s+/)[0] ?? "";
+}
+
 // Picker order is the ORDER OF config/markets.ts — interleaved there so one
 // HSM's markets aren't clustered. No second ordering list.
 export const MARKET_CARDS: MarketCard[] = MARKETS.map((m) => ({
   slug: m.slug,
   label: m.displayName,
   region: m.coverage,
-  hsmFirst: m.hsm.firstName,
+  hsmFirst: firstNameOf(m.hsm.name),
   photo: m.hsm.photo,
 }));
 
@@ -156,11 +163,6 @@ const TEAM: Record<string, TeamMember> = {
     photo: "/hsm/christine-harvey.jpg",
     title: "Home Services Manager",
     bio: "A top-5% lifetime-producing REALTOR® with $80M+ in recent sales, Christine leads design and home-improvement projects across metro Atlanta — managing vendors, timelines, budgets, and quality from the first walkthrough to closing.",
-  },
-  "Lisa Tucker": {
-    photo: "/hsm/lisa-tucker.jpg",
-    title: "Home Services Manager",
-    bio: "A former listing agent, Lisa knows firsthand what it takes to get a home market-ready. She brings that agent-side perspective to every project — keeping it organized, on schedule, and low-stress while maximizing value.",
   },
   "Miguel Picart": {
     photo: "/hsm/miguel-picart.jpg",
@@ -229,9 +231,14 @@ export function buildResolvedMarketFromSlug(
   const cat = BY_SLUG[s];
   if (!cat) return null;
   const hsmStatic = MARKET_BY_SLUG[s]?.hsm ?? null;
-  const firstName = hsmStatic?.firstName ?? "";
+  const fullName = hsmStatic?.name ?? "";
+  const firstName = firstNameOf(fullName);
   const label = cat.label;
-  const member = firstName ? Object.values(TEAM).find((m) => m.bio.includes(firstName)) ?? null : null;
+  // Exact key lookup. This used to search TEAM for a bio CONTAINING the first
+  // name, which silently missed any bio that doesn't happen to say the
+  // person's name — Joshua Collins' does not, so his markets fell back to the
+  // templated bio even though a real one was on file.
+  const member = fullName ? TEAM[fullName] ?? null : null;
   return {
     slug: s,
     name: label,
@@ -241,7 +248,10 @@ export function buildResolvedMarketFromSlug(
     isBusinessHours: false,
     hsm: {
       firstName,
-      name: firstName || "Your local team",
+      // Full name, matching what the live path renders — the config now
+      // carries it, so an API outage no longer downgrades "Joshua Collins"
+      // to a bare "Joshua" in the booking modal.
+      name: fullName || "Your local team",
       title: member?.title ?? "Home Services Manager",
       bio: (
         member?.bio ??
