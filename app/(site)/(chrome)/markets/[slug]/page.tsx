@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MARKETS, MARKET_BY_SLUG, marketPath } from "@/config/markets";
+import { firstNameOf } from "@/lib/markets";
 import { routeMetadata } from "@/config/routes";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -88,7 +89,7 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
             Home Services Manager
           </dt>
           <dd className="mt-1 text-body text-content">
-            {market.hsm.firstName || "—"}
+            {firstNameOf(market.hsm.name) || "—"}
             <span className="block text-micro text-content-muted">
               Full identity resolves live from the operator API per request.
             </span>

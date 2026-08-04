@@ -81,7 +81,7 @@ export type Market = {
    * business hours) still comes live from the operator API per request — this
    * is a display convenience, not a cache.
    */
-  hsm: { firstName: string; photo: string | null };
+  hsm: { name: string; photo: string | null };
   /** Brokerage partner logos. Empty everywhere — no assets, no permissions. */
   brokerageLogos: { name: string; src: string }[];
   /**
@@ -105,7 +105,7 @@ export const MARKETS: Market[] = [
     canonicalZip: "30002",
     coordinates: { lat: 33.749, lng: -84.388 },
     cities: ["Atlanta", "Marietta", "Alpharetta", "Decatur", "Sandy Springs"],
-    hsm: { firstName: "Christine", photo: "/hsm/christine-harvey.jpg" },
+    hsm: { name: "Christine Harvey", photo: "/hsm/christine-harvey.jpg" },
     brokerageLogos: [],
     legacySlugs: [],
     sold: [
@@ -127,7 +127,7 @@ export const MARKETS: Market[] = [
     canonicalZip: "20001",
     coordinates: { lat: 38.9072, lng: -77.0369 },
     cities: ["Washington", "Georgetown", "Capitol Hill", "Navy Yard"],
-    hsm: { firstName: "Joshua", photo: "/hsm/joshua-collins.jpg" },
+    hsm: { name: "Joshua Collins", photo: "/hsm/joshua-collins.jpg" },
     brokerageLogos: [],
     legacySlugs: ["wdc"],
     sold: [
@@ -149,7 +149,7 @@ export const MARKETS: Market[] = [
     canonicalZip: "75201",
     coordinates: { lat: 32.7767, lng: -96.797 },
     cities: ["Dallas", "Plano", "Frisco", "Arlington", "Fort Worth"],
-    hsm: { firstName: "Miguel", photo: "/hsm/miguel-picart.jpg" },
+    hsm: { name: "Miguel Picart", photo: "/hsm/miguel-picart.jpg" },
     brokerageLogos: [],
     legacySlugs: ["dallas-ft-worth"],
     sold: [
@@ -171,7 +171,10 @@ export const MARKETS: Market[] = [
     canonicalZip: "21201",
     coordinates: { lat: 39.13, lng: -76.85 },
     cities: ["Baltimore", "Bethesda", "Rockville", "Silver Spring", "Columbia"],
-    hsm: { firstName: "Lisa", photo: "/hsm/lisa-tucker.jpg" },
+    // Lisa Tucker left Curbio (2026-07-30); Joshua Collins covers Maryland in
+    // the interim, alongside DC and NOVA. Matches the operator API, which
+    // already routes every Maryland ZIP to him.
+    hsm: { name: "Joshua Collins", photo: "/hsm/joshua-collins.jpg" },
     brokerageLogos: [],
     legacySlugs: ["dmv-maryland", "baltimore", "maryland-suburbs"],
     sold: [
@@ -193,7 +196,7 @@ export const MARKETS: Market[] = [
     canonicalZip: "90001",
     coordinates: { lat: 34.0522, lng: -118.2437 },
     cities: ["Los Angeles", "Long Beach", "Pasadena", "Glendale", "Santa Monica"],
-    hsm: { firstName: "Trevor", photo: "/hsm/trevor-laramee.jpg" },
+    hsm: { name: "Trevor Laramee", photo: "/hsm/trevor-laramee.jpg" },
     brokerageLogos: [],
     legacySlugs: ["la", "los-angeles-ca"],
     sold: [
@@ -215,7 +218,7 @@ export const MARKETS: Market[] = [
     canonicalZip: "22030",
     coordinates: { lat: 38.8462, lng: -77.3064 },
     cities: ["Arlington", "Alexandria", "Fairfax", "Reston", "Vienna"],
-    hsm: { firstName: "Joshua", photo: "/hsm/joshua-collins.jpg" },
+    hsm: { name: "Joshua Collins", photo: "/hsm/joshua-collins.jpg" },
     brokerageLogos: [],
     legacySlugs: ["nova"],
     sold: [
@@ -237,7 +240,7 @@ export const MARKETS: Market[] = [
     canonicalZip: "92503",
     coordinates: { lat: 33.9533, lng: -117.3962 },
     cities: ["Riverside", "Corona", "Moreno Valley", "Temecula"],
-    hsm: { firstName: "Trevor", photo: "/hsm/trevor-laramee.jpg" },
+    hsm: { name: "Trevor Laramee", photo: "/hsm/trevor-laramee.jpg" },
     brokerageLogos: [],
     legacySlugs: [],
     sold: [
