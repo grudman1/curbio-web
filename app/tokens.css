@@ -74,9 +74,9 @@
   --font-family-sans: var(--font-sans);
   --font-family-mono: var(--font-mono);
 
-  --text-hero: clamp(48px, 6.4vw, 88px);
+  --text-hero: clamp(40px, 5.6vw, 72px);
   --text-h1: clamp(40px, 4.6vw, 64px);
-  --text-h2: clamp(30px, 3.2vw, 44px);
+  --text-h2: clamp(28px, 3.4vw, 44px);
   --text-h3: 22px;
   --text-h4: 18px;
   --text-body: 16px;
@@ -84,8 +84,8 @@
   --text-label: 12px;
   --text-micro: 11px;
 
-  --leading-tight: 1.1;
-  --leading-heading: 1.2;
+  --leading-tight: 1.04;
+  --leading-heading: 1.12;
   --leading-body: 1.55;
 
   --tracking-tight: -0.015em;
