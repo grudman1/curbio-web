@@ -2,22 +2,21 @@
    HOMEPAGE PREVIEW — /home-preview
    ============================================================================
 
-   Ported from the approved standalone design file ("Curbio Homepage Design
-   Preview.html", Aug 2026). Class names and every desktop value are carried
-   over verbatim from that file's own stylesheets; colors and type come
-   exclusively from the semantic token layer (tokens.css), which the design
-   file already used by name.
+   v1 was the faithful port of the approved standalone design file ("Curbio
+   Homepage Design Preview.html", Aug 2026). v2 applies the written homepage
+   revisions (Aug 2026): reorder, split hero with the transformation video,
+   proof band, how-it-works, audience router, app + awards sections; the
+   editorial paragraph, Notable estimator, results marquee, and standalone
+   quotes block are gone. The design language — palette, type, tokens,
+   section rhythm — is unchanged and everything still resolves through the
+   semantic token layer (tokens.css).
 
-   Two kinds of rules live here:
+   Rule provenance:
 
-     ARTIFACT   copied from the design file unchanged (dp-, dph-, dpr-, dpl-,
-                dps-, dpl2- families, including their own breakpoints).
-     PORT       classes replacing the design file's inline styles — required
-                so the desktop-only-reviewed sections can carry tablet/mobile
-                rules (inline styles can't be overridden by media queries).
-                Desktop values are identical to the inline originals; the
-                ≤1024px and ≤640px behavior is authored per the design
-                brief's breakpoints and flagged in the PR for review.
+     ARTIFACT   copied from the v1 design file unchanged (dp-, dph-, dpl-,
+                dps- families, including their own breakpoints).
+     PORT       authored for the port or for the v2 revisions, at the design
+                brief's breakpoints (≤1024px, ≤640px).
 
    Everything is scoped under .dp- / .dph- style prefixes; nothing here can
    reach the live pages, which never render these class names.
@@ -262,6 +261,17 @@
   font-family: var(--font-family-sans); font-size: 14.5px; font-weight: 500;
   transition: color var(--duration-base) var(--easing-out);
 }
+
+/* v2: the persistent gold CTA. Same amber in every header tone, so the
+   primary action survives scrolling — the bar it sits in is already fixed. */
+#dp-header .dph-cta {
+  display: inline-flex; align-items: center; white-space: nowrap;
+  height: 40px; padding: 0 20px; border-radius: var(--radius-pill);
+  background: var(--color-accent); color: var(--color-text-on-accent);
+  font-family: var(--font-family-sans); font-size: 14.5px; font-weight: 700;
+  text-decoration: none; cursor: pointer; transition: background 160ms;
+}
+#dp-header .dph-cta:hover { background: var(--color-accent-hover); }
 #dp-header .dph-burger {
   display: none; flex-direction: column; justify-content: center; gap: 5px;
   width: 30px; height: 30px; padding: 4px; background: none; border: 0; cursor: pointer;
@@ -279,37 +289,78 @@
   #dp-header .dph-actions { gap: 14px; }
   #dp-header .dph-phone span { display: none; }  /* glyph only, still tappable */
   #dp-header .dph-login { display: none; }        /* lives in the menu */
+  #dp-header .dph-cta { height: 36px; padding: 0 14px; font-size: 13px; }
 }
 
-/* ── PORT: hero ──────────────────────────────────────────────────────────── */
-.dp-hero { position: relative; min-height: 830px; display: flex; align-items: flex-end; }
-.dp-hero-scrim { position: absolute; inset: 0; background: rgba(13,37,77,0.46); }
-.dp-hero-inner { position: relative; width: 100%; padding-bottom: 140px; }
+/* ── PORT v2: split hero — text left (~45%), transformation video right ───── */
+/* min-height stops short of the viewport so the proof band crests into view
+   and the hero never reads as a false floor. The media column sets the
+   natural height on desktop; nothing overlaps the video rectangle. */
+.dp-hero {
+  padding: 172px 0 56px; /* clears the fixed header (announce + nav) */
+  background: var(--color-surface);
+}
+.dp-hero-grid {
+  display: grid; grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
+  gap: clamp(40px, 4.5vw, 72px); align-items: center;
+}
 .dp-hero h1 {
   font-family: var(--font-family-serif); font-weight: 600; font-size: var(--text-display);
-  line-height: 1.02; letter-spacing: -0.015em; color: var(--color-text-inverse);
-  margin: 0; max-width: 15em;
+  line-height: var(--leading-tight); letter-spacing: -0.015em; color: var(--color-text);
+  margin: 0;
 }
 .dp-hero-sub {
-  font-family: var(--font-family-sans); font-weight: 450; font-size: 21px; line-height: 1.5;
-  color: rgba(255,255,255,0.92); margin: 24px 0 0; max-width: 44ch;
+  font-family: var(--font-family-sans); font-weight: 450; font-size: 20px; line-height: 1.5;
+  color: var(--color-text-muted); margin: 22px 0 0; max-width: 40ch;
 }
-.dp-hero-form { max-width: 640px; margin-top: 32px; }
+.dp-hero-ctas { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 30px; }
+.dp-cta--outline {
+  display: inline-block; background: transparent; color: var(--color-text);
+  border: 1.5px solid var(--color-border-strong); border-radius: var(--radius-pill);
+  font-weight: 600; text-decoration: none; cursor: pointer;
+  transition: border-color 160ms, color 160ms;
+}
+.dp-cta--outline:hover { border-color: var(--color-text); }
+.dp-hero-proofline {
+  font-family: var(--font-family-sans); font-size: 13.5px; font-weight: 500;
+  color: var(--color-text-muted); margin: 18px 0 0;
+}
+.dp-hero-proofline b { color: var(--color-text); font-weight: 700; }
+.dp-hero-form { max-width: 440px; margin-top: 26px; }
+.dp-hero-formlabel {
+  display: block; font-family: var(--font-family-sans); font-size: 13.5px; font-weight: 600;
+  color: var(--color-text-muted); margin: 0 0 8px;
+}
+.dp-hero-media {
+  position: relative; border-radius: var(--radius-lg); overflow: hidden;
+  background: var(--color-surface-sunken); aspect-ratio: 1500 / 1260;
+  box-shadow: var(--elevation-card);
+}
+.dp-hero-media video, .dp-hero-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* static / reduced-motion variant: the two stills side by side */
+.dp-hero-ba { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.dp-hero-ba figure { position: relative; margin: 0; overflow: hidden; }
+.dp-hero-ba img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.dp-hero-balabel {
+  position: absolute; left: 12px; bottom: 12px; z-index: 1; margin: 0;
+  font-family: var(--font-family-sans); font-weight: 800; font-size: 10px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: #fff;
+  background: rgba(13,37,77,0.55); padding: 5px 10px; border-radius: var(--radius-pill);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
 @media (max-width: 1024px) {
-  .dp-hero { min-height: 700px; }
-  .dp-hero-inner { padding-bottom: 96px; }
+  .dp-hero { padding-top: 150px; }
+  .dp-hero-grid { grid-template-columns: 1fr; gap: 36px; }
 }
 @media (max-width: 640px) {
-  .dp-hero { min-height: 620px; }
-  .dp-hero-inner { padding-bottom: 64px; }
-  .dp-hero-sub { font-size: 18px; }
+  /* text first, video second; display type shrinks before the video does so
+     the primary CTA stays above the fold */
+  .dp-hero { padding: 128px 0 40px; }
+  .dp-hero h1 { font-size: clamp(34px, 9vw, 44px); }
+  .dp-hero-sub { font-size: 17px; }
 }
 
-/* ── ARTIFACT: brokerage trust strip ─────────────────────────────────────── */
-.dp-trust { display: flex; align-items: center; gap: 40px; }
-.dp-trust-label {
-  flex: 0 0 200px; font-size: 14px; line-height: 1.45; color: var(--color-text-muted);
-}
+/* ── ARTIFACT: brokerage logo marquee (v2: lives inside the proof band) ───── */
 .dp-marquee {
   flex: 1; min-width: 0; position: relative; overflow: hidden;
   -webkit-mask-image: linear-gradient(90deg, transparent, black 48px, black calc(100% - 48px), transparent);
@@ -349,45 +400,51 @@
   .dp-marquee-track { animation: none !important; flex-wrap: wrap; justify-content: center; }
   .dp-marquee { -webkit-mask-image: none; mask-image: none; }
 }
+
+/* ── PORT v2: proof band — stats row over a lower-contrast logo marquee ───── */
+/* Crests up into the hero's viewport (negative top margin) so the fold
+   never lands on empty canvas. */
+.dp-proof {
+  position: relative; background: var(--color-surface-raised);
+  border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border);
+  padding: 36px 0;
+}
+.dp-proof-stats {
+  display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap;
+  gap: 10px 0; margin: 0 0 28px; text-align: center;
+}
+.dp-proof-stat { font-family: var(--font-family-sans); font-size: 15.5px; color: var(--color-text-muted); }
+.dp-proof-stat b { color: var(--color-text); font-weight: 700; }
+.dp-proof-sep { margin: 0 18px; color: var(--color-text-subtle); }
+.dp-proof-label {
+  text-align: center; font-family: var(--font-family-sans); font-weight: 800; font-size: 11px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-subtle);
+  margin: 0 0 18px;
+}
+.dp-proof .dp-logo::before { opacity: 0.45; } /* logos read quieter than v1 */
+.dp-proof .dp-logo:hover::before { opacity: 0; }
 @media (max-width: 640px) {
-  .dp-trust { flex-direction: column; align-items: flex-start; gap: 24px; }
-  .dp-trust-label { flex: none; }
+  .dp-proof { padding: 28px 0; }
+  .dp-proof-sep { margin: 0 10px; }
+  .dp-proof-stat { font-size: 14px; }
 }
 
-/* ── ARTIFACT: results section (dpr) ─────────────────────────────────────── */
-.dpr-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:56px}
-.dpr-stat{padding:0 clamp(20px,2.6vw,44px);border-right:1px solid var(--color-border)}
-.dpr-stat:first-child{padding-left:0}
-.dpr-stat:last-child{border-right:0;padding-right:0}
-.dpr-statlabel{font-family:var(--font-family-sans);font-size:15px;line-height:1.4;color:var(--color-text-muted);margin:0 0 14px}
-.dpr-statnum{font-family:var(--font-family-serif);font-weight:600;font-size:clamp(40px,4.4vw,62px);line-height:1;letter-spacing:-0.02em;color:var(--color-text);margin:0}
-.dpr-marquee{margin-top:64px;overflow:hidden;
-  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 5%,#000 95%,transparent 100%);
-  mask-image:linear-gradient(90deg,transparent 0,#000 5%,#000 95%,transparent 100%)}
-.dpr-track{display:flex;gap:14px;width:max-content;animation:dpr-scroll 64s linear infinite}
-.dpr-marquee:hover .dpr-track{animation-play-state:paused}
-@keyframes dpr-scroll{from{transform:translateX(0)}to{transform:translateX(calc(-50% - 7px))}}
-.dpr-card{position:relative;flex:none;width:280px;height:400px;border-radius:var(--radius-lg);
-  overflow:hidden;background-color:var(--color-surface-sunken);
-  background-size:cover;background-position:center}
-.dpr-pill{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);white-space:nowrap;
-  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);background:rgba(13,37,77,0.55);
-  color:#fff;padding:7px 15px;border-radius:var(--radius-pill);
-  font-family:var(--font-family-sans);font-weight:500;font-size:15px;line-height:1.4;margin:0}
-.dpr-foot{font-family:var(--font-family-sans);font-size:12.5px;line-height:1.6;
-  color:var(--color-text-subtle);margin:30px 0 0;max-width:76ch}
-.dpr-t0{background-image:url(/home/results/interior-paint.jpg)}
-.dpr-t1{background-image:url(/home/results/flooring.jpg)}
-.dpr-t2{background-image:url(/home/results/kitchens.jpg)}
-.dpr-t3{background-image:url(/home/results/baths.jpg)}
-.dpr-t4{background-image:url(/home/results/exteriors.jpg)}
-.dpr-t5{background-image:url(/home/results/pressure-washing.jpg)}
-.dpr-t6{background-image:url(/home/results/landscaping.jpg)}
-@media (max-width:900px){.dpr-stats{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:44px}
-  .dpr-stat:nth-child(2){border-right:0;padding-right:0}.dpr-stat:nth-child(3){padding-left:0}}
-@media (max-width:560px){.dpr-stats{grid-template-columns:1fr;row-gap:34px}
-  .dpr-stat{border-right:0;padding:0}.dpr-card{width:220px;height:314px}}
-@media (prefers-reduced-motion:reduce){.dpr-track{animation:none}.dpr-marquee{overflow-x:auto}}
+/* ── PORT v2: how it works — three steps, three words, three images ───────── */
+.dp-how-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 28px; margin-top: 64px; }
+.dp-how-step { position: relative; }
+.dp-how-img { position: relative; aspect-ratio: 4 / 3; border-radius: var(--radius-lg); overflow: hidden; background: var(--color-surface-sunken); }
+.dp-how-num {
+  font-family: var(--font-family-sans); font-weight: 800; font-size: 11px;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-accent);
+  margin: 22px 0 8px;
+}
+.dp-how-title {
+  font-family: var(--font-family-serif); font-weight: 600; font-size: 27px;
+  letter-spacing: -0.005em; color: var(--color-text); margin: 0;
+}
+.dp-how-line { font-size: 15px; color: var(--color-text-muted); margin: 8px 0 0; }
+@media (max-width: 1024px) { .dp-how-grid { gap: 20px; margin-top: 48px; } }
+@media (max-width: 640px) { .dp-how-grid { grid-template-columns: 1fr; gap: 36px; margin-top: 40px; } }
 
 /* ── ARTIFACT: deal timeline (dpl) ───────────────────────────────────────── */
 .dpl-grid{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,7fr);gap:clamp(40px,5vw,88px);align-items:start;margin-top:70px}
@@ -445,24 +502,20 @@
 .dp-sect { padding: 130px 0 140px; }
 .dp-sect--raised { background: var(--color-surface-raised); }
 .dp-sect--sunken { background: var(--color-surface-sunken); }
-.dp-sect--trust { border-bottom: 1px solid var(--color-border); padding: 44px 0; }
 .dp-sect--deal { background: var(--color-surface-raised); padding: 130px 0 150px; }
-.dp-sect--editorial { padding: 150px 0 160px; }
 .dp-sect--work-gallery { background: var(--color-surface-raised); padding: 130px 0 150px; overflow: hidden; }
 .dp-sect--payledger { background: var(--color-surface-inverse); padding: 160px 0 170px; }
 .dp-sect--sixways { padding: 140px 0 150px; }
-.dp-sect--quotes { background: var(--color-surface-raised); padding: 150px 0 160px; }
 .dp-sect--markets { padding: 140px 0 150px; border-bottom: 1px solid var(--color-border); }
 @media (max-width: 1024px) {
-  .dp-sect, .dp-sect--deal, .dp-sect--editorial, .dp-sect--work-gallery,
-  .dp-sect--payledger, .dp-sect--sixways, .dp-sect--quotes, .dp-sect--markets {
+  .dp-sect, .dp-sect--deal, .dp-sect--work-gallery,
+  .dp-sect--payledger, .dp-sect--sixways, .dp-sect--markets {
     padding-top: 88px; padding-bottom: 96px;
   }
-  .dp-sect--trust { padding: 36px 0; }
 }
 @media (max-width: 640px) {
-  .dp-sect, .dp-sect--deal, .dp-sect--editorial, .dp-sect--work-gallery,
-  .dp-sect--payledger, .dp-sect--sixways, .dp-sect--quotes, .dp-sect--markets {
+  .dp-sect, .dp-sect--deal, .dp-sect--work-gallery,
+  .dp-sect--payledger, .dp-sect--sixways, .dp-sect--markets {
     padding-top: 64px; padding-bottom: 72px;
   }
 }
@@ -481,15 +534,22 @@
   color: var(--color-text-muted); margin: 0; max-width: 56ch;
 }
 
-/* ── PORT: editorial break ───────────────────────────────────────────────── */
-.dp-edit-grid { display: grid; grid-template-columns: 220px 1fr 90px; gap: 48px; }
-.dp-edit-copy {
-  font-family: var(--font-family-serif); font-weight: 500; font-size: var(--text-editorial);
-  line-height: 1.45; letter-spacing: -0.005em; margin: 0; max-width: 26em;
+/* ── PORT v2: deal timeline collapse — 6 visible, the rest behind an expand ─ */
+.dpl-entry[data-collapsed="true"] { display: none; }
+.dpl-entries[data-expanded="true"] .dpl-entry[data-collapsed="true"] { display: grid; }
+.dpl-expand {
+  display: flex; align-items: center; gap: 9px; width: 100%; padding: 16px 0;
+  background: none; border: 0; border-bottom: 1px solid var(--color-border); cursor: pointer;
+  font-family: var(--font-family-sans); font-weight: 700; font-size: 13.5px;
+  color: var(--color-text-muted); transition: color 160ms;
 }
-@media (max-width: 1024px) {
-  .dp-edit-grid { grid-template-columns: 1fr; gap: 0; }
+.dpl-expand:hover { color: var(--color-text); }
+.dpl-expand::before {
+  content: ''; width: 7px; height: 7px; flex: none;
+  border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-1px); transition: transform 160ms;
 }
+.dpl-entries[data-expanded="true"] .dpl-expand::before { transform: rotate(225deg); }
 
 /* ── PORT: our work / by address ─────────────────────────────────────────── */
 .dp-work-h2 { margin-bottom: 84px; max-width: 14em; }
@@ -504,14 +564,6 @@
   color: var(--color-text-muted); margin: 0 0 26px;
 }
 .dp-work-desc { font-size: 16.5px; color: var(--color-text-muted); margin: 0 0 40px; max-width: 26em; }
-.dp-work-before {
-  background: var(--color-surface-sunken); border-radius: var(--radius-lg);
-  aspect-ratio: 4 / 3; max-width: 300px; display: flex; align-items: center; justify-content: center;
-}
-.dp-work-before span {
-  font-family: var(--font-family-sans); font-weight: 800; font-size: 11px; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--color-text-muted); text-align: center; line-height: 2;
-}
 .dp-work-featimg { position: relative; width: 100%; height: 640px; }
 .dp-work-gallery {
   display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 40px; margin-top: 120px; align-items: start;
@@ -565,55 +617,53 @@
   .dp-pay-total-val { font-size: 40px; }
 }
 
-/* ── ARTIFACT: qualify / Notable estimator (dpl2) ────────────────────────── */
-.dpl2-grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(48px,6vw,110px);align-items:center}
-.dpl2-check{list-style:none;margin:34px 0 0;padding:0;display:flex;flex-direction:column;gap:16px}
-.dpl2-check li{display:flex;align-items:flex-start;gap:13px;font-family:var(--font-family-sans);
-  font-size:17px;line-height:1.5;color:var(--color-text);max-width:46ch}
-.dpl2-check svg{flex:none;width:21px;height:21px;margin-top:1px;stroke:var(--color-accent);fill:none;
-  stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.dpl2-note{font-family:var(--font-family-sans);font-size:13.5px;line-height:1.6;
-  color:var(--color-text-subtle);margin:26px 0 0;max-width:52ch}
-.dpl2-card{background:var(--color-surface-raised);border:1px solid var(--color-border);
-  border-radius:var(--radius-xl);padding:36px 36px 32px;box-shadow:var(--elevation-card)}
-.dpl2-cardh{font-family:var(--font-family-serif);font-weight:600;font-size:24px;letter-spacing:-0.01em;
-  color:var(--color-text);margin:0 0 24px}
-.dpl2-field{margin:0 0 18px}
-.dpl2-label{display:block;font-family:var(--font-family-sans);font-weight:600;font-size:13.5px;
-  color:var(--color-text-muted);margin:0 0 7px}
-.dpl2-input{width:100%;font-family:var(--font-family-sans);font-size:16px;color:var(--color-text);
-  background:var(--color-surface);border:1px solid var(--color-border-strong);border-radius:var(--radius-md);
-  padding:12px 14px;outline:none;transition:border-color 160ms,box-shadow 160ms}
-.dpl2-input::placeholder{color:var(--color-text-subtle)}
-.dpl2-input:focus{border-color:var(--color-accent);box-shadow:0 0 0 4px var(--color-accent-ring)}
-select.dpl2-input{appearance:none;-webkit-appearance:none;
-  background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 14px center}
-.dpl2-btn{display:flex;align-items:center;justify-content:center;width:100%;margin-top:6px;
-  height:52px;border:0;cursor:pointer;border-radius:var(--radius-pill);background:var(--color-accent);
-  font-family:var(--font-family-sans);font-weight:600;font-size:16px;color:#fff;text-decoration:none;
-  transition:background 160ms}
-.dpl2-btn:hover{background:var(--color-accent-hover)}
-.dpl2-fine{font-family:var(--font-family-sans);font-size:12.5px;line-height:1.55;text-align:center;
-  color:var(--color-text-subtle);margin:14px 0 0}
-@media (max-width:1024px){.dpl2-grid{grid-template-columns:1fr;gap:52px}.dpl2-card{max-width:520px}}
-@media (max-width:560px){.dpl2-card{padding:26px 22px 24px}}
+/* ── PORT v2: audience router — three cards, proof matched to audience ────── */
+.dp-route-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 20px; margin-top: 56px; align-items: stretch; }
+.dp-route-card {
+  display: flex; flex-direction: column; background: var(--color-surface-raised);
+  border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+  padding: 32px 30px 28px; transition: box-shadow var(--duration-base) var(--easing-out);
+}
+.dp-route-card:hover { box-shadow: var(--elevation-card); }
+.dp-route-eyebrow {
+  font-family: var(--font-family-sans); font-weight: 800; font-size: 11px;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-accent); margin: 0 0 12px;
+}
+.dp-route-title {
+  font-family: var(--font-family-serif); font-weight: 600; font-size: 26px;
+  letter-spacing: -0.005em; color: var(--color-text); margin: 0 0 10px;
+}
+.dp-route-line { font-size: 15.5px; line-height: 1.55; color: var(--color-text-muted); margin: 0; }
+.dp-route-quote {
+  font-family: var(--font-family-serif); font-weight: 500; font-size: 17.5px; line-height: 1.5;
+  color: var(--color-text); border-left: 2px solid var(--color-accent);
+  padding-left: 14px; margin: 22px 0 0;
+}
+.dp-route-attr { font-family: var(--font-family-sans); font-weight: 700; font-size: 12.5px; color: var(--color-text-muted); margin: 10px 0 0; }
+.dp-route-cta { margin-top: auto; padding-top: 24px; font-size: 15.5px; font-weight: 600; }
+@media (max-width: 1024px) { .dp-route-grid { grid-template-columns: 1fr; gap: 16px; margin-top: 44px; } }
 
-/* ── PORT: broker quotes ─────────────────────────────────────────────────── */
-.dp-quote-lg {
-  font-family: var(--font-family-serif); font-weight: 500; font-size: clamp(28px, 2.9vw, 40px);
-  line-height: 1.32; letter-spacing: -0.005em; margin: 0 0 30px; max-width: 24em;
+/* ── PORT v2: the app ─────────────────────────────────────────────────────── */
+.dp-app-grid { display: grid; grid-template-columns: minmax(0,5fr) minmax(0,7fr); gap: clamp(48px,5vw,88px); align-items: center; }
+.dp-app-media {
+  position: relative; aspect-ratio: 16 / 10; border-radius: var(--radius-lg); overflow: hidden;
+  background: var(--color-surface-sunken); border: 1px solid var(--color-border);
 }
-.dp-quote-sm {
-  font-family: var(--font-family-serif); font-weight: 500; font-size: 23px;
-  line-height: 1.45; margin: 0 0 22px; max-width: 24em;
+.dp-app-media video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.dp-app-placeholder {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  text-align: center; font-family: var(--font-family-sans); font-weight: 800; font-size: 11px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-muted); line-height: 2.2;
 }
-.dp-quote-attr { font-family: var(--font-family-sans); font-weight: 700; font-size: 13px; color: var(--color-text); margin: 0; }
-.dp-quote-second { display: grid; grid-template-columns: 1fr 1fr; margin-top: 90px; }
-@media (max-width: 1024px) {
-  .dp-quote-second { grid-template-columns: 1fr; margin-top: 64px; }
-  .dp-quote-second > span { display: none; }
+@media (max-width: 1024px) { .dp-app-grid { grid-template-columns: 1fr; gap: 36px; } }
+
+/* ── PORT v2: awards / reviews / press — thin, low emphasis ───────────────── */
+.dp-strip { padding: 26px 0; border-bottom: 1px solid var(--color-border); }
+.dp-strip-row {
+  display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: 8px 0;
+  font-family: var(--font-family-sans); font-size: 13.5px; color: var(--color-text-subtle);
 }
+.dp-strip-row b { color: var(--color-text-muted); font-weight: 700; }
 
 /* ── PORT: markets + managers ────────────────────────────────────────────── */
 .dp-mkt-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 110px; }

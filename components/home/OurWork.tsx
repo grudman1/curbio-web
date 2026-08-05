@@ -46,16 +46,10 @@ export function OurWork() {
           <h3 className="dp-work-addr">8250 Buckspark</h3>
           <p className="dp-work-sold">Potomac, MD — sold $1,610,000</p>
           <p className="dp-work-desc">
-            Whole-home refresh ahead of listing: paint throughout, refinished floors, kitchen and
-            primary bath, landscaping. Scoped in one walkthrough, invoiced at settlement.
+            Whole-home refresh: paint, floors, kitchen, bath, landscaping. One walkthrough, invoiced at settlement.
           </p>
-          <div className="dp-work-before">
-            <span>
-              Before
-              <br />
-              [placeholder — archive photo]
-            </span>
-          </div>
+          {/* v2: the "[placeholder — archive photo]" before-box is cut per the
+              no-placeholder rule; it returns when the archive photo exists. */}
         </div>
         <div className="dp-work-featimg">
           <Image

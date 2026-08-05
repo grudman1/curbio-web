@@ -2,37 +2,40 @@ import type { Metadata } from "next";
 import { routeMetadata } from "@/config/routes";
 import { HomeHeader } from "@/components/home/HomeHeader";
 import { HomeHero } from "@/components/home/HomeHero";
-import { BrokerageMarquee } from "@/components/home/BrokerageMarquee";
-import { HomeResults } from "@/components/home/HomeResults";
+import { ProofBand } from "@/components/home/ProofBand";
+import { HowItWorks } from "@/components/home/HowItWorks";
+import { PayAtClosing } from "@/components/home/PayAtClosing";
 import { DealTimeline } from "@/components/home/DealTimeline";
 import { MoveInStats } from "@/components/home/MoveInStats";
-import { EditorialBreak } from "@/components/home/EditorialBreak";
-import { OurWork } from "@/components/home/OurWork";
-import { PayAtClosing } from "@/components/home/PayAtClosing";
-import { QualifyCard } from "@/components/home/QualifyCard";
 import { SixWaysIn } from "@/components/home/SixWaysIn";
-import { BrokerQuotes } from "@/components/home/BrokerQuotes";
+import { AudienceRouter } from "@/components/home/AudienceRouter";
+import { OurWork } from "@/components/home/OurWork";
 import { MarketsManagers } from "@/components/home/MarketsManagers";
+import { AppShowcase } from "@/components/home/AppShowcase";
+import { AwardsStrip } from "@/components/home/AwardsStrip";
 import { HomeCloser } from "@/components/home/HomeCloser";
 import { HomeFooter } from "@/components/home/HomeFooter";
 import "@/components/home/home.css";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// /home-preview — the approved homepage design, ported into the app.
+// /home-preview — the homepage design preview, v2.
 //
-// This is the faithful componentized port of the approved standalone design
-// file ("Curbio Homepage Design Preview.html", Aug 2026). It is NOT the
-// homepage yet: it lives at an unlinked path, noindex/nofollow via
-// config/routes.ts, absent from the sitemap and every nav, and 404s publicly
-// on sell.curbio.com (campaign-host allowlist). Promoting it to "/" is a
-// deliberate future step — flipping this route's entry — never a side effect.
+// v1 was the faithful port of the approved design file; v2 applies the
+// written homepage revisions (Aug 2026): reordered around what Curbio does
+// and pay-at-closing, split hero with the transformation video, proof band,
+// how-it-works, audience router, app + awards sections. Removed: the
+// editorial paragraph, the Notable estimator, the results marquee (its
+// category cards were flagged stand-ins), and the standalone quotes block
+// (both quotes moved onto the router cards).
 //
-// It sits OUTSIDE the (chrome) group on purpose: the design carries its own
-// header and footer, and SiteHeader/SiteFooter wrapping it would double the
-// chrome, exactly like the /exp precedent.
+// Still NOT the homepage: unlinked, noindex/nofollow via config/routes.ts,
+// absent from sitemap and nav, 404s publicly on sell.curbio.com. Outside
+// (chrome) on purpose — the design carries its own header and footer.
 //
-// STUBS (see each component): the hero address field and closer CTA are
-// inert; nothing on this page touches /api/lead or /api/resolve.
+// STUBS flagged inline: hero ZIP field and CTAs are inert (nothing touches
+// /api/lead or /api/resolve); router card targets are planned pages;
+// [rating]/[count]/awards are pending data; the app recording placeholder
+// was explicitly approved.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {
@@ -47,17 +50,17 @@ export default function HomePreviewPage() {
     <div className="dp-page">
       <HomeHeader />
       <HomeHero />
-      <BrokerageMarquee />
-      <HomeResults />
+      <ProofBand />
+      <HowItWorks />
+      <PayAtClosing />
       <DealTimeline />
       <MoveInStats />
-      <EditorialBreak />
-      <OurWork />
-      <PayAtClosing />
-      <QualifyCard />
       <SixWaysIn />
-      <BrokerQuotes />
+      <AudienceRouter />
+      <OurWork />
       <MarketsManagers />
+      <AppShowcase />
+      <AwardsStrip />
       <HomeCloser />
       <HomeFooter />
     </div>

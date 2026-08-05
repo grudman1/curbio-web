@@ -5,14 +5,13 @@ import { useEffect, useState } from "react";
 // ─────────────────────────────────────────────────────────────────────────────
 // Homepage preview header.
 //
-// STRUCTURE
-//   Logo · How It Works · Services ▾ · Our Work · Pay At Closing · phone · Log in
+// STRUCTURE (v2)
+//   Logo · How It Works · Services ▾ · Our Work · Pay At Closing ·
+//   For Brokerages · phone · Log in · [Get a free estimate]
 //
-// The primary CTA is the address search bar IN THE HERO (see HomeHero), not
-// anything in this bar — the header stays four questions an agent asks before
-// they'll trust that field: how it works, what you do, is it any good, what
-// it costs. No "Get a free estimate" button and no "Markets" item here; the
-// hero field answers coverage directly. Everything else lives in the footer.
+// v2 revisions: a persistent gold CTA lives in the bar (the bar is fixed, so
+// it is sticky by construction — the primary action no longer disappears
+// after the hero), and For Brokerages is a top-level item.
 //
 // Nav labels are hardcoded and the links are inert spans on purpose: every
 // destination is a page that doesn't exist yet, and config/navigation.ts must
@@ -26,7 +25,10 @@ import { useEffect, useState } from "react";
 // is actually scrolling" ambiguous across browsers. Rects sidestep that.
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Tone = "hero" | "scrolled" | "dark";
+// v2: the hero is light (no full-bleed photo), so the transparent-with-white-
+// text "hero" tone is gone — the bar is frosted-light everywhere except over
+// the navy sections, where it goes frosted-dark.
+type Tone = "scrolled" | "dark";
 
 const PHONE_DISPLAY = "(844) 944-2629";
 
@@ -89,11 +91,10 @@ function Item({ name, title, desc }: { name: string; title: string; desc: string
 }
 
 export function HomeHeader() {
-  const [tone, setTone] = useState<Tone>("hero");
+  const [tone, setTone] = useState<Tone>("scrolled");
 
   useEffect(() => {
     const header = document.getElementById("dp-header");
-    const hero = document.querySelector<HTMLElement>("[data-hero]");
     if (!header) return;
 
     const update = () => {
@@ -104,10 +105,7 @@ export function HomeHeader() {
         const r = el.getBoundingClientRect();
         return mid >= r.top && mid <= r.bottom;
       });
-      if (overDark) return setTone("dark");
-
-      const heroBottom = hero ? hero.getBoundingClientRect().bottom : 700;
-      setTone(heroBottom <= rect.bottom ? "scrolled" : "hero");
+      setTone(overDark ? "dark" : "scrolled");
     };
 
     update();
@@ -171,6 +169,10 @@ export function HomeHeader() {
             <li>
               <span className="dph-link">Pay At Closing</span>
             </li>
+
+            <li>
+              <span className="dph-link">For Brokerages</span>
+            </li>
           </ul>
 
           <div className="dph-actions">
@@ -182,6 +184,12 @@ export function HomeHeader() {
             </span>
 
             <span className="dph-login">Log in</span>
+
+            {/* v2: the primary CTA no longer disappears after the hero — the
+                bar is fixed, so this button is the "sticky on scroll" CTA. */}
+            <a className="dph-cta" href="#dp-zip">
+              Get a free estimate
+            </a>
 
             <button className="dph-burger" type="button" aria-label="Menu">
               <span />

@@ -57,8 +57,7 @@ export function MarketsManagers() {
             ))}
           </div>
           <p className="dp-mkt-note">
-            Your ZIP routes to one of these four people — a Home Services Manager who walks the
-            property, scopes the work, and answers their own phone. Not a call center.
+            Your ZIP routes to one of these four people. Not a call center.
           </p>
         </div>
       </div>
