@@ -321,12 +321,7 @@
   transition: border-color 160ms, color 160ms;
 }
 .dp-cta--outline:hover { border-color: var(--color-text); }
-.dp-hero-proofline {
-  font-family: var(--font-family-sans); font-size: 13.5px; font-weight: 500;
-  color: var(--color-text-muted); margin: 18px 0 0;
-}
-.dp-hero-proofline b { color: var(--color-text); font-weight: 700; }
-.dp-hero-form { max-width: 440px; margin-top: 26px; }
+.dp-hero-form { max-width: 440px; margin-top: 30px; }
 .dp-hero-formlabel {
   display: block; font-family: var(--font-family-sans); font-size: 13.5px; font-weight: 600;
   color: var(--color-text-muted); margin: 0 0 8px;

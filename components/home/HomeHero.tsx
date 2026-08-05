@@ -3,13 +3,24 @@ import { HeroMedia } from "./HeroMedia";
 // Split hero — text left (~45%), the kitchen-transformation video right.
 // The media column sets the height; nothing overlaps it.
 //
-// STUB: the ZIP field is inert (button type="button", no handler), exactly as
-// in v1 — wiring to /api/resolve and the lead pipeline stays a separate,
-// deliberate step.
+// The ZIP/market/address field is the ONE primary CTA in the hero — no
+// second "Get a free estimate" button competing with it. "See a deal run
+// start to finish" is the only secondary action, an anchor to the deal
+// timeline below.
 //
-// [PENDING DATA] The proof line's rating and review count are marked values
-// awaiting the real numbers — same convention as the revision spec's
-// "[rating] from [count]".
+// STUB: the field is inert (button type="button", no handler) — wiring to
+// /api/resolve and the lead pipeline stays a separate, deliberate step. Flag
+// for that later step: lib/resolveMarket.ts's ZIP path currently strips
+// input to digits-only (`.replace(/\D/g, "")`) and has no market-name or
+// address matching at all — "Atlanta" or a street address resolves to
+// nothing today. The field's copy now promises all three; the backend does
+// not yet deliver on market name or address, only ZIP and the ?market=
+// slug. Whoever wires this needs to close that gap, not just point the
+// input at the existing endpoint.
+//
+// No hero proof line: the proof band immediately below already carries
+// rating/review-count/licensing — repeating it one scroll later is the
+// redundancy this hero was asked to drop.
 export function HomeHero() {
   return (
     <section data-hero="true" className="dp-hero" id="get-estimate">
@@ -20,33 +31,24 @@ export function HomeHero() {
             Curbio does the renovations and repairs that get homes sold — your seller pays
             nothing until closing.
           </p>
-          <div className="dp-hero-ctas">
-            <a className="dp-cta" style={{ fontSize: 16, padding: "15px 30px" }} href="#dp-zip">
-              Get a free estimate
-            </a>
-            <a className="dp-cta--outline" style={{ fontSize: 15.5, padding: "13.5px 26px" }} href="#deal">
-              See a deal run start to finish
-            </a>
-          </div>
-          <p className="dp-hero-proofline">
-            <b>★ [4.x]</b> from [count] agent reviews · Licensed and insured
-          </p>
           <div className="dp-hero-form">
             <label className="dp-hero-formlabel" htmlFor="dp-zip">
-              Enter a ZIP to reach your local manager.
+              Enter your ZIP, market, or address to reach your local manager
             </label>
             <div className="dp-hero-search">
               <input
                 id="dp-zip"
                 type="text"
-                inputMode="numeric"
-                aria-label="ZIP code"
-                placeholder="ZIP code"
+                placeholder="ZIP, market, or address"
                 autoComplete="off"
-                maxLength={5}
               />
-              <button type="button">Get a free estimate</button>
+              <button type="button">Find my manager</button>
             </div>
+          </div>
+          <div className="dp-hero-ctas">
+            <a className="dp-cta--outline" style={{ fontSize: 15.5, padding: "13.5px 26px" }} href="#deal">
+              See a deal run start to finish
+            </a>
           </div>
         </div>
         <HeroMedia />
