@@ -75,6 +75,18 @@ export type RouteEntry = {
    * for the parent and would otherwise compete with it.
    */
   canonicalPath?: string;
+  /**
+   * Omit from the QA-links list on the "/" placeholder.
+   *
+   * That list exists so preview deploys can reach the campaign tier at its
+   * physical path, since preview has no sell.curbio.com hostname to trigger
+   * the middleware rewrite. A route that is reachable at its own path needs
+   * no such link — and a route that must stay UNLINKED (a design preview
+   * awaiting sign-off) must not acquire one just by being registered here.
+   * The reason lives on the route so a new preview route cannot silently
+   * pick up a link the way /home-preview did.
+   */
+  unlisted?: boolean;
 };
 
 export const ROUTES: RouteEntry[] = [
@@ -143,6 +155,21 @@ export const ROUTES: RouteEntry[] = [
     // Rewrite targets for /exp?market=… — same content as the parent. Without
     // this they would compete with /exp the moment indexing is switched on.
     canonicalPath: "/exp",
+  },
+
+  // The ported approved homepage design, parked at an unlinked path while it
+  // hardens. `indexed: false` keeps it noindex/nofollow and out of the
+  // sitemap; the campaign-host allowlist already 404s it on sell.curbio.com.
+  // Becoming the real "/" is a deliberate later change to THIS entry — it
+  // must never happen as a side effect of other work.
+  {
+    publicPath: "/home-preview",
+    internalPath: "/home-preview",
+    cutoverPath: "/home-preview",
+    tier: "site",
+    group: "site",
+    indexed: false,
+    unlisted: true, // not linked from anywhere, including the QA-links list
   },
 ];
 

@@ -126,6 +126,15 @@ function implementedPages(): RegistryEntry[] {
     note: "placeholder — Phase 3 builds the real one",
   });
   out.push({
+    path: "/home-preview",
+    group: "site",
+    title: "Homepage — design preview",
+    status: "stub", // renders, unlinked, awaiting sign-off before it becomes "/"
+    indexed: indexedFor("/home-preview"),
+    derivedFrom: "app/(site)/home-preview",
+    note: "approved design, ported — promoted to / only on explicit sign-off",
+  });
+  out.push({
     path: "/markets",
     group: "site",
     title: "Markets index",

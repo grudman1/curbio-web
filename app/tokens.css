@@ -84,6 +84,13 @@
   --text-label: 12px;
   --text-micro: 11px;
 
+  /* Display steps from the approved homepage design (Aug 2026) — the sizes
+     its hero, section headings, and editorial break use, which the scale
+     above doesn't cover. ADDITIVE: nothing live references these yet. */
+  --text-display: clamp(46px, 5.4vw, 82px);
+  --text-display-h2: clamp(38px, 3.9vw, 56px);
+  --text-editorial: clamp(24px, 2.3vw, 31px);
+
   --leading-tight: 1.04;
   --leading-heading: 1.12;
   --leading-body: 1.55;
