@@ -5,12 +5,11 @@ import Image from "next/image";
 
 // The hero's media rectangle: the kitchen-transformation video.
 //
-// Behavior:
-//   • autoplay muted, playsinline, loops continuously — NOT the native
-//     `loop` attribute, which would cut straight from the after-frame back
-//     to before with no breathing room. Instead: hold ~1s on the before
-//     frame, play through, hold ~1s on the after frame, seek back to 0,
-//     repeat. Same hold on every cycle, not just the first.
+// Behavior (per the written revisions):
+//   • autoplay muted, playsinline, NO loop — plays once and holds the final
+//     ("after") frame
+//   • holds the "before" state ~1s before motion starts (done here in the
+//     player, not baked into the file, so the encode stays clean)
 //   • no controls, no sound; poster is the before frame
 //   • prefers-reduced-motion → static before/after side-by-side
 //   • ?hero=static forces the same static variant — the A/B alternate
@@ -18,8 +17,6 @@ import Image from "next/image";
 // LCP: the poster renders as a priority next/image UNDER the video element,
 // so the largest paint is an optimized image that arrives with the HTML; the
 // video (preload=metadata) fills in over it and never gates first paint.
-const HOLD_MS = 1000;
-
 export function HeroMedia() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [variant, setVariant] = useState<"video" | "static">("video");
@@ -33,36 +30,26 @@ export function HeroMedia() {
     }
     const v = videoRef.current;
     if (!v) return;
-
-    let timer: number | undefined;
-    // Browsers pause muted video in hidden pages (and may refuse play()
-    // outright) — in both cases the current frame simply holds, and the
-    // visibilitychange listener resumes the cycle once the page is actually
-    // being looked at, instead of quietly freezing forever.
-    const playNow = () => {
-      if (document.visibilityState !== "visible") return;
+    // Hold the "before" state ~1s, then run once and freeze on the last
+    // frame. Browsers pause muted video in hidden pages (and may refuse the
+    // play() outright) — in both cases the poster/before frame simply stays,
+    // and the visibilitychange listener starts the run when the page is
+    // actually being looked at.
+    const start = () => {
+      if (v.ended) return;
       v.play().catch(() => {
-        /* autoplay refused → the current frame stays */
+        /* autoplay refused → the before frame stays */
       });
     };
-    const holdThenPlay = () => {
-      timer = window.setTimeout(playNow, HOLD_MS);
-    };
-    const onEnded = () => {
-      v.currentTime = 0;
-      holdThenPlay();
-    };
+    const t = window.setTimeout(() => {
+      if (document.visibilityState === "visible") start();
+    }, 1000);
     const onVisible = () => {
-      if (document.visibilityState === "visible" && v.paused) holdThenPlay();
+      if (document.visibilityState === "visible") window.setTimeout(start, 1000);
     };
-
-    v.addEventListener("ended", onEnded);
     document.addEventListener("visibilitychange", onVisible);
-    holdThenPlay(); // first run: hold on the before frame, then play
-
     return () => {
-      window.clearTimeout(timer);
-      v.removeEventListener("ended", onEnded);
+      window.clearTimeout(t);
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
