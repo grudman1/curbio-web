@@ -31,7 +31,7 @@ export default function SiteHome() {
 
       <h2 style={{ fontSize: 20, marginTop: 40 }}>QA links</h2>
       <ul style={{ marginTop: 12, lineHeight: 2 }}>
-        {ROUTES.filter((r) => !r.publicPath.includes(":market")).map((r) => (
+        {ROUTES.filter((r) => !r.publicPath.includes(":market") && !r.unlisted).map((r) => (
           <li key={r.internalPath}>
             <Link href={r.internalPath}>{r.internalPath}</Link>{" "}
             <span style={{ color: "var(--fg-subtle)", fontSize: 13 }}>

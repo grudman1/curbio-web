@@ -75,6 +75,18 @@ export type RouteEntry = {
    * for the parent and would otherwise compete with it.
    */
   canonicalPath?: string;
+  /**
+   * Omit from the QA-links list on the "/" placeholder.
+   *
+   * That list exists so preview deploys can reach the campaign tier at its
+   * physical path, since preview has no sell.curbio.com hostname to trigger
+   * the middleware rewrite. A route that is reachable at its own path needs
+   * no such link — and a route that must stay UNLINKED (a design preview
+   * awaiting sign-off) must not acquire one just by being registered here.
+   * The reason lives on the route so a new preview route cannot silently
+   * pick up a link the way /home-preview did.
+   */
+  unlisted?: boolean;
 };
 
 export const ROUTES: RouteEntry[] = [
@@ -157,6 +169,7 @@ export const ROUTES: RouteEntry[] = [
     tier: "site",
     group: "site",
     indexed: false,
+    unlisted: true, // not linked from anywhere, including the QA-links list
   },
 ];
 
