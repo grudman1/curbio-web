@@ -144,6 +144,20 @@ export const ROUTES: RouteEntry[] = [
     // this they would compete with /exp the moment indexing is switched on.
     canonicalPath: "/exp",
   },
+
+  // The ported approved homepage design, parked at an unlinked path while it
+  // hardens. `indexed: false` keeps it noindex/nofollow and out of the
+  // sitemap; the campaign-host allowlist already 404s it on sell.curbio.com.
+  // Becoming the real "/" is a deliberate later change to THIS entry — it
+  // must never happen as a side effect of other work.
+  {
+    publicPath: "/home-preview",
+    internalPath: "/home-preview",
+    cutoverPath: "/home-preview",
+    tier: "site",
+    group: "site",
+    indexed: false,
+  },
 ];
 
 const BY_PUBLIC_PATH = new Map(ROUTES.map((r) => [r.publicPath, r]));
