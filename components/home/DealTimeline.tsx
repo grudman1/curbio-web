@@ -1,130 +1,86 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 
-// "One deal, the way it actually ran" — the 395 Meeting St case study:
-// sticky facts card on the left rail, dated timeline on the right.
-// All copy and figures are real (signed contract + public listing record),
-// carried over verbatim from the approved design file.
+// "One deal, the way it actually ran" — 395 Meeting St, compressed: six
+// milestones visible, the other seven behind an expand, in true order. The
+// numbers card keeps the Shequira Edmonds quote attached.
+// All figures are real (signed contract + public listing record).
 
 type Entry = {
   date: string;
   title: string;
-  body: React.ReactNode;
+  body: string;
   quote?: string;
   figure?: boolean;
+  collapsed?: boolean;
 };
 
 const ENTRIES: Entry[] = [
   {
     date: "Jun 3",
     title: "The agent calls",
-    body: (
-      <>
-        Shequira Edmonds calls Curbio about a McDonough listing that needs full interior paint,
-        drywall and door repairs, and carpet work. Christine Harvey, Curbio&rsquo;s Atlanta Home
-        Services Manager, picks it up and sends financing options the same afternoon.
-      </>
-    ),
+    body: "The ask: paint, drywall repairs, carpet.",
   },
   {
     date: "Jun 4",
     title: "Financing approved",
-    body: (
-      <>
-        The sellers are approved for $33,301 through Notable. Notable pays Curbio as the work is
-        invoiced; the sellers settle up when the home sells, or in twelve months — whichever
-        comes first. Nothing out of pocket to start.
-      </>
-    ),
-    quote: "“My clients have been approved for $33,301. How do we proceed with next steps?”",
+    body: "$33,301 through Notable. Nothing out of pocket.",
   },
   {
     date: "Jun 7",
     title: "Walkthrough",
-    body: (
-      <>
-        Christine walks the house with Shequira at 1:00 PM on a Sunday. Recommendations: full
-        interior paint, carpet on the stairs, hallway and bedrooms, and pressure washing — chosen
-        for return, not for volume. A 3D scan goes out so the proposal is priced off
-        measurements.
-      </>
-    ),
+    body: "Christine walks the house on a Sunday; a 3D scan prices the proposal off measurements.",
+    collapsed: true,
   },
   {
     date: "Jun 9",
     title: "Proposal delivered",
-    body: (
-      <>
-        Three line items — interior paint, carpet replacement, exterior — priced from the scan
-        and good through June 16. No allowances, no contingency padding.
-      </>
-    ),
+    body: "Three line items, priced from the scan. No allowances, no contingency padding.",
+    collapsed: true,
   },
   {
     date: "Jun 10",
     title: "Contract signed",
-    body: <>Oneca and Jaquan Smith sign the same day for $19,731.00 and the project opens.</>,
-    quote: "“My clients are good to go with everything. All listed items on the proposal.”",
+    body: "Signed the same day: $19,731.00.",
   },
   {
     date: "Jun 15",
     title: "Crews on site",
-    body: (
-      <>
-        Kickoff walkthrough at noon with Christine, the crew lead, and the agent. The house is
-        vacant, so there is no working around a family.
-      </>
-    ),
+    body: "Kickoff at noon with Christine, the crew lead, and the agent.",
+    collapsed: true,
   },
   {
     date: "Jun 22",
     title: "Paint and exterior done",
-    body: (
-      <>
-        Interior painting and pressure washing complete; carpet goes in the same day. Christine
-        sends Shequira progress photos without being asked for them.
-      </>
-    ),
+    body: "Paint done; carpet goes in the same day.",
     figure: true,
   },
-  { date: "Jun 25", title: "Mid-project walkthrough", body: <>Walked and signed off.</> },
+  { date: "Jun 25", title: "Mid-project walkthrough", body: "Walked and signed off.", collapsed: true },
   {
     date: "Jun 30",
     title: "Work complete",
-    body: (
-      <>
-        Twenty days after signing, fifteen after the crews started — inside the four weeks the
-        proposal estimated.
-      </>
-    ),
+    body: "Twenty days after signing — inside the four-week estimate.",
+    collapsed: true,
   },
-  {
-    date: "Jul 10",
-    title: "Final walkthrough",
-    body: <>Punch list cleared. Curbio&rsquo;s balance closes out at $0.00.</>,
-  },
-  {
-    date: "Jul 17",
-    title: "Listing goes live",
-    body: <>The home hits the market painted, re-carpeted, and photographed.</>,
-  },
+  { date: "Jul 10", title: "Final walkthrough", body: "Punch list cleared. Balance: $0.00.", collapsed: true },
+  { date: "Jul 17", title: "Listing goes live", body: "Painted, re-carpeted, photographed.", collapsed: true },
   {
     date: "Jul 18",
     title: "Two full-price offers",
-    body: <>One day on market. Both at asking. The McDonough median sits at 54 days.</>,
+    body: "One day on market, both at asking.",
   },
   {
     date: "Jul 23",
     title: "Sold — $347,500",
-    body: (
-      <>
-        $100 a square foot, and $37,500 above the McDonough median sale. The $19,731 of work came
-        to 5.7% of what the house sold for.
-      </>
-    ),
+    body: "$37,500 over the area median — the work was 5.7% of sale.",
   },
 ];
 
 export function DealTimeline() {
+  const [expanded, setExpanded] = useState(false);
+
   return (
     <section id="deal" className="dp-sect--deal">
       <div className="dp-container">
@@ -132,9 +88,7 @@ export function DealTimeline() {
           One deal, the way it actually ran.
         </h2>
         <p className="dp-lede">
-          Fifty days at 395 Meeting Street, from the agent&rsquo;s first phone call to two
-          full-price offers in a single day on market. Every Curbio project runs on this rail;
-          only the address changes.
+          Fifty days, first call to two full-price offers. Every project runs on this rail.
         </p>
         <div className="dpl-grid">
           <aside className="dpl-rail">
@@ -177,16 +131,17 @@ export function DealTimeline() {
                   <span className="dpl-val">$347,500</span>
                 </div>
               </div>
-              <p className="dpl-note">
-                Scope from the signed contract; sale price and days on market from the public
-                listing record. The sellers paid nothing out of pocket — Notable carried the
-                balance to closing.
-              </p>
+              <figure className="dpl-review" style={{ margin: "22px 0 0", padding: "20px 22px" }}>
+                <blockquote style={{ fontSize: 17, lineHeight: 1.5 }}>
+                  Curbio is nothing less than amazing — two full-price offers within one day of listing.
+                </blockquote>
+                <figcaption>Shequira Edmonds — listing agent, 395 Meeting St</figcaption>
+              </figure>
             </div>
           </aside>
-          <div className="dpl-entries">
+          <div className="dpl-entries" data-expanded={expanded}>
             {ENTRIES.map((e) => (
-              <article key={e.date + e.title} className="dpl-entry">
+              <article key={e.date + e.title} className="dpl-entry" data-collapsed={e.collapsed || undefined}>
                 <p className="dpl-date">{e.date}</p>
                 <div>
                   <h3>{e.title}</h3>
@@ -220,27 +175,16 @@ export function DealTimeline() {
                           <p className="dpl-balabel">After</p>
                         </figure>
                       </div>
-                      <figcaption>
-                        The same elevation. Curbio&rsquo;s exterior scope was mulch, pressure
-                        washing the driveway and walks, and repainting the garage-door trim; the
-                        rest of the budget went inside.
-                      </figcaption>
                     </figure>
                   )}
                 </div>
               </article>
             ))}
+            <button type="button" className="dpl-expand" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded}>
+              {expanded ? "Show the six milestones" : `Every step, dated — show all ${ENTRIES.length}`}
+            </button>
           </div>
         </div>
-        <figure className="dpl-review">
-          <blockquote>
-            Curbio is nothing less than amazing. My client&rsquo;s entire project was coordinated
-            by Christine, who also recommended project items that would allow my clients to get a
-            higher return on investment. The recommendations landed us two full-price offers
-            within one day of listing the property.
-          </blockquote>
-          <figcaption>Shequira Edmonds — listing agent, 395 Meeting St</figcaption>
-        </figure>
       </div>
     </section>
   );

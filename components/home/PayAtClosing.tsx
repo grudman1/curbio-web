@@ -11,9 +11,7 @@ export function PayAtClosing() {
         <div>
           <h2 className="dp-h2">Pay at closing is the product.</h2>
           <p className="dp-pay-body">
-            Curbio created pay-at-closing renovation. No deposits, no draws, no loan for your
-            client to qualify for. We carry every cost while the work happens and while the home
-            sells — the project settles as one line on the closing statement.
+            Curbio created pay-at-closing renovation. No deposits, no draws — one line on the closing statement.
           </p>
           <p className="dp-pay-fine">Qualified sellers pay from proceeds when the home sells.</p>
         </div>
