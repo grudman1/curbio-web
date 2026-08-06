@@ -10,31 +10,31 @@ import Image from "next/image";
 // (white links) while it floats over the photo — same mechanism the ledger
 // and closer sections already use.
 //
-// IMAGE is a one-line swap ↓. Source was a 6.1MB PNG mislabeled .jpg;
-// re-encoded to a real JPEG at 2560px (379KB), which next/image then serves
-// as AVIF/WebP at per-viewport widths.
+// IMAGE is a one-line swap ↓. 305 Johnsberg Ln, the AFTER shot of a real
+// Curbio project — 4000×2667 source, re-encoded to 2560px / 869KB, which
+// next/image then serves as AVIF/WebP at per-viewport widths.
 //
-// The other candidate (gray-panelled living room) was rejected on
-// resolution: 1280×720 is too small for a full-bleed hero and goes soft on
-// retina. It's fine for a card or an inline figure if it's wanted elsewhere.
+// This one is Curbio's own project photography, so the provenance/licensing
+// question that hung over the previous (stock interior) hero is closed.
 //
-// TWO FLAGS on this photo, both for Gavin, neither blocking:
-//   1. Provenance — this is not Curbio project photography (it reads as
-//      stock/architectural, desert Southwest, Camelback Mountain in frame).
-//      Every other photo on this page is Curbio's own portfolio. Confirm
-//      the license before this ships publicly.
-//   2. It has the same tension the v2 brief raised against the v1 hero:
-//      "the house in it needs no work, so the image argues against the
-//      product." This room is immaculate. Kept because it was explicitly
-//      chosen — noted because that critique still applies.
+// Rejected candidates, for the record: stock stone-fireplace living room
+// (licensing unknown, not Curbio work); gray-panelled living room (1280×720,
+// too small for full-bleed — goes soft on retina, but fine for a card).
+//
+// ONE STANDING NOTE, not blocking: the v2 brief's objection to a full-bleed
+// exterior was "the house in it needs no work, so the image argues against
+// the product." That still applies to any after-only shot. The unlock, if
+// it's ever wanted, is the matching BEFORE frame — pairing them turns the
+// hero from a pretty house into the actual pitch. No before shot for this
+// address exists on disk today.
 //
 // STUB: field is inert; /api/resolve wiring is a separate step, and its
 // backend still only parses ZIPs — see the note in lib/resolveMarket.ts
 // callers before wiring.
 const HERO_IMAGE = {
-  src: "/home/hero/living-room-stone-fireplace.jpg",
-  alt: "Sunlit living room with a floor-to-ceiling stone fireplace and mountain view",
-  objectPosition: "center 55%",
+  src: "/home/hero/305-johnsberg-exterior.jpg",
+  alt: "305 Johnsberg Lane — brick colonial after Curbio's pre-listing exterior refresh",
+  objectPosition: "center 62%",
 };
 
 export function HomeHero() {
