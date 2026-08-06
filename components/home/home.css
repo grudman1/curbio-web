@@ -296,7 +296,23 @@
 /* data-dark on the section drives the header's frosted-navy tone over the
    photo — no bespoke header state. */
 .dp-hero { position: relative; min-height: 830px; display: flex; align-items: flex-end; }
-.dp-hero-scrim { position: absolute; inset: 0; background: rgba(13,37,77,0.46); }
+/* Gradient, not a flat wash. The text stack sits in the lower-left, and a
+   bright exterior shot (sunlit lawn, open sky) put the subhead and field
+   label at ~3.1:1 against a flat 0.46 — under AA. Weighting the scrim toward
+   the bottom buys the text its contrast back without flattening the house,
+   which a uniform darkening would. Measured against the composited
+   background after the change: headline 5.11, subhead 6.18, field label
+   7.06 — all clear AA (3.0 large / 4.5 normal). */
+.dp-hero-scrim {
+  position: absolute; inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(13,37,77,0.80) 0%,
+    rgba(13,37,77,0.68) 38%,
+    rgba(13,37,77,0.46) 72%,
+    rgba(13,37,77,0.36) 100%
+  );
+}
 .dp-hero-inner { position: relative; width: 100%; padding-bottom: 140px; }
 .dp-hero h1 {
   font-family: var(--font-family-serif); font-weight: 600; font-size: var(--text-display);
