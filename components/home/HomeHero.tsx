@@ -1,57 +1,57 @@
-import { HeroMedia } from "./HeroMedia";
+import Image from "next/image";
 
-// Split hero — text left (~45%), the kitchen-transformation video right.
-// The media column sets the height; nothing overlaps it.
+// Hero — CONTROL variant: the v1 full-bleed photo hero, restored (Gavin,
+// Aug 6). One primary action: the field. No second button, no outline CTA
+// row, no proof line. The photo is the LCP element — next/image `priority`.
 //
-// The ZIP/market/address field is the ONE primary CTA in the hero — no
-// second "Get a free estimate" button competing with it. "See a deal run
-// start to finish" is the only secondary action, an anchor to the deal
-// timeline below.
+// The split video hero lives on as the A/B "B" variant in HomeHeroVideo.tsx.
 //
-// STUB: the field is inert (button type="button", no handler) — wiring to
-// /api/resolve and the lead pipeline stays a separate, deliberate step. Flag
-// for that later step: lib/resolveMarket.ts's ZIP path currently strips
-// input to digits-only (`.replace(/\D/g, "")`) and has no market-name or
-// address matching at all — "Atlanta" or a street address resolves to
-// nothing today. The field's copy now promises all three; the backend does
-// not yet deliver on market name or address, only ZIP and the ?market=
-// slug. Whoever wires this needs to close that gap, not just point the
-// input at the existing endpoint.
+// data-dark on the section puts the fixed header into its frosted-navy tone
+// (white links) while it floats over the photo — same mechanism the ledger
+// and closer sections already use.
 //
-// No hero proof line: the proof band immediately below already carries
-// rating/review-count/licensing — repeating it one scroll later is the
-// redundancy this hero was asked to drop.
+// IMAGE is a one-line swap ↓. Currently the v1 brick colonial as a stand-in:
+// the two replacement candidates Gavin picked (stone-fireplace living room,
+// gray-paneled living room) were pasted as chat images — no files on disk
+// yet. Drop them in ~/Downloads and this constant is the only thing that
+// changes.
+//
+// STUB: field is inert; /api/resolve wiring is a separate step, and its
+// backend still only parses ZIPs — see the note in lib/resolveMarket.ts
+// callers before wiring.
+const HERO_IMAGE = {
+  src: "/sold/northern-virginia/9420BianJac_GreatFalls.jpg",
+  alt: "Brick colonial in Great Falls, Virginia, prepped by Curbio",
+  objectPosition: "center 38%",
+};
+
 export function HomeHero() {
   return (
-    <section data-hero="true" className="dp-hero" id="get-estimate">
-      <div className="dp-container dp-hero-grid">
-        <div>
-          <h1>Win the listing. Drop the hammer.</h1>
-          <p className="dp-hero-sub">
-            Curbio does the renovations and repairs that get homes sold — your seller pays
-            nothing until closing.
-          </p>
-          <div className="dp-hero-form">
-            <label className="dp-hero-formlabel" htmlFor="dp-zip">
-              Enter your ZIP, market, or address to reach your local manager
-            </label>
-            <div className="dp-hero-search">
-              <input
-                id="dp-zip"
-                type="text"
-                placeholder="ZIP, market, or address"
-                autoComplete="off"
-              />
-              <button type="button">Find my manager</button>
-            </div>
-          </div>
-          <div className="dp-hero-ctas">
-            <a className="dp-cta--outline" style={{ fontSize: 15.5, padding: "13.5px 26px" }} href="#deal">
-              See a deal run start to finish
-            </a>
+    <section data-hero="true" data-dark="true" className="dp-hero" id="get-estimate">
+      <Image
+        src={HERO_IMAGE.src}
+        alt={HERO_IMAGE.alt}
+        fill
+        priority
+        sizes="100vw"
+        style={{ objectFit: "cover", objectPosition: HERO_IMAGE.objectPosition }}
+      />
+      <div className="dp-hero-scrim" />
+      <div className="dp-container dp-hero-inner">
+        <h1>Stress less. Sell more.</h1>
+        <p className="dp-hero-sub">
+          We do the repairs and updates that get homes sold — your seller pays nothing until
+          closing.
+        </p>
+        <div className="dp-hero-form">
+          <label className="dp-hero-formlabel" htmlFor="dp-zip">
+            Enter your ZIP, market, or address to reach your local manager
+          </label>
+          <div className="dp-hero-search">
+            <input id="dp-zip" type="text" placeholder="ZIP, market, or address" autoComplete="off" />
+            <button type="button">Find my manager</button>
           </div>
         </div>
-        <HeroMedia />
       </div>
     </section>
   );
