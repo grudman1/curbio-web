@@ -10,19 +10,31 @@ import Image from "next/image";
 // (white links) while it floats over the photo — same mechanism the ledger
 // and closer sections already use.
 //
-// IMAGE is a one-line swap ↓. Currently the v1 brick colonial as a stand-in:
-// the two replacement candidates Gavin picked (stone-fireplace living room,
-// gray-paneled living room) were pasted as chat images — no files on disk
-// yet. Drop them in ~/Downloads and this constant is the only thing that
-// changes.
+// IMAGE is a one-line swap ↓. Source was a 6.1MB PNG mislabeled .jpg;
+// re-encoded to a real JPEG at 2560px (379KB), which next/image then serves
+// as AVIF/WebP at per-viewport widths.
+//
+// The other candidate (gray-panelled living room) was rejected on
+// resolution: 1280×720 is too small for a full-bleed hero and goes soft on
+// retina. It's fine for a card or an inline figure if it's wanted elsewhere.
+//
+// TWO FLAGS on this photo, both for Gavin, neither blocking:
+//   1. Provenance — this is not Curbio project photography (it reads as
+//      stock/architectural, desert Southwest, Camelback Mountain in frame).
+//      Every other photo on this page is Curbio's own portfolio. Confirm
+//      the license before this ships publicly.
+//   2. It has the same tension the v2 brief raised against the v1 hero:
+//      "the house in it needs no work, so the image argues against the
+//      product." This room is immaculate. Kept because it was explicitly
+//      chosen — noted because that critique still applies.
 //
 // STUB: field is inert; /api/resolve wiring is a separate step, and its
 // backend still only parses ZIPs — see the note in lib/resolveMarket.ts
 // callers before wiring.
 const HERO_IMAGE = {
-  src: "/sold/northern-virginia/9420BianJac_GreatFalls.jpg",
-  alt: "Brick colonial in Great Falls, Virginia, prepped by Curbio",
-  objectPosition: "center 38%",
+  src: "/home/hero/living-room-stone-fireplace.jpg",
+  alt: "Sunlit living room with a floor-to-ceiling stone fireplace and mountain view",
+  objectPosition: "center 55%",
 };
 
 export function HomeHero() {
