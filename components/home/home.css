@@ -295,24 +295,29 @@
 /* ── PORT: hero — CONTROL: v1 full-bleed photo, one field, one action ─────── */
 /* data-dark on the section drives the header's frosted-navy tone over the
    photo — no bespoke header state. */
-.dp-hero { position: relative; min-height: 830px; display: flex; align-items: flex-end; }
-/* Gradient, not a flat wash. The text stack sits in the lower-left, and a
-   bright exterior shot (sunlit lawn, open sky) put the subhead and field
-   label at ~3.1:1 against a flat 0.46 — under AA. Weighting the scrim toward
-   the bottom buys the text its contrast back without flattening the house,
-   which a uniform darkening would. Measured against the composited
-   background after the change: headline 5.11, subhead 6.18, field label
-   7.06 — all clear AA (3.0 large / 4.5 normal). */
-.dp-hero-scrim {
-  position: absolute; inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(13,37,77,0.80) 0%,
-    rgba(13,37,77,0.68) 38%,
-    rgba(13,37,77,0.46) 72%,
-    rgba(13,37,77,0.36) 100%
-  );
+/* Height is capped by the VIEWPORT, not just a fixed 830px, so the proof
+   band's logo carousel always crests into the first screen — a hero that
+   exactly fills the fold reads as a false floor and nobody scrolls. The
+   subtrahend is the distance from the band's top edge to a visible slice of
+   the carousel (the stats row and its label sit above the logos), so the
+   logos are on screen at landing at every height. svh (not vh) on the second
+   declaration so mobile browser chrome can't eat the margin; the vh line
+   above it is the fallback for engines without svh. */
+.dp-hero {
+  position: relative;
+  min-height: min(830px, calc(100vh - 185px));
+  min-height: min(830px, calc(100svh - 185px));
+  display: flex; align-items: flex-end;
 }
+/* Flat 0.46 — the v1 value, restored (Gavin, Aug 6: the gradient read as
+   overdone). Deliberate tradeoff, recorded so it isn't rediscovered as a
+   bug: against this bright exterior the small text measures under WCAG AA —
+   subhead ~3.1:1 and field label ~3.6:1 where normal-size text wants 4.5
+   (the headline is large text and clears its 3.0 bar at ~3.3). If that ever
+   needs fixing without touching the wash, the light-touch options are a
+   text-shadow on those two layers, or nudging them a step bolder — both
+   leave the photo exactly as it looks now. */
+.dp-hero-scrim { position: absolute; inset: 0; background: rgba(13,37,77,0.46); }
 .dp-hero-inner { position: relative; width: 100%; padding-bottom: 140px; }
 .dp-hero h1 {
   font-family: var(--font-family-serif); font-weight: 600; font-size: var(--text-display);
@@ -328,12 +333,21 @@
   display: block; font-family: var(--font-family-sans); font-size: 13.5px; font-weight: 600;
   color: rgba(255,255,255,0.92); margin: 0 0 8px;
 }
+/* Same viewport cap at each breakpoint, with a bigger subtrahend as the
+   band's stats row wraps to more lines on narrower screens and pushes the
+   carousel further down. */
 @media (max-width: 1024px) {
-  .dp-hero { min-height: 700px; }
+  .dp-hero {
+    min-height: min(700px, calc(100vh - 215px));
+    min-height: min(700px, calc(100svh - 215px));
+  }
   .dp-hero-inner { padding-bottom: 96px; }
 }
 @media (max-width: 640px) {
-  .dp-hero { min-height: 620px; }
+  .dp-hero {
+    min-height: min(620px, calc(100vh - 250px));
+    min-height: min(620px, calc(100svh - 250px));
+  }
   .dp-hero-inner { padding-bottom: 64px; }
   .dp-hero-sub { font-size: 18px; }
 }
