@@ -1,15 +1,19 @@
 import { BROKERAGE_LOGOS } from "@/lib/partners";
 
-// Proof band — two rows: stats, then the brokerage logo marquee at lower
-// contrast, relabeled "Trusted by agents at". Sits directly under the hero so
-// its top edge crests into the first viewport.
+// Proof band — one compact row: label left, scrolling brokerage logos right.
 //
-// Deliberately absent (per the revisions): "7 metro markets" (sounds small out
-// of context) and "$0 due before closing" (already in the announcement bar
-// and the subhead).
+// The stats row ("8,000+ homes prepped · [rating] from [count] agent reviews ·
+// 1-year warranty · Licensed and insured") was dropped (Gavin, Aug 6). It took
+// this section's two unsourced placeholders with it, and collapsing to a
+// single row cut the band from ~190px to ~90px — which is what lets the whole
+// strip sit on screen at landing, the Guest House proportion.
 //
-// [PENDING DATA] rating + review count are marked values awaiting the real
-// numbers; "8,000+ homes prepped" is from the revision spec.
+// Placeholders still live elsewhere on the page: AwardsStrip carries five
+// ([Award] ×2, [rating], [count], [press]). Removing them here did not clear
+// the page.
+//
+// If the stats come back with real numbers, they belong on their own row
+// again; the marquee is the part that has to stay compact.
 //
 // Logos: each declared once in CSS custom properties (see .dp-logo) — never
 // repeated <img> tags; the duplicate loop track is aria-hidden.
@@ -37,35 +41,10 @@ function LogoRow({ hidden }: { hidden?: boolean }) {
   );
 }
 
-const STATS: React.ReactNode[] = [
-  <>
-    <b>8,000+</b> homes prepped
-  </>,
-  <>
-    <b>[rating]</b> from <b>[count]</b> agent reviews
-  </>,
-  <>
-    <b>1-year</b> warranty
-  </>,
-  <>Licensed and insured</>,
-];
-
 export function ProofBand() {
   return (
-    <section className="dp-proof" aria-label="Proof">
-      <div className="dp-container">
-        <p className="dp-proof-stats">
-          {STATS.map((s, i) => (
-            <span key={i} className="dp-proof-stat">
-              {s}
-              {i < STATS.length - 1 && (
-                <span className="dp-proof-sep" aria-hidden>
-                  ·
-                </span>
-              )}
-            </span>
-          ))}
-        </p>
+    <section className="dp-proof" aria-label="Brokerages Curbio agents work with">
+      <div className="dp-container dp-proof-row">
         <p className="dp-proof-label">Trusted by agents at</p>
         <div className="dp-marquee" data-animated="true">
           <div className="dp-marquee-track">

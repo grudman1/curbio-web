@@ -305,8 +305,8 @@
    above it is the fallback for engines without svh. */
 .dp-hero {
   position: relative;
-  min-height: min(830px, calc(100vh - 185px));
-  min-height: min(830px, calc(100svh - 185px));
+  min-height: min(830px, calc(100vh - 100px));
+  min-height: min(830px, calc(100svh - 100px));
   display: flex; align-items: flex-end;
 }
 /* Flat 0.46 — the v1 value, restored (Gavin, Aug 6: the gradient read as
@@ -333,20 +333,21 @@
   display: block; font-family: var(--font-family-sans); font-size: 13.5px; font-weight: 600;
   color: rgba(255,255,255,0.92); margin: 0 0 8px;
 }
-/* Same viewport cap at each breakpoint, with a bigger subtrahend as the
-   band's stats row wraps to more lines on narrower screens and pushes the
-   carousel further down. */
+/* Same viewport cap per breakpoint. The subtrahend is the band's own height
+   plus ~10px of breathing room, so the strip lands complete on the first
+   screen without the hero giving up more height than it has to. Mobile's is
+   larger because the band stacks (label above logos) below 640px. */
 @media (max-width: 1024px) {
   .dp-hero {
-    min-height: min(700px, calc(100vh - 215px));
-    min-height: min(700px, calc(100svh - 215px));
+    min-height: min(700px, calc(100vh - 100px));
+    min-height: min(700px, calc(100svh - 100px));
   }
   .dp-hero-inner { padding-bottom: 96px; }
 }
 @media (max-width: 640px) {
   .dp-hero {
-    min-height: min(620px, calc(100vh - 250px));
-    min-height: min(620px, calc(100svh - 250px));
+    min-height: min(620px, calc(100vh - 130px));
+    min-height: min(620px, calc(100svh - 130px));
   }
   .dp-hero-inner { padding-bottom: 64px; }
   .dp-hero-sub { font-size: 18px; }
@@ -450,32 +451,36 @@
   .dp-marquee { -webkit-mask-image: none; mask-image: none; }
 }
 
-/* ── PORT v2: proof band — stats row over a lower-contrast logo marquee ───── */
-/* Crests up into the hero's viewport (negative top margin) so the fold
-   never lands on empty canvas. */
+/* ── PORT v2: proof band — one row, label left, logo marquee right ────────── */
+/* Single row on purpose. Stacked (label centered above the logos) it ran
+   ~190px tall, which forced the hero to give up a lot of height before the
+   strip could sit fully on screen. Side by side it's ~90px, so the hero
+   keeps its presence AND the whole strip lands above the fold — the Guest
+   House proportion. */
 .dp-proof {
   position: relative; background: var(--color-surface-raised);
   border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border);
-  padding: 36px 0;
+  padding: 30px 0;
 }
-.dp-proof-stats {
-  display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap;
-  gap: 10px 0; margin: 0 0 28px; text-align: center;
-}
-.dp-proof-stat { font-family: var(--font-family-sans); font-size: 15.5px; color: var(--color-text-muted); }
-.dp-proof-stat b { color: var(--color-text); font-weight: 700; }
-.dp-proof-sep { margin: 0 18px; color: var(--color-text-subtle); }
+.dp-proof-row { display: flex; align-items: center; gap: 44px; }
 .dp-proof-label {
-  text-align: center; font-family: var(--font-family-sans); font-weight: 800; font-size: 11px;
+  flex: 0 0 auto; max-width: 200px; margin: 0;
+  font-family: var(--font-family-sans); font-weight: 800; font-size: 11px;
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-subtle);
-  margin: 0 0 18px;
+  line-height: 1.5;
 }
 .dp-proof .dp-logo::before { opacity: 0.45; } /* logos read quieter than v1 */
 .dp-proof .dp-logo:hover::before { opacity: 0; }
 @media (max-width: 640px) {
-  .dp-proof { padding: 28px 0; }
-  .dp-proof-sep { margin: 0 10px; }
-  .dp-proof-stat { font-size: 14px; }
+  /* Stacks below the label — the row would squeeze the marquee to nothing.
+     width:100% is load-bearing, not tidiness: once the row turns to a column,
+     `flex: 1` governs HEIGHT, and align-items:flex-start stops the cross-axis
+     stretch — so the marquee sizes to its own max-content track (~5,700px)
+     and the whole document scrolls sideways. */
+  .dp-proof { padding: 24px 0; }
+  .dp-proof-row { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .dp-proof-label { max-width: none; }
+  .dp-marquee { width: 100%; }
 }
 
 /* ── PORT v2: how it works — three steps, three words, three images ───────── */
