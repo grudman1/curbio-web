@@ -496,7 +496,88 @@
   font-family: var(--font-family-serif); font-weight: 600; font-size: 27px;
   letter-spacing: -0.005em; color: var(--color-text); margin: 0;
 }
-.dp-how-line { font-size: 15px; color: var(--color-text-muted); margin: 8px 0 0; }
+.dp-how-line { font-size: 15px; line-height: 1.55; color: var(--color-text-muted); margin: 8px 0 0; max-width: 34ch; }
+
+/* ── PORT: rotating section headline (Opendoor-style) ─────────────────────── */
+/* Navy static half + amber phrase cycling vertically. CSS-only on purpose:
+   no JS means phrase 1 is the first painted frame even on a slow load or a
+   hydration failure, which matters because it's the strongest phrase.
+
+   The loop is seamless because the track ends with a CLONE of phrase 1
+   (data-loop-clone in the markup). The animation runs to that clone and
+   resets to translateY(0) — pixel-identical, so the snap is invisible.
+
+   TIMING: 6 items (5 phrases + clone), 2s hold + 0.9s slide = 2.9s each,
+   ×5 transitions = 14.5s. Each phrase therefore occupies 20% of the cycle:
+   hold through 13.8%, slide over the remaining 6.2%. */
+/* --rot-lh is BOTH the item height and the mask's clip height, so it decides
+   whether descenders survive. The phrases carry g/p ("listing", "prep",
+   "impress"), which sit ~0.21em below the baseline; the line box only gives
+   (lh − 1) / 2 per side, so anything under ~1.42 shears them off. 1.46 keeps
+   a small margin over that. It cannot be solved with padding instead: the
+   track is continuous, so any extra room below the item reveals the top of
+   the next one. */
+.dp-rot-h2 { --rot-lh: 1.46; line-height: var(--rot-lh); }
+.dp-rot { display: inline; }
+/* Same line-height as the items — NOT cosmetic. The mask is vertical-align:
+   bottom, so the two halves only share a baseline when they share a line
+   box height; inheriting .dp-h2's 1.08 here left the amber sitting ~9px
+   above the navy, visibly breaking one sentence into two. */
+.dp-rot-static { color: var(--color-text); line-height: var(--rot-lh); }
+
+/* Shrink-to-fit around the track, whose max-content width is the LONGEST
+   phrase — so the box never changes width as phrases cycle and nothing
+   reflows horizontally. */
+.dp-rot-mask {
+  display: inline-block;
+  overflow: hidden;
+  height: calc(var(--rot-lh) * 1em);
+  vertical-align: bottom;
+}
+.dp-rot-track {
+  display: block;
+  animation: dp-rot-cycle 14.5s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+.dp-rot-item {
+  display: block;
+  height: calc(var(--rot-lh) * 1em);
+  line-height: var(--rot-lh);
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+
+@keyframes dp-rot-cycle {
+  0%,   13.8% { transform: translateY(0); }
+  20%,  33.8% { transform: translateY(-16.6667%); }
+  40%,  53.8% { transform: translateY(-33.3333%); }
+  60%,  73.8% { transform: translateY(-50%); }
+  80%,  93.8% { transform: translateY(-66.6667%); }
+  100%        { transform: translateY(-83.3333%); }
+}
+
+/* The items are white-space:nowrap (they have to be — each must occupy
+   exactly one item-height for the translate math), so they cannot wrap out of
+   an overflow. At the shared 38px floor of --text-display-h2, the longest
+   phrase measures ~385px against ~335px of usable width at a 375px viewport,
+   which would scroll the page sideways. Scale the heading below 640px so the
+   longest phrase always fits its own line. */
+@media (max-width: 640px) {
+  .dp-rot-h2 { font-size: clamp(26px, 7.6vw, 38px); }
+}
+
+/* Motion off entirely — the track stays at phrase 1, which the mask already
+   clips to. Nothing else needed: the sr-only sentence carries the full
+   meaning regardless. */
+@media (prefers-reduced-motion: reduce) {
+  .dp-rot-track { animation: none; transform: none; }
+}
+
+/* Visually hidden, still announced. The animated track is aria-hidden, so
+   this span is the ONLY thing a screen reader gets from the heading. */
+.dp-sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
 @media (max-width: 1024px) { .dp-how-grid { gap: 20px; margin-top: 48px; } }
 @media (max-width: 640px) { .dp-how-grid { grid-template-columns: 1fr; gap: 36px; margin-top: 40px; } }
 
