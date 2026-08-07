@@ -84,7 +84,7 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <section className="dp-sect" id="how-it-works">
+    <section className="dp-sect dp-sect--tight-top" id="how-it-works">
       <div className="dp-container">
         <h2 className="dp-h2 dp-rot-h2">
           <span className="dp-sr-only">{SPOKEN}</span>
