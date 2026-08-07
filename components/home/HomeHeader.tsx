@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 //
 // STRUCTURE (v2)
 //   Logo · How It Works · Services ▾ · Our Work · Pay At Closing ·
-//   For Brokerages · phone · Log in · [Get a free estimate]
+//   For Brokerages · phone · Log in · [Free quote]
 //
 // v2 revisions: a persistent gold CTA lives in the bar (the bar is fixed, so
 // it is sticky by construction — the primary action no longer disappears
@@ -188,7 +188,7 @@ export function HomeHeader() {
             {/* v2: the primary CTA no longer disappears after the hero — the
                 bar is fixed, so this button is the "sticky on scroll" CTA. */}
             <a className="dph-cta" href="#dp-zip">
-              Get a free estimate
+              Free quote
             </a>
 
             <button className="dph-burger" type="button" aria-label="Menu">
