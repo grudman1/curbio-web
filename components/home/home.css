@@ -295,8 +295,8 @@
    above it is the fallback for engines without svh. */
 .dp-hero {
   position: relative;
-  min-height: min(830px, calc(100vh - 100px));
-  min-height: min(830px, calc(100svh - 100px));
+  min-height: min(830px, calc(100vh - 145px));
+  min-height: min(830px, calc(100svh - 145px));
   display: flex; align-items: flex-end;
 }
 /* Flat 0.46 — the v1 value, restored (Gavin, Aug 6: the gradient read as
@@ -309,6 +309,22 @@
    leave the photo exactly as it looks now. */
 .dp-hero-scrim { position: absolute; inset: 0; background: rgba(13,37,77,0.46); }
 .dp-hero-inner { position: relative; width: 100%; padding-bottom: 140px; }
+/* Review line above the headline (Gavin, Aug 7 — credibility proof). Eyebrow
+   weight, NOT a badge: no background, no border, no pill. Pure #fff rather
+   than the .dp-hero-sub's rgba(255,255,255,0.92) because this is 14px text
+   over the flat 0.46 scrim, where the subhead already measures under AA —
+   every bit of luminance counts. See the scrim note above. */
+.dp-hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 9px;
+  margin: 0 0 20px; text-decoration: none;
+  font-family: var(--font-family-sans); font-weight: 600; font-size: 14px;
+  letter-spacing: 0.005em; line-height: 1.4; color: #fff;
+}
+.dp-hero-eyebrow:hover {
+  text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px;
+}
+.dp-hero-star { font-size: 15px; line-height: 1; color: var(--color-accent); }
+.dp-hero-eyebrow-sep { color: rgba(255,255,255,0.58); margin: 0 2px; }
 .dp-hero h1 {
   font-family: var(--font-family-serif); font-weight: 600; font-size: var(--text-display);
   line-height: 1.02; letter-spacing: -0.015em; color: var(--color-text-inverse);
@@ -326,18 +342,22 @@
 /* Same viewport cap per breakpoint. The subtrahend is the band's own height
    plus ~10px of breathing room, so the strip lands complete on the first
    screen without the hero giving up more height than it has to. Mobile's is
-   larger because the band stacks (label above logos) below 640px. */
+   larger because the band stacks (label above logos) below 640px.
+   RE-TUNED Aug 7: the trust strip added ~44px to the band (and more on
+   mobile, where it wraps to two lines), which left only 16px of the logo row
+   above the fold at 1280x800. 100 -> 145, and 130 -> 210 on mobile. If this
+   band changes height again, these move with it. */
 @media (max-width: 1024px) {
   .dp-hero {
-    min-height: min(700px, calc(100vh - 100px));
-    min-height: min(700px, calc(100svh - 100px));
+    min-height: min(700px, calc(100vh - 145px));
+    min-height: min(700px, calc(100svh - 145px));
   }
   .dp-hero-inner { padding-bottom: 96px; }
 }
 @media (max-width: 640px) {
   .dp-hero {
-    min-height: min(620px, calc(100vh - 130px));
-    min-height: min(620px, calc(100svh - 130px));
+    min-height: min(620px, calc(100vh - 210px));
+    min-height: min(620px, calc(100svh - 210px));
   }
   .dp-hero-inner { padding-bottom: 64px; }
   .dp-hero-sub { font-size: 18px; }
@@ -452,6 +472,17 @@
   border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border);
   padding: 30px 0;
 }
+/* Trust strip — restored verbatim from 4223269 (typography, dividers, the
+   navy-<b>-on-muted treatment), with one change: justify-content is
+   flex-start, not center, so it sits with the left-aligned logo rail beneath
+   it rather than floating on its own axis. No amber, no pills — by brief. */
+.dp-proof-stats {
+  display: flex; align-items: baseline; justify-content: flex-start; flex-wrap: wrap;
+  gap: 10px 0; margin: 0 0 22px;
+}
+.dp-proof-stat { font-family: var(--font-family-sans); font-size: 15.5px; color: var(--color-text-muted); }
+.dp-proof-stat b { color: var(--color-text); font-weight: 700; }
+.dp-proof-sep { margin: 0 18px; color: var(--color-text-subtle); }
 .dp-proof-row { display: flex; align-items: center; gap: 44px; }
 .dp-proof-label {
   flex: 0 0 auto; max-width: 200px; margin: 0;
@@ -470,6 +501,11 @@
   .dp-proof { padding: 24px 0; }
   .dp-proof-row { flex-direction: column; align-items: flex-start; gap: 16px; }
   .dp-proof-label { max-width: none; }
+  /* The strip wraps to two lines here — tighten the dividers so a pair still
+     fits per line rather than breaking one signal per row. */
+  .dp-proof-stats { margin-bottom: 18px; }
+  .dp-proof-stat { font-size: 14px; }
+  .dp-proof-sep { margin: 0 10px; }
   .dp-marquee { width: 100%; }
 }
 

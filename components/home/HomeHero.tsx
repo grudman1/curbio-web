@@ -50,6 +50,32 @@ export function HomeHero() {
       />
       <div className="dp-hero-scrim" />
       <div className="dp-container dp-hero-inner">
+        {/* Review line — eyebrow weight on purpose: it must not compete with
+            the headline, so it is 14px/600 next to a ~76px serif, and it is a
+            plain link, not a badge (no pill, no background).
+
+            No crowding risk against the "Pay at closing" utility strip: that
+            strip is pinned to the TOP of the page inside the header, and hero
+            content is BOTTOM-aligned (.dp-hero align-items:flex-end, 140px
+            bottom padding) — they are at opposite ends of the viewport.
+
+            The star is aria-hidden and the link carries its own label, so a
+            screen reader gets one clean sentence instead of "black star 4.8
+            slash 5 middle dot". */}
+        <a
+          className="dp-hero-eyebrow"
+          href="https://www.featuredcustomers.com/vendor/curbio"
+          target="_blank"
+          rel="noopener"
+          aria-label="Rated 4.8 out of 5 from 1,776 reviews — read them on FeaturedCustomers (opens in a new tab)"
+        >
+          <span className="dp-hero-star" aria-hidden="true">
+            &#9733;
+          </span>
+          <span aria-hidden="true">
+            4.8/5 <span className="dp-hero-eyebrow-sep">&middot;</span> 1,776 reviews
+          </span>
+        </a>
         <h1>Stress less. Sell more.</h1>
         <p className="dp-hero-sub">
           We do the repairs and updates that get homes sold — your seller pays nothing until

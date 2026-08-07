@@ -1,19 +1,28 @@
 import { BROKERAGE_LOGOS } from "@/lib/partners";
 
-// Proof band — one compact row: label left, scrolling brokerage logos right.
+// Proof band — two rows: the trust strip, then the brokerage logo marquee.
 //
-// The stats row ("8,000+ homes prepped · [rating] from [count] agent reviews ·
-// 1-year warranty · Licensed and insured") was dropped (Gavin, Aug 6). It took
-// this section's two unsourced placeholders with it, and collapsing to a
-// single row cut the band from ~190px to ~90px — which is what lets the whole
-// strip sit on screen at landing, the Guest House proportion.
+// The stats row was dropped Aug 6 because two of its four figures were
+// unsourced placeholders ([rating] from [count] agent reviews). It is BACK
+// as of Aug 7 with real, final numbers — and the review figure it used to
+// carry now lives in the hero eyebrow instead, so nothing is said twice.
 //
-// Placeholders still live elsewhere on the page: AwardsStrip carries five
-// ([Award] ×2, [rating], [count], [press]). Removing them here did not clear
-// the page.
+// This is the original row restored, not a new component: the markup and the
+// .dp-proof-stat* rules are the ones from 4223269. The only deliberate change
+// is alignment — the row is left-aligned to sit with the "Trusted by agents
+// at" rail below it, where v1 centred it against a centred label.
 //
-// If the stats come back with real numbers, they belong on their own row
-// again; the marquee is the part that has to stay compact.
+// Reads as one credibility zone with the hero: review line -> trust strip ->
+// logos. Trust signals, not a CTA — navy on muted, thin dividers, no amber
+// anywhere ("if everything is amber, nothing is").
+//
+// KEEPING THE LOGOS ON SCREEN AT LANDING is a standing requirement (Gavin,
+// Aug 6). The hero is viewport-capped by this band's height — see the
+// subtrahend in .dp-hero — so growing this band means growing that number.
+// It was re-tuned with this row; if you add to this band, re-tune it again.
+//
+// Placeholders still live elsewhere: AwardsStrip carries five
+// ([Award] ×2, [rating], [count], [press]).
 //
 // Logos: each declared once in CSS custom properties (see .dp-logo) — never
 // repeated <img> tags; the duplicate loop track is aria-hidden.
@@ -41,15 +50,44 @@ function LogoRow({ hidden }: { hidden?: boolean }) {
   );
 }
 
+// All four are real and final. The review figure deliberately is NOT here —
+// it is the hero eyebrow, and repeating it would spend the same proof twice.
+const STATS: React.ReactNode[] = [
+  <>
+    <b>8,000+</b> homes prepped
+  </>,
+  <>
+    <b>$0</b> until closing
+  </>,
+  <>
+    <b>1-year</b> warranty
+  </>,
+  <>Licensed &amp; insured</>,
+];
+
 export function ProofBand() {
   return (
-    <section className="dp-proof" aria-label="Brokerages Curbio agents work with">
-      <div className="dp-container dp-proof-row">
-        <p className="dp-proof-label">Trusted by agents at</p>
-        <div className="dp-marquee" data-animated="true">
-          <div className="dp-marquee-track">
-            <LogoRow />
-            <LogoRow hidden />
+    <section className="dp-proof" aria-label="Why agents trust Curbio">
+      <div className="dp-container">
+        <p className="dp-proof-stats">
+          {STATS.map((s, i) => (
+            <span key={i} className="dp-proof-stat">
+              {s}
+              {i < STATS.length - 1 && (
+                <span className="dp-proof-sep" aria-hidden="true">
+                  &middot;
+                </span>
+              )}
+            </span>
+          ))}
+        </p>
+        <div className="dp-proof-row">
+          <p className="dp-proof-label">Trusted by agents at</p>
+          <div className="dp-marquee" data-animated="true">
+            <div className="dp-marquee-track">
+              <LogoRow />
+              <LogoRow hidden />
+            </div>
           </div>
         </div>
       </div>
