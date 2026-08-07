@@ -4,7 +4,7 @@ import { HomeHeader } from "@/components/home/HomeHeader";
 import { HomeHero } from "@/components/home/HomeHero";
 import { ProofBand } from "@/components/home/ProofBand";
 import { HowItWorks } from "@/components/home/HowItWorks";
-import { PayAtClosing } from "@/components/home/PayAtClosing";
+import { QualifyCard } from "@/components/home/QualifyCard";
 import { DealTimeline } from "@/components/home/DealTimeline";
 import { MoveInStats } from "@/components/home/MoveInStats";
 import { SixWaysIn } from "@/components/home/SixWaysIn";
@@ -20,13 +20,17 @@ import "@/components/home/home.css";
 // ─────────────────────────────────────────────────────────────────────────────
 // /home-preview — the homepage design preview, v2.
 //
-// v1 was the faithful port of the approved design file; v2 applies the
-// written homepage revisions (Aug 2026): reordered around what Curbio does
-// and pay-at-closing, split hero with the transformation video, proof band,
-// how-it-works, audience router, app + awards sections. Removed: the
-// editorial paragraph, the Notable estimator, the results marquee (its
-// category cards were flagged stand-ins), and the standalone quotes block
-// (both quotes moved onto the router cards).
+// v1 was the faithful port of the approved design file; v2 reordered the
+// page around what Curbio does and pay-at-close, and added the proof band,
+// how-it-works, audience router, and app + awards sections. Removed and
+// still gone: the editorial paragraph, the results marquee (its category
+// cards were flagged stand-ins), and the standalone quotes block (both
+// quotes moved onto the router cards).
+//
+// Two things v2 changed have since been changed back, both by request:
+// the hero is the full-bleed photo again (not the split video layout —
+// that variant survives, unmounted, in HomeHeroVideo.tsx for the A/B), and
+// the Notable estimator is back in place of the navy pay-at-close ledger.
 //
 // Still NOT the homepage: unlinked, noindex/nofollow via config/routes.ts,
 // absent from sitemap and nav, 404s publicly on sell.curbio.com. Outside
@@ -52,7 +56,7 @@ export default function HomePreviewPage() {
       <HomeHero />
       <ProofBand />
       <HowItWorks />
-      <PayAtClosing />
+      <QualifyCard />
       <DealTimeline />
       <MoveInStats />
       <SixWaysIn />
