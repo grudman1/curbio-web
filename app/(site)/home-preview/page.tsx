@@ -39,7 +39,8 @@ import "@/components/home/home.css";
 // STUBS flagged inline: hero ZIP field and CTAs are inert (nothing touches
 // /api/lead or /api/resolve); router card targets are planned pages;
 // [rating]/[count]/awards are pending data; the app recording placeholder
-// was explicitly approved.
+// was explicitly approved. ONE exception is live: the Notable estimator
+// card calls Notable's real API via app/api/notable-estimate (no PII).
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {

@@ -765,6 +765,32 @@ select.dpl2-input{appearance:none;-webkit-appearance:none;
 .dpl2-btn:hover{background:var(--color-accent-hover)}
 .dpl2-fine{font-family:var(--font-family-sans);font-size:12.5px;line-height:1.55;text-align:center;
   color:var(--color-text-subtle);margin:14px 0 0}
+/* Live-estimator states (Aug 7): the card swaps form → result/denial once
+   Notable's numbers come back through /api/notable-estimate. */
+.dpl2-btn:disabled{opacity:.5;cursor:not-allowed}
+.dpl2-btn:disabled:hover{background:var(--color-accent)}
+.dpl2-state{font-family:var(--font-family-sans);font-size:13.5px;color:var(--color-text-muted);
+  margin:-4px 0 18px}
+.dpl2-state-change{background:none;border:0;padding:0;cursor:pointer;font:inherit;font-weight:600;
+  color:var(--color-accent);text-decoration:underline;text-underline-offset:3px}
+.dpl2-error{font-family:var(--font-family-sans);font-size:13px;line-height:1.5;text-align:center;
+  color:var(--color-state-error);margin:12px 0 0}
+.dpl2-error a{color:inherit}
+.dpl2-result-label{font-family:var(--font-family-sans);font-weight:600;font-size:13.5px;
+  color:var(--color-text-muted);margin:0 0 6px}
+.dpl2-result-amount{font-family:var(--font-family-serif);font-weight:600;font-size:46px;line-height:1.1;
+  letter-spacing:-0.02em;color:var(--color-text);margin:0 0 10px}
+.dpl2-result-rate{font-family:var(--font-family-sans);font-size:15px;line-height:1.5;
+  color:var(--color-text);margin:0 0 14px}
+.dpl2-result-note{font-family:var(--font-family-sans);font-size:12.5px;line-height:1.55;
+  color:var(--color-text-subtle);margin:0 0 20px}
+.dpl2-denial-h{font-family:var(--font-family-serif);font-weight:600;font-size:21px;
+  color:var(--color-text);margin:0 0 10px}
+.dpl2-denial-p{font-family:var(--font-family-sans);font-size:15px;line-height:1.6;
+  color:var(--color-text-muted);margin:0 0 20px}
+.dpl2-reset{display:block;margin:14px auto 0;background:none;border:0;padding:0;cursor:pointer;
+  font-family:var(--font-family-sans);font-size:13.5px;color:var(--color-text-muted);
+  text-decoration:underline;text-underline-offset:3px}
 @media (max-width:1024px){.dpl2-grid{grid-template-columns:1fr;gap:52px}.dpl2-card{max-width:520px}}
 @media (max-width:560px){.dpl2-card{padding:26px 22px 24px}}
 /* ── PORT v2: audience router — three cards, proof matched to audience ────── */
