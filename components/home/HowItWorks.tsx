@@ -50,6 +50,26 @@ const STEPS = [
     // Replaces the still that shipped in #33: same shot, but that still was
     // 2560x1387 and MEASURED 32% softer through the card's crop-and-resize —
     // more pixels, less real detail, i.e. an upscale of lower-res source.
+    //
+    // RE-EXTRACTED Aug 7 (Gavin: "still blurry") — 1.82x sharper measured
+    // through the real delivery pipeline, same frame. Two causes, neither of
+    // them the frame's resolution:
+    //
+    //   1. ASPECT. The card is 4:3 and the frame was 16:9, so object-fit
+    //      cover had to scale the bitmap to 494 CSS px to fill a 371px box.
+    //      At dpr 2 that needs 988px, but `sizes="30vw"` describes the
+    //      ELEMENT (371px), so next/image served 828 — a 19% UPSCALE of an
+    //      already-soft still. Cropping to 4:3 (1440x1080) at extraction
+    //      makes the served 828 an over-supply instead. Worth 1.21x alone.
+    //   2. It is a video frame — shallow depth of field, subject mid-motion.
+    //      A light unsharp (0.75) recovers what the codec smeared: 1.82x
+    //      total. Checked at display size for halos at 0.6/0.75/0.9.
+    //
+    // Do NOT swap this for a "sharper" frame without watching the clip: 25.0s
+    // sits in a soft valley (measured 119 vs 307 at 23.7s), but 23.7s is a
+    // DIFFERENT shot — there is a cut at ~24.8s — and the sharpest frames
+    // inside this shot (28.4-29.0s) have an out-of-focus foreground mass
+    // covering half the frame. 25.0s is the best usable frame of this shot.
     src: "/home/how/02-we-do-the-work.jpg",
     alt: "Curbio crews replacing a window on a home exterior",
   },
