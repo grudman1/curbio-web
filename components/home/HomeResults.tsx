@@ -1,44 +1,42 @@
-// "Results worth funding" — the scrolling services list. Cut in v2, back by
-// request (Gavin, Aug 7); recovered from history (4223269^) rather than
-// rebuilt, so the markup and the dpr-* styles are the v1 originals.
+// "Results worth funding" — the scrolling services list. Cut in v2, restored
+// in #37, and given its real ten services + photography on Aug 7 (Gavin).
 //
-// Card photos are CSS background-image classes (dpr-t0…t6 in home.css),
+// Card photos are CSS background-image classes (dpr-t0…t9 in home.css),
 // declared once each; the track renders TWICE for the seamless loop — the
 // keyframe translates -50% (minus half the gap) so copy 2 lands exactly
 // where copy 1 started. The second copy is aria-hidden, so a screen reader
-// hears the seven categories once, not fourteen.
+// hears the ten services once, not twenty.
 //
-// WHAT CHANGED FROM v1: the four-stat row above the marquee is not restored.
-// Its own footnote said the numbers came from a single closed project (395
-// Meeting St) and "should be replaced with portfolio-wide numbers before
-// this ships" — the same unsourced-stat problem that took the "8,000+ homes
-// prepped" bar off the proof band. The stat markup is one `git show
+// LABEL ONLY on the card — one line of text over the photo. The service
+// descriptions Gavin wrote were photo-selection direction, NOT card copy,
+// and deliberately don't appear here.
+//
+// The photos are real category photography now, one per service, replacing
+// the seven v1 stand-ins that were all exterior curb shots regardless of
+// label (a card reading "Baths" over a front lawn). Sources are Gavin's,
+// cropped to 560x800 — 2x the 280x400 card — so they hold on retina.
+//
+// STUB: "See all services" points at /services, which is `planned` in
+// config/pageRegistry.ts (linked in the nav, no route behind it yet). Same
+// status as the audience-router card targets.
+//
+// WHAT'S STILL NOT RESTORED: the four-stat row that sat above the marquee in
+// v1. Its own footnote said the numbers came from a single closed project
+// (395 Meeting St) and "should be replaced with portfolio-wide numbers
+// before this ships." Markup is one `git show
 // 4223269^:components/home/HomeResults.tsx` away when real numbers exist.
-//
-// ⚠️ PHOTOS DO NOT MATCH THEIR LABELS — DO NOT SHIP AS-IS.
-// v1's note called these "stand-ins pulled from the project library," which
-// undersells it. All seven files are EXTERIOR curb-appeal listing photos:
-// baths.jpg is a brick house and lawn, kitchens.jpg is a white ranch,
-// interior-paint.jpg is a brick colonial, flooring.jpg is a blue rowhouse.
-// Only "Exteriors" is honest by accident. A card reading "Baths" over a
-// front yard is wrong information on a page selling those services, not a
-// polish issue — which is likely why v2 cut the section rather than fix it.
-//
-// Nothing on disk can fix this: public/ has no interior category photography
-// (the lone real interior is home/how/caminito-herminia-kitchen.jpg). This
-// needs seven real category photos from Curbio's library before it ships.
-//
-// Secondary, once real photos exist: source these at 560x800 or better. The
-// current files are 360x480 against a 280x400 card, so they go soft at 2x.
 
 const CARDS = [
-  "Interior paint",
+  "Interior & exterior painting",
   "Flooring",
-  "Kitchens",
-  "Baths",
-  "Exteriors",
-  "Pressure washing",
-  "Landscaping",
+  "Kitchen updates",
+  "Bathroom updates",
+  "Lighting & electrical",
+  "Curb appeal & landscaping",
+  "Staging",
+  "Roofing & exterior repair",
+  "HVAC & plumbing",
+  "Deep cleaning & haul-away",
 ];
 
 function CardRow({ hidden }: { hidden?: boolean }) {
@@ -73,6 +71,11 @@ export function HomeResults() {
           <CardRow />
           <CardRow hidden />
         </div>
+      </div>
+      <div className="dp-container">
+        <a className="dpr-cta" href="/services">
+          See all services <span aria-hidden="true">&rarr;</span>
+        </a>
       </div>
     </section>
   );

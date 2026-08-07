@@ -25,8 +25,8 @@ import "@/components/home/home.css";
 // how-it-works, audience router, and app + awards sections. Removed and
 // still gone: the editorial paragraph and the standalone quotes block (both
 // quotes moved onto the router cards). The results marquee — the scrolling
-// services list — is back as of Aug 7, minus its single-project stat row;
-// its category photos are still stand-ins.
+// services list — is back as of Aug 7, minus its single-project stat row,
+// and now carries its real ten services with real category photography.
 //
 // "Six ways in" is gone with it (Gavin, Aug 7): the marquee replaces it as
 // the services section. What that dropped, if it's ever missed: per-service
@@ -49,8 +49,10 @@ import "@/components/home/home.css";
 // STUBS flagged inline: hero ZIP field and CTAs are inert (nothing touches
 // /api/lead or /api/resolve); router card targets are planned pages;
 // [rating]/[count]/awards are pending data; the app recording placeholder
-// was explicitly approved. ONE exception is live: the Notable estimator
-// card calls Notable's real API via app/api/notable-estimate (no PII).
+// was explicitly approved; the marquee's "See all services" points at
+// /services, which is `planned` in config/pageRegistry.ts. ONE exception is
+// live: the Notable estimator card calls Notable's real API via
+// app/api/notable-estimate (no PII).
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {

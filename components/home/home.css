@@ -734,7 +734,10 @@
 .dpr-marquee{margin-top:64px;overflow:hidden;
   -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 5%,#000 95%,transparent 100%);
   mask-image:linear-gradient(90deg,transparent 0,#000 5%,#000 95%,transparent 100%)}
-.dpr-track{display:flex;gap:14px;width:max-content;animation:dpr-scroll 64s linear infinite}
+/* 91s, not the v1 64s: the track carries 10 cards now instead of 7, and the
+   duration is for the WHOLE track — leaving it at 64s scrolled 43% faster
+   (46px/s vs the designed 32px/s). 91s restores the original cadence. */
+.dpr-track{display:flex;gap:14px;width:max-content;animation:dpr-scroll 91s linear infinite}
 .dpr-marquee:hover .dpr-track{animation-play-state:paused}
 @keyframes dpr-scroll{from{transform:translateX(0)}to{transform:translateX(calc(-50% - 7px))}}
 .dpr-card{position:relative;flex:none;width:280px;height:400px;border-radius:var(--radius-lg);
@@ -744,14 +747,34 @@
   -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);background:rgba(13,37,77,0.55);
   color:#fff;padding:7px 15px;border-radius:var(--radius-pill);
   font-family:var(--font-family-sans);font-weight:500;font-size:15px;line-height:1.4;margin:0}
-.dpr-t0{background-image:url(/home/results/interior-paint.jpg)}
+.dpr-t0{background-image:url(/home/results/interior-exterior-painting.jpg)}
 .dpr-t1{background-image:url(/home/results/flooring.jpg)}
-.dpr-t2{background-image:url(/home/results/kitchens.jpg)}
-.dpr-t3{background-image:url(/home/results/baths.jpg)}
-.dpr-t4{background-image:url(/home/results/exteriors.jpg)}
-.dpr-t5{background-image:url(/home/results/pressure-washing.jpg)}
-.dpr-t6{background-image:url(/home/results/landscaping.jpg)}
-@media (max-width:560px){.dpr-card{width:220px;height:314px}}
+.dpr-t2{background-image:url(/home/results/kitchen-updates.jpg)}
+.dpr-t3{background-image:url(/home/results/bathroom-updates.jpg)}
+.dpr-t4{background-image:url(/home/results/lighting-electrical.jpg)}
+.dpr-t5{background-image:url(/home/results/curb-appeal-landscaping.jpg)}
+.dpr-t6{background-image:url(/home/results/staging.jpg)}
+.dpr-t7{background-image:url(/home/results/roofing-exterior-repair.jpg)}
+.dpr-t8{background-image:url(/home/results/hvac-plumbing.jpg)}
+.dpr-t9{background-image:url(/home/results/deep-cleaning-haul-away.jpg)}
+/* Quiet CTA under the carousel — navy, small, centered. Deliberately not a
+   .dp-cta pill: the page already has a loud accent CTA in the nav and the
+   closer, and this one is a way out of the section, not a conversion point. */
+.dpr-cta{display:block;width:fit-content;margin:38px auto 0;
+  font-family:var(--font-family-sans);font-weight:600;font-size:14.5px;line-height:1.4;
+  color:var(--color-text);text-decoration:none;
+  transition:opacity 160ms}
+.dpr-cta span{display:inline-block;margin-left:3px;transition:transform 200ms var(--easing-out)}
+.dpr-cta:hover{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
+.dpr-cta:hover span{transform:translateX(3px)}
+/* Pills shrink with the card. The v1 labels were one or two short words
+   ("Baths", "Flooring"); the real service names are up to 25 characters, and
+   at the desktop 15px they measured 214-218px inside a 220px card — clipped
+   by the card's own overflow:hidden. */
+@media (max-width:560px){
+  .dpr-card{width:220px;height:314px}
+  .dpr-pill{font-size:13px;padding:6px 12px;bottom:16px}
+}
 @media (prefers-reduced-motion:reduce){.dpr-track{animation:none}.dpr-marquee{overflow-x:auto}}
 
 /* ── PORT: pay at close — Notable inline estimator (dpl2) ────────────────── */
