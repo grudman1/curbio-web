@@ -650,6 +650,17 @@
   }
 }
 
+/* PORT: tighter lead-in, for a section that follows the proof band (Gavin,
+   Aug 7 — "too much grey space between the scrolling banner and Curbio helps
+   you"). The band is a thin white strip, not a full section, so .dp-sect's
+   standard 130px lead-in reads as a gap rather than as rhythm — and it was
+   top-heavy besides, 130px above the headline against 64px below it.
+   Declared AFTER .dp-sect and its breakpoints: same specificity, so source
+   order is what makes these win. Keep it that way. */
+.dp-sect--tight-top { padding-top: 76px; }
+@media (max-width: 1024px) { .dp-sect--tight-top { padding-top: 60px; } }
+@media (max-width: 640px)  { .dp-sect--tight-top { padding-top: 44px; } }
+
 /* ── PORT: shared headings (were inline in the design file) ──────────────── */
 .dp-eyebrow {
   font-family: var(--font-family-sans); font-weight: 500; font-size: 15px;
