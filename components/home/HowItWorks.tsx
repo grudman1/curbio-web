@@ -46,6 +46,10 @@ const STEPS = [
     num: "02",
     title: "We do the work",
     line: "One project manager, crews moving at the pace of real estate — track every step in the app.",
+    // Frame at 0:25 of the Aaron Glines PM Spotlight cut (1080p, 19 Mbps).
+    // Replaces the still that shipped in #33: same shot, but that still was
+    // 2560x1387 and MEASURED 32% softer through the card's crop-and-resize —
+    // more pixels, less real detail, i.e. an upscale of lower-res source.
     src: "/home/how/02-we-do-the-work.jpg",
     alt: "Curbio crews replacing a window on a home exterior",
   },
