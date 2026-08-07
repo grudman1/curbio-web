@@ -1,27 +1,60 @@
 import Image from "next/image";
 
-// How it works — three steps, three words each, three images. This replaces
-// the removed editorial paragraph; no prose block anywhere on the page.
-// Photos are real project photography already in the library.
+// How it works — animated section title over three steps.
+//
+// ── The rotating headline ────────────────────────────────────────────────────
+// Navy "Curbio helps you" + an amber phrase that cycles vertically, modeled on
+// Opendoor's hero. Deliberately CSS-only, no JS:
+//
+//   • phrase 1 ("win the listing") is the FIRST PAINTED FRAME by construction —
+//     it's the first node in the track and the animation starts at translateY(0).
+//     A slow load, a JS failure, or reduced-motion all land on the strongest
+//     phrase rather than a blank box or a mid-cycle one.
+//   • the loop is seamless because phrase 1 is CLONED at the end of the track
+//     (data-loop-clone). The animation runs to the clone and resets to 0 —
+//     identical pixels, so the reset is invisible.
+//
+// ── Accessibility ───────────────────────────────────────────────────────────
+// A screen reader gets ONE complete sentence from the sr-only span; the
+// animated track is aria-hidden, so the rotating fragments are never announced
+// as five disconnected phrases. Under prefers-reduced-motion the animation is
+// off entirely and only phrase 1 shows (see home.css).
+
+const PHRASES = [
+  "win the listing",
+  "prep the house",
+  "list on time",
+  "impress the seller",
+  "close with confidence",
+];
+
+// The sentence a screen reader actually hears. Kept adjacent to PHRASES so the
+// two cannot drift apart.
+const SPOKEN = `Curbio helps you ${PHRASES.slice(0, -1).join(", ")}, and ${
+  PHRASES[PHRASES.length - 1]
+}.`;
 
 const STEPS = [
   {
     num: "01",
-    title: "Walk the house",
-    src: "/sold/northern-virginia/9420BianJac_GreatFalls.jpg",
-    alt: "A Curbio-prepped listing at the walkthrough stage",
+    title: "You win the listing",
+    line: "Your edge in the listing presentation: a licensed GC, market-ready prep, pay at close.",
+    src: "/home/how/01-win-the-listing.jpg",
+    alt: "An agent showing sellers a Curbio plan on a tablet in their kitchen",
   },
   {
     num: "02",
-    title: "Crews handle everything",
-    src: "/home/how/caminito-herminia-kitchen.jpg",
-    alt: "A kitchen renovated by Curbio crews — 5412 Caminito Herminia",
+    title: "We do the work",
+    line: "One project manager, crews moving at the pace of real estate — track every step in the app.",
+    src: "/home/how/02-we-do-the-work.jpg",
+    alt: "Curbio crews replacing a window on a home exterior",
   },
   {
     num: "03",
-    title: "Paid at closing",
-    src: "/home/deal/395-meeting-st-after-dusk.jpg",
-    alt: "A finished Curbio listing at dusk, sold",
+    title: "Seller pays at close",
+    line: "Nothing upfront; the project settles as one line when the home sells.",
+    src: "/home/how/03-pay-at-close.jpg",
+    alt: "Sellers holding a SOLD sign with their agent in the kitchen",
   },
 ];
 
@@ -29,17 +62,42 @@ export function HowItWorks() {
   return (
     <section className="dp-sect" id="how-it-works">
       <div className="dp-container">
-        <h2 className="dp-h2" style={{ maxWidth: "14em" }}>
-          How it works.
+        <h2 className="dp-h2 dp-rot-h2">
+          <span className="dp-sr-only">{SPOKEN}</span>
+          <span className="dp-rot" aria-hidden="true">
+            <span className="dp-rot-static">Curbio helps you</span>{" "}
+            <span className="dp-rot-mask">
+              <span className="dp-rot-track">
+                {PHRASES.map((p) => (
+                  <span key={p} className="dp-rot-item">
+                    {p}
+                  </span>
+                ))}
+                {/* Clone of phrase 1 — the animation ends here and snaps back
+                    to the real phrase 1, which is pixel-identical. */}
+                <span className="dp-rot-item" data-loop-clone="true">
+                  {PHRASES[0]}
+                </span>
+              </span>
+            </span>
+          </span>
         </h2>
+
         <div className="dp-how-grid">
           {STEPS.map((s) => (
             <div key={s.num} className="dp-how-step">
               <div className="dp-how-img">
-                <Image src={s.src} alt={s.alt} fill sizes="(max-width: 640px) 90vw, 30vw" style={{ objectFit: "cover" }} />
+                <Image
+                  src={s.src}
+                  alt={s.alt}
+                  fill
+                  sizes="(max-width: 640px) 90vw, 30vw"
+                  style={{ objectFit: "cover" }}
+                />
               </div>
               <p className="dp-how-num">{s.num}</p>
               <h3 className="dp-how-title">{s.title}</h3>
+              <p className="dp-how-line">{s.line}</p>
             </div>
           ))}
         </div>
