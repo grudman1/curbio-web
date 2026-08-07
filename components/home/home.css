@@ -47,22 +47,12 @@
   border-radius: var(--radius-pill); font-weight: 700; text-decoration: none; cursor: pointer; border: 0;
   transition: background 160ms; }
 .dp-cta:hover { background: var(--color-accent-hover); }
-.dp-row { display: grid; grid-template-columns: 72px 300px 1fr 160px; gap: 32px; align-items: baseline;
-  padding: 34px 0; border-top: 1px solid var(--color-border); transition: background 160ms; }
-.dp-row:last-of-type { border-bottom: 1px solid var(--color-border); }
-.dp-row:hover { background: var(--color-surface-raised); }
 .dp-leader { flex: 1; border-bottom: 1px dotted rgba(255,255,255,.32); margin: 0 12px 5px; }
 .dp-ulink { color: var(--color-text); text-decoration: underline; text-underline-offset: 5px;
   text-decoration-thickness: 1px; }
-
-/* PORT: the six-ways rows collapse on mobile (no artifact rule existed). */
-@media (max-width: 1024px) {
-  .dp-row { grid-template-columns: 48px 200px 1fr 120px; gap: 20px; }
-}
-@media (max-width: 640px) {
-  .dp-row { grid-template-columns: 40px 1fr auto; gap: 12px; padding: 24px 0; }
-  .dp-row > :nth-child(3) { grid-column: 2 / -1; grid-row: 2; }
-}
+/* .dp-row + its two breakpoints went with SixWaysIn (Gavin, Aug 7 — the
+   services marquee replaces that section). .dp-ulink stays: AudienceRouter
+   and OurWork still use it. */
 
 /* ── ARTIFACT: hero address search — the eXp pattern ─────────────────────── */
 .dp-hero-search {
@@ -561,8 +551,13 @@
    phrase measures ~385px against ~335px of usable width at a 375px viewport,
    which would scroll the page sideways. Scale the heading below 640px so the
    longest phrase always fits its own line. */
+/* .dp-h2.dp-rot-h2, not .dp-rot-h2: .dp-h2 sets font-size and is defined
+   LATER in this file (shared headings, below). At equal specificity the later
+   rule wins, so the single-class version of this rule never applied — the
+   headline stayed at 38px and kept overflowing. Verified by computed style
+   this time, not by projecting what the clamp should yield. */
 @media (max-width: 640px) {
-  .dp-rot-h2 { font-size: clamp(26px, 7.6vw, 38px); }
+  .dp-h2.dp-rot-h2 { font-size: clamp(26px, 7.6vw, 38px); }
 }
 
 /* Motion off entirely — the track stays at phrase 1, which the mask already
@@ -631,7 +626,11 @@
 .dps-foot{font-family:var(--font-family-sans);font-size:12.5px;line-height:1.6;color:var(--color-text-subtle);
   margin:26px 0 0;max-width:70ch}
 @media (max-width:1100px){.dps-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:620px){.dps-grid{grid-template-columns:1fr}.dps-card,.dps-video{min-height:260px}}
+/* min-height is for the text cards ONLY. .dps-video has aspect-ratio:16/9, and
+   a min-height taller than the ratio allows drives the WIDTH instead
+   (260 x 16/9 = 462px against ~335px of usable width at 375px) — that was the
+   page's largest mobile horizontal-scroll source. The ratio sizes it. */
+@media (max-width:620px){.dps-grid{grid-template-columns:1fr}.dps-card{min-height:260px}}
 
 /* ── PORT: section shells (backgrounds + vertical rhythm) ────────────────── */
 .dp-sect { padding: 130px 0 140px; }
@@ -639,17 +638,14 @@
 .dp-sect--sunken { background: var(--color-surface-sunken); }
 .dp-sect--deal { background: var(--color-surface-raised); padding: 130px 0 150px; }
 .dp-sect--work-gallery { background: var(--color-surface-raised); padding: 130px 0 150px; overflow: hidden; }
-.dp-sect--sixways { padding: 140px 0 150px; }
 .dp-sect--markets { padding: 140px 0 150px; border-bottom: 1px solid var(--color-border); }
 @media (max-width: 1024px) {
-  .dp-sect, .dp-sect--deal, .dp-sect--work-gallery,
-  .dp-sect--sixways, .dp-sect--markets {
+  .dp-sect, .dp-sect--deal, .dp-sect--work-gallery, .dp-sect--markets {
     padding-top: 88px; padding-bottom: 96px;
   }
 }
 @media (max-width: 640px) {
-  .dp-sect, .dp-sect--deal, .dp-sect--work-gallery,
-  .dp-sect--sixways, .dp-sect--markets {
+  .dp-sect, .dp-sect--deal, .dp-sect--work-gallery, .dp-sect--markets {
     padding-top: 64px; padding-bottom: 72px;
   }
 }
@@ -738,7 +734,10 @@
 .dpr-marquee{margin-top:64px;overflow:hidden;
   -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 5%,#000 95%,transparent 100%);
   mask-image:linear-gradient(90deg,transparent 0,#000 5%,#000 95%,transparent 100%)}
-.dpr-track{display:flex;gap:14px;width:max-content;animation:dpr-scroll 64s linear infinite}
+/* 91s, not the v1 64s: the track carries 10 cards now instead of 7, and the
+   duration is for the WHOLE track — leaving it at 64s scrolled 43% faster
+   (46px/s vs the designed 32px/s). 91s restores the original cadence. */
+.dpr-track{display:flex;gap:14px;width:max-content;animation:dpr-scroll 91s linear infinite}
 .dpr-marquee:hover .dpr-track{animation-play-state:paused}
 @keyframes dpr-scroll{from{transform:translateX(0)}to{transform:translateX(calc(-50% - 7px))}}
 .dpr-card{position:relative;flex:none;width:280px;height:400px;border-radius:var(--radius-lg);
@@ -748,14 +747,34 @@
   -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);background:rgba(13,37,77,0.55);
   color:#fff;padding:7px 15px;border-radius:var(--radius-pill);
   font-family:var(--font-family-sans);font-weight:500;font-size:15px;line-height:1.4;margin:0}
-.dpr-t0{background-image:url(/home/results/interior-paint.jpg)}
+.dpr-t0{background-image:url(/home/results/interior-exterior-painting.jpg)}
 .dpr-t1{background-image:url(/home/results/flooring.jpg)}
-.dpr-t2{background-image:url(/home/results/kitchens.jpg)}
-.dpr-t3{background-image:url(/home/results/baths.jpg)}
-.dpr-t4{background-image:url(/home/results/exteriors.jpg)}
-.dpr-t5{background-image:url(/home/results/pressure-washing.jpg)}
-.dpr-t6{background-image:url(/home/results/landscaping.jpg)}
-@media (max-width:560px){.dpr-card{width:220px;height:314px}}
+.dpr-t2{background-image:url(/home/results/kitchen-updates.jpg)}
+.dpr-t3{background-image:url(/home/results/bathroom-updates.jpg)}
+.dpr-t4{background-image:url(/home/results/lighting-electrical.jpg)}
+.dpr-t5{background-image:url(/home/results/curb-appeal-landscaping.jpg)}
+.dpr-t6{background-image:url(/home/results/staging.jpg)}
+.dpr-t7{background-image:url(/home/results/roofing-exterior-repair.jpg)}
+.dpr-t8{background-image:url(/home/results/hvac-plumbing.jpg)}
+.dpr-t9{background-image:url(/home/results/deep-cleaning-haul-away.jpg)}
+/* Quiet CTA under the carousel — navy, small, centered. Deliberately not a
+   .dp-cta pill: the page already has a loud accent CTA in the nav and the
+   closer, and this one is a way out of the section, not a conversion point. */
+.dpr-cta{display:block;width:fit-content;margin:38px auto 0;
+  font-family:var(--font-family-sans);font-weight:600;font-size:14.5px;line-height:1.4;
+  color:var(--color-text);text-decoration:none;
+  transition:opacity 160ms}
+.dpr-cta span{display:inline-block;margin-left:3px;transition:transform 200ms var(--easing-out)}
+.dpr-cta:hover{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
+.dpr-cta:hover span{transform:translateX(3px)}
+/* Pills shrink with the card. The v1 labels were one or two short words
+   ("Baths", "Flooring"); the real service names are up to 25 characters, and
+   at the desktop 15px they measured 214-218px inside a 220px card — clipped
+   by the card's own overflow:hidden. */
+@media (max-width:560px){
+  .dpr-card{width:220px;height:314px}
+  .dpr-pill{font-size:13px;padding:6px 12px;bottom:16px}
+}
 @media (prefers-reduced-motion:reduce){.dpr-track{animation:none}.dpr-marquee{overflow-x:auto}}
 
 /* ── PORT: pay at close — Notable inline estimator (dpl2) ────────────────── */

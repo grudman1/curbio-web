@@ -8,7 +8,6 @@ import { QualifyCard } from "@/components/home/QualifyCard";
 import { DealTimeline } from "@/components/home/DealTimeline";
 import { MoveInStats } from "@/components/home/MoveInStats";
 import { HomeResults } from "@/components/home/HomeResults";
-import { SixWaysIn } from "@/components/home/SixWaysIn";
 import { AudienceRouter } from "@/components/home/AudienceRouter";
 import { OurWork } from "@/components/home/OurWork";
 import { MarketsManagers } from "@/components/home/MarketsManagers";
@@ -26,8 +25,17 @@ import "@/components/home/home.css";
 // how-it-works, audience router, and app + awards sections. Removed and
 // still gone: the editorial paragraph and the standalone quotes block (both
 // quotes moved onto the router cards). The results marquee — the scrolling
-// services list — is back as of Aug 7, minus its single-project stat row;
-// its category photos are still stand-ins.
+// services list — is back as of Aug 7, minus its single-project stat row,
+// and now carries its real ten services with real category photography.
+//
+// "Six ways in" is gone with it (Gavin, Aug 7): the marquee replaces it as
+// the services section. What that dropped, if it's ever missed: per-service
+// TIMELINES (1–3 weeks / 4–8 weeks / days / pre-settlement), the one-line
+// descriptions, and the engagement-type taxonomy — Refreshes, Remodels,
+// Repairs, Listing prep, Inspection repairs, Staging. The marquee names
+// work categories instead (Interior paint, Flooring, Kitchens…), so the two
+// aren't the same axis and no timing survives on the page. Recoverable at
+// `git show f3e74ea:components/home/SixWaysIn.tsx`.
 //
 // Two things v2 changed have since been changed back, both by request:
 // the hero is the full-bleed photo again (not the split video layout —
@@ -41,8 +49,10 @@ import "@/components/home/home.css";
 // STUBS flagged inline: hero ZIP field and CTAs are inert (nothing touches
 // /api/lead or /api/resolve); router card targets are planned pages;
 // [rating]/[count]/awards are pending data; the app recording placeholder
-// was explicitly approved. ONE exception is live: the Notable estimator
-// card calls Notable's real API via app/api/notable-estimate (no PII).
+// was explicitly approved; the marquee's "See all services" points at
+// /services, which is `planned` in config/pageRegistry.ts. ONE exception is
+// live: the Notable estimator card calls Notable's real API via
+// app/api/notable-estimate (no PII).
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {
@@ -63,7 +73,6 @@ export default function HomePreviewPage() {
       <DealTimeline />
       <MoveInStats />
       <HomeResults />
-      <SixWaysIn />
       <AudienceRouter />
       <OurWork />
       <MarketsManagers />
