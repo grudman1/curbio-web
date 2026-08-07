@@ -7,6 +7,7 @@ import { HowItWorks } from "@/components/home/HowItWorks";
 import { QualifyCard } from "@/components/home/QualifyCard";
 import { DealTimeline } from "@/components/home/DealTimeline";
 import { MoveInStats } from "@/components/home/MoveInStats";
+import { HomeResults } from "@/components/home/HomeResults";
 import { SixWaysIn } from "@/components/home/SixWaysIn";
 import { AudienceRouter } from "@/components/home/AudienceRouter";
 import { OurWork } from "@/components/home/OurWork";
@@ -23,9 +24,10 @@ import "@/components/home/home.css";
 // v1 was the faithful port of the approved design file; v2 reordered the
 // page around what Curbio does and pay-at-close, and added the proof band,
 // how-it-works, audience router, and app + awards sections. Removed and
-// still gone: the editorial paragraph, the results marquee (its category
-// cards were flagged stand-ins), and the standalone quotes block (both
-// quotes moved onto the router cards).
+// still gone: the editorial paragraph and the standalone quotes block (both
+// quotes moved onto the router cards). The results marquee — the scrolling
+// services list — is back as of Aug 7, minus its single-project stat row;
+// its category photos are still stand-ins.
 //
 // Two things v2 changed have since been changed back, both by request:
 // the hero is the full-bleed photo again (not the split video layout —
@@ -60,6 +62,7 @@ export default function HomePreviewPage() {
       <QualifyCard />
       <DealTimeline />
       <MoveInStats />
+      <HomeResults />
       <SixWaysIn />
       <AudienceRouter />
       <OurWork />
