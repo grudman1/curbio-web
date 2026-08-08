@@ -24,7 +24,9 @@ import { useCallback, useEffect, useRef } from "react";
 // auto-advance at all — but it stays scrollable and draggable, so the content
 // is still reachable.
 
-const SPEED_PX_PER_SEC = 48;
+// 2x the previous 48 (Gavin, Aug 8). One copy of the row is ~2,330px, so a
+// full pass now takes ~24s instead of ~49s.
+const SPEED_PX_PER_SEC = 96;
 
 export function ServicesMarquee({ children }: { children: React.ReactNode }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
