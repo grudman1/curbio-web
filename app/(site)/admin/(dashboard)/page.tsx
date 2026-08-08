@@ -49,6 +49,12 @@ function previewPlan(entries: RegistryEntry[]) {
       cards.push({ entry: e, src: "/lp/sell/confirm?market=atlanta", note: "shown: sell/atlanta" });
       continue;
     }
+    if (e.path === "/") {
+      // The homepage is being BUILT at /home-preview; the placeholder at /
+      // is not worth a preview. One page, one card.
+      cards.push({ entry: e, src: "/home-preview", note: e.note });
+      continue;
+    }
     cards.push({ entry: e, src: e.path, note: e.note });
   }
   return cards;

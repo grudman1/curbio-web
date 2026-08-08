@@ -2,7 +2,6 @@ import { ROUTES } from "./routes";
 import { MARKETS, marketPath } from "./markets";
 import { CAMPAIGNS } from "./campaigns";
 import { NAVIGATION, isGroup } from "./navigation";
-import { exp } from "./campaigns/exp";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PAGE REGISTRY — the Phase 3 build tracker.
@@ -68,11 +67,16 @@ function implementedPages(): RegistryEntry[] {
 
   // Campaign tier — one entry per registered campaign, plus its per-market
   // variants when it has a picker.
+  // Titles here are ADMIN DISPLAY NAMES — this registry feeds only the
+  // Control Room's Pages tab, so keep them as simple as possible. The pages'
+  // real <title>/SEO strings live in each campaign's `meta`, untouched.
+  const simpleName = (slug: string) =>
+    `${slug.charAt(0).toUpperCase()}${slug.slice(1)} Campaign`;
   for (const c of CAMPAIGNS) {
     out.push({
       path: `/lp/${c.slug}`,
       group: "campaigns",
-      title: c.meta?.title ?? `Campaign: ${c.slug}`,
+      title: simpleName(c.slug),
       status: "live",
       indexed: false, // campaign tier, permanently
       derivedFrom: "config/campaigns",
@@ -81,7 +85,7 @@ function implementedPages(): RegistryEntry[] {
       out.push({
         path: `/lp/${c.slug}/m/:market`,
         group: "campaigns",
-        title: `${c.slug} — per-market (${MARKETS.length} variants)`,
+        title: `${simpleName(c.slug)} — per-market (${MARKETS.length} variants)`,
         status: "live",
         indexed: false,
         derivedFrom: "config/campaigns × config/markets",
@@ -91,7 +95,7 @@ function implementedPages(): RegistryEntry[] {
   out.push({
     path: "/lp/:campaign/confirm",
     group: "campaigns",
-    title: "Booking confirmation",
+    title: "Booking Confirmation",
     status: "live",
     indexed: false,
     derivedFrom: "config/routes.ts",
@@ -101,7 +105,7 @@ function implementedPages(): RegistryEntry[] {
   out.push({
     path: "/exp",
     group: "site",
-    title: exp.meta?.title ?? "eXp partner page",
+    title: "eXp Partner Page",
     status: "live",
     indexed: indexedFor("/exp"),
     derivedFrom: "config/campaigns/exp.ts",
@@ -109,35 +113,30 @@ function implementedPages(): RegistryEntry[] {
   out.push({
     path: "/exp/m/:market",
     group: "site",
-    title: `eXp — per-market (${MARKETS.length} variants)`,
+    title: `eXp Partner Page — per-market (${MARKETS.length} variants)`,
     status: "live",
     indexed: indexedFor("/exp/m/:market"),
     derivedFrom: "config/campaigns/exp.ts × config/markets",
   });
 
   // Site tier.
+  // ONE homepage entry. The real homepage is being built at /home-preview and
+  // replaces the placeholder at / on sign-off — two routes, one page. The
+  // Pages tab previews /home-preview because that IS the homepage; the
+  // placeholder at / is an implementation detail, not a second page.
   out.push({
     path: "/",
     group: "site",
     title: "Homepage",
-    status: "stub",
+    status: "stub", // building at /home-preview; promoted to / on sign-off
     indexed: false,
-    derivedFrom: "app/(site)/(chrome)/page.tsx",
-    note: "placeholder — Phase 3 builds the real one",
-  });
-  out.push({
-    path: "/home-preview",
-    group: "site",
-    title: "Homepage — design preview",
-    status: "stub", // renders, unlinked, awaiting sign-off before it becomes "/"
-    indexed: indexedFor("/home-preview"),
-    derivedFrom: "app/(site)/home-preview",
-    note: "approved design, ported — promoted to / only on explicit sign-off",
+    derivedFrom: "app/(site)/home-preview → app/(site)/(chrome)/page.tsx",
+    note: "building at /home-preview — replaces the placeholder at / on sign-off",
   });
   out.push({
     path: "/markets",
     group: "site",
-    title: "Markets index",
+    title: "Markets Index",
     status: "live",
     indexed: indexedFor("/markets"),
     derivedFrom: "config/routes.ts",
@@ -146,7 +145,7 @@ function implementedPages(): RegistryEntry[] {
     out.push({
       path: marketPath(m.slug),
       group: "site",
-      title: `Market: ${m.displayName}`,
+      title: m.displayName,
       status: "stub", // template renders; the marketing content is not written
       indexed: indexedFor("/markets/:slug"),
       derivedFrom: "config/markets.ts",
@@ -165,7 +164,7 @@ function implementedPages(): RegistryEntry[] {
   out.push({
     path: "/admin/leads",
     group: "internal",
-    title: "Lead feed & delivery",
+    title: "Leads",
     status: "live",
     indexed: false,
     derivedFrom: "app/(site)/admin/(dashboard)/leads",
@@ -174,7 +173,7 @@ function implementedPages(): RegistryEntry[] {
   out.push({
     path: "/admin/design-system",
     group: "internal",
-    title: "Design system reference",
+    title: "Design System",
     status: "live",
     indexed: false,
     derivedFrom: "app/(site)/admin/design-system",
