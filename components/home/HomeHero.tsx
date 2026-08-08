@@ -54,27 +54,32 @@ export function HomeHero() {
             the headline, so it is 14px/600 next to a ~76px serif, and it is a
             plain link, not a badge (no pill, no background).
 
+            FIVE STARS, IN REVIEW-GREEN. The green is the only green on the
+            page and it is load-bearing, not decoration: green + five filled
+            stars is the visual grammar of third-party review platforms, so
+            the line reads as "someone else vouched for us" at a glance.
+            Navy would read as Curbio talking about itself, and amber is
+            reserved for CTAs. See --review-green in home.css.
+
             No crowding risk against the "Pay at closing" utility strip: that
             strip is pinned to the TOP of the page inside the header, and hero
             content is BOTTOM-aligned (.dp-hero align-items:flex-end, 140px
             bottom padding) — they are at opposite ends of the viewport.
 
-            The star is aria-hidden and the link carries its own label, so a
-            screen reader gets one clean sentence instead of "black star 4.8
-            slash 5 middle dot". */}
+            The stars are aria-hidden and the link carries its own label, so a
+            screen reader gets one clean sentence instead of five repetitions
+            of "black star". */}
         <a
           className="dp-hero-eyebrow"
           href="https://www.featuredcustomers.com/vendor/curbio"
           target="_blank"
-          rel="noopener"
-          aria-label="Rated 4.8 out of 5 from 1,776 reviews — read them on FeaturedCustomers (opens in a new tab)"
+          rel="noopener noreferrer"
+          aria-label="Rated 4.8 out of 5 stars from 1,776 Featured Customers (opens in a new tab)"
         >
-          <span className="dp-hero-star" aria-hidden="true">
-            &#9733;
+          <span className="dp-hero-stars" aria-hidden="true">
+            &#9733;&#9733;&#9733;&#9733;&#9733;
           </span>
-          <span aria-hidden="true">
-            4.8/5 <span className="dp-hero-eyebrow-sep">&middot;</span> 1,776 reviews
-          </span>
+          <span aria-hidden="true">4.8/5 stars from 1,776 Featured Customers</span>
         </a>
         <h1>Stress less. Sell more.</h1>
         <p className="dp-hero-sub">

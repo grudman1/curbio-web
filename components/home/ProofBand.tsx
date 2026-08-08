@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { BROKERAGE_LOGOS } from "@/lib/partners";
 
 // Proof band — two rows: the trust strip, then the brokerage logo marquee.
@@ -69,16 +70,21 @@ export function ProofBand() {
   return (
     <section className="dp-proof" aria-label="Why agents trust Curbio">
       <div className="dp-container">
+        {/* The dividers are SIBLINGS of the stats, not children of them. That
+            is what lets justify-content:space-between spread all seven items
+            across the full container width — with the divider nested inside
+            each stat it travelled with the text and the row stayed clustered
+            at the left margin. */}
         <p className="dp-proof-stats">
           {STATS.map((s, i) => (
-            <span key={i} className="dp-proof-stat">
-              {s}
+            <Fragment key={i}>
+              <span className="dp-proof-stat">{s}</span>
               {i < STATS.length - 1 && (
                 <span className="dp-proof-sep" aria-hidden="true">
                   &middot;
                 </span>
               )}
-            </span>
+            </Fragment>
           ))}
         </p>
         <div className="dp-proof-row">

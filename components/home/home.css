@@ -295,8 +295,8 @@
    above it is the fallback for engines without svh. */
 .dp-hero {
   position: relative;
-  min-height: min(830px, calc(100vh - 145px));
-  min-height: min(830px, calc(100svh - 145px));
+  min-height: min(830px, calc(100vh - 125px));
+  min-height: min(830px, calc(100svh - 125px));
   display: flex; align-items: flex-end;
 }
 /* Flat 0.46 — the v1 value, restored (Gavin, Aug 6: the gradient read as
@@ -307,7 +307,50 @@
    needs fixing without touching the wash, the light-touch options are a
    text-shadow on those two layers, or nudging them a step bolder — both
    leave the photo exactly as it looks now. */
-.dp-hero-scrim { position: absolute; inset: 0; background: rgba(13,37,77,0.46); }
+/* Two layers, on purpose.
+   BASE — a thin flat wash across the whole photo. Not for the hero text (the
+   gradient does that); it protects the HEADER, whose links are white and
+   float over the top-right, exactly where the gradient fades out. Drop this
+   and the nav goes illegible over the bright roofline.
+   GRADIENT — left-heavy, because every piece of hero text is in the left
+   column. The stops are set from MEASURED ink extents, not by eye: the
+   longest lines (headline 57.6%, search pill 53.7%, subhead 53%) all end
+   around the 58% mark, so the wash stays above the old flat 0.46 out to
+   there and only then falls away. Tuning the fade to start at 45% — which
+   looked right — put the end of the subhead in light wash and left its
+   darkest patch at 3.1:1.
+   Effective alpha: ~0.85 left edge -> ~0.51 at 58% (where text ends) ->
+   ~0.18 right edge, so the brick and lawn on the right read BRIGHTER than
+   under the old flat scrim, not darker. The photo opens up; the text gets a
+   floor. */
+.dp-hero-scrim {
+  position: absolute; inset: 0;
+  background:
+    /* TOP EDGE — under the header only, fading out by 190px. The nav's white
+       links live in the top-RIGHT, precisely where the horizontal gradient
+       has cleared; without this, "Log in" and the phone measured 3.2:1 and
+       3.8:1 against ~5.5 under the old flat scrim. Fixing that by lifting
+       the base wash would have darkened the entire photo, which is the thing
+       this change is trying to avoid — so it is spent where it is needed. */
+    linear-gradient(180deg,
+      rgba(8,24,50,0.42) 0px,
+      rgba(8,24,50,0.30) 90px,
+      rgba(8,24,50,0) 190px),
+    linear-gradient(90deg,
+      rgba(8,24,50,0.82) 0%,
+      rgba(8,24,50,0.74) 26%,
+      rgba(9,27,56,0.56) 48%,
+      rgba(11,32,66,0.28) 66%,
+      rgba(13,37,77,0.08) 82%,
+      rgba(13,37,77,0) 94%),
+    rgba(13,37,77,0.18);
+}
+/* Below 1024 the column is full-bleed, so a horizontal fade would strand the
+   right half of the text. Go back to an even wash there, a little heavier
+   than the old flat value since it is now the only thing under the text. */
+@media (max-width: 1024px) {
+  .dp-hero-scrim { background: rgba(11,30,62,0.56); }
+}
 .dp-hero-inner { position: relative; width: 100%; padding-bottom: 140px; }
 /* Review line above the headline (Gavin, Aug 7 — credibility proof). Eyebrow
    weight, NOT a badge: no background, no border, no pill. Pure #fff rather
@@ -323,8 +366,21 @@
 .dp-hero-eyebrow:hover {
   text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px;
 }
-.dp-hero-star { font-size: 15px; line-height: 1; color: var(--color-accent); }
-.dp-hero-eyebrow-sep { color: rgba(255,255,255,0.58); margin: 0 2px; }
+/* The ONLY green on this page, and deliberately not a design token: it is not
+   part of Curbio's palette and must never spread. Green + five filled stars
+   is the review-platform convention (Trustpilot's #00B67A), which is the
+   whole point — it signals third-party, not first-party. Amber stays on CTAs,
+   navy stays on brand. If this colour ever appears anywhere else, that is a
+   bug. Nudged one step brighter than stock Trustpilot green so it holds up
+   against a photo instead of a white card. */
+.dp-hero-stars {
+  --review-green: #14c98e;
+  color: var(--review-green);
+  font-size: 15px; line-height: 1; letter-spacing: 1.5px;
+  /* the glyph's own right-side bearing plus letter-spacing double up */
+  margin-right: -1.5px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.28);
+}
 .dp-hero h1 {
   font-family: var(--font-family-serif); font-weight: 600; font-size: var(--text-display);
   line-height: 1.02; letter-spacing: -0.015em; color: var(--color-text-inverse);
@@ -343,14 +399,14 @@
    plus ~10px of breathing room, so the strip lands complete on the first
    screen without the hero giving up more height than it has to. Mobile's is
    larger because the band stacks (label above logos) below 640px.
-   RE-TUNED Aug 7: the trust strip added ~44px to the band (and more on
-   mobile, where it wraps to two lines), which left only 16px of the logo row
-   above the fold at 1280x800. 100 -> 145, and 130 -> 210 on mobile. If this
-   band changes height again, these move with it. */
+   RE-TUNED TWICE on Aug 7, and it moves with the band every time: the trust
+   strip first pushed the band 90 -> 134px (100 -> 145 here), then the polish
+   pass compressed it to 115px, so 145 -> 125. Mobile is 210 for a 194px
+   band. If this band changes height again, these move with it. */
 @media (max-width: 1024px) {
   .dp-hero {
-    min-height: min(700px, calc(100vh - 145px));
-    min-height: min(700px, calc(100svh - 145px));
+    min-height: min(700px, calc(100vh - 125px));
+    min-height: min(700px, calc(100svh - 125px));
   }
   .dp-hero-inner { padding-bottom: 96px; }
 }
@@ -361,6 +417,20 @@
   }
   .dp-hero-inner { padding-bottom: 64px; }
   .dp-hero-sub { font-size: 18px; }
+  /* "4.8/5 stars from 1,776 Featured Customers" plus five stars measures the
+     full usable width at 375px, so it scales with the viewport rather than
+     stepping — one fixed size either wrapped at 375 or went unreadably small
+     at 320. Below ~340px it still wraps, deliberately: row-gap keeps the
+     stars and the text as two tight lines instead of a broken one, which is
+     the lesser evil against an 11px eyebrow nobody would trust. */
+  .dp-hero-eyebrow {
+    font-size: clamp(11px, 3.3vw, 13px);
+    gap: 6px; row-gap: 1px; flex-wrap: wrap; max-width: 100%;
+    margin-bottom: 14px;
+  }
+  .dp-hero-stars {
+    font-size: clamp(11.5px, 3.4vw, 13.5px); letter-spacing: 0.8px; margin-right: -0.8px;
+  }
 }
 
 /* ── PORT v2: hero — "B" VARIANT: split layout, transformation video right ── */
@@ -467,22 +537,30 @@
    strip could sit fully on screen. Side by side it's ~90px, so the hero
    keeps its presence AND the whole strip lands above the fold — the Guest
    House proportion. */
+/* ONE credibility zone, not two stacked bands. Padding is 30 -> 16 and the
+   gap under the strip 22 -> 12, which takes the band 134px -> ~100px; the
+   only rule between strip and logos is a hairline at 55% alpha, so they read
+   as two rows of one thing rather than two bands with a hard edge. */
 .dp-proof {
   position: relative; background: var(--color-surface-raised);
   border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border);
-  padding: 30px 0;
+  padding: 16px 0 18px;
 }
-/* Trust strip — restored verbatim from 4223269 (typography, dividers, the
-   navy-<b>-on-muted treatment), with one change: justify-content is
-   flex-start, not center, so it sits with the left-aligned logo rail beneath
-   it rather than floating on its own axis. No amber, no pills — by brief. */
+/* Spread across the FULL container width — the four signals earn the whole
+   line, and ending flush right lines the strip up with the logo rail's right
+   edge below it. Dividers are siblings (see ProofBand.tsx), so they space out
+   with everything else instead of hugging the text. */
+/* NO rule between the strip and the logo rail. A hairline was tried and cut:
+   even at 55% alpha it drew a full-width line across the band and put the two
+   rows back into separate compartments, which is the exact thing this pass is
+   undoing. Tight spacing plus the shared surface does the grouping. */
 .dp-proof-stats {
-  display: flex; align-items: baseline; justify-content: flex-start; flex-wrap: wrap;
-  gap: 10px 0; margin: 0 0 22px;
+  display: flex; align-items: baseline; justify-content: space-between;
+  flex-wrap: wrap; gap: 6px 0; margin: 0 0 16px;
 }
 .dp-proof-stat { font-family: var(--font-family-sans); font-size: 15.5px; color: var(--color-text-muted); }
 .dp-proof-stat b { color: var(--color-text); font-weight: 700; }
-.dp-proof-sep { margin: 0 18px; color: var(--color-text-subtle); }
+.dp-proof-sep { color: var(--color-text-subtle); }
 .dp-proof-row { display: flex; align-items: center; gap: 44px; }
 .dp-proof-label {
   flex: 0 0 auto; max-width: 200px; margin: 0;
@@ -501,9 +579,9 @@
   .dp-proof { padding: 24px 0; }
   .dp-proof-row { flex-direction: column; align-items: flex-start; gap: 16px; }
   .dp-proof-label { max-width: none; }
-  /* The strip wraps to two lines here — tighten the dividers so a pair still
-     fits per line rather than breaking one signal per row. */
-  .dp-proof-stats { margin-bottom: 18px; }
+  /* space-between is wrong once this wraps — it strands the last line's items
+     at opposite edges. Pack left and give the dividers their margins back. */
+  .dp-proof-stats { justify-content: flex-start; margin-bottom: 14px; }
   .dp-proof-stat { font-size: 14px; }
   .dp-proof-sep { margin: 0 10px; }
   .dp-marquee { width: 100%; }
