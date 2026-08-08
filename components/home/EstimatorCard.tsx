@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CreditSelect } from "./CreditSelect";
 
 // The interactive half of "See what your seller qualifies for" — the first
 // live-wired element on this page. Split out of QualifyCard.tsx so the client
@@ -142,24 +143,16 @@ export function EstimatorCard() {
             }}
           >
             <div className="dpl2-field">
-              <label className="dpl2-label" htmlFor="dpl2-credit">
+              <label className="dpl2-label" id="dpl2-credit-label" htmlFor="dpl2-credit">
                 Seller&rsquo;s credit score
               </label>
-              <select
-                className="dpl2-input"
-                id="dpl2-credit"
+              <CreditSelect
+                bands={CREDIT_BANDS}
                 value={band}
-                onChange={(e) => setBand(e.target.value)}
-              >
-                <option value="" disabled>
-                  Select&hellip;
-                </option>
-                {CREDIT_BANDS.map((b) => (
-                  <option key={b.value} value={b.value}>
-                    {b.label}
-                  </option>
-                ))}
-              </select>
+                onChange={setBand}
+                id="dpl2-credit"
+                labelledBy="dpl2-credit-label"
+              />
             </div>
             <div className="dpl2-field">
               <label className="dpl2-label" htmlFor="dpl2-price">

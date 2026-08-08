@@ -14,6 +14,9 @@ import Image from "next/image";
 //     (data-loop-clone). The animation runs to the clone and resets to 0 —
 //     identical pixels, so the reset is invisible.
 //
+// The amber full stop after each phrase is part of the visible track only —
+// SPOKEN below already ends in one, so a screen reader does not hear five.
+//
 // ── Accessibility ───────────────────────────────────────────────────────────
 // A screen reader gets ONE complete sentence from the sr-only span; the
 // animated track is aria-hidden, so the rotating fragments are never announced
@@ -95,12 +98,15 @@ export function HowItWorks() {
                 {PHRASES.map((p) => (
                   <span key={p} className="dp-rot-item">
                     {p}
+                    <span className="dp-rot-dot">.</span>
                   </span>
                 ))}
                 {/* Clone of phrase 1 — the animation ends here and snaps back
-                    to the real phrase 1, which is pixel-identical. */}
+                    to the real phrase 1, which is pixel-identical. The dot has
+                    to be cloned too or the reset would visibly drop it. */}
                 <span className="dp-rot-item" data-loop-clone="true">
                   {PHRASES[0]}
+                  <span className="dp-rot-dot">.</span>
                 </span>
               </span>
             </span>
