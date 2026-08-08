@@ -326,30 +326,48 @@
 .dp-hero-scrim {
   position: absolute; inset: 0;
   background:
-    /* TOP EDGE — under the header only, fading out by 190px. The nav's white
-       links live in the top-RIGHT, precisely where the horizontal gradient
-       has cleared; without this, "Log in" and the phone measured 3.2:1 and
-       3.8:1 against ~5.5 under the old flat scrim. Fixing that by lifting
-       the base wash would have darkened the entire photo, which is the thing
-       this change is trying to avoid — so it is spent where it is needed. */
+    /* TOP EDGE — under the header only, fading out by 200px. The nav's white
+       links live top-RIGHT, where the vignette never reaches. */
     linear-gradient(180deg,
-      rgba(8,24,50,0.42) 0px,
-      rgba(8,24,50,0.30) 90px,
-      rgba(8,24,50,0) 190px),
-    linear-gradient(90deg,
-      rgba(8,24,50,0.82) 0%,
-      rgba(8,24,50,0.74) 26%,
-      rgba(9,27,56,0.56) 48%,
-      rgba(11,32,66,0.28) 66%,
-      rgba(13,37,77,0.08) 82%,
-      rgba(13,37,77,0) 94%),
-    rgba(13,37,77,0.18);
+      rgba(8,24,50,0.48) 0px,
+      rgba(8,24,50,0.34) 96px,
+      rgba(8,24,50,0) 210px),
+    /* THE TEXT VIGNETTE — a radial anchored at the bottom-left corner, where
+       the copy actually sits, NOT a left-half band.
+       A 90deg linear was tried first and cut: because it darkens by COLUMN,
+       it dims the full height of the photo — house, roof, sky — to protect
+       four lines of text in the bottom corner, and the falloff shows up as a
+       vertical wedge across the picture. A radial falls off in every
+       direction at once, so it hugs the text block and lets the house stay
+       lit. Same legibility, no slab. */
+    radial-gradient(88% 70% at 10% 58%,
+      rgba(5,17,38,0.92) 0%,
+      rgba(5,17,38,0.84) 20%,
+      rgba(6,20,44,0.66) 38%,
+      rgba(7,22,48,0.40) 55%,
+      rgba(9,26,54,0.16) 72%,
+      rgba(11,30,62,0.04) 85%,
+      rgba(11,30,62,0) 95%),
+    rgba(11,30,62,0.14);
 }
-/* Below 1024 the column is full-bleed, so a horizontal fade would strand the
-   right half of the text. Go back to an even wash there, a little heavier
-   than the old flat value since it is now the only thing under the text. */
+/* Text carries a little of its own contrast so the wash does not have to do
+   all of it. This is the "light touch" the old scrim note pointed at: 1-3px
+   of shadow is invisible as an effect but worth ~1.5 stops of separation
+   over a busy photo, which is what buys the vignette the right to stay
+   subtle. */
+.dp-hero-eyebrow, .dp-hero-sub, .dp-hero-formlabel {
+  text-shadow: 0 1px 3px rgba(4,14,32,0.55);
+}
+.dp-hero h1 { text-shadow: 0 2px 12px rgba(4,14,32,0.40); }
+/* Below 1024 the text column is nearly full-bleed, so a corner vignette would
+   strand its right end. An even wash instead — and a light one, because the
+   text-shadow above is doing part of the work now. */
 @media (max-width: 1024px) {
-  .dp-hero-scrim { background: rgba(11,30,62,0.56); }
+  .dp-hero-scrim {
+    background:
+      linear-gradient(180deg, rgba(8,24,50,0.34) 0px, rgba(8,24,50,0) 180px),
+      linear-gradient(0deg, rgba(7,22,48,0.62) 0%, rgba(8,24,50,0.40) 46%, rgba(11,30,62,0.30) 100%);
+  }
 }
 .dp-hero-inner { position: relative; width: 100%; padding-bottom: 140px; }
 /* Review line above the headline (Gavin, Aug 7 — credibility proof). Eyebrow
@@ -358,9 +376,9 @@
    over the flat 0.46 scrim, where the subhead already measures under AA —
    every bit of luminance counts. See the scrim note above. */
 .dp-hero-eyebrow {
-  display: inline-flex; align-items: center; gap: 9px;
-  margin: 0 0 20px; text-decoration: none;
-  font-family: var(--font-family-sans); font-weight: 600; font-size: 14px;
+  display: inline-flex; align-items: center; gap: 10px;
+  margin: 0 0 22px; text-decoration: none;
+  font-family: var(--font-family-sans); font-weight: 600; font-size: 15px;
   letter-spacing: 0.005em; line-height: 1.4; color: #fff;
 }
 .dp-hero-eyebrow:hover {
@@ -376,10 +394,12 @@
 .dp-hero-stars {
   --review-green: #14c98e;
   color: var(--review-green);
-  font-size: 15px; line-height: 1; letter-spacing: 1.5px;
+  /* Larger than the text it sits beside: at 15px the five glyphs read as a
+     smudge rather than as stars, which defeats the point of using them. */
+  font-size: 18px; line-height: 1; letter-spacing: 1.5px;
   /* the glyph's own right-side bearing plus letter-spacing double up */
   margin-right: -1.5px;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.28);
+  text-shadow: 0 1px 3px rgba(4,14,32,0.5);
 }
 .dp-hero h1 {
   font-family: var(--font-family-serif); font-weight: 600; font-size: var(--text-display);
@@ -550,17 +570,31 @@
    line, and ending flush right lines the strip up with the logo rail's right
    edge below it. Dividers are siblings (see ProofBand.tsx), so they space out
    with everything else instead of hugging the text. */
-/* NO rule between the strip and the logo rail. A hairline was tried and cut:
-   even at 55% alpha it drew a full-width line across the band and put the two
-   rows back into separate compartments, which is the exact thing this pass is
-   undoing. Tight spacing plus the shared surface does the grouping. */
+/* Four equal columns with hairline rules between them — NOT space-between.
+   space-between spread four variable-width phrases to the far corners and
+   left the middle two floating at uneven intervals, with the middot dividers
+   swallowed in the gaps; it read as stretched, not structured. An even grid
+   gives each signal the same room and the rules make the rhythm deliberate.
+   Text is left-aligned inside each cell so column 1 lines up with the
+   "Trusted by agents at" label directly beneath it.
+   No rule between the strip and the logo rail — a hairline there was tried
+   and cut: it split the band back into two compartments, the exact thing
+   this pass is undoing. Tight spacing on a shared surface does the grouping. */
 .dp-proof-stats {
-  display: flex; align-items: baseline; justify-content: space-between;
-  flex-wrap: wrap; gap: 6px 0; margin: 0 0 16px;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: baseline; margin: 0 0 14px;
 }
-.dp-proof-stat { font-family: var(--font-family-sans); font-size: 15.5px; color: var(--color-text-muted); }
+.dp-proof-stat {
+  font-family: var(--font-family-sans); font-size: 15px; line-height: 1.4;
+  color: var(--color-text-muted);
+  padding-left: clamp(16px, 2.4vw, 34px);
+  border-left: 1px solid var(--color-border);
+}
+.dp-proof-stat:first-child { padding-left: 0; border-left: 0; }
 .dp-proof-stat b { color: var(--color-text); font-weight: 700; }
-.dp-proof-sep { color: var(--color-text-subtle); }
+/* The middot dividers belong to the flex/wrap layout only (see the <=640
+   block); the grid uses rules instead. */
+.dp-proof-sep { display: none; }
 .dp-proof-row { display: flex; align-items: center; gap: 44px; }
 .dp-proof-label {
   flex: 0 0 auto; max-width: 200px; margin: 0;
@@ -579,11 +613,15 @@
   .dp-proof { padding: 24px 0; }
   .dp-proof-row { flex-direction: column; align-items: flex-start; gap: 16px; }
   .dp-proof-label { max-width: none; }
-  /* space-between is wrong once this wraps — it strands the last line's items
-     at opposite edges. Pack left and give the dividers their margins back. */
-  .dp-proof-stats { justify-content: flex-start; margin-bottom: 14px; }
-  .dp-proof-stat { font-size: 14px; }
-  .dp-proof-sep { margin: 0 10px; }
+  /* Four columns do not fit here — each cell would be ~78px wide. Back to an
+     inline run that wraps, with the middot dividers doing the separating
+     again since there are no columns to rule between. */
+  .dp-proof-stats {
+    display: flex; flex-wrap: wrap; align-items: baseline;
+    justify-content: flex-start; gap: 6px 0; margin-bottom: 14px;
+  }
+  .dp-proof-stat { font-size: 14px; padding-left: 0; border-left: 0; }
+  .dp-proof-sep { display: inline; margin: 0 10px; color: var(--color-text-subtle); }
   .dp-marquee { width: 100%; }
 }
 
