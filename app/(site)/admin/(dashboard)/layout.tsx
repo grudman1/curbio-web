@@ -7,7 +7,7 @@ import { logout } from "../login/actions";
 import { approveUserAction, denyUserAction } from "../actions";
 import { AlertBanner, type AlertEntry } from "./AlertBanner";
 import { Tabs } from "./Tabs";
-import { Meta, MUTED, Panel, SCAN, SUBTLE, mono } from "./ui";
+import { Meta, MUTED, Panel, SCAN, SUBTLE } from "./ui";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Control Room shell — shared by every tab.
@@ -90,7 +90,7 @@ function PendingRequestsPanel({ pending }: { pending: AdminUser[] }) {
             }}
           >
             <span style={{ flex: 1 }}>{u.email}</span>
-            <span style={{ fontFamily: mono, fontSize: 11, color: SUBTLE }}>
+            <span style={{ fontSize: "var(--text-label)", color: SUBTLE }}>
               {u.createdAt.slice(0, 10)}
             </span>
             <form action={approveUserAction}>
@@ -132,7 +132,6 @@ export default async function ControlRoomLayout({ children }: { children: React.
     listPendingUsers(),
   ]);
   const isOwner = me?.role === "owner";
-  const renderedAt = new Date().toISOString().replace("T", " ").replace(/\..*/, " UTC");
 
   return (
     <div
@@ -144,13 +143,13 @@ export default async function ControlRoomLayout({ children }: { children: React.
       }}
     >
       <main style={{ maxWidth: 1400, margin: "0 auto", padding: "28px 28px 96px" }}>
-        {/* ── header ── */}
-        <header style={{ marginBottom: "var(--space-5)" }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 16, flexWrap: "wrap" }}>
+        {/* ── header: title, signed-in user, sign-out. Nothing else. ── */}
+        <header style={{ marginBottom: "var(--space-6)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
             <h1
               style={{
                 fontFamily: "var(--font-family-serif)",
-                fontSize: 30,
+                fontSize: 32,
                 fontWeight: 600,
                 letterSpacing: "var(--tracking-heading)",
                 color: "var(--color-text)",
@@ -159,11 +158,7 @@ export default async function ControlRoomLayout({ children }: { children: React.
             >
               Control Room
             </h1>
-            <span style={{ fontFamily: mono, fontSize: 12, color: SUBTLE }}>
-              build {process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local"} ·{" "}
-              {process.env.VERCEL_ENV ?? "dev"} · rendered {renderedAt}
-            </span>
-            <span style={{ marginLeft: "auto", fontSize: 12.5, color: MUTED }}>
+            <span style={{ marginLeft: "auto", fontSize: "var(--text-small)", color: MUTED }}>
               {me?.email}
               {isOwner && <span style={{ color: SUBTLE }}> · owner</span>}
             </span>
@@ -184,12 +179,9 @@ export default async function ControlRoomLayout({ children }: { children: React.
               height: 3,
               background: "var(--color-accent)",
               borderRadius: 2,
-              marginTop: 12,
+              marginTop: 14,
             }}
           />
-          <p style={{ fontSize: "var(--text-micro)", color: SUBTLE, margin: "8px 0 0" }}>
-            read-only · identities masked
-          </p>
         </header>
 
         {/* ── alert banner: absent when healthy, first thing seen when not ── */}

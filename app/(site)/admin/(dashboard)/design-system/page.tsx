@@ -31,12 +31,11 @@ function Section({
     <section id={id} style={{ marginBottom: "var(--space-16)" }}>
       <h2
         style={{
-          fontFamily: "var(--font-family-sans)",
-          fontSize: "var(--text-label)",
-          fontWeight: "var(--weight-black)" as unknown as number,
-          letterSpacing: "var(--tracking-label)",
-          textTransform: "uppercase",
-          color: "var(--color-text-muted)",
+          fontFamily: "var(--font-family-serif)",
+          fontSize: 20,
+          fontWeight: "var(--weight-semibold)" as unknown as number,
+          letterSpacing: "var(--tracking-heading)",
+          color: "var(--color-text)",
           paddingBottom: "var(--space-3)",
           borderBottom: "1px solid var(--color-border)",
           marginBottom: "var(--space-6)",
