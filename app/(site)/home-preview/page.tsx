@@ -8,6 +8,7 @@ import { QualifyCard } from "@/components/home/QualifyCard";
 import { DealTimeline } from "@/components/home/DealTimeline";
 import { MoveInStats } from "@/components/home/MoveInStats";
 import { HomeResults } from "@/components/home/HomeResults";
+import { NavyProofBand } from "@/components/home/NavyProofBand";
 import { AudienceRouter } from "@/components/home/AudienceRouter";
 import { OurWork } from "@/components/home/OurWork";
 import { MarketsManagers } from "@/components/home/MarketsManagers";
@@ -36,6 +37,11 @@ import "@/components/home/home.css";
 // work categories instead (Interior paint, Flooring, Kitchens…), so the two
 // aren't the same axis and no timing survives on the page. Recoverable at
 // `git show f3e74ea:components/home/SixWaysIn.tsx`.
+//
+// The four proof numbers (8,000+ homes prepped / $0 until closing / 1-year
+// warranty / Licensed & insured) left the hero area on Aug 8 and are now the
+// full-bleed navy band after the carousel — see NavyProofBand.tsx. Under the
+// hero, ProofBand is a single logo row again.
 //
 // Two things v2 changed have since been changed back, both by request:
 // the hero is the full-bleed photo again (not the split video layout —
@@ -73,6 +79,7 @@ export default function HomePreviewPage() {
       <DealTimeline />
       <MoveInStats />
       <HomeResults />
+      <NavyProofBand />
       <AudienceRouter />
       <OurWork />
       <MarketsManagers />

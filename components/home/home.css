@@ -295,8 +295,8 @@
    above it is the fallback for engines without svh. */
 .dp-hero {
   position: relative;
-  min-height: min(830px, calc(100vh - 125px));
-  min-height: min(830px, calc(100svh - 125px));
+  min-height: min(830px, calc(100vh - 78px));
+  min-height: min(830px, calc(100svh - 78px));
   display: flex; align-items: flex-end;
 }
 /* Flat 0.46 — the v1 value, restored (Gavin, Aug 6: the gradient read as
@@ -326,30 +326,53 @@
 .dp-hero-scrim {
   position: absolute; inset: 0;
   background:
-    /* TOP EDGE — under the header only, fading out by 190px. The nav's white
-       links live in the top-RIGHT, precisely where the horizontal gradient
-       has cleared; without this, "Log in" and the phone measured 3.2:1 and
-       3.8:1 against ~5.5 under the old flat scrim. Fixing that by lifting
-       the base wash would have darkened the entire photo, which is the thing
-       this change is trying to avoid — so it is spent where it is needed. */
+    /* TOP EDGE — under the header only, fading out by 200px. The nav's white
+       links live top-RIGHT, where the vignette never reaches. */
     linear-gradient(180deg,
-      rgba(8,24,50,0.42) 0px,
-      rgba(8,24,50,0.30) 90px,
-      rgba(8,24,50,0) 190px),
-    linear-gradient(90deg,
-      rgba(8,24,50,0.82) 0%,
-      rgba(8,24,50,0.74) 26%,
-      rgba(9,27,56,0.56) 48%,
-      rgba(11,32,66,0.28) 66%,
-      rgba(13,37,77,0.08) 82%,
-      rgba(13,37,77,0) 94%),
-    rgba(13,37,77,0.18);
+      rgba(8,24,50,0.48) 0px,
+      rgba(8,24,50,0.34) 96px,
+      rgba(8,24,50,0) 210px),
+    /* THE TEXT VIGNETTE — a radial anchored at the bottom-left corner, where
+       the copy actually sits, NOT a left-half band.
+       A 90deg linear was tried first and cut: because it darkens by COLUMN,
+       it dims the full height of the photo — house, roof, sky — to protect
+       four lines of text in the bottom corner, and the falloff shows up as a
+       vertical wedge across the picture. A radial falls off in every
+       direction at once, so it hugs the text block and lets the house stay
+       lit. Same legibility, no slab. */
+    /* LIGHTENED (Gavin, Aug 8 — "heavier than needed, let more of the house
+       show through"). Core 0.92 -> 0.68 and the falloff pulled in, so the
+       photo reads brighter everywhere while the text keeps a floor. The
+       text-shadow below is what makes this affordable: it carries roughly a
+       stop of separation on its own, so the wash no longer has to. */
+    radial-gradient(84% 66% at 10% 58%,
+      rgba(5,17,38,0.68) 0%,
+      rgba(5,17,38,0.60) 20%,
+      rgba(6,20,44,0.46) 38%,
+      rgba(7,22,48,0.27) 55%,
+      rgba(9,26,54,0.11) 72%,
+      rgba(11,30,62,0.03) 85%,
+      rgba(11,30,62,0) 95%),
+    rgba(11,30,62,0.09);
 }
-/* Below 1024 the column is full-bleed, so a horizontal fade would strand the
-   right half of the text. Go back to an even wash there, a little heavier
-   than the old flat value since it is now the only thing under the text. */
+/* Text carries a little of its own contrast so the wash does not have to do
+   all of it. This is the "light touch" the old scrim note pointed at: 1-3px
+   of shadow is invisible as an effect but worth ~1.5 stops of separation
+   over a busy photo, which is what buys the vignette the right to stay
+   subtle. */
+.dp-hero-eyebrow, .dp-hero-sub, .dp-hero-formlabel {
+  text-shadow: 0 1px 3px rgba(4,14,32,0.68), 0 1px 10px rgba(4,14,32,0.34);
+}
+.dp-hero h1 { text-shadow: 0 2px 12px rgba(4,14,32,0.40); }
+/* Below 1024 the text column is nearly full-bleed, so a corner vignette would
+   strand its right end. An even wash instead — and a light one, because the
+   text-shadow above is doing part of the work now. */
 @media (max-width: 1024px) {
-  .dp-hero-scrim { background: rgba(11,30,62,0.56); }
+  .dp-hero-scrim {
+    background:
+      linear-gradient(180deg, rgba(8,24,50,0.34) 0px, rgba(8,24,50,0) 180px),
+      linear-gradient(0deg, rgba(7,22,48,0.62) 0%, rgba(8,24,50,0.40) 46%, rgba(11,30,62,0.30) 100%);
+  }
 }
 .dp-hero-inner { position: relative; width: 100%; padding-bottom: 140px; }
 /* Review line above the headline (Gavin, Aug 7 — credibility proof). Eyebrow
@@ -358,9 +381,9 @@
    over the flat 0.46 scrim, where the subhead already measures under AA —
    every bit of luminance counts. See the scrim note above. */
 .dp-hero-eyebrow {
-  display: inline-flex; align-items: center; gap: 9px;
-  margin: 0 0 20px; text-decoration: none;
-  font-family: var(--font-family-sans); font-weight: 600; font-size: 14px;
+  display: inline-flex; align-items: center; gap: 10px;
+  margin: 0 0 22px; text-decoration: none;
+  font-family: var(--font-family-sans); font-weight: 600; font-size: 15px;
   letter-spacing: 0.005em; line-height: 1.4; color: #fff;
 }
 .dp-hero-eyebrow:hover {
@@ -376,10 +399,12 @@
 .dp-hero-stars {
   --review-green: #14c98e;
   color: var(--review-green);
-  font-size: 15px; line-height: 1; letter-spacing: 1.5px;
+  /* Larger than the text it sits beside: at 15px the five glyphs read as a
+     smudge rather than as stars, which defeats the point of using them. */
+  font-size: 18px; line-height: 1; letter-spacing: 1.5px;
   /* the glyph's own right-side bearing plus letter-spacing double up */
   margin-right: -1.5px;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.28);
+  text-shadow: 0 1px 3px rgba(4,14,32,0.5);
 }
 .dp-hero h1 {
   font-family: var(--font-family-serif); font-weight: 600; font-size: var(--text-display);
@@ -399,21 +424,22 @@
    plus ~10px of breathing room, so the strip lands complete on the first
    screen without the hero giving up more height than it has to. Mobile's is
    larger because the band stacks (label above logos) below 640px.
-   RE-TUNED TWICE on Aug 7, and it moves with the band every time: the trust
-   strip first pushed the band 90 -> 134px (100 -> 145 here), then the polish
-   pass compressed it to 115px, so 145 -> 125. Mobile is 210 for a 194px
-   band. If this band changes height again, these move with it. */
+   This number tracks the band and has moved every time the band has: the
+   trust strip pushed it 90 -> 134px (subtrahend 145), the polish pass
+   compressed the band to 115 (125), and on Aug 8 the stats left for the navy
+   band entirely, taking it to 64px — so 78 here and 124 on mobile, where the
+   band stacks to 111px. If the band changes height again, these move too. */
 @media (max-width: 1024px) {
   .dp-hero {
-    min-height: min(700px, calc(100vh - 125px));
-    min-height: min(700px, calc(100svh - 125px));
+    min-height: min(700px, calc(100vh - 78px));
+    min-height: min(700px, calc(100svh - 78px));
   }
   .dp-hero-inner { padding-bottom: 96px; }
 }
 @media (max-width: 640px) {
   .dp-hero {
-    min-height: min(620px, calc(100vh - 210px));
-    min-height: min(620px, calc(100svh - 210px));
+    min-height: min(620px, calc(100vh - 124px));
+    min-height: min(620px, calc(100svh - 124px));
   }
   .dp-hero-inner { padding-bottom: 64px; }
   .dp-hero-sub { font-size: 18px; }
@@ -546,21 +572,65 @@
   border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border);
   padding: 16px 0 18px;
 }
-/* Spread across the FULL container width — the four signals earn the whole
-   line, and ending flush right lines the strip up with the logo rail's right
-   edge below it. Dividers are siblings (see ProofBand.tsx), so they space out
-   with everything else instead of hugging the text. */
-/* NO rule between the strip and the logo rail. A hairline was tried and cut:
-   even at 55% alpha it drew a full-width line across the band and put the two
-   rows back into separate compartments, which is the exact thing this pass is
-   undoing. Tight spacing plus the shared surface does the grouping. */
-.dp-proof-stats {
-  display: flex; align-items: baseline; justify-content: space-between;
-  flex-wrap: wrap; gap: 6px 0; margin: 0 0 16px;
+/* The .dp-proof-stat* family went with the trust strip (Gavin, Aug 8 — the
+   four numbers are now the navy band below the carousel, see .dp-navyproof).
+   Nothing else in this band changed; it is a single row again.
+
+   .dp-proof-sep SURVIVES, restored to its original margins, because
+   AwardsStrip is now its only consumer — and it got caught in the crossfire
+   twice: #43 dropped its 18px margins (the strip used space-between to do the
+   spacing, so the middots sat flush against the text everywhere AwardsStrip
+   used them), and the follow-up set display:none, which would have hidden
+   them outright. Scoped-by-accident shared classes; fixed by giving this one
+   back to its actual owner. */
+.dp-proof-sep { margin: 0 18px; color: var(--color-text-subtle); }
+@media (max-width: 640px) { .dp-proof-sep { margin: 0 10px; } }
+/* ── PORT: navy proof band — the four numbers, below the carousel ────────── */
+/* Full-bleed navy statement (Gavin, Aug 8). Padding is deliberately generous
+   because this is a beat in the page, not a strip: the whole reason for
+   moving these numbers out of the hero was to stop them reading as fine
+   print. Figures sit at --text-display-h2 — the SECTION-HEADING token — in
+   the serif display face, with sans labels beneath, which is the same
+   figure-over-label pairing MoveInStats and the deal timeline already use.
+   Dividers are white at 18%, the lightest rule that still survives on navy.
+   No amber: this band asks for nothing, and amber is the CTA colour. */
+.dp-navyproof {
+  background: var(--color-surface-inverse);
+  padding: 100px 0;
 }
-.dp-proof-stat { font-family: var(--font-family-sans); font-size: 15.5px; color: var(--color-text-muted); }
-.dp-proof-stat b { color: var(--color-text); font-weight: 700; }
-.dp-proof-sep { color: var(--color-text-subtle); }
+.dp-navyproof-grid {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.dp-navyproof-item {
+  padding: 0 clamp(20px, 3vw, 48px);
+  border-left: 1px solid rgba(255,255,255,0.18);
+}
+.dp-navyproof-item:first-child { border-left: 0; padding-left: 0; }
+.dp-navyproof-figure {
+  font-family: var(--font-family-serif); font-weight: 600;
+  font-size: var(--text-display-h2); line-height: 1.02; letter-spacing: -0.02em;
+  color: var(--color-text-inverse); margin: 0 0 12px;
+}
+.dp-navyproof-label {
+  font-family: var(--font-family-sans); font-weight: 500; font-size: var(--text-small);
+  line-height: 1.45; letter-spacing: 0.02em;
+  color: rgba(255,255,255,0.72); margin: 0;
+}
+/* Two-up below 900: four serif display figures cannot share a phone width
+   without shrinking to caption size, which would undo the entire point. */
+@media (max-width: 900px) {
+  .dp-navyproof { padding: 72px 0; }
+  .dp-navyproof-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 44px; }
+  .dp-navyproof-item:nth-child(odd) { border-left: 0; padding-left: 0; }
+}
+@media (max-width: 560px) {
+  .dp-navyproof { padding: 56px 0; }
+  .dp-navyproof-grid { row-gap: 36px; }
+  .dp-navyproof-item { padding: 0 14px; }
+  .dp-navyproof-item:nth-child(odd) { padding-left: 0; }
+}
+
 .dp-proof-row { display: flex; align-items: center; gap: 44px; }
 .dp-proof-label {
   flex: 0 0 auto; max-width: 200px; margin: 0;
@@ -579,11 +649,6 @@
   .dp-proof { padding: 24px 0; }
   .dp-proof-row { flex-direction: column; align-items: flex-start; gap: 16px; }
   .dp-proof-label { max-width: none; }
-  /* space-between is wrong once this wraps — it strands the last line's items
-     at opposite edges. Pack left and give the dividers their margins back. */
-  .dp-proof-stats { justify-content: flex-start; margin-bottom: 14px; }
-  .dp-proof-stat { font-size: 14px; }
-  .dp-proof-sep { margin: 0 10px; }
   .dp-marquee { width: 100%; }
 }
 
