@@ -705,7 +705,7 @@
 }
 .dp-rot-track {
   display: block;
-  animation: dp-rot-cycle 14.5s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  animation: dp-rot-cycle 11s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 }
 .dp-rot-item {
   display: block;
@@ -714,6 +714,10 @@
   color: var(--color-accent);
   white-space: nowrap;
 }
+/* The full stop is its own span so it can be coloured independently of the
+   phrase, and so the clone carries it too (see HowItWorks.tsx). Amber like
+   the phrase — the sentence ends in the accent, not in navy. */
+.dp-rot-dot { color: var(--color-accent); }
 
 @keyframes dp-rot-cycle {
   0%,   13.8% { transform: translateY(0); }
@@ -927,9 +931,20 @@
 /* 91s, not the v1 64s: the track carries 10 cards now instead of 7, and the
    duration is for the WHOLE track — leaving it at 64s scrolled 43% faster
    (46px/s vs the designed 32px/s). 91s restores the original cadence. */
-.dpr-track{display:flex;gap:14px;width:max-content;animation:dpr-scroll 91s linear infinite}
-.dpr-marquee:hover .dpr-track{animation-play-state:paused}
-@keyframes dpr-scroll{from{transform:translateX(0)}to{transform:translateX(calc(-50% - 7px))}}
+/* Scroll-driven, not transform-driven (see ServicesMarquee.tsx): the position
+   is scrollLeft, so the auto-advance, a mouse drag, a touch flick and a
+   trackpad swipe all move the same value instead of fighting each other.
+   overflow-x is auto rather than hidden for the same reason — that IS the
+   drag surface. The scrollbar is hidden because the row is a marquee, not a
+   list the user is meant to aim at. */
+.dpr-marquee{overflow-x:auto;overscroll-behavior-x:contain;cursor:grab;
+  scrollbar-width:none;-ms-overflow-style:none;touch-action:pan-x pan-y}
+.dpr-marquee::-webkit-scrollbar{display:none}
+.dpr-marquee:active{cursor:grabbing}
+.dpr-track{display:flex;gap:14px;width:max-content}
+/* The cards are background-images, so a drag would otherwise start a native
+   image/anything drag and cancel the gesture. */
+.dpr-card{user-select:none;-webkit-user-drag:none}
 .dpr-card{position:relative;flex:none;width:280px;height:400px;border-radius:var(--radius-lg);
   overflow:hidden;background-color:var(--color-surface-sunken);
   background-size:cover;background-position:center}
@@ -965,7 +980,8 @@
   .dpr-card{width:220px;height:314px}
   .dpr-pill{font-size:13px;padding:6px 12px;bottom:16px}
 }
-@media (prefers-reduced-motion:reduce){.dpr-track{animation:none}.dpr-marquee{overflow-x:auto}}
+/* Auto-advance is skipped in JS under reduced-motion; the row stays scrollable
+   and draggable, so nothing becomes unreachable. */
 
 /* ── PORT: pay at close — Notable inline estimator (dpl2) ────────────────── */
 /* Recovered as-authored from v1 (PR #27), where this section shipped before
@@ -991,9 +1007,49 @@
   padding:12px 14px;outline:none;transition:border-color 160ms,box-shadow 160ms}
 .dpl2-input::placeholder{color:var(--color-text-subtle)}
 .dpl2-input:focus{border-color:var(--color-accent);box-shadow:0 0 0 4px var(--color-accent-ring)}
-select.dpl2-input{appearance:none;-webkit-appearance:none;
-  background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 14px center}
+/* Credit band picker — a real listbox, matching Notable's (CreditSelect.tsx).
+   The native <select> that used to live here is gone: its popup is drawn by
+   the OS, so on macOS it rendered as a grey system menu with a checkmark
+   column while Notable's is a white card with hairline-separated rows, and no
+   CSS reaches inside that popup. Trigger keeps .dpl2-input's box so it still
+   lines up with the two money fields under it. */
+.dpl2-sel { position: relative; }
+.dpl2-sel-btn {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  font-family: var(--font-family-sans); font-size: 16px; text-align: left;
+  color: var(--color-text); background: var(--color-surface);
+  border: 1px solid var(--color-border-strong); border-radius: var(--radius-md);
+  padding: 12px 14px; cursor: pointer;
+  transition: border-color 160ms, box-shadow 160ms;
+}
+.dpl2-sel-btn.is-empty .dpl2-sel-value { color: var(--color-text-subtle); }
+.dpl2-sel-btn:hover { border-color: var(--color-border-accent); }
+.dpl2-sel-btn:focus-visible,
+.dpl2-sel-btn.is-open {
+  outline: none; border-color: var(--color-accent);
+  box-shadow: 0 0 0 4px var(--color-accent-ring);
+}
+.dpl2-sel-caret { width: 12px; height: 8px; flex: none; color: var(--color-text-muted); }
+.dpl2-sel-btn.is-open .dpl2-sel-caret { transform: rotate(180deg); }
+/* The list itself — white card, hairline rows, generous height. Notable's
+   rows are noticeably taller than a system menu's; that is most of why theirs
+   reads as part of the page and the native one did not. */
+.dpl2-sel-list {
+  position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; right: 0;
+  margin: 0; padding: 0; list-style: none;
+  max-height: 268px; overflow-y: auto;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); box-shadow: var(--elevation-card);
+}
+.dpl2-sel-opt {
+  padding: 13px 16px; cursor: pointer;
+  font-family: var(--font-family-sans); font-size: 15.5px; color: var(--color-text);
+  border-top: 1px solid var(--color-border);
+}
+.dpl2-sel-opt:first-child { border-top: 0; }
+.dpl2-sel-opt.is-active { background: var(--color-surface-sunken); }
+.dpl2-sel-opt[aria-selected="true"] { font-weight: 600; }
+
 .dpl2-btn{display:flex;align-items:center;justify-content:center;width:100%;margin-top:6px;
   height:52px;border:0;cursor:pointer;border-radius:var(--radius-pill);background:var(--color-accent);
   font-family:var(--font-family-sans);font-weight:600;font-size:16px;color:#fff;text-decoration:none;

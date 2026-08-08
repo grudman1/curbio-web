@@ -1,3 +1,5 @@
+import { ServicesMarquee } from "./ServicesMarquee";
+
 // "Results worth funding" — the scrolling services list. Cut in v2, restored
 // in #37, and given its real ten services + photography on Aug 7 (Gavin).
 //
@@ -66,12 +68,10 @@ export function HomeResults() {
           Put the money into the work that moves the price.
         </h2>
       </div>
-      <div className="dpr-marquee">
-        <div className="dpr-track">
-          <CardRow />
-          <CardRow hidden />
-        </div>
-      </div>
+      <ServicesMarquee>
+        <CardRow />
+        <CardRow hidden />
+      </ServicesMarquee>
       <div className="dp-container">
         <a className="dpr-cta" href="/services">
           See all services <span aria-hidden="true">&rarr;</span>
