@@ -162,21 +162,42 @@ export default function PagesTab() {
                       {c.note ?? c.entry.path}
                     </div>
                   )}
-                  <div
-                    style={{
-                      padding: "10px 12px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <span style={{ fontFamily: mono, fontSize: 12.5 }}>{c.entry.path}</span>
-                    {statusChip(c.entry)}
-                    {c.variants && <Chip text={`×${c.variants} markets`} color={MUTED} />}
-                    {c.entry.indexed && <Chip text="indexed" color={WARN} />}
+                  <div style={{ padding: "12px 16px 14px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "var(--text-small)",
+                          fontWeight: 600,
+                          letterSpacing: "-0.005em",
+                        }}
+                      >
+                        {c.entry.title}
+                      </span>
+                      {statusChip(c.entry)}
+                      {c.variants && <Chip text={`×${c.variants} markets`} color={MUTED} />}
+                      {c.entry.indexed && <Chip text="indexed" color={WARN} />}
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: mono,
+                        fontSize: 11,
+                        color: SUBTLE,
+                        marginTop: 5,
+                      }}
+                    >
+                      {c.entry.path}
+                    </div>
                     {c.note && c.src && (
-                      <span style={{ fontSize: 10.5, color: SUBTLE, width: "100%" }}>{c.note}</span>
+                      <div style={{ fontSize: "var(--text-label)", color: SUBTLE, marginTop: 4 }}>
+                        {c.note}
+                      </div>
                     )}
                   </div>
                 </a>
@@ -202,17 +223,24 @@ export default function PagesTab() {
               style={{
                 border: "1px dashed var(--color-border-strong)",
                 borderRadius: "var(--radius-lg)",
-                padding: "14px 14px",
+                padding: "14px 16px",
               }}
             >
-              <div style={{ fontFamily: mono, fontSize: 12.5, color: "var(--color-text)" }}>
-                {e.path}
-              </div>
-              <div style={{ fontSize: "var(--text-micro)", color: MUTED, marginTop: 4 }}>
+              <div
+                style={{
+                  fontSize: "var(--text-small)",
+                  fontWeight: 600,
+                  letterSpacing: "-0.005em",
+                  color: "var(--color-text)",
+                }}
+              >
                 {e.title}
               </div>
+              <div style={{ fontFamily: mono, fontSize: 11, color: SUBTLE, marginTop: 4 }}>
+                {e.path}
+              </div>
               {e.note && (
-                <div style={{ fontSize: "var(--text-micro)", color: SUBTLE, marginTop: 6 }}>
+                <div style={{ fontSize: "var(--text-label)", color: MUTED, marginTop: 6 }}>
                   {e.note}
                 </div>
               )}

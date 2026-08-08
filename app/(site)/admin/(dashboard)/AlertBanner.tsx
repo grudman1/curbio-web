@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FAIL, MUTED, mono } from "./ui";
+import { FAIL, MUTED } from "./ui";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // The alert banner: absent when healthy, unmissable when not. Sits directly
@@ -84,11 +84,13 @@ export function AlertBanner({
     <div
       role="alert"
       style={{
-        background: "rgba(226,75,74,0.08)",
-        border: `2px solid ${FAIL}`,
+        background: "rgba(226,75,74,0.06)",
+        border: `1px solid color-mix(in srgb, ${FAIL} 45%, transparent)`,
+        borderLeft: `3px solid ${FAIL}`,
         borderRadius: "var(--radius-lg)",
         padding: "16px 20px",
         marginBottom: "var(--space-5)",
+        fontFamily: "var(--font-family-sans)",
       }}
     >
       {storeError && (
@@ -101,8 +103,8 @@ export function AlertBanner({
 
       {visible.length > 0 && (
         <>
-          <div style={{ fontSize: 16, fontWeight: 800, color: FAIL, marginBottom: 8 }}>
-            ⚠ {visible.length} CRM delivery failure{visible.length > 1 ? "s" : ""} in the last
+          <div style={{ fontSize: 15, fontWeight: 700, color: FAIL, marginBottom: 8 }}>
+            {visible.length} CRM delivery failure{visible.length > 1 ? "s" : ""} in the last
             24 h
           </div>
           {visible.map((e) => (
@@ -115,7 +117,7 @@ export function AlertBanner({
                 padding: "2px 0",
               }}
             >
-              <span style={{ fontFamily: mono, fontSize: 12, color: MUTED, flex: 1 }}>
+              <span style={{ fontSize: 13, color: MUTED, flex: 1, lineHeight: 1.5 }}>
                 {e.time} · {e.summary} — {e.detail}
               </span>
               <button

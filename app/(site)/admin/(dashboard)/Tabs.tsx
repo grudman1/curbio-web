@@ -35,18 +35,17 @@ export function Tabs() {
             href={t.href}
             aria-current={active ? "page" : undefined}
             style={{
-              padding: "6px 2px 10px",
+              padding: "6px 2px 12px",
               marginBottom: -1,
               textDecoration: "none",
               fontFamily: "var(--font-sans)",
-              fontSize: "var(--text-label)",
-              fontWeight: 800,
-              letterSpacing: "var(--tracking-label)",
-              textTransform: "uppercase",
+              fontSize: "var(--text-small)",
+              fontWeight: active ? 700 : 600,
+              letterSpacing: "-0.005em",
               color: active ? "var(--color-text)" : MUTED,
               borderBottom: active
-                ? "3px solid var(--color-accent)"
-                : "3px solid transparent",
+                ? "2px solid var(--color-accent)"
+                : "2px solid transparent",
               transition: "color var(--duration-base) ease-out",
             }}
           >
