@@ -23,10 +23,19 @@ import Image from "next/image";
 // as five disconnected phrases. Under prefers-reduced-motion the animation is
 // off entirely and only phrase 1 shows (see home.css).
 
+// Order matters twice over. "win the listing" must stay FIRST — it is the
+// first painted frame by construction, so a slow load or reduced-motion lands
+// on the strongest phrase. And "pay at close" is deliberately not adjacent to
+// "close with confidence": back to back, the two "close"s read as a stutter.
+//
+// The COUNT matters too: @keyframes dp-rot-cycle steps by 1/(phrases+1) and
+// has one stop per item. Adding or removing a phrase means rewriting it — see
+// the note above the keyframes in home.css.
 const PHRASES = [
   "win the listing",
   "prep the house",
   "list on time",
+  "pay at close",
   "impress the seller",
   "close with confidence",
 ];
