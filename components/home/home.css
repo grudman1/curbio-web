@@ -443,6 +443,21 @@
   }
   .dp-hero-inner { padding-bottom: 64px; }
   .dp-hero-sub { font-size: 18px; }
+  /* The headline scales below 640 instead of sitting on --text-display's 46px
+     floor. "Win more listings. Sell more homes." is long enough that 46px
+     broke it across THREE lines at 375px — each sentence wrapping on its own —
+     and the hero is viewport-capped, so the extra line pushed the whole
+     bottom-aligned block up until the review line sat 60px BEHIND the fixed
+     header on a 375x667 phone. At ~36px each sentence holds one line. */
+  .dp-hero h1 { font-size: clamp(33px, 9.6vw, 46px); }
+}
+/* Short phones (SE/8 at 667, and anything in landscape) get the least hero
+   height, because the cap subtracts the proof band from an already small
+   viewport — so the bottom-aligned block has the least room exactly where the
+   header is closest. Trimming the bottom padding pushes the block down and
+   away from it; 36px headline + this leaves ~31px of clearance instead of 7. */
+@media (max-width: 640px) and (max-height: 720px) {
+  .dp-hero-inner { padding-bottom: 40px; }
   /* "4.8/5 stars from 1,776 Featured Customers" plus five stars measures the
      full usable width at 375px, so it scales with the viewport rather than
      stepping — one fixed size either wrapped at 375 or went unreadably small
