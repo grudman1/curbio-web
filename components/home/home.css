@@ -720,7 +720,7 @@
 }
 .dp-rot-track {
   display: block;
-  animation: dp-rot-cycle 11s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  animation: dp-rot-cycle 13.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 }
 .dp-rot-item {
   display: block;
@@ -734,13 +734,21 @@
    the phrase — the sentence ends in the accent, not in navy. */
 .dp-rot-dot { color: var(--color-accent); }
 
+/* REWRITE THIS WHEN A PHRASE IS ADDED OR REMOVED. The track holds
+   PHRASES.length + 1 items (the clone), so each step is -100/(n+1) % and
+   there is one stop per item. With 6 phrases: 7 items, step -14.2857%, and
+   6 transitions each owning 100/6 = 16.6667% of the cycle. Hold keeps the
+   same 69% share of a step it has always had — that is why the phrases feel
+   the same speed as before even though the cycle is longer (11s -> 13.2s,
+   which is 5 -> 6 steps at an unchanged 2.2s each). */
 @keyframes dp-rot-cycle {
-  0%,   13.8% { transform: translateY(0); }
-  20%,  33.8% { transform: translateY(-16.6667%); }
-  40%,  53.8% { transform: translateY(-33.3333%); }
-  60%,  73.8% { transform: translateY(-50%); }
-  80%,  93.8% { transform: translateY(-66.6667%); }
-  100%        { transform: translateY(-83.3333%); }
+  0%,      11.5%   { transform: translateY(0); }
+  16.6667%, 28.17% { transform: translateY(-14.2857%); }
+  33.3333%, 44.83% { transform: translateY(-28.5714%); }
+  50%,      61.5%  { transform: translateY(-42.8571%); }
+  66.6667%, 78.17% { transform: translateY(-57.1429%); }
+  83.3333%, 94.83% { transform: translateY(-71.4286%); }
+  100%             { transform: translateY(-85.7143%); }
 }
 
 /* The items are white-space:nowrap (they have to be — each must occupy
