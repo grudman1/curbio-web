@@ -40,8 +40,22 @@ import "@/components/home/home.css";
 //
 // The four proof numbers (8,000+ homes prepped / $0 until closing / 1-year
 // warranty / Licensed & insured) left the hero area on Aug 8 and are now the
-// full-bleed navy band after the carousel — see NavyProofBand.tsx. Under the
-// hero, ProofBand is a single logo row again.
+// full-bleed navy band — see NavyProofBand.tsx. Under the hero, ProofBand is
+// a single logo row again.
+//
+// SECTION ORDER, reset Aug 9 (Gavin). The first six are deliberate and were
+// specified directly:
+//
+//   hero → brokerage logos → how it works → navy numbers → services → financing
+//
+// The argument that order makes: who trusts us, how it works, the proof, what
+// we do, then how it is paid for. Financing moved from 5th to 7th — it now
+// answers a question the services section has just raised, instead of
+// arriving before the reader knows what they would be financing. The navy
+// band moved up from after the carousel to before it, so the numbers land as
+// the turn from explanation into evidence.
+//
+// Everything after financing keeps its previous relative order.
 //
 // Two things v2 changed have since been changed back, both by request:
 // the hero is the full-bleed photo again (not the split video layout —
@@ -75,11 +89,11 @@ export default function HomePreviewPage() {
       <HomeHero />
       <ProofBand />
       <HowItWorks />
+      <NavyProofBand />
+      <HomeResults />
       <QualifyCard />
       <DealTimeline />
       <MoveInStats />
-      <HomeResults />
-      <NavyProofBand />
       <AudienceRouter />
       <OurWork />
       <MarketsManagers />
