@@ -62,9 +62,27 @@ import "@/components/home/home.css";
 // that variant survives, unmounted, in HomeHeroVideo.tsx for the A/B), and
 // the Notable estimator is back in place of the navy pay-at-close ledger.
 //
-// Still NOT the homepage: unlinked, noindex/nofollow via config/routes.ts,
-// absent from sitemap and nav, 404s publicly on sell.curbio.com. Outside
-// (chrome) on purpose — the design carries its own header and footer.
+// PUBLIC as of Aug 9 (Gavin) — no admin session needed; see the allowlist
+// entry in middleware.ts. What that changed and what it did NOT:
+//
+//   reachable   anyone with the URL, on sell.curbio.com and curbio.com
+//   NOT indexed routes.ts still sets indexed:false, so noindex/nofollow and
+//               absent from the sitemap. Shareable, not discoverable — a
+//               deliberate split, because the page still carries the
+//               placeholders listed below and Google is hard to un-tell.
+//   NOT "/"     the homepage is still the placeholder in (chrome)/page.tsx,
+//               and pageRegistry still marks this `stub`. Promotion to / is
+//               a separate, deliberate change.
+//
+// Outside (chrome) on purpose — the design carries its own header and footer.
+//
+// SHIPPED PUBLIC WITH KNOWN STUBS, explicitly (Gavin, Aug 9 — "leave content
+// as-is"). Visitors currently see: literal [Award]/[rating]/[count]/[press]
+// text in the awards strip; a hero field and "Find my manager" button that
+// post nowhere; a "Get a free estimate" closer that is a <span> and does not
+// respond to a click; and nav items pointing at 17 routes that do not exist
+// yet. None of these are bugs to hunt — they are known, and the decision to
+// publish ahead of them was made on purpose.
 //
 // STUBS flagged inline: hero ZIP field and CTAs are inert (nothing touches
 // /api/lead or /api/resolve); router card targets are planned pages;

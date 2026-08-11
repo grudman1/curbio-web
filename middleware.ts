@@ -129,6 +129,11 @@ function campaignAllowlist(pathname: string): string | null {
     return `${CAMPAIGN_PREFIX}${pathname}`;
   if (pathname === "/exp" || pathname.startsWith("/exp/")) return pathname;
   if (pathname === "/lp" || pathname.startsWith("/lp/")) return pathname;
+  // PUBLIC as of Aug 9 (Gavin) — the homepage design, viewable without an
+  // admin session. Physical path, no rewrite: it is site-tier and lives at
+  // its own URL. It is still NOT "/" and is still noindex (routes.ts), so
+  // this makes it shareable, not discoverable.
+  if (pathname === "/home-preview") return pathname;
   return null;
 }
 
