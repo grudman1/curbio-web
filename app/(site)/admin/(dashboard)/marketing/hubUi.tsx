@@ -121,10 +121,12 @@ export function ConsequenceNote({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Progress toward a target, rendered OUTLINE-ONLY — no fill until real data
- * exists to fill it with. The track is the promise; wiring earns the ink.
+ * Progress toward a target. OUTLINE-ONLY while no data exists — the track is
+ * the promise; wiring earns the ink. Pass `fraction` (0..1) once a real
+ * number exists and the bar fills accordingly.
  */
-export function OutlineBar({ label }: { label?: string }) {
+export function OutlineBar({ label, fraction }: { label?: string; fraction?: number }) {
+  const pct = fraction === undefined ? 0 : Math.max(0, Math.min(1, fraction)) * 100;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
       <span
@@ -136,8 +138,22 @@ export function OutlineBar({ label }: { label?: string }) {
           border: "1px solid var(--color-border-strong, var(--color-border))",
           borderRadius: 3,
           flex: "none",
+          overflow: "hidden",
+          position: "relative",
         }}
-      />
+      >
+        {fraction !== undefined && (
+          <span
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: `${pct}%`,
+              background: "var(--color-accent)",
+              borderRadius: 2,
+            }}
+          />
+        )}
+      </span>
       {label && (
         <span
           style={{

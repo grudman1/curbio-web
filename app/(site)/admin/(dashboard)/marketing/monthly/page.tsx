@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import { MARKETS } from "@/config/markets";
 import { HUB_SURFACE_BY_SLUG } from "@/config/marketingHub";
+import {
+  aggregateSnapshot,
+  OTHER_MARKETS_KEY,
+  OTHER_MARKETS_LABEL,
+  SNAPSHOT_LABEL,
+} from "@/config/appLeadsSnapshot";
 import { HubPageHeader } from "../hubUi";
 import { MonthlyReview } from "./MonthlyReview";
 
@@ -18,13 +24,28 @@ export const metadata: Metadata = {
 const surface = HUB_SURFACE_BY_SLUG.monthly;
 
 export default function MonthlyPage() {
-  const markets = MARKETS.map((m) => ({ key: m.slug, label: m.name }));
+  const markets: { key: string; label: string }[] = MARKETS.map((m) => ({
+    key: m.slug,
+    label: m.name,
+  }));
+
+  const agg = aggregateSnapshot();
+  if (agg.marketKeys.includes(OTHER_MARKETS_KEY)) {
+    markets.push({ key: OTHER_MARKETS_KEY, label: OTHER_MARKETS_LABEL });
+  }
+
   return (
     <>
       <div className="mh-no-print">
         <HubPageHeader surface={surface} />
       </div>
-      <MonthlyReview markets={markets} />
+      <MonthlyReview
+        markets={markets}
+        months={agg.months}
+        qualifiedByMarketMonth={agg.qualifiedByMarketMonth}
+        closedByMarketMonth={agg.closedByMarketMonth}
+        snapshotLabel={SNAPSHOT_LABEL}
+      />
     </>
   );
 }

@@ -67,6 +67,15 @@ export type Market = {
   operatorName: string;
   /** EXACT market string the CRM expects in the lead payload. */
   crmName: string;
+  /**
+   * Market codes app.curbio.com uses in its exports/reports ("ATL", "BAL"…).
+   * A list because the app splits some metros we treat as one market
+   * (Maryland is BAL + NMD + SMD there). App codes with no row here (SEA,
+   * SD) are markets we don't serve landing pages for — reporting aggregates
+   * them under "Other markets"; they NEVER become market rows just to make
+   * a report add up.
+   */
+  appMarketCodes: string[];
   /** Two-letter state code, used for same-state geo disambiguation. */
   state: string;
   /** Representative ZIP used for operator API lookups. */
@@ -101,6 +110,7 @@ export const MARKETS: Market[] = [
     coverage: "Metro Atlanta · North GA",
     operatorName: "Atlanta",
     crmName: "Atlanta",
+    appMarketCodes: ["ATL"],
     state: "GA",
     canonicalZip: "30002",
     coordinates: { lat: 33.749, lng: -84.388 },
@@ -123,6 +133,7 @@ export const MARKETS: Market[] = [
     coverage: "All DC Areas",
     operatorName: "DC",
     crmName: "DC",
+    appMarketCodes: ["DC"],
     state: "DC",
     canonicalZip: "20001",
     coordinates: { lat: 38.9072, lng: -77.0369 },
@@ -145,6 +156,7 @@ export const MARKETS: Market[] = [
     coverage: "DFW Metroplex",
     operatorName: "Dallas",
     crmName: "Dallas",
+    appMarketCodes: ["DAL"],
     state: "TX",
     canonicalZip: "75201",
     coordinates: { lat: 32.7767, lng: -96.797 },
@@ -167,6 +179,7 @@ export const MARKETS: Market[] = [
     coverage: "Baltimore · Maryland Suburbs",
     operatorName: "Maryland",
     crmName: "Maryland",
+    appMarketCodes: ["BAL", "NMD", "SMD"],
     state: "MD",
     canonicalZip: "21201",
     coordinates: { lat: 39.13, lng: -76.85 },
@@ -192,6 +205,7 @@ export const MARKETS: Market[] = [
     coverage: "Greater Los Angeles",
     operatorName: "Los Angeles",
     crmName: "Los Angeles",
+    appMarketCodes: ["LA"],
     state: "CA",
     canonicalZip: "90001",
     coordinates: { lat: 34.0522, lng: -118.2437 },
@@ -214,6 +228,7 @@ export const MARKETS: Market[] = [
     coverage: "Arlington · Manassas",
     operatorName: "NOVA",
     crmName: "NOVA",
+    appMarketCodes: ["NVA"],
     state: "VA",
     canonicalZip: "22030",
     coordinates: { lat: 38.8462, lng: -77.3064 },
@@ -236,6 +251,7 @@ export const MARKETS: Market[] = [
     coverage: "Inland Empire · Riverside",
     operatorName: "Riverside",
     crmName: "Riverside",
+    appMarketCodes: ["RS"],
     state: "CA",
     canonicalZip: "92503",
     coordinates: { lat: 33.9533, lng: -117.3962 },

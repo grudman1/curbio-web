@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import { MARKETS } from "@/config/markets";
 import { HUB_SURFACE_BY_SLUG } from "@/config/marketingHub";
+import {
+  aggregateSnapshot,
+  OTHER_MARKETS_KEY,
+  OTHER_MARKETS_LABEL,
+  SNAPSHOT_LABEL,
+} from "@/config/appLeadsSnapshot";
 import { HubPageHeader, NeedsBlock } from "../hubUi";
 import { ReportGrid } from "./ReportGrid";
 
@@ -21,7 +27,10 @@ const surface = HUB_SURFACE_BY_SLUG.report;
 export default function ReportPage() {
   // Row dimensions derive from config/markets.ts — the only place a market is
   // named. HSM rows are the unique HSM names, each covering its markets.
-  const markets = MARKETS.map((m) => ({ key: m.slug, label: m.name }));
+  const markets: { key: string; label: string; sub?: string }[] = MARKETS.map((m) => ({
+    key: m.slug,
+    label: m.name,
+  }));
 
   const hsmMarkets = new Map<string, string[]>();
   for (const m of MARKETS) {
@@ -33,10 +42,23 @@ export default function ReportPage() {
     sub: covers.join(" · "),
   }));
 
+  // Interim Qualified data: the PII-stripped app snapshot. Aggregated on the
+  // server; the grid receives plain numbers. App markets without landing
+  // pages (SEA, SD) aggregate under one labeled row rather than pretending
+  // to be markets.
+  const agg = aggregateSnapshot();
+  if (agg.marketKeys.includes(OTHER_MARKETS_KEY)) {
+    markets.push({
+      key: OTHER_MARKETS_KEY,
+      label: OTHER_MARKETS_LABEL,
+      sub: "app markets without landing pages",
+    });
+  }
+
   return (
     <>
       <HubPageHeader surface={surface} />
-      <ReportGrid markets={markets} hsms={hsms} />
+      <ReportGrid markets={markets} hsms={hsms} agg={agg} snapshotLabel={SNAPSHOT_LABEL} />
       <NeedsBlock surface={surface} />
     </>
   );

@@ -7,6 +7,7 @@ import {
   HUB_SURFACE_BY_SLUG,
   SYNC_SURFACES,
 } from "@/config/marketingHub";
+import { SNAPSHOT_AS_OF } from "@/config/appLeadsSnapshot";
 import { ConsequenceNote, DASH, HubPageHeader, NeedsBlock, StatusChip, td, tdDash, th } from "../hubUi";
 import { UtmBuilder } from "./UtmBuilder";
 
@@ -115,11 +116,20 @@ export default function SettingsPage() {
               {SYNC_SURFACES.map((s) => (
                 <tr key={s.key}>
                   <td style={{ ...td, fontWeight: 600, whiteSpace: "nowrap" }}>{s.label}</td>
-                  <td style={{ ...td, color: "var(--color-text-muted)" }}>{s.carries}</td>
-                  <td style={td}>
-                    <StatusChip status="waiting" />
+                  <td style={{ ...td, color: "var(--color-text-muted)" }}>
+                    {s.carries}
+                    {s.note && (
+                      <div style={{ fontSize: "var(--text-label)", color: "var(--color-text-subtle)", marginTop: 3 }}>
+                        {s.note}
+                      </div>
+                    )}
                   </td>
-                  <td style={{ ...tdDash, textAlign: "right" }}>{DASH}</td>
+                  <td style={td}>
+                    <StatusChip status={s.status} />
+                  </td>
+                  <td style={{ ...tdDash, textAlign: "right" }}>
+                    {s.key === "app_sync" ? `snapshot ${SNAPSHOT_AS_OF}` : DASH}
+                  </td>
                 </tr>
               ))}
             </tbody>
