@@ -15,7 +15,9 @@ import {
   type ReportMetricKey,
   type RowDimension,
 } from "@/config/marketingHub";
-import { DASH, DefinitionsNote, OutlineBar, td, tdDash, th } from "../hubUi";
+import type { Channel } from "@/lib/channels";
+import type { SnapshotAggregates } from "@/config/appLeadsSnapshot";
+import { DASH, DefinitionsNote, OutlineBar, td, th } from "../hubUi";
 
 // The grid: rows × channel columns, ONE metric at a time — nine columns × six
 // numbers is a spreadsheet, not a view. The rest of the metrics live in the
@@ -93,7 +95,23 @@ function Seg<K extends string>({
   );
 }
 
-export function ReportGrid({ markets, hsms }: { markets: Row[]; hsms: Row[] }) {
+// "2026-08" → "Aug". Snapshot months are the app's created-date months.
+const MONTH_ABBR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function monthShort(ym: string): string {
+  return MONTH_ABBR[Number(ym.slice(5)) - 1] ?? ym;
+}
+
+export function ReportGrid({
+  markets,
+  hsms,
+  agg,
+  snapshotLabel,
+}: {
+  markets: Row[];
+  hsms: Row[];
+  agg: SnapshotAggregates;
+  snapshotLabel: string;
+}) {
   const [rowDim, setRowDim] = useState<RowDimension>("market");
   const [metric, setMetric] = useState<ReportMetricKey>("qualified");
   const [mode, setMode] = useState<AttributionMode>("last");
@@ -108,6 +126,31 @@ export function ReportGrid({ markets, hsms }: { markets: Row[]; hsms: Row[] }) {
   const selectedRow = selected ? rows.find((r) => r.key === selected.row) : null;
   const selectedCol = selected ? columns.find((c) => c.key === selected.col) : null;
   const selectionValid = !!(selectedRow && selectedCol);
+
+  // ── snapshot reads ────────────────────────────────────────────────────────
+  // The snapshot can honestly answer: market rows × base channels × last
+  // touch, for Qualified / Closed / Revenue / Close rate. Everything else
+  // (HSM rows, first touch, the email opt-in/cold split, Engaged, CAC)
+  // renders an em-dash because its source genuinely doesn't exist yet.
+  const latestMonth = agg.months[agg.months.length - 1];
+
+  function cellFor(rowKey: string, colKey: string) {
+    if (rowDim !== "market" || mode !== "last") return null;
+    if (colKey.startsWith("email_")) return null; // split views need webhooks
+    return agg.cells[`${rowKey}|${colKey as Channel}`] ?? { qualified: 0, closed: 0, revenue: 0, funnel: [0, 0, 0, 0, 0, 0] };
+  }
+
+  function metricValue(rowKey: string, colKey: string, m: ReportMetricKey): string | null {
+    const cell = cellFor(rowKey, colKey);
+    if (!cell) return null;
+    switch (m) {
+      case "qualified": return String(cell.qualified);
+      case "closed": return String(cell.closed);
+      case "revenue": return cell.revenue ? `$${Math.round(cell.revenue).toLocaleString("en-US")}` : "$0";
+      case "close_rate": return cell.qualified ? `${Math.round((cell.closed / cell.qualified) * 100)}%` : null;
+      default: return null; // engaged, cac — no source yet
+    }
+  }
 
   return (
     <>
@@ -164,7 +207,17 @@ export function ReportGrid({ markets, hsms }: { markets: Row[]; hsms: Row[] }) {
         channel that introduced the contact — the channel that opened. The two disagree
         whenever one channel opens a relationship and another closes it.
         {emailSplit &&
-          " The email split is a view resolved from the source webhook (ActiveCampaign = opt-in, Instantly = cold), not a separate channel."}
+          " The email split is a view resolved from the source webhook (ActiveCampaign = opt-in, Instantly = cold), not a separate channel — those webhooks don't exist yet, so the split columns render em-dashes."}
+        {mode === "first" &&
+          " The app's first-touch fields are empty (verified against its attribution export), so first-touch views render em-dashes until the contact store exists."}
+        {rowDim === "market" && mode === "last" && (
+          <>
+            {" "}Populated numbers are Qualified-side only, from a one-time{" "}
+            <strong>{snapshotLabel}</strong> — a point-in-time export, not a live sync.
+            Channel attribution is the app&apos;s referral source, conservatively mapped;
+            everything ambiguous is counted as direct.
+          </>
+        )}
       </p>
       <DefinitionsNote />
 
@@ -172,7 +225,13 @@ export function ReportGrid({ markets, hsms }: { markets: Row[]; hsms: Row[] }) {
       <div style={{ marginTop: "var(--space-4)" }}>
         <Panel
           title={`${metricLabel} by ${rowDim === "market" ? "market" : "HSM"} × channel`}
-          right={<Meta>{modeLabel} · channels in funnel order · direct last</Meta>}
+          right={
+            <Meta>
+              {rowDim === "market" && mode === "last"
+                ? `YTD · ${snapshotLabel} · direct last`
+                : `${modeLabel} · channels in funnel order · direct last`}
+            </Meta>
+          }
         >
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -197,13 +256,27 @@ export function ReportGrid({ markets, hsms }: { markets: Row[]; hsms: Row[] }) {
                         </div>
                       )}
                       <div style={{ marginTop: 5 }}>
-                        <OutlineBar
-                          label={`${DASH} of ${QUALIFIED_TARGET_PER_MARKET_PER_MONTH} Qualified this month`}
-                        />
+                        {rowDim === "market" && latestMonth ? (
+                          (() => {
+                            const q = agg.qualifiedByMarketMonth[`${r.key}|${latestMonth}`] ?? 0;
+                            return (
+                              <OutlineBar
+                                fraction={q / QUALIFIED_TARGET_PER_MARKET_PER_MONTH}
+                                label={`${q} of ${QUALIFIED_TARGET_PER_MARKET_PER_MONTH} Qualified in ${monthShort(latestMonth)} · snapshot`}
+                              />
+                            );
+                          })()
+                        ) : (
+                          <OutlineBar
+                            label={`${DASH} of ${QUALIFIED_TARGET_PER_MARKET_PER_MONTH} Qualified this month`}
+                          />
+                        )}
                       </div>
                     </td>
                     {columns.map((c) => {
                       const isSelected = selected?.row === r.key && selected?.col === c.key;
+                      const value = metricValue(r.key, c.key, metric);
+                      const isZero = value === "0" || value === "$0";
                       return (
                         <td key={c.key} style={{ ...td, padding: 0, textAlign: "right" }}>
                           <button
@@ -225,12 +298,13 @@ export function ReportGrid({ markets, hsms }: { markets: Row[]; hsms: Row[] }) {
                               borderRadius: "var(--radius-sm, 6px)",
                               fontFamily: "var(--font-family-sans)",
                               fontSize: "var(--text-small)",
-                              color: SUBTLE,
+                              fontWeight: value !== null && !isZero ? 600 : 400,
+                              color: value === null || isZero ? SUBTLE : "var(--color-text)",
                               cursor: "pointer",
                               textAlign: "right",
                             }}
                           >
-                            {DASH}
+                            {value ?? DASH}
                           </button>
                         </td>
                       );
@@ -254,36 +328,42 @@ export function ReportGrid({ markets, hsms }: { markets: Row[]; hsms: Row[] }) {
             right={<Meta>{modeLabel} attribution</Meta>}
           >
             <div style={{ display: "flex", flexWrap: "wrap", gap: "20px 40px" }}>
-              {REPORT_METRICS.filter((m) => m.key !== metric).map((m) => (
-                <div key={m.key} style={{ minWidth: 86 }}>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-family-serif)",
-                      fontSize: 26,
-                      fontWeight: 600,
-                      color: SUBTLE,
-                      lineHeight: 1,
-                    }}
-                  >
-                    {DASH}
+              {REPORT_METRICS.filter((m) => m.key !== metric).map((m) => {
+                const v = metricValue(selectedRow!.key, selectedCol!.key, m.key);
+                return (
+                  <div key={m.key} style={{ minWidth: 86 }}>
+                    <div
+                      style={{
+                        fontFamily: "var(--font-family-serif)",
+                        fontSize: 26,
+                        fontWeight: 600,
+                        color: v === null ? SUBTLE : "var(--color-text)",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {v ?? DASH}
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: "var(--font-family-sans)",
+                        fontSize: "var(--text-label)",
+                        color: MUTED,
+                        marginTop: 6,
+                      }}
+                    >
+                      {m.label}
+                    </div>
                   </div>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-family-sans)",
-                      fontSize: "var(--text-label)",
-                      color: MUTED,
-                      marginTop: 6,
-                    }}
-                  >
-                    {m.label}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div style={{ marginTop: "var(--space-5)" }}>
               <p style={{ ...eyebrow, marginBottom: 10 }}>Funnel</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-                {FUNNEL_STAGES.map((stage, i) => (
+                {FUNNEL_STAGES.map((stage, i) => {
+                  const cell = cellFor(selectedRow!.key, selectedCol!.key);
+                  const n = cell ? cell.funnel[i] : null;
+                  return (
                   <div key={stage} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div
                       style={{
@@ -298,11 +378,11 @@ export function ReportGrid({ markets, hsms }: { markets: Row[]; hsms: Row[] }) {
                           fontFamily: "var(--font-family-serif)",
                           fontSize: 20,
                           fontWeight: 600,
-                          color: SUBTLE,
+                          color: n === null ? SUBTLE : "var(--color-text)",
                           lineHeight: 1,
                         }}
                       >
-                        {DASH}
+                        {n ?? DASH}
                       </div>
                       <div
                         style={{
@@ -322,8 +402,16 @@ export function ReportGrid({ markets, hsms }: { markets: Row[]; hsms: Row[] }) {
                       </span>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
+              {cellFor(selectedRow!.key, selectedCol!.key) && (
+                <p style={{ fontSize: "var(--text-label)", color: SUBTLE, margin: "10px 0 0" }}>
+                  Cumulative reached-at-least counts from the snapshot. Closed = status
+                  Won only — the app&apos;s post-proposal production stages never count as
+                  Closed on their own.
+                </p>
+              )}
             </div>
           </Panel>
         </div>

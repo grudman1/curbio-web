@@ -191,12 +191,24 @@ export const OUTREACH_ARMS = [
 
 // ── Sync / webhook surfaces (Settings health table) ──────────────────────────
 
-export const SYNC_SURFACES = [
-  { key: "app_sync", label: "App sync", carries: "Qualified, funnel stages, Closed, Revenue" },
-  { key: "activecampaign", label: "ActiveCampaign", carries: "opt-in email events, newsletter signups" },
-  { key: "instantly", label: "Instantly", carries: "cold-email sends and positive replies" },
-  { key: "intake", label: "/api/intake", carries: "form submissions (all Engaged types)" },
-] as const;
+export const SYNC_SURFACES: {
+  key: string;
+  label: string;
+  carries: string;
+  status: WiringStatus;
+  note?: string;
+}[] = [
+  {
+    key: "app_sync",
+    label: "App sync",
+    carries: "Qualified, funnel stages, Closed, Revenue",
+    status: "partial",
+    note: "one-time snapshot in place (config/appLeadsSnapshot.json) — not a live sync; re-run scripts/import-app-leads.mjs to refresh",
+  },
+  { key: "activecampaign", label: "ActiveCampaign", carries: "opt-in email events, newsletter signups", status: "waiting" },
+  { key: "instantly", label: "Instantly", carries: "cold-email sends and positive replies", status: "waiting" },
+  { key: "intake", label: "/api/intake", carries: "form submissions (all Engaged types)", status: "waiting" },
+];
 
 // ── Wiring registry ──────────────────────────────────────────────────────────
 //
@@ -227,12 +239,12 @@ export const HUB_SURFACES: HubSurface[] = [
     purpose:
       "Markets or HSMs × the nine channels, one metric at a time — the operating view of what is producing Qualified leads.",
     target: `${QUALIFIED_TARGET_PER_MARKET_PER_MONTH} Qualified per market per month`,
-    status: "waiting",
+    status: "partial",
     needs: [
-      "App sync returning Qualified, funnel stages, Closed, and Revenue per lead",
-      "Contact store with channel attribution (first and last touch)",
+      "Live app sync for Qualified, funnel stages, Closed, and Revenue — interim: one-time PII-stripped snapshot (config/appLeadsSnapshot.json); accurate through its as-of date, drifts after",
+      "Contact store with channel attribution (first and last touch — the app's first-touch fields are empty, so first-touch views stay em-dash)",
       "Spend entry per month × market × channel (for CAC)",
-      "ActiveCampaign and Instantly webhooks (for the email opt-in / cold split)",
+      "ActiveCampaign and Instantly webhooks (for Engaged and the email opt-in / cold split)",
     ],
   },
   {
@@ -302,9 +314,10 @@ export const HUB_SURFACES: HubSurface[] = [
     purpose:
       "The exec review — Qualified vs. the 50 target per market, with engagement as the leading indicator. Built to be read by people who have never seen the other tabs.",
     target: `${QUALIFIED_TARGET_PER_MARKET_PER_MONTH} Qualified per market per month`,
-    status: "waiting",
+    status: "partial",
     needs: [
-      "Everything the Report page needs (app sync, attribution, spend)",
+      "Live app sync — interim: the headline grid reads the one-time snapshot (config/appLeadsSnapshot.json)",
+      "Engaged sources (ActiveCampaign, Instantly, /api/intake) for the engagement summary",
       "Event and outreach logs (for the initiative scorecards)",
       "A place to persist Wins / Concerns / Decisions notes per month",
     ],

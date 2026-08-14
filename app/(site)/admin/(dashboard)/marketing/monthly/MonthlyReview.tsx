@@ -23,17 +23,10 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-function recentMonths(count: number): { key: string; label: string }[] {
-  const now = new Date();
-  const out: { key: string; label: string }[] = [];
-  for (let i = 0; i < count; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    out.push({
-      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
-      label: `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`,
-    });
-  }
-  return out;
+/** "2026-03" → "March 2026". Selector months come from the snapshot itself,
+ *  so the page never offers a month it has no data for. */
+function monthLabelFor(ym: string): string {
+  return `${MONTH_NAMES[Number(ym.slice(5)) - 1] ?? ym} ${ym.slice(0, 4)}`;
 }
 
 const noteLabel: React.CSSProperties = {
@@ -56,10 +49,23 @@ const noteArea: React.CSSProperties = {
   lineHeight: 1.6,
 };
 
-export function MonthlyReview({ markets }: { markets: { key: string; label: string }[] }) {
-  const months = recentMonths(12);
-  const [month, setMonth] = useState(months[0].key);
-  const monthLabel = months.find((m) => m.key === month)!.label;
+export function MonthlyReview({
+  markets,
+  months: snapshotMonths,
+  qualifiedByMarketMonth,
+  closedByMarketMonth,
+  snapshotLabel,
+}: {
+  markets: { key: string; label: string }[];
+  /** Ascending "YYYY-MM" months present in the snapshot. */
+  months: string[];
+  qualifiedByMarketMonth: Record<string, number>;
+  closedByMarketMonth: Record<string, number>;
+  snapshotLabel: string;
+}) {
+  const months = [...snapshotMonths].reverse().map((key) => ({ key, label: monthLabelFor(key) }));
+  const [month, setMonth] = useState(months[0]?.key ?? "");
+  const monthLabel = months.find((m) => m.key === month)?.label ?? month;
 
   return (
     <>
@@ -132,7 +138,7 @@ export function MonthlyReview({ markets }: { markets: { key: string; label: stri
       <div style={{ marginBottom: "var(--space-4)" }}>
         <Panel
           title={`Qualified vs. ${QUALIFIED_TARGET_PER_MARKET_PER_MONTH}, by market`}
-          right={<Meta>{monthLabel}</Meta>}
+          right={<Meta>{monthLabel} · {snapshotLabel}</Meta>}
         >
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -140,6 +146,7 @@ export function MonthlyReview({ markets }: { markets: { key: string; label: stri
                 <tr>
                   <th style={th}>Market</th>
                   <th style={{ ...th, textAlign: "right" }}>Qualified</th>
+                  <th style={{ ...th, textAlign: "right" }}>Closed</th>
                   <th style={{ ...th, textAlign: "right" }}>
                     Target ({QUALIFIED_TARGET_PER_MARKET_PER_MONTH})
                   </th>
@@ -147,21 +154,38 @@ export function MonthlyReview({ markets }: { markets: { key: string; label: stri
                 </tr>
               </thead>
               <tbody>
-                {markets.map((m) => (
-                  <tr key={m.key}>
-                    <td style={{ ...td, fontWeight: 600 }}>{m.label}</td>
-                    <td style={{ ...tdDash, textAlign: "right" }}>{DASH}</td>
-                    <td style={{ ...td, textAlign: "right", color: MUTED }}>
-                      {QUALIFIED_TARGET_PER_MARKET_PER_MONTH}
-                    </td>
-                    <td style={td}>
-                      <OutlineBar label={`${DASH} of ${QUALIFIED_TARGET_PER_MARKET_PER_MONTH}`} />
-                    </td>
-                  </tr>
-                ))}
+                {markets.map((m) => {
+                  const q = qualifiedByMarketMonth[`${m.key}|${month}`] ?? 0;
+                  const c = closedByMarketMonth[`${m.key}|${month}`] ?? 0;
+                  return (
+                    <tr key={m.key}>
+                      <td style={{ ...td, fontWeight: 600 }}>{m.label}</td>
+                      <td style={{ ...td, textAlign: "right", fontWeight: q ? 600 : 400, color: q ? "var(--color-text)" : SUBTLE }}>
+                        {q}
+                      </td>
+                      <td style={{ ...td, textAlign: "right", color: c ? "var(--color-text)" : SUBTLE }}>
+                        {c}
+                      </td>
+                      <td style={{ ...td, textAlign: "right", color: MUTED }}>
+                        {QUALIFIED_TARGET_PER_MARKET_PER_MONTH}
+                      </td>
+                      <td style={td}>
+                        <OutlineBar
+                          fraction={q / QUALIFIED_TARGET_PER_MARKET_PER_MONTH}
+                          label={`${q} of ${QUALIFIED_TARGET_PER_MARKET_PER_MONTH}`}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
+          <p style={{ fontSize: "var(--text-label)", color: SUBTLE, margin: "12px 0 0", lineHeight: 1.6 }}>
+            Qualified = estimate requests created in {monthLabel}; Closed = of those, the
+            ones whose status is Won. Numbers come from a one-time {snapshotLabel} — a
+            point-in-time export, not a live sync.
+          </p>
           <p
             style={{
               fontFamily: "var(--font-family-sans)",
