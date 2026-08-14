@@ -334,14 +334,27 @@ em { font-style: normal; }
 
 /* ============================================================ CONFIRM PAGE */
 .lp-confirm { background: var(--cloud-white); padding: 32px 0 48px; min-height: calc(100vh - 64px); }
+/* Receipt banner — first thing under the header; mirrors QuoteModal's success state */
+.lp-confirm-receipt { text-align: center; max-width: 640px; margin: 0 auto 36px; animation: lp-rise-in var(--dur-base) var(--ease-out); }
+.lp-confirm-receipt-check { width: 62px; height: 62px; border-radius: 999px; background: var(--stone); display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; }
+.lp-confirm-receipt-h { font-family: var(--font-serif); font-size: clamp(26px, 3.2vw, 38px); font-weight: 600; color: var(--navy); line-height: 1.1; margin: 0 0 10px; }
+.lp-confirm-receipt-sub { font-family: var(--font-sans); font-size: 16px; font-weight: 400; color: var(--fg-muted); line-height: 1.55; margin: 0; }
+.lp-confirm-receipt-sub strong { color: var(--navy); }
 .lp-confirm-grid { display: grid; grid-template-columns: 42fr 58fr; gap: 40px; align-items: start; }
 .lp-confirm-eyebrow { font-family: var(--font-sans); font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-muted); margin: 0 0 8px; }
+.lp-confirm-subline { font-family: var(--font-sans); font-size: 14px; font-weight: 400; color: var(--fg-muted); line-height: 1.5; margin: 0 0 14px; }
 /* cal-wrap keeps the button directly below the widget as Calendly expands */
 .lp-confirm-cal-wrap { display: flex; flex-direction: column; }
 .lp-confirm-no-cal { background: #fff; border: 1px solid var(--stone); border-radius: 16px; padding: 28px 24px; margin-top: 0; }
-/* Secondary pill button — visible without scrolling */
-.lp-confirm-nothx { display: flex; align-items: center; justify-content: center; width: 100%; margin-top: 14px; padding: 14px 24px; min-height: 50px; font-family: var(--font-sans); font-size: 15px; font-weight: 700; color: var(--navy); background: transparent; border: 1.5px solid var(--navy); border-radius: 999px; text-decoration: none; cursor: pointer; transition: background .18s, color .18s; }
-.lp-confirm-nothx:hover { background: var(--navy); color: #fff; }
+/* Text-link exit — secondary action, ≥44px touch target */
+.lp-confirm-nothx { display: flex; align-items: center; justify-content: center; align-self: center; width: max-content; margin: 10px auto 0; padding: 0 12px; min-height: 44px; font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--fg-muted); background: transparent; border: 0; border-radius: 0; text-decoration: none; cursor: pointer; transition: color .18s; }
+.lp-confirm-nothx:hover { color: var(--navy); text-decoration: underline; text-underline-offset: 3px; }
+/* Declined state — centered "you're all set" panel, HSM card below */
+.lp-confirm-done { display: flex; flex-direction: column; }
+.lp-confirm-done .lp-confirm-receipt { margin-bottom: 32px; }
+.lp-confirm-done .lp-confirm-left { width: 100%; max-width: 440px; margin: 0 auto; }
+.lp-confirm-again { align-self: center; display: inline-flex; align-items: center; margin-top: 24px; padding: 0 12px; min-height: 44px; font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--fg-muted); text-decoration: none; transition: color .18s; }
+.lp-confirm-again:hover { color: var(--navy); text-decoration: underline; text-underline-offset: 3px; }
 @keyframes lp-skeleton-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 .lp-cal-skeleton { position: absolute; inset: 0; background: var(--stone); border-radius: 8px; animation: lp-skeleton-pulse 1.6s ease-in-out infinite; pointer-events: none; }
 @media (max-width: 860px) {

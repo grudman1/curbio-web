@@ -85,10 +85,18 @@ export default function ConfirmShell({
   // render (SSR). The useEffect is a safety-net for edge cases where the prop
   // is absent or differs from the real client host — Calendly's postMessage
   // target origin is derived from embed_domain so the value must match exactly.
-  // "No thanks, I'll wait" returns to the landing page. "/" on sell.curbio.com
+  // "Submit another request" returns to the landing page. "/" on sell.curbio.com
   // and during SSR — the prefix only when this HTML is served at its QA path,
   // so QA doesn't fall out of the campaign tier. See lib/campaignBase.ts.
   const backHref = useCampaignBase();
+
+  // "I'll wait" hides the booking column in place — no navigation, so the
+  // visitor never lands back on a form that looks unsubmitted.
+  const [declined, setDeclined] = useState(false);
+  function declineBooking() {
+    trackEvent("booking_declined", { market: market.slug || "unknown" });
+    setDeclined(true);
+  }
 
   const [embedDomain, setEmbedDomain] = useState<string>(embedDomainProp);
   useEffect(() => {
@@ -178,20 +186,28 @@ export default function ConfirmShell({
       ? buildCalendlyIframeSrc(profileUrl, prefill, embedDomain)
       : null;
 
-  return (
-    <>
-      {partner === "exp"
-        ? <PartnerHeader partnerId={partner!} market={market} neutral={false} initialPickerOpen={false} basePath={backHref} />
-        : <Header market={market} />
-      }
+  const visitorFirstName = prefill.name?.trim().split(/\s+/)[0] || null;
+  const hsmFirstName = hsm?.hsm.firstName || null;
 
-      <main className="lp-confirm">
-        <div className="lp-shell lp-confirm-grid">
+  const receipt = (
+    <div className="lp-confirm-receipt">
+      <div className="lp-confirm-receipt-check">
+        <Icon name="check" size={28} color="var(--amber)" stroke={2.5} />
+      </div>
+      <h1 className="lp-confirm-receipt-h">
+        {visitorFirstName ? <>You&apos;re all set, {visitorFirstName}.</> : <>You&apos;re all set.</>}
+      </h1>
+      <p className="lp-confirm-receipt-sub">
+        {hsmFirstName ?? "Your local Curbio team"} will reach out within one business day
+        {prefill.email ? <> at <strong>{prefill.email}</strong></> : null}.
+      </p>
+    </div>
+  );
 
-          {/* ── Left: HSM card ── */}
-          <div className="lp-confirm-left">
-            <p className="lp-confirm-eyebrow">Your local Curbio team</p>
-            {hsm ? (
+  const hsmCard = (
+    <div className="lp-confirm-left">
+      <p className="lp-confirm-eyebrow">Your local Curbio team</p>
+      {hsm ? (
               <div className="lp-hsm">
                 <div className="lp-hsm-photo">
                   {hsm.hsm.photo ? (
@@ -243,63 +259,96 @@ export default function ConfirmShell({
                 </p>
               </div>
             )}
-          </div>
+    </div>
+  );
 
-          {/* ── Right: Calendly + No thanks ── */}
-          <div className="lp-confirm-right">
-            <p className="lp-confirm-eyebrow">Pick a time that works for you</p>
-            {profileUrl ? (
-              <div className="lp-confirm-cal-wrap">
-                {/* iframe src is SSR'd (embedDomain from server Host header) so
-                    the browser starts fetching Calendly when HTML parses.
-                    No scrolling="no": calHeight tracks calendly.page_height
-                    messages so content is never clipped. */}
-                {iframeSrc && (
-                  <div style={{ position: "relative" }}>
-                    {/* Skeleton — visible until iframe fires onLoad */}
-                    {!iframeLoaded && (
-                      <div
-                        className="lp-cal-skeleton"
-                        style={{ height: calHeight }}
-                        aria-hidden
-                      />
+  const waitLabel = hsmFirstName ? (
+    <>I&apos;ll wait for {hsmFirstName}&apos;s call</>
+  ) : (
+    <>I&apos;ll wait for the call</>
+  );
+
+  return (
+    <>
+      {partner === "exp"
+        ? <PartnerHeader partnerId={partner!} market={market} neutral={false} initialPickerOpen={false} basePath={backHref} />
+        : <Header market={market} />
+      }
+
+      <main className="lp-confirm">
+        {declined ? (
+          /* ── Booking declined: centered confirmation, no navigation ── */
+          <div className="lp-shell lp-confirm-done">
+            {receipt}
+            {hsmCard}
+            <a href={backHref} className="lp-confirm-again">
+              Submit another request &rarr;
+            </a>
+          </div>
+        ) : (
+          <div className="lp-shell">
+            {receipt}
+            <div className="lp-confirm-grid">
+
+              {/* ── Left: HSM card ── */}
+              {hsmCard}
+
+              {/* ── Right: Calendly (optional upgrade) + I'll wait ── */}
+              <div className="lp-confirm-right">
+                <p className="lp-confirm-eyebrow">Want to talk sooner?</p>
+                <p className="lp-confirm-subline">
+                  Grab a time that works for you &mdash; otherwise we&apos;ll call you.
+                </p>
+                {profileUrl ? (
+                  <div className="lp-confirm-cal-wrap">
+                    {/* iframe src is SSR'd (embedDomain from server Host header) so
+                        the browser starts fetching Calendly when HTML parses.
+                        No scrolling="no": calHeight tracks calendly.page_height
+                        messages so content is never clipped. */}
+                    {iframeSrc && (
+                      <div style={{ position: "relative" }}>
+                        {/* Skeleton — visible until iframe fires onLoad */}
+                        {!iframeLoaded && (
+                          <div
+                            className="lp-cal-skeleton"
+                            style={{ height: calHeight }}
+                            aria-hidden
+                          />
+                        )}
+                        <iframe
+                          src={iframeSrc}
+                          width="100%"
+                          height={calHeight}
+                          frameBorder="0"
+                          title={`Schedule a call with ${hsm?.hsm.firstName ?? "your local manager"}`}
+                          {...{ fetchpriority: "high" }}
+                          style={{ border: 0, display: "block", borderRadius: 8, overflowY: "auto" }}
+                          onLoad={() => setIframeLoaded(true)}
+                        />
+                      </div>
                     )}
-                    <iframe
-                      src={iframeSrc}
-                      width="100%"
-                      height={calHeight}
-                      frameBorder="0"
-                      title={`Schedule a call with ${hsm?.hsm.firstName ?? "your local manager"}`}
-                      {...{ fetchpriority: "high" }}
-                      style={{ border: 0, display: "block", borderRadius: 8, overflowY: "auto" }}
-                      onLoad={() => setIframeLoaded(true)}
-                    />
+                    <button type="button" className="lp-confirm-nothx" onClick={declineBooking}>
+                      {waitLabel}
+                    </button>
                   </div>
+                ) : (
+                  <>
+                    <div className="lp-confirm-no-cal">
+                      <p style={{ fontSize: 16, color: "var(--fg-muted)", lineHeight: 1.6 }}>
+                        {hsm?.hsm.firstName ?? "Your local manager"} will reach out within one
+                        business day to find a time that works for you.
+                      </p>
+                    </div>
+                    <button type="button" className="lp-confirm-nothx" onClick={declineBooking}>
+                      {waitLabel}
+                    </button>
+                  </>
                 )}
-                {/* Deliberate full navigation — resets landing-page state. */}
-                {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-                <a href={backHref} className="lp-confirm-nothx">
-                  No thanks, I&apos;ll wait
-                </a>
               </div>
-            ) : (
-              <>
-                <div className="lp-confirm-no-cal">
-                  <p style={{ fontSize: 16, color: "var(--fg-muted)", lineHeight: 1.6 }}>
-                    {hsm?.hsm.firstName ?? "Your local manager"} will reach out within one
-                    business day to find a time that works for you.
-                  </p>
-                </div>
-                {/* Deliberate full navigation — resets landing-page state. */}
-                {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-                <a href={backHref} className="lp-confirm-nothx">
-                  No thanks, I&apos;ll wait
-                </a>
-              </>
-            )}
-          </div>
 
-        </div>
+            </div>
+          </div>
+        )}
       </main>
 
     </>

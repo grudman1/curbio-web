@@ -30,6 +30,7 @@ export type EventName =
   | "market_select"
   | "booking_view"
   | "booking_complete"
+  | "booking_declined"
   | "scroll_depth";
 
 export function trackEvent(
