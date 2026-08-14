@@ -9,6 +9,7 @@ import { DealTimeline } from "@/components/home/DealTimeline";
 import { MoveInStats } from "@/components/home/MoveInStats";
 import { HomeResults } from "@/components/home/HomeResults";
 import { NavyProofBand } from "@/components/home/NavyProofBand";
+import { BeforeAfterProof } from "@/components/home/BeforeAfterProof";
 import { AudienceRouter } from "@/components/home/AudienceRouter";
 import { OurWork } from "@/components/home/OurWork";
 import { MarketsManagers } from "@/components/home/MarketsManagers";
@@ -92,6 +93,7 @@ export default function HomePreviewPage() {
       <NavyProofBand />
       <HomeResults />
       <QualifyCard />
+      <BeforeAfterProof />
       <DealTimeline />
       <MoveInStats />
       <AudienceRouter />
