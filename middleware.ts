@@ -166,6 +166,17 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
+  // 1c. Executive share route: ONE env-configured token, read-only, no admin
+  //     session. Fails closed — env unset means no bypass exists at all. The
+  //     page re-validates the token itself; this bypass only skips the login
+  //     redirect.
+  const shareToken = process.env.MARKETING_EXEC_SHARE_TOKEN;
+  if (shareToken && pathname === `/marketing/executive/${shareToken}`) {
+    const res = NextResponse.next();
+    res.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return res;
+  }
+
   // 2. /admin and /marketing gate — one session, one password, one place to
   //    revoke. /marketing is the Marketing Hub; it authenticates exactly like
   //    /admin and sends the signed-out to the same login.

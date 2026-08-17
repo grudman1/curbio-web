@@ -376,10 +376,9 @@ export const HUB_SURFACES: HubSurface[] = [
     target: `${QUALIFIED_TARGET_PER_MARKET_PER_MONTH} Qualified per market per month`,
     status: "partial",
     needs: [
-      "Live app sync — interim: the headline grid reads the one-time snapshot (config/appLeadsSnapshot.json)",
-      "Engaged sources (ActiveCampaign, Instantly, /api/intake) for the engagement summary",
+      "Live app sync — interim: the scorecard reads the one-time snapshot (config/appLeadsSnapshot.json)",
+      "Engaged sources (ActiveCampaign, Instantly, /api/intake) before the funnel's Engaged stage can show a number",
       "Event and outreach logs (for the initiative scorecards)",
-      "A place to persist Wins / Concerns / Decisions notes per month",
     ],
   },
   {

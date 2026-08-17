@@ -26,8 +26,8 @@ import {
   SNAPSHOT_MONTHS,
   aggregateSnapshot,
 } from "@/config/appLeadsSnapshot";
-import { FAIL, Meta, MUTED, Panel, SCAN, SUBTLE, WARN } from "@/app/(site)/admin/(dashboard)/ui";
-import { monthLabel, monthShort } from "./timeframe";
+import { FAIL, Meta, MUTED, Panel, SCAN, WARN } from "@/app/(site)/admin/(dashboard)/ui";
+import { monthShort } from "./timeframe";
 import { paceRead } from "./pacing";
 
 export type HubAlert = {
