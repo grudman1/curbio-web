@@ -13,10 +13,12 @@ import {
 
 // Five jobs, all on the edge, in order:
 //
-// 1. /design-system → 301 /admin/design-system. Every internal surface lives
-//    under /admin — one door, one auth gate.
+// 1. Internal-surface moves: /design-system → 301 /admin/design-system, and
+//    /admin/marketing/* → 301 /marketing/* (the Marketing Hub is its own
+//    control room now, not a Control Room tab; "monthly" became "executive").
+//    One auth gate covers both roots.
 //
-// 2. /admin GATE. Signed-session auth (see lib/adminSession.ts): middleware
+// 2. /admin AND /marketing GATE. Signed-session auth (see lib/adminSession.ts): middleware
 //    verifies the cookie's HMAC + idle expiry, then confirms the session
 //    record still exists in Redis — using the READ-ONLY token, so the edge
 //    can verify sessions but never mint or revoke one. Passwords are never
@@ -150,8 +152,40 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
-  // 2. /admin gate.
-  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+  // 1b. The Marketing Hub moved out of the Control Room: /admin/marketing/*
+  //     301s to /marketing/* so old links keep working. The one renamed
+  //     segment: monthly → executive. Must run before the /admin gate below,
+  //     because these paths match its prefix.
+  if (pathname === "/admin/marketing" || pathname.startsWith("/admin/marketing/")) {
+    const rest = pathname.slice("/admin/marketing".length);
+    const url = req.nextUrl.clone();
+    url.pathname =
+      rest === "/monthly" || rest.startsWith("/monthly/")
+        ? `/marketing/executive${rest.slice("/monthly".length)}`
+        : `/marketing${rest}`;
+    return NextResponse.redirect(url, 301);
+  }
+
+  // 1c. Executive share route: ONE env-configured token, read-only, no admin
+  //     session. Fails closed — env unset means no bypass exists at all. The
+  //     page re-validates the token itself; this bypass only skips the login
+  //     redirect.
+  const shareToken = process.env.MARKETING_EXEC_SHARE_TOKEN;
+  if (shareToken && pathname === `/marketing/executive/${shareToken}`) {
+    const res = NextResponse.next();
+    res.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return res;
+  }
+
+  // 2. /admin and /marketing gate — one session, one password, one place to
+  //    revoke. /marketing is the Marketing Hub; it authenticates exactly like
+  //    /admin and sends the signed-out to the same login.
+  if (
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/") ||
+    pathname === "/marketing" ||
+    pathname.startsWith("/marketing/")
+  ) {
     if (!adminEnvReady()) return notFoundResponse();
     const session = await validSession(req);
 

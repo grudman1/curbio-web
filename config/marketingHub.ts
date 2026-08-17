@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// MARKETING HUB — single source of truth for the /admin/marketing surfaces.
+// MARKETING HUB — single source of truth for the /marketing surfaces.
 //
-// This file defines the sub-nav, the reporting dimensions, the two-tier lead
+// This file defines the sidebar, the reporting dimensions, the two-tier lead
 // vocabulary, and the wiring registry. Pages render FROM this config; nothing
 // in the Hub writes a dimension, target, or definition down twice.
 //
@@ -220,7 +220,7 @@ export const SYNC_SURFACES: {
 export type WiringStatus = "live" | "partial" | "waiting";
 
 export type HubSurface = {
-  /** Route segment under /admin/marketing. */
+  /** Route segment under /marketing ("today" is the root). */
   slug: string;
   label: string;
   /** One-line purpose, rendered in the page header. */
@@ -234,6 +234,19 @@ export type HubSurface = {
 
 export const HUB_SURFACES: HubSurface[] = [
   {
+    slug: "today",
+    label: "Today",
+    purpose:
+      "Are we on pace to hit 50 Qualified per market this month — and if not, where is it breaking?",
+    target: `${QUALIFIED_TARGET_PER_MARKET_PER_MONTH} Qualified per market per month`,
+    status: "partial",
+    needs: [
+      "Live app sync — interim: the app snapshot (config/appLeadsSnapshot.json), accurate through its as-of date",
+      "Engaged sources (ActiveCampaign, Instantly, /api/intake) before the funnel's Engaged stage can show a number",
+      "Webhook heartbeats, so the alerts panel can catch a sync going silent",
+    ],
+  },
+  {
     slug: "report",
     label: "Report",
     purpose:
@@ -245,6 +258,53 @@ export const HUB_SURFACES: HubSurface[] = [
       "Contact store with channel attribution (first and last touch — the app's first-touch fields are empty, so first-touch views stay em-dash)",
       "Spend entry per month × market × channel (for CAC)",
       "ActiveCampaign and Instantly webhooks (for Engaged and the email opt-in / cold split)",
+    ],
+  },
+  {
+    slug: "channels",
+    label: "Channels",
+    purpose:
+      "One channel at a time, across markets and months — what is producing, what has gone quiet, and what each Qualified costs.",
+    status: "partial",
+    needs: [
+      "Live app sync — interim: the app snapshot, last-touch only",
+      "Spend entry per month × market × channel (for cost per Qualified)",
+      "ActiveCampaign and Instantly webhooks (for Engaged by channel)",
+    ],
+  },
+  {
+    slug: "markets",
+    label: "Markets",
+    purpose:
+      "One market at a time — trajectory against the 50, channel mix, and where its funnel narrows.",
+    target: `${QUALIFIED_TARGET_PER_MARKET_PER_MONTH} Qualified per market per month`,
+    status: "partial",
+    needs: [
+      "Live app sync — interim: the app snapshot",
+      "Spend entry per month × market (for CAC by market)",
+    ],
+  },
+  {
+    slug: "attribution",
+    label: "Attribution health",
+    purpose:
+      "What share of Qualified arrives with no known channel. Shrinking that number is the job — every other page is only as good as this one.",
+    status: "partial",
+    needs: [
+      "UTM discipline on every link in the wild — the Links registry is the tool for this",
+      "Call tracking numbers per market and event (phone leads land as direct without them)",
+      "First-touch capture (the app's first-touch fields are empty today)",
+    ],
+  },
+  {
+    slug: "links",
+    label: "Links",
+    purpose:
+      "Every tracked link Curbio has in the world — QR, print, email, partner, paid — in one registry, with its performance attached.",
+    status: "partial",
+    needs: [
+      "Click counts for the go.curbio.com redirects (today: lifetime hits from the July 28 export only)",
+      "Lead-traffic join beyond the recent-leads window",
     ],
   },
   {
@@ -309,17 +369,16 @@ export const HUB_SURFACES: HubSurface[] = [
     ],
   },
   {
-    slug: "monthly",
-    label: "Monthly",
+    slug: "executive",
+    label: "Executive",
     purpose:
-      "The exec review — Qualified vs. the 50 target per market, with engagement as the leading indicator. Built to be read by people who have never seen the other tabs.",
+      "The exec review — Qualified vs. the 50 target per market, with engagement as the leading indicator. Built to be read by people who have never seen the other pages.",
     target: `${QUALIFIED_TARGET_PER_MARKET_PER_MONTH} Qualified per market per month`,
     status: "partial",
     needs: [
-      "Live app sync — interim: the headline grid reads the one-time snapshot (config/appLeadsSnapshot.json)",
-      "Engaged sources (ActiveCampaign, Instantly, /api/intake) for the engagement summary",
+      "Live app sync — interim: the scorecard reads the one-time snapshot (config/appLeadsSnapshot.json)",
+      "Engaged sources (ActiveCampaign, Instantly, /api/intake) before the funnel's Engaged stage can show a number",
       "Event and outreach logs (for the initiative scorecards)",
-      "A place to persist Wins / Concerns / Decisions notes per month",
     ],
   },
   {
@@ -340,5 +399,28 @@ export const HUB_SURFACE_BY_SLUG: Record<string, HubSurface> = Object.fromEntrie
 );
 
 export function hubPath(slug: string): string {
-  return `/admin/marketing/${slug}`;
+  return slug === "today" ? "/marketing" : `/marketing/${slug}`;
+}
+
+// ── Sidebar grouping ─────────────────────────────────────────────────────────
+//
+// The sidebar's four sections, in reading order: the screen that answers the
+// question, the screens that explain it, the screens that change it, and the
+// screens that present it. Every slug must exist in HUB_SURFACES — the
+// exhaustiveness check below fails the build if the two lists drift.
+
+export const HUB_NAV_GROUPS: { title: string; slugs: string[] }[] = [
+  { title: "Overview", slugs: ["today"] },
+  { title: "Analyze", slugs: ["report", "channels", "markets", "attribution"] },
+  { title: "Operate", slugs: ["links", "contacts", "forms", "partners", "outreach", "events"] },
+  { title: "Present", slugs: ["executive", "settings"] },
+];
+
+// Runtime exhaustiveness: every surface appears in exactly one group.
+{
+  const grouped = HUB_NAV_GROUPS.flatMap((g) => g.slugs);
+  const all = HUB_SURFACES.map((s) => s.slug);
+  if (grouped.length !== all.length || !all.every((s) => grouped.includes(s))) {
+    throw new Error("config/marketingHub.ts: HUB_NAV_GROUPS and HUB_SURFACES disagree");
+  }
 }

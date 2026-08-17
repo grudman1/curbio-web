@@ -12,6 +12,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/qrcode": "^1.5.6",
     "@upstash/redis": "^1.38.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/functions": "^1.5.0",
@@ -19,6 +20,7 @@
     "bcryptjs": "^3.0.3",
     "next": "^15.0.3",
     "posthog-js": "^1.407.4",
+    "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "resend": "^6.12.4"

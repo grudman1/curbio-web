@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { readRecentLeads, type LeadRow } from "@/lib/adminLeads";
+import { readRecentLeads, recentCrmFailures, type LeadRow } from "@/lib/adminLeads";
 import { getSessionUser, listPendingUsers, sessionSecret, type AdminUser } from "@/lib/adminAuth";
 import { SESSION_COOKIE, openSession } from "@/lib/adminSession";
 import { logout } from "../login/actions";
@@ -51,26 +51,15 @@ async function currentAdminUser(): Promise<{ email: string; role: string } | nul
 }
 
 // ── Banner source (a): CRM delivery failures, last 24 h ─────────────────────
-// Scans the same "last SCAN leads" window as the aggregates. If more than
-// SCAN leads ever arrive inside one day, the oldest same-day failures fall
-// out of this scan — they remain visible in the Leads tab counts, and the
-// failure-alert email fires per incident regardless.
+// The scan itself lives in lib/adminLeads.ts (recentCrmFailures) — one
+// implementation shared with the Marketing Hub's alerts panel.
 function failureEntries(rows: LeadRow[]): AlertEntry[] {
-  const DAY = 86_400_000;
-  const now = Date.now();
-  const out: AlertEntry[] = [];
-  for (const { lead, delivery } of rows) {
-    if (!delivery?.crmAttempted || delivery.crmOk) continue;
-    const t = Date.parse(lead.submittedAt ?? "") || Date.parse(delivery.recordedAt ?? "");
-    if (!Number.isFinite(t) || now - t >= DAY) continue;
-    out.push({
-      id: delivery.leadId,
-      time: (lead.submittedAt ?? delivery.recordedAt).slice(5, 16).replace("T", " "),
-      summary: `${lead.market ?? "?"} · ${lead.source ?? "?"} · HTTP ${delivery.crmStatus ?? "?"}`,
-      detail: delivery.crmError ?? "no body",
-    });
-  }
-  return out;
+  return recentCrmFailures(rows).map((f) => ({
+    id: f.leadId,
+    time: f.time,
+    summary: f.summary,
+    detail: f.detail,
+  }));
 }
 
 function PendingRequestsPanel({ pending }: { pending: AdminUser[] }) {
