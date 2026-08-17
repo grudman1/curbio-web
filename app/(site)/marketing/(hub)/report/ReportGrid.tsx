@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Meta, MUTED, Panel, SUBTLE, eyebrow } from "@/app/(site)/admin/(dashboard)/ui";
 import {
-  ATTRIBUTION_MODES,
   CHANNEL_FUNNEL_ORDER,
   CHANNEL_LABELS,
   EMAIL_SPLIT_VIEWS,
@@ -11,18 +10,19 @@ import {
   QUALIFIED_TARGET_PER_MARKET_PER_MONTH,
   REPORT_METRICS,
   ROW_DIMENSIONS,
-  type AttributionMode,
   type ReportMetricKey,
   type RowDimension,
 } from "@/config/marketingHub";
 import type { Channel } from "@/lib/channels";
 import type { SnapshotAggregates } from "@/config/appLeadsSnapshot";
+import type { AttributionMode } from "../timeframe";
 import { DASH, DefinitionsNote, OutlineBar, td, th } from "../hubUi";
 
 // The grid: rows × channel columns, ONE metric at a time — nine columns × six
 // numbers is a spreadsheet, not a view. The rest of the metrics live in the
-// drill-down below the grid. Every toggle works and re-labels the grid; only
-// the values are absent (each renders an em-dash until the wiring lands).
+// drill-down below the grid. Rows and metric are page-local controls; the
+// TIMEFRAME and ATTRIBUTION MODE arrive from the layout header, which governs
+// every Hub screen at once.
 
 type Row = { key: string; label: string; sub?: string };
 
@@ -106,22 +106,32 @@ export function ReportGrid({
   hsms,
   agg,
   snapshotLabel,
+  mode,
+  tfLabel,
+  barMonth,
 }: {
   markets: Row[];
   hsms: Row[];
+  /** Aggregated over the header-selected timeframe's months only. */
   agg: SnapshotAggregates;
   snapshotLabel: string;
+  /** From the header toggle. */
+  mode: AttributionMode;
+  /** Human label of the header timeframe ("Aug 2026", "YTD 2026"…). */
+  tfLabel: string;
+  /** Set only when the timeframe is a single month — the target bars render
+   *  then and only then, so the grid never mixes two timeframes. */
+  barMonth: string | null;
 }) {
   const [rowDim, setRowDim] = useState<RowDimension>("market");
   const [metric, setMetric] = useState<ReportMetricKey>("qualified");
-  const [mode, setMode] = useState<AttributionMode>("last");
   const [emailSplit, setEmailSplit] = useState(false);
   const [selected, setSelected] = useState<{ row: string; col: string } | null>(null);
 
   const rows = rowDim === "market" ? markets : hsms;
   const columns = columnsFor(emailSplit);
   const metricLabel = REPORT_METRICS.find((m) => m.key === metric)!.label;
-  const modeLabel = ATTRIBUTION_MODES.find((m) => m.key === mode)!.label.toLowerCase();
+  const modeLabel = mode === "last" ? "last touch" : "first touch";
 
   const selectedRow = selected ? rows.find((r) => r.key === selected.row) : null;
   const selectedCol = selected ? columns.find((c) => c.key === selected.col) : null;
@@ -132,8 +142,6 @@ export function ReportGrid({
   // touch, for Qualified / Closed / Revenue / Close rate. Everything else
   // (HSM rows, first touch, the email opt-in/cold split, Engaged, CAC)
   // renders an em-dash because its source genuinely doesn't exist yet.
-  const latestMonth = agg.months[agg.months.length - 1];
-
   function cellFor(rowKey: string, colKey: string) {
     if (rowDim !== "market" || mode !== "last") return null;
     if (colKey.startsWith("email_")) return null; // split views need webhooks
@@ -166,7 +174,6 @@ export function ReportGrid({
       >
         <Seg label="Rows" options={ROW_DIMENSIONS} value={rowDim} onChange={(k) => { setRowDim(k); setSelected(null); }} />
         <Seg label="Metric" options={REPORT_METRICS} value={metric} onChange={setMetric} />
-        <Seg label="Attribution" options={ATTRIBUTION_MODES} value={mode} onChange={setMode} />
         <label
           style={{
             display: "inline-flex",
@@ -212,10 +219,10 @@ export function ReportGrid({
           " The app's first-touch fields are empty (verified against its attribution export), so first-touch views render em-dashes until the contact store exists."}
         {rowDim === "market" && mode === "last" && (
           <>
-            {" "}Populated numbers are Qualified-side only, from a one-time{" "}
-            <strong>{snapshotLabel}</strong> — a point-in-time export, not a live sync.
-            Channel attribution is the app&apos;s referral source, conservatively mapped;
-            everything ambiguous is counted as direct.
+            {" "}Populated numbers cover <strong>{tfLabel}</strong>, Qualified-side only,
+            from a one-time <strong>{snapshotLabel}</strong> — a point-in-time export, not
+            a live sync. Channel attribution is the app&apos;s referral source,
+            conservatively mapped; everything ambiguous is counted as direct.
           </>
         )}
       </p>
@@ -228,8 +235,8 @@ export function ReportGrid({
           right={
             <Meta>
               {rowDim === "market" && mode === "last"
-                ? `YTD · ${snapshotLabel} · direct last`
-                : `${modeLabel} · channels in funnel order · direct last`}
+                ? `${tfLabel} · ${snapshotLabel} · direct last`
+                : `${tfLabel} · ${modeLabel} · direct last`}
             </Meta>
           }
         >
@@ -255,23 +262,23 @@ export function ReportGrid({
                           {r.sub}
                         </div>
                       )}
-                      <div style={{ marginTop: 5 }}>
-                        {rowDim === "market" && latestMonth ? (
-                          (() => {
-                            const q = agg.qualifiedByMarketMonth[`${r.key}|${latestMonth}`] ?? 0;
+                      {/* Target bars only when the header timeframe IS a
+                          single month — the 50 target is per month, and a
+                          YTD grid with this-month bars was two timeframes in
+                          one view. */}
+                      {rowDim === "market" && barMonth && (
+                        <div style={{ marginTop: 5 }}>
+                          {(() => {
+                            const q = agg.qualifiedByMarketMonth[`${r.key}|${barMonth}`] ?? 0;
                             return (
                               <OutlineBar
                                 fraction={q / QUALIFIED_TARGET_PER_MARKET_PER_MONTH}
-                                label={`${q} of ${QUALIFIED_TARGET_PER_MARKET_PER_MONTH} Qualified in ${monthShort(latestMonth)} · snapshot`}
+                                label={`${q} of ${QUALIFIED_TARGET_PER_MARKET_PER_MONTH} Qualified in ${monthShort(barMonth)} · snapshot`}
                               />
                             );
-                          })()
-                        ) : (
-                          <OutlineBar
-                            label={`${DASH} of ${QUALIFIED_TARGET_PER_MARKET_PER_MONTH} Qualified this month`}
-                          />
-                        )}
-                      </div>
+                          })()}
+                        </div>
+                      )}
                     </td>
                     {columns.map((c) => {
                       const isSelected = selected?.row === r.key && selected?.col === c.key;

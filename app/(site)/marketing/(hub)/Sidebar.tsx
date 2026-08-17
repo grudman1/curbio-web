@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { HUB_NAV_GROUPS, HUB_SURFACE_BY_SLUG, hubPath } from "@/config/marketingHub";
 import { STATUS_TONE } from "./hubUi";
@@ -113,7 +113,13 @@ function NavIcon({ slug }: { slug: string }) {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
+
+  // Navigating between screens keeps the header's timeframe and attribution
+  // state — the whole point of putting that state in the URL.
+  const qs = searchParams.toString();
+  const withQuery = (href: string) => (qs ? `${href}?${qs}` : href);
 
   const activeSurface = HUB_NAV_GROUPS.flatMap((g) => g.slugs)
     .map((slug) => HUB_SURFACE_BY_SLUG[slug])
@@ -139,7 +145,7 @@ export function Sidebar() {
             return (
               <Link
                 key={slug}
-                href={href}
+                href={withQuery(href)}
                 aria-current={active ? "page" : undefined}
                 className={`mk-item${active ? " is-active" : ""}`}
                 title={s.label}

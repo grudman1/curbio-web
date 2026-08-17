@@ -52,6 +52,10 @@ export const SNAPSHOT_AS_OF: string = snapshot.asOf;
 export const SNAPSHOT_LABEL = `app snapshot · through ${snapshot.asOf}`;
 export const SNAPSHOT_DEALS: SnapshotDeal[] = snapshot.deals;
 
+/** Every month with at least one deal, ascending ("2026-01"…). The Hub's
+ *  timeframe selector offers exactly these — never a month with no data. */
+export const SNAPSHOT_MONTHS: string[] = [...new Set(SNAPSHOT_DEALS.map((d) => d.month))].sort();
+
 /** The aggregate row for app markets we don't serve landing pages for. */
 export const OTHER_MARKETS_KEY = "__other__";
 export const OTHER_MARKETS_LABEL = "Other markets";
@@ -145,7 +149,10 @@ export type SnapshotAggregates = {
   marketKeys: string[];
 };
 
-export function aggregateSnapshot(): SnapshotAggregates {
+/** Aggregate the snapshot, optionally over a subset of months — the Hub's
+ *  timeframe selector resolves to a month set and every page aggregates over
+ *  exactly that set. No filter = the whole snapshot (YTD). */
+export function aggregateSnapshot(monthFilter?: ReadonlySet<string>): SnapshotAggregates {
   const cells: Record<string, CellAggregate> = {};
   const qualifiedByMarketMonth: Record<string, number> = {};
   const closedByMarketMonth: Record<string, number> = {};
@@ -153,6 +160,7 @@ export function aggregateSnapshot(): SnapshotAggregates {
   const marketKeys = new Set<string>();
 
   for (const deal of SNAPSHOT_DEALS) {
+    if (monthFilter && !monthFilter.has(deal.month)) continue;
     const marketKey = marketKeyForCode(deal.marketCode);
     const channel = channelForDeal(deal);
     const cellKey = `${marketKey}|${channel}`;

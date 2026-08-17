@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { SNAPSHOT_MONTHS } from "@/config/appLeadsSnapshot";
+import { HubControls } from "./HubControls";
 import { Sidebar } from "./Sidebar";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -92,9 +94,10 @@ export default function MarketingHubLayout({ children }: { children: React.React
           ← Control Room
         </Link>
         <div className="mk-controls">
-          {/* Month selector + attribution toggle mount here — they govern
-              every screen at once, which is why they live in the layout and
-              not on any page. */}
+          {/* These two govern every screen at once — which is why they live
+              in the layout and not on any page. One timeframe on screen at a
+              time; YTD is an explicit choice, never an implicit second read. */}
+          <HubControls months={SNAPSHOT_MONTHS} />
         </div>
       </header>
       <div className="mk-body">
