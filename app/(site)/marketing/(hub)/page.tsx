@@ -21,6 +21,8 @@ import { PaceArc, Sparkline, TargetBar } from "./charts";
 import { TrendChart, type TrendMonth } from "./TrendChart";
 import { FunnelStrip, type FunnelStage } from "./FunnelStrip";
 import { AttributionHealthPanel } from "./AttributionHealth";
+import { AlertsPanel, collectAlerts } from "./alerts";
+import { monthLabel } from "./timeframe";
 import { DASH, HubPageHeader, NeedsBlock, PACE_TONE } from "./hubUi";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -129,6 +131,9 @@ export default async function TodayPage({
     { label: "Closed", count: funnel[5], reportMetric: "closed" },
   ];
   const linkQuery = `t=${timeframeParam(tf)}${sp.a === "first" ? "&a=first" : ""}`;
+
+  // ── f) alerts ─────────────────────────────────────────────────────────────
+  const alertData = await collectAlerts();
 
   return (
     <>
@@ -295,6 +300,14 @@ export default async function TodayPage({
       {/* ── e) attribution health — the honest panel ── */}
       <div style={{ marginBottom: "var(--space-5)" }}>
         <AttributionHealthPanel months={months} tfLabel={tfLabel} />
+      </div>
+
+      {/* ── f) alerts — part of the dashboard, not a page-top interruption ── */}
+      <div style={{ marginBottom: "var(--space-5)" }}>
+        <AlertsPanel
+          {...alertData}
+          currentMonthLabel={monthLabel(SNAPSHOT_MONTHS[SNAPSHOT_MONTHS.length - 1] ?? "")}
+        />
       </div>
 
       <NeedsBlock surface={surface} />

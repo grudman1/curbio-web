@@ -125,6 +125,43 @@ export const readRecentLeads = cache(async (limit = 50): Promise<LeadsResult> =>
   }
 });
 
+// ── CRM delivery failures (alert sources) ────────────────────────────────────
+// One implementation for both surfaces that show these: the Control Room's
+// banner and the Marketing Hub's alerts panel. Scans the same "last N leads"
+// window as the aggregates; if more than N leads arrive inside the window the
+// oldest same-day failures fall out of this scan — they remain visible in the
+// Leads tab counts, and the failure-alert email fires per incident regardless.
+
+export type CrmFailure = {
+  leadId: string;
+  /** For sorting, newest first. */
+  timestamp: number;
+  /** "07-29 14:03" — already formatted for display. */
+  time: string;
+  /** One line: market · source · status. */
+  summary: string;
+  /** Error body / context. */
+  detail: string;
+};
+
+export function recentCrmFailures(rows: LeadRow[], windowMs = 86_400_000): CrmFailure[] {
+  const now = Date.now();
+  const out: CrmFailure[] = [];
+  for (const { lead, delivery } of rows) {
+    if (!delivery?.crmAttempted || delivery.crmOk) continue;
+    const t = Date.parse(lead.submittedAt ?? "") || Date.parse(delivery.recordedAt ?? "");
+    if (!Number.isFinite(t) || now - t >= windowMs) continue;
+    out.push({
+      leadId: delivery.leadId,
+      timestamp: t,
+      time: (lead.submittedAt ?? delivery.recordedAt).slice(5, 16).replace("T", " "),
+      summary: `${lead.market ?? "?"} · ${lead.source ?? "?"} · HTTP ${delivery.crmStatus ?? "?"}`,
+      detail: delivery.crmError ?? "no body",
+    });
+  }
+  return out.sort((a, b) => b.timestamp - a.timestamp);
+}
+
 // ── PII minimisation ─────────────────────────────────────────────────────────
 // This viewer exists to diagnose DELIVERY and audit ATTRIBUTION, not to look up
 // contacts — the CRM is for that, and the CRM-failure alert email already
