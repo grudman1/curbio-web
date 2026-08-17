@@ -109,6 +109,7 @@ export function ReportGrid({
   mode,
   tfLabel,
   barMonth,
+  initialMetric,
 }: {
   markets: Row[];
   hsms: Row[];
@@ -122,9 +123,11 @@ export function ReportGrid({
   /** Set only when the timeframe is a single month — the target bars render
    *  then and only then, so the grid never mixes two timeframes. */
   barMonth: string | null;
+  /** Metric to open on (?m= from a funnel-stage click). */
+  initialMetric?: ReportMetricKey;
 }) {
   const [rowDim, setRowDim] = useState<RowDimension>("market");
-  const [metric, setMetric] = useState<ReportMetricKey>("qualified");
+  const [metric, setMetric] = useState<ReportMetricKey>(initialMetric ?? "qualified");
   const [emailSplit, setEmailSplit] = useState(false);
   const [selected, setSelected] = useState<{ row: string; col: string } | null>(null);
 

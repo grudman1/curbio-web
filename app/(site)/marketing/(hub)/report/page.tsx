@@ -8,6 +8,7 @@ import {
   SNAPSHOT_LABEL,
   SNAPSHOT_MONTHS,
 } from "@/config/appLeadsSnapshot";
+import { REPORT_METRICS, type ReportMetricKey } from "@/config/marketingHub";
 import { monthsFor, parseAttribution, parseTimeframe, timeframeLabel } from "../timeframe";
 import { HubPageHeader, NeedsBlock } from "../hubUi";
 import { ReportGrid } from "./ReportGrid";
@@ -36,6 +37,10 @@ export default async function ReportPage({
   const tf = parseTimeframe(sp.t, SNAPSHOT_MONTHS);
   const mode = parseAttribution(sp.a);
   const months = monthsFor(tf, SNAPSHOT_MONTHS);
+  // ?m= preselects the metric — how funnel-stage clicks land on the grid.
+  const initialMetric = REPORT_METRICS.find((m) => m.key === sp.m)?.key as
+    | ReportMetricKey
+    | undefined;
 
   // Row dimensions derive from config/markets.ts — the only place a market is
   // named. HSM rows are the unique HSM names, each covering its markets.
@@ -78,6 +83,7 @@ export default async function ReportPage({
         mode={mode}
         tfLabel={timeframeLabel(tf, SNAPSHOT_MONTHS)}
         barMonth={tf.kind === "month" ? tf.ym : null}
+        initialMetric={initialMetric}
       />
       <NeedsBlock surface={surface} />
     </>

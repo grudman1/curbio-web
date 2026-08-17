@@ -26,6 +26,26 @@ export type Channel = (typeof VALID_CHANNELS)[number];
 
 const CHANNEL_SET: ReadonlySet<string> = new Set(VALID_CHANNELS);
 
+/**
+ * THE channel colour map — one fixed colour per channel, used by every chart
+ * in the Marketing Hub. Defined here, beside the closed list itself, so a
+ * chart can never invent a palette. Muted on purpose, and none of these hues
+ * approach the state colours (green / amber / red mean on-pace / behind /
+ * at-risk and nothing else). `direct` is grey because it is the absence of
+ * attribution — unattributed traffic must never look like a channel win.
+ */
+export const CHANNEL_COLORS: Record<Channel, string> = {
+  creator: "#8f62c0", // violet
+  partnership: "#4467c4", // indigo
+  hsm_field: "#2f8bb5", // cyan-blue
+  email: "#2e9188", // teal
+  paid_search: "#b8538f", // magenta
+  paid_social: "#c4785e", // terracotta
+  organic: "#7a8f3d", // olive
+  referral: "#5b7d8f", // slate
+  direct: "#9aa3ad", // grey — no known channel
+};
+
 /** Map a raw utm_source onto the closed channel list. Always returns a valid
  *  channel — "direct" for absent or unrecognized sources. */
 export function deriveChannel(utmSource: string | null | undefined): Channel {

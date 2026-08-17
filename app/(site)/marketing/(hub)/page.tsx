@@ -6,16 +6,20 @@ import {
 } from "@/config/marketingHub";
 import {
   aggregateSnapshot,
+  funnelCounts,
   OTHER_MARKETS_KEY,
+  qualifiedByMonthChannel,
   SNAPSHOT_AS_OF,
   SNAPSHOT_LABEL,
   SNAPSHOT_MONTHS,
   weeklyQualified,
 } from "@/config/appLeadsSnapshot";
 import { Meta, MUTED, Panel, SUBTLE, eyebrow } from "@/app/(site)/admin/(dashboard)/ui";
-import { monthsFor, parseTimeframe, timeframeLabel } from "./timeframe";
+import { monthsFor, parseTimeframe, timeframeLabel, timeframeParam } from "./timeframe";
 import { paceRead, paceSentence, type PaceRead } from "./pacing";
 import { PaceArc, Sparkline, TargetBar } from "./charts";
+import { TrendChart, type TrendMonth } from "./TrendChart";
+import { FunnelStrip, type FunnelStage } from "./FunnelStrip";
 import { DASH, HubPageHeader, NeedsBlock, PACE_TONE } from "./hubUi";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -102,6 +106,28 @@ export default async function TodayPage({
     (acc, m) => acc.map((v, i) => v + (weekly.byMarket[m.slug]?.[i] ?? 0)),
     zeroWeeks
   );
+
+  // ── c) trend: every snapshot month (up to 12), stacked by channel ─────────
+  const byMonthChannel = qualifiedByMonthChannel();
+  const trendMonths: TrendMonth[] = SNAPSHOT_MONTHS.slice(-12).map((ym) => {
+    const byChannel = byMonthChannel[ym] ?? {};
+    return {
+      ym,
+      byChannel,
+      total: Object.values(byChannel).reduce((s, v) => s + (v ?? 0), 0),
+    };
+  });
+
+  // ── d) funnel over the selected timeframe ─────────────────────────────────
+  const funnel = funnelCounts(new Set(months));
+  const stages: FunnelStage[] = [
+    { label: "Engaged", count: null, reportMetric: "engaged" },
+    { label: "Qualified", count: funnel[0], reportMetric: "qualified" },
+    { label: "Meeting", count: funnel[2], reportMetric: "qualified" },
+    { label: "Proposal", count: funnel[4], reportMetric: "qualified" },
+    { label: "Closed", count: funnel[5], reportMetric: "closed" },
+  ];
+  const linkQuery = `t=${timeframeParam(tf)}${sp.a === "first" ? "&a=first" : ""}`;
 
   return (
     <>
@@ -227,6 +253,41 @@ export default async function TodayPage({
               the target.
             </p>
           )}
+        </Panel>
+      </div>
+
+      {/* ── c) trend — 12 months, stacked by channel ── */}
+      <div style={{ marginBottom: "var(--space-5)" }}>
+        <Panel
+          title="Qualified by month"
+          right={
+            <Meta>
+              all markets · stacked by channel · last touch · {SNAPSHOT_LABEL}
+            </Meta>
+          }
+        >
+          <TrendChart months={trendMonths} />
+        </Panel>
+      </div>
+
+      {/* ── d) funnel — where it narrows, click through to the grid ── */}
+      <div style={{ marginBottom: "var(--space-5)" }}>
+        <Panel
+          title="Funnel"
+          right={
+            <Meta>
+              {tfLabel} · {SNAPSHOT_LABEL}
+            </Meta>
+          }
+        >
+          <FunnelStrip stages={stages} query={linkQuery} />
+          <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: "12px 0 0", lineHeight: 1.6 }}>
+            Cumulative reached-at-least counts across ALL app markets, including those
+            without landing pages — which is why Qualified here can exceed the company
+            total above. Closed = status Won only. Engaged has no wired source yet — its
+            stage and conversion stay em-dashes, never zeros. Each stage opens the Report
+            grid on the matching metric.
+          </p>
         </Panel>
       </div>
 

@@ -194,6 +194,34 @@ export function aggregateSnapshot(monthFilter?: ReadonlySet<string>): SnapshotAg
   };
 }
 
+// ── month × channel counts (trend chart / channel pages) ─────────────────────
+
+/** Qualified per month per channel, across ALL markets, whole snapshot.
+ *  month → channel → count. Only months and channels with deals appear. */
+export function qualifiedByMonthChannel(): Record<string, Partial<Record<Channel, number>>> {
+  const out: Record<string, Partial<Record<Channel, number>>> = {};
+  for (const deal of SNAPSHOT_DEALS) {
+    const ch = channelForDeal(deal);
+    const m = (out[deal.month] ??= {});
+    m[ch] = (m[ch] ?? 0) + 1;
+  }
+  return out;
+}
+
+// ── funnel counts (Today / Executive) ────────────────────────────────────────
+
+/** Cumulative reached-at-least counts per FUNNEL_STAGES entry, over the given
+ *  months (all months when omitted). Closed = status Won only. */
+export function funnelCounts(monthFilter?: ReadonlySet<string>): number[] {
+  const counts = FUNNEL_STAGES.map(() => 0);
+  for (const deal of SNAPSHOT_DEALS) {
+    if (monthFilter && !monthFilter.has(deal.month)) continue;
+    const reached = funnelOrdinal(deal);
+    for (let i = 0; i <= reached; i++) counts[i]++;
+  }
+  return counts;
+}
+
 // ── weekly Qualified (sparkline source) ──────────────────────────────────────
 
 const DAY_MS = 86_400_000;
