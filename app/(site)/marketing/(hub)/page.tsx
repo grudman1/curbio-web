@@ -20,6 +20,7 @@ import { paceRead, paceSentence, type PaceRead } from "./pacing";
 import { PaceArc, Sparkline, TargetBar } from "./charts";
 import { TrendChart, type TrendMonth } from "./TrendChart";
 import { FunnelStrip, type FunnelStage } from "./FunnelStrip";
+import { AttributionHealthPanel } from "./AttributionHealth";
 import { DASH, HubPageHeader, NeedsBlock, PACE_TONE } from "./hubUi";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -289,6 +290,11 @@ export default async function TodayPage({
             grid on the matching metric.
           </p>
         </Panel>
+      </div>
+
+      {/* ── e) attribution health — the honest panel ── */}
+      <div style={{ marginBottom: "var(--space-5)" }}>
+        <AttributionHealthPanel months={months} tfLabel={tfLabel} />
       </div>
 
       <NeedsBlock surface={surface} />

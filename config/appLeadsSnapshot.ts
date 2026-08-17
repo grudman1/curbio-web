@@ -208,6 +208,41 @@ export function qualifiedByMonthChannel(): Record<string, Partial<Record<Channel
   return out;
 }
 
+// ── attribution health ───────────────────────────────────────────────────────
+
+/** Per month: how many Qualified arrived with no known channel (direct), and
+ *  the month's total. The share of direct IS the attribution-health number. */
+export function directShareByMonth(): { ym: string; direct: number; total: number }[] {
+  const byMonth: Record<string, { direct: number; total: number }> = {};
+  for (const deal of SNAPSHOT_DEALS) {
+    const m = (byMonth[deal.month] ??= { direct: 0, total: 0 });
+    m.total++;
+    if (channelForDeal(deal) === "direct") m.direct++;
+  }
+  return Object.entries(byMonth)
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([ym, v]) => ({ ym, ...v }));
+}
+
+/** What the app recorded for the deals we count as direct — the raw referral
+ *  sources that carry no usable channel meaning. This list is the to-do list
+ *  for shrinking the unattributed number: phone sources need call tracking,
+ *  site sources need UTM discipline, blanks need a form that captures. */
+export function directSourceBreakdown(
+  monthFilter?: ReadonlySet<string>
+): { source: string; count: number }[] {
+  const counts: Record<string, number> = {};
+  for (const deal of SNAPSHOT_DEALS) {
+    if (monthFilter && !monthFilter.has(deal.month)) continue;
+    if (channelForDeal(deal) !== "direct") continue;
+    const source = deal.referralSource.trim() || "(blank)";
+    counts[source] = (counts[source] ?? 0) + 1;
+  }
+  return Object.entries(counts)
+    .map(([source, count]) => ({ source, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
 // ── funnel counts (Today / Executive) ────────────────────────────────────────
 
 /** Cumulative reached-at-least counts per FUNNEL_STAGES entry, over the given
