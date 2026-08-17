@@ -8,10 +8,14 @@ import { MUTED } from "./ui";
 // URL, so /admin/design-system keeps working as a direct link and the browser
 // back button behaves. Ordered by how often each gets scanned: Pages daily,
 // Leads second, Design System as occasional reference.
+//
+// Marketing is a DOOR, not a tab: it navigates out to the Marketing Hub's own
+// control room at /marketing (same session, same login). It can never render
+// as active here — /marketing doesn't use this layout.
 const TABS = [
   { href: "/admin", label: "Pages" },
   { href: "/admin/leads", label: "Leads" },
-  { href: "/admin/marketing", label: "Marketing" },
+  { href: "/marketing", label: "Marketing ↗" },
   { href: "/admin/design-system", label: "Design System" },
 ];
 

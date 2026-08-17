@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { MARKETS } from "@/config/markets";
-import { Meta, MUTED, Panel, Stat, SUBTLE } from "../../ui";
+import { Meta, MUTED, Panel, Stat, SUBTLE } from "@/app/(site)/admin/(dashboard)/ui";
 import {
   COST_PER_MEETING_TARGET_USD,
   HUB_SURFACE_BY_SLUG,
@@ -11,7 +11,7 @@ import {
 import { DASH, HubPageHeader, NeedsBlock, OutlineBar, td, th } from "../hubUi";
 
 export const metadata: Metadata = {
-  title: "Marketing · Outreach · Control Room — Curbio",
+  title: "Outreach · Marketing — Curbio",
   robots: { index: false, follow: false },
 };
 

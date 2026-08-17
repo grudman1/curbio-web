@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Meta, Panel, SUBTLE, mono } from "../../ui";
+import { Meta, Panel, SUBTLE, mono } from "@/app/(site)/admin/(dashboard)/ui";
 import { CHANNEL_FUNNEL_ORDER } from "@/config/marketingHub";
 import { ConsequenceNote } from "../hubUi";
 

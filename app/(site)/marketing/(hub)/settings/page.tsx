@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { MARKETS } from "@/config/markets";
-import { Meta, Panel, SUBTLE } from "../../ui";
+import { Meta, Panel, SUBTLE } from "@/app/(site)/admin/(dashboard)/ui";
 import {
   CHANNEL_FUNNEL_ORDER,
   CHANNEL_LABELS,
@@ -12,7 +12,7 @@ import { ConsequenceNote, DASH, HubPageHeader, NeedsBlock, StatusChip, td, tdDas
 import { UtmBuilder } from "./UtmBuilder";
 
 export const metadata: Metadata = {
-  title: "Marketing · Settings · Control Room — Curbio",
+  title: "Settings · Marketing — Curbio",
   robots: { index: false, follow: false },
 };
 

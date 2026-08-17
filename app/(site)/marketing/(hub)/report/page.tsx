@@ -18,7 +18,7 @@ import { ReportGrid } from "./ReportGrid";
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {
-  title: "Marketing · Report · Control Room — Curbio",
+  title: "Report · Marketing — Curbio",
   robots: { index: false, follow: false },
 };
 

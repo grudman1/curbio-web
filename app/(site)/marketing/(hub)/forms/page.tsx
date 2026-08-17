@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Meta, MUTED, Panel, Stat, SUBTLE } from "../../ui";
+import { Meta, MUTED, Panel, Stat, SUBTLE } from "@/app/(site)/admin/(dashboard)/ui";
 import { FORM_TYPES, HUB_SURFACE_BY_SLUG } from "@/config/marketingHub";
 import { ConsequenceNote, DASH, DefinitionsNote, EmptyLog, HubPageHeader, NeedsBlock } from "../hubUi";
 
 export const metadata: Metadata = {
-  title: "Marketing · Forms · Control Room — Curbio",
+  title: "Forms · Marketing — Curbio",
   robots: { index: false, follow: false },
 };
 

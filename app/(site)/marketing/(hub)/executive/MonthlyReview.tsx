@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Meta, MUTED, Panel, Stat, SUBTLE, eyebrow, panelHeading } from "../../ui";
+import { Meta, MUTED, Panel, Stat, SUBTLE, eyebrow, panelHeading } from "@/app/(site)/admin/(dashboard)/ui";
 import {
   COST_PER_ATTENDEE_TARGET_USD,
   COST_PER_MEETING_TARGET_USD,

@@ -2,7 +2,7 @@
 // design language (ui.tsx), specialised for the Hub's unwired state. Pure
 // styling, no data access. Server and client components both import from here.
 
-import { Chip, Meta, MUTED, OK, SUBTLE, WARN, eyebrow, panelHeading } from "../ui";
+import { Chip, Meta, MUTED, OK, SUBTLE, WARN, eyebrow, panelHeading } from "@/app/(site)/admin/(dashboard)/ui";
 import { DEFINITIONS_LINE, type HubSurface, type WiringStatus } from "@/config/marketingHub";
 
 /** The em-dash every unwired metric renders. Never a zero, never a spinner. */
@@ -24,12 +24,13 @@ export function StatusChip({ status }: { status: WiringStatus }) {
   return <Chip text={STATUS_LABEL[status]} color={STATUS_TONE[status]} dashed={status === "waiting"} />;
 }
 
-/** Page header: serif title, wiring status, purpose line, target where one exists. */
+/** Page header: serif title, wiring status, purpose line, target where one
+ *  exists. An h1 — each Hub page is its own screen now, not a tab section. */
 export function HubPageHeader({ surface }: { surface: HubSurface }) {
   return (
     <header style={{ marginBottom: "var(--space-5)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <h2 style={{ ...panelHeading, fontSize: 24 }}>{surface.label}</h2>
+        <h1 style={{ ...panelHeading, fontSize: 24 }}>{surface.label}</h1>
         <StatusChip status={surface.status} />
         {surface.target && <Meta>Target: {surface.target}</Meta>}
       </div>

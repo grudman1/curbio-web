@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Meta, Panel } from "../../ui";
+import { Meta, Panel } from "@/app/(site)/admin/(dashboard)/ui";
 import { HUB_SURFACE_BY_SLUG, PARTNER_SEED } from "@/config/marketingHub";
 import { DASH, HubPageHeader, NeedsBlock, td, tdDash, th } from "../hubUi";
 
 export const metadata: Metadata = {
-  title: "Marketing · Partners · Control Room — Curbio",
+  title: "Partners · Marketing — Curbio",
   robots: { index: false, follow: false },
 };
 

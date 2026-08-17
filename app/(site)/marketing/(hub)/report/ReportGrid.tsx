@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Meta, MUTED, Panel, SUBTLE, eyebrow } from "../../ui";
+import { Meta, MUTED, Panel, SUBTLE, eyebrow } from "@/app/(site)/admin/(dashboard)/ui";
 import {
   ATTRIBUTION_MODES,
   CHANNEL_FUNNEL_ORDER,

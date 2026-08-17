@@ -17,11 +17,11 @@ import { MonthlyReview } from "./MonthlyReview";
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {
-  title: "Marketing · Monthly · Control Room — Curbio",
+  title: "Executive · Marketing — Curbio",
   robots: { index: false, follow: false },
 };
 
-const surface = HUB_SURFACE_BY_SLUG.monthly;
+const surface = HUB_SURFACE_BY_SLUG.executive;
 
 export default function MonthlyPage() {
   const markets: { key: string; label: string }[] = MARKETS.map((m) => ({

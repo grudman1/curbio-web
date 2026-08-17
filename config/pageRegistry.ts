@@ -171,13 +171,13 @@ function implementedPages(): RegistryEntry[] {
     note: "Leads tab of the Control Room",
   });
   out.push({
-    path: "/admin/marketing",
+    path: "/marketing",
     group: "internal",
     title: "Marketing Hub",
-    status: "stub", // shell renders; no data sources wired yet (see config/marketingHub.ts registry)
+    status: "stub", // own control room; interim snapshot data, live sources still unwired (see config/marketingHub.ts registry)
     indexed: false,
-    derivedFrom: "app/(site)/admin/(dashboard)/marketing",
-    note: "Marketing tab of the Control Room — redirects to /admin/marketing/report",
+    derivedFrom: "app/(site)/marketing",
+    note: "the marketing control room — same admin session; /admin/marketing/* 301s here",
   });
   out.push({
     path: "/admin/design-system",
