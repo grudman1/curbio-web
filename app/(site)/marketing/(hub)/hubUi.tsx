@@ -2,8 +2,9 @@
 // design language (ui.tsx), specialised for the Hub's unwired state. Pure
 // styling, no data access. Server and client components both import from here.
 
-import { Chip, Meta, MUTED, OK, SUBTLE, WARN, eyebrow, panelHeading } from "@/app/(site)/admin/(dashboard)/ui";
+import { Chip, FAIL, Meta, MUTED, OK, SUBTLE, WARN, eyebrow, panelHeading } from "@/app/(site)/admin/(dashboard)/ui";
 import { DEFINITIONS_LINE, type HubSurface, type WiringStatus } from "@/config/marketingHub";
+import type { PaceState } from "./pacing";
 
 /** The em-dash every unwired metric renders. Never a zero, never a spinner. */
 export const DASH = "—";
@@ -12,6 +13,14 @@ export const STATUS_TONE: Record<WiringStatus, string> = {
   live: OK,
   partial: WARN,
   waiting: SUBTLE,
+};
+
+/** Pace tones — the ONLY meaning green/amber/red carry anywhere in the Hub:
+ *  on pace, behind, under half pace. */
+export const PACE_TONE: Record<PaceState, string> = {
+  on: OK,
+  behind: WARN,
+  risk: FAIL,
 };
 
 export const STATUS_LABEL: Record<WiringStatus, string> = {

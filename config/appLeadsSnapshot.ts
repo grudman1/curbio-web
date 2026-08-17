@@ -39,7 +39,11 @@ import snapshot from "./appLeadsSnapshot.json";
 
 export type SnapshotDeal = {
   marketCode: string;
-  /** "2026-01" */
+  /** "2026-01-06" — created date, day-level. Not PII; identity fields are
+   *  stripped at the import boundary. Days exist so weekly sparklines and
+   *  pace-to-date math can be real numbers instead of em-dashes. */
+  date: string;
+  /** "2026-01" — derived from `date` at import. */
   month: string;
   stage: string;
   status: string;
@@ -188,4 +192,50 @@ export function aggregateSnapshot(monthFilter?: ReadonlySet<string>): SnapshotAg
     months: [...months].sort(),
     marketKeys: [...marketKeys],
   };
+}
+
+// ── weekly Qualified (sparkline source) ──────────────────────────────────────
+
+const DAY_MS = 86_400_000;
+const WEEK_MS = 7 * DAY_MS;
+
+function utcMs(isoDate: string): number {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  return Date.UTC(y, m - 1, d);
+}
+
+export type WeeklyQualified = {
+  /** Monday of each week, ascending, ISO dates. The LAST week is partial —
+   *  it runs only through the snapshot's as-of date. */
+  weekStarts: string[];
+  /** marketKey → one count per week. Only markets with any deal appear. */
+  byMarket: Record<string, number[]>;
+  /** All markets combined (including "other"). */
+  total: number[];
+};
+
+/** Qualified per week for the trailing `nWeeks` calendar weeks (Mon-based)
+ *  ending at the snapshot's as-of date. Counts deals, invents nothing —
+ *  the final bucket is partial exactly as far as the snapshot reaches. */
+export function weeklyQualified(nWeeks = 12): WeeklyQualified {
+  const asOf = utcMs(SNAPSHOT_AS_OF);
+  const asOfDow = (new Date(asOf).getUTCDay() + 6) % 7; // Mon = 0
+  const firstWeekStart = asOf - asOfDow * DAY_MS - (nWeeks - 1) * WEEK_MS;
+
+  const weekStarts = Array.from({ length: nWeeks }, (_, i) =>
+    new Date(firstWeekStart + i * WEEK_MS).toISOString().slice(0, 10)
+  );
+  const byMarket: Record<string, number[]> = {};
+  const total = weekStarts.map(() => 0);
+
+  for (const deal of SNAPSHOT_DEALS) {
+    const t = utcMs(deal.date);
+    if (t < firstWeekStart || t > asOf) continue;
+    const idx = Math.floor((t - firstWeekStart) / WEEK_MS);
+    const key = marketKeyForCode(deal.marketCode);
+    (byMarket[key] ??= weekStarts.map(() => 0))[idx]++;
+    total[idx]++;
+  }
+
+  return { weekStarts, byMarket, total };
 }

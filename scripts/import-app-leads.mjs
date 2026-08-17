@@ -59,22 +59,26 @@ for (const required of ["marketCode", "createdDate", "stageName", "statusName", 
   }
 }
 
-// "1/6/2026" → "2026-01". Rejects anything unparseable rather than guessing.
-function toMonth(mdY) {
-  const m = /^(\d{1,2})\/\d{1,2}\/(\d{4})$/.exec((mdY ?? "").trim());
-  return m ? `${m[2]}-${m[1].padStart(2, "0")}` : null;
+// "1/6/2026" → "2026-01-06". Rejects anything unparseable rather than
+// guessing. DAY-LEVEL on purpose: the Today page's weekly sparklines and
+// pace-to-date math need days, and a created date is not PII.
+function toDate(mdY) {
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec((mdY ?? "").trim());
+  return m ? `${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}` : null;
 }
 
 const deals = [];
 let skipped = 0;
 for (const r of records) {
-  const month = toMonth(r[col.createdDate]);
-  if (!month) { skipped++; continue; }
+  const date = toDate(r[col.createdDate]);
+  if (!date) { skipped++; continue; }
+  const month = date.slice(0, 7);
   const value = Number(String(r[col.value]).replace(/,/g, ""));
   deals.push({
     // Identity fields (title, agentName, agentEmail, agentOrgName, pmName,
     // rdName) are dropped HERE, at the boundary — they never reach the repo.
     marketCode: r[col.marketCode].trim(),
+    date,
     month,
     stage: r[col.stageName].trim(),
     status: r[col.statusName].trim(),
