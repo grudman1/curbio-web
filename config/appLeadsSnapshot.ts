@@ -208,6 +208,44 @@ export function qualifiedByMonthChannel(): Record<string, Partial<Record<Channel
   return out;
 }
 
+// ── per-cell source breakdown (Report drill-down) ────────────────────────────
+
+export type SourceBreakdownRow = {
+  /** The app's raw referral source — the nearest thing the snapshot has to a
+   *  campaign dimension. "(blank)" when the app recorded nothing. */
+  source: string;
+  qualified: number;
+  closed: number;
+  revenue: number;
+};
+
+/** `${marketKey}|${channel}` → rows by raw referral source, most Qualified
+ *  first. What the drill-down drawer shows. The snapshot is PII-stripped and
+ *  carries no lead ids, so a per-lead list (names, dates, app links) is
+ *  honestly impossible until the live sync exists. */
+export function cellSourceBreakdowns(
+  monthFilter?: ReadonlySet<string>
+): Record<string, SourceBreakdownRow[]> {
+  const map: Record<string, Record<string, SourceBreakdownRow>> = {};
+  for (const deal of SNAPSHOT_DEALS) {
+    if (monthFilter && !monthFilter.has(deal.month)) continue;
+    const cellKey = `${marketKeyForCode(deal.marketCode)}|${channelForDeal(deal)}`;
+    const source = deal.referralSource.trim() || "(blank)";
+    const row = ((map[cellKey] ??= {})[source] ??= { source, qualified: 0, closed: 0, revenue: 0 });
+    row.qualified++;
+    if (isClosed(deal)) {
+      row.closed++;
+      if (deal.value) row.revenue += deal.value;
+    }
+  }
+  return Object.fromEntries(
+    Object.entries(map).map(([k, v]) => [
+      k,
+      Object.values(v).sort((a, b) => b.qualified - a.qualified),
+    ])
+  );
+}
+
 // ── attribution health ───────────────────────────────────────────────────────
 
 /** Per month: how many Qualified arrived with no known channel (direct), and

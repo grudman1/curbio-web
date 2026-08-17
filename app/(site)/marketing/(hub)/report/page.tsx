@@ -3,8 +3,10 @@ import { MARKETS } from "@/config/markets";
 import { HUB_SURFACE_BY_SLUG } from "@/config/marketingHub";
 import {
   aggregateSnapshot,
+  cellSourceBreakdowns,
   OTHER_MARKETS_KEY,
   OTHER_MARKETS_LABEL,
+  SNAPSHOT_AS_OF,
   SNAPSHOT_LABEL,
   SNAPSHOT_MONTHS,
 } from "@/config/appLeadsSnapshot";
@@ -84,6 +86,8 @@ export default async function ReportPage({
         tfLabel={timeframeLabel(tf, SNAPSHOT_MONTHS)}
         barMonth={tf.kind === "month" ? tf.ym : null}
         initialMetric={initialMetric}
+        sourceBreakdowns={cellSourceBreakdowns(new Set(months))}
+        stale={Date.now() - Date.parse(`${SNAPSHOT_AS_OF}T00:00:00Z`) > 7 * 86_400_000}
       />
       <NeedsBlock surface={surface} />
     </>
