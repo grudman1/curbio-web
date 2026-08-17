@@ -8,7 +8,6 @@ import { QualifyCard } from "@/components/home/QualifyCard";
 import { DealTimeline } from "@/components/home/DealTimeline";
 import { MoveInStats } from "@/components/home/MoveInStats";
 import { HomeResults } from "@/components/home/HomeResults";
-import { NavyProofBand } from "@/components/home/NavyProofBand";
 import { BeforeAfterProof } from "@/components/home/BeforeAfterProof";
 import { AudienceRouter } from "@/components/home/AudienceRouter";
 import { OurWork } from "@/components/home/OurWork";
@@ -90,10 +89,9 @@ export default function HomePreviewPage() {
       <HomeHero />
       <ProofBand />
       <HowItWorks />
-      <NavyProofBand />
+      <BeforeAfterProof />
       <HomeResults />
       <QualifyCard />
-      <BeforeAfterProof />
       <DealTimeline />
       <MoveInStats />
       <AudienceRouter />

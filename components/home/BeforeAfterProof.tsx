@@ -60,7 +60,7 @@ export function BeforeAfterProof() {
         <div className="dp-proofvid-copy">
           <p className="dp-eyebrow dp-proofvid-eyebrow">Real projects</p>
           <h2 className="dp-proofvid-h" id="proofvid-h">
-            The difference buyers pay for.
+            After 8,000 projects, we&rsquo;ve gotten pretty good at before-and-afters.
           </h2>
           <p className="dp-proofvid-sub">
             Today&rsquo;s buyers scroll past tired listings. Watch an outdated space become
