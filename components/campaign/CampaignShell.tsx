@@ -70,19 +70,33 @@ export default function CampaignShell({
   crmMarketName = null,
   neutral = false,
   showPicker = false,
+  variant: serverVariant,
 }: {
   page: CampaignPage;
   market: CampaignMarket;
   crmMarketName?: string | null;
   neutral?: boolean;
   showPicker?: boolean;
+  /**
+   * EDGE PATH only. Set by the /v/<variant> routes, where middleware already
+   * bucketed the visitor and served the matching prerendered HTML. Passing it
+   * disables the client-side swap below entirely — that swap is precisely the
+   * flash the edge path exists to remove. Omit for the client path.
+   * See lib/ctaVariant.ts, "THE TWO DELIVERY PATHS".
+   */
+  variant?: CtaVariant;
 }) {
-  // A/B variant, bucketed on the curbio_vid middleware cookie. Client-side
-  // because this renders on prerendered pages — one HTML for every visitor.
-  const [variant, setVariant] = useState<CtaVariant>("control");
+  // CLIENT PATH: bucketed from the curbio_vid cookie after hydration, because
+  // this renders on prerendered pages — one HTML for every visitor, so the
+  // server cannot know the bucket. Control until hydration, then swap.
+  const [clientVariant, setClientVariant] = useState<CtaVariant>("control");
   useEffect(() => {
-    setVariant(readVariantFromCookie());
-  }, []);
+    // Never run on the edge path: the HTML is already the right variant, and
+    // re-reading the cookie could only reintroduce a swap.
+    if (serverVariant) return;
+    setClientVariant(readVariantFromCookie());
+  }, [serverVariant]);
+  const variant = serverVariant ?? clientVariant;
 
   // A config `cta` overrides the running experiment; omitting it keeps the
   // experiment intact, which is why /lp/sell does not set one.
