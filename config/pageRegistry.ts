@@ -180,6 +180,15 @@ function implementedPages(): RegistryEntry[] {
     note: "out-of-area signups, kept out of the CRM and leads:v1 entirely — the expansion-demand signal",
   });
   out.push({
+    path: "/admin/experiments",
+    group: "internal",
+    title: "Experiments",
+    status: "live",
+    indexed: false,
+    derivedFrom: "app/(site)/admin/(dashboard)/experiments",
+    note: "A/B results for the one active experiment — lead split by variant, read from leads:v1",
+  });
+  out.push({
     path: "/marketing",
     group: "internal",
     title: "Marketing Hub",

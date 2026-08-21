@@ -10,6 +10,7 @@ import {
   sealSession,
   type OpenedSession,
 } from "./lib/adminSession";
+import { ACTIVE_EXPERIMENT, bucket } from "./lib/ctaVariant";
 
 // Five jobs, all on the edge, in order:
 //
@@ -40,6 +41,13 @@ import {
 //
 // 5. Campaign-link rewrite (?market=<slug> → prerendered per-market page) and
 //    the stable curbio_vid A/B cookie — unchanged behaviour.
+//
+// 6. A/B EDGE PATH (opt-in, off unless ACTIVE_EXPERIMENT.surface === "edge").
+//    Buckets curbio_vid with the SAME hash the client uses and rewrites to the
+//    matching prerendered /lp/<campaign>/v/<variant>[/m/<market>] page, so an
+//    above-the-fold or structural test is correct in the first byte instead of
+//    swapping after hydration. Rewrite, not redirect: the visitor's URL is
+//    unchanged. See lib/ctaVariant.ts for which path an experiment should use.
 
 // ── admin session (edge side) ────────────────────────────────────────────────
 
@@ -139,6 +147,30 @@ const MARKET_REWRITES: Record<string, string> = {
   [CAMPAIGN_PREFIX]: `${CAMPAIGN_PREFIX}/m`,
   "/exp": "/exp/m",
 };
+
+// ── A/B edge path ────────────────────────────────────────────────────────────
+/**
+ * Campaign paths that have a prerendered /v/<variant> twin, and only those:
+ *
+ *   /lp/<campaign>              → /lp/<campaign>/v/<variant>
+ *   /lp/<campaign>/m/<market>   → /lp/<campaign>/v/<variant>/m/<market>
+ *
+ * Returns null for everything else — /lp/<campaign>/confirm, /exp, site pages,
+ * and anything already carrying a /v/ segment. An ALLOWLIST by construction:
+ * `dynamicParams = false` on those routes means a rewrite to a path with no
+ * prerendered twin is a 404, so guessing is not an option. A new campaign is
+ * covered automatically (generateStaticParams reads config/campaigns), a new
+ * SHAPE of campaign URL is not, and must be added here deliberately.
+ */
+function withVariantSegment(pathname: string, variant: string): string | null {
+  const m = /^\/lp\/([^/]+)(?:\/m\/([^/]+))?$/.exec(pathname);
+  if (!m) return null;
+  const [, campaign, market] = m;
+  if (campaign === "v") return null; // already variant-scoped; never double-apply
+  return market
+    ? `/lp/${campaign}/v/${variant}/m/${market}`
+    : `/lp/${campaign}/v/${variant}`;
+}
 
 export async function middleware(req: NextRequest) {
   const rawPath = req.nextUrl.pathname;
@@ -251,11 +283,37 @@ export async function middleware(req: NextRequest) {
   let res: NextResponse | undefined;
   const marketBase = MARKET_REWRITES[physical];
   let dest: string | null = null;
+  // The ?market= rewrite CONSUMES the param into the path, and is the only
+  // rewrite allowed to drop the query string. Tracked as a flag rather than
+  // re-derived from `dest`, which the variant rewrite below may change.
+  let consumedMarketParam = false;
   if (marketBase) {
     const slug = canonicalSlug(req.nextUrl.searchParams.get("market"));
-    if (slug) dest = `${marketBase}/${slug}`;
+    if (slug) {
+      dest = `${marketBase}/${slug}`;
+      consumedMarketParam = true;
+    }
   }
   if (!dest && physical !== rawPath) dest = physical;
+
+  // 6. A/B EDGE PATH — the visitor id is resolved HERE, before bucketing,
+  //    because a first-time visitor has no cookie yet. Generating the id up
+  //    front and using the same value for both the bucket and the Set-Cookie
+  //    below is what keeps the edge's choice and the client's later
+  //    readVariantFromCookie() in agreement on request #1. Reading the cookie
+  //    after setting it would bucket first-time visitors as "control" while
+  //    handing them an id that buckets to "treatment".
+  const existingVid = req.cookies.get("curbio_vid")?.value;
+  const vid = existingVid ?? crypto.randomUUID();
+
+  //    Only when the active experiment declares surface: "edge" — otherwise
+  //    the client path handles it and no extra pages are served. Scoped to the
+  //    campaign tier (/lp/*), the only tree with prerendered /v/<variant>
+  //    twins; /exp and site pages keep the client path. See lib/ctaVariant.ts.
+  if (ACTIVE_EXPERIMENT.surface === "edge") {
+    const variantDest = withVariantSegment(dest ?? physical, bucket(vid));
+    if (variantDest) dest = variantDest;
+  }
 
   if (dest) {
     const url = req.nextUrl.clone();
@@ -263,15 +321,14 @@ export async function middleware(req: NextRequest) {
     // Only the ?market= rewrite drops the query string (it has been consumed
     // into the path); a plain tier rewrite must preserve ?zip=, ?status=,
     // ?n=/?e= prefill and every utm_* param exactly as they arrived.
-    if (marketBase && dest !== physical) url.search = "";
+    if (consumedMarketParam) url.search = "";
     res = NextResponse.rewrite(url);
   }
   res ??= NextResponse.next();
 
-  if (!req.cookies.get("curbio_vid")) {
+  if (!existingVid) {
     // Stable random id for the cta-copy A/B bucket (lib/ctaVariant.ts).
-    const id = crypto.randomUUID();
-    res.cookies.set("curbio_vid", id, {
+    res.cookies.set("curbio_vid", vid, {
       path: "/",
       maxAge: 60 * 60 * 24 * 365,
       sameSite: "lax",
