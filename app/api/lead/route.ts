@@ -97,6 +97,17 @@ function toCrmMarket(slug: string | null | undefined): string | null {
 const LEADS_KEY = "leads:v1";
 const LEADS_MAX = 5000; // capped index — newest first, oldest trimmed
 
+// Waitlist submissions (out-of-area visitors) live in their OWN list, not
+// leads:v1. They are a real signal — where expansion demand is — but they
+// are not a sales lead: there is no market to route them to yet, so posting
+// them to the CRM only produces a 404 ("not in that area") that the delivery
+// hash below then reports as a CRM FAILURE. Keeping them out of leads:v1
+// entirely (rather than writing there and suppressing the alert) means they
+// can never appear in the Leads tab's delivery numbers or the CRM-failure
+// banner — there is no code path left that could regress that.
+const WAITLIST_KEY = "waitlist:leads";
+const WAITLIST_MAX = 5000;
+
 // Delivery outcomes, keyed by the `leadId` now carried on every leads:v1
 // record. A SEPARATE key on purpose: leads:v1 is written BEFORE any delivery
 // is attempted (that ordering is the whole recoverability guarantee), so the
@@ -254,6 +265,7 @@ export async function POST(req: Request) {
     firstTouchCampaign: body.firstTouchCampaign ?? null,
   };
   const logCtx = leadLogContext(payload);
+  const isWaitlist = payload.source === "waitlist";
 
   // ── 1. Durable persistence — FIRST, before any delivery. A lead that
   // reaches Redis is recoverable no matter what Resend/CRM do below.
@@ -263,9 +275,11 @@ export async function POST(req: Request) {
   if (redis) {
     persistAttempted = true;
     try {
-      await redis.lpush(LEADS_KEY, JSON.stringify(payload));
-      // Capped index: keep the newest LEADS_MAX, trim the tail.
-      await redis.ltrim(LEADS_KEY, 0, LEADS_MAX - 1);
+      const key = isWaitlist ? WAITLIST_KEY : LEADS_KEY;
+      const max = isWaitlist ? WAITLIST_MAX : LEADS_MAX;
+      await redis.lpush(key, JSON.stringify(payload));
+      // Capped index: keep the newest `max`, trim the tail.
+      await redis.ltrim(key, 0, max - 1);
       persistOk = true;
       console.log("[lead] persisted", logCtx);
     } catch (err) {
@@ -289,7 +303,13 @@ export async function POST(req: Request) {
       console.log("[resend] skipped — RESEND_API_KEY not set");
       return false;
     }
-    const subject = `New Curbio Lead — ${payload.firstName} ${payload.lastName} — ${payload.market ?? "unknown market"}`.trim();
+    const subject = isWaitlist
+      ? `Waitlist — ZIP ${payload.zip || "unknown"}${
+          [payload.detectedCity, payload.detectedRegion].filter(Boolean).length
+            ? `, ${[payload.detectedCity, payload.detectedRegion].filter(Boolean).join(" ")}`
+            : ""
+        }`
+      : `New Curbio Lead — ${payload.firstName} ${payload.lastName} — ${payload.market ?? "unknown market"}`.trim();
     const text = [
       `Name:        ${payload.name}`,
       `Email:       ${payload.email}`,
@@ -375,10 +395,18 @@ export async function POST(req: Request) {
     return true;
   }
 
-  const [resendResult, crmResult] = await Promise.allSettled([sendLeadNotification(), postToCrm()]);
+  // Waitlist leads never reach the CRM: there is no market to route them to,
+  // and every out-of-area ZIP the webhook sees comes back 404 — a real
+  // rejection, not a delivery failure, but the CRM has no way to say that.
+  // Skipping the call (not just tolerating its failure) is what keeps these
+  // out of the delivery-failure hash below.
+  const [resendResult, crmResult] = await Promise.allSettled([
+    sendLeadNotification(),
+    isWaitlist ? Promise.resolve(false) : postToCrm(),
+  ]);
   // "Attempted" = the integration is configured; fulfilled-false means skipped.
   const resendAttempted = !!resend;
-  const crmAttempted = !!process.env.CURBIO_CRM_WEBHOOK_URL;
+  const crmAttempted = !isWaitlist && !!process.env.CURBIO_CRM_WEBHOOK_URL;
   const resendOk = resendResult.status === "fulfilled" && resendResult.value;
   const crmOk = crmResult.status === "fulfilled" && crmResult.value;
   if (resendResult.status === "rejected") {
@@ -416,7 +444,11 @@ export async function POST(req: Request) {
   // the serverless runtime can't be frozen mid-write. Wrapped so a Redis
   // hiccup here can never turn a successful lead into an error for the
   // visitor — this is diagnostics, and diagnostics never outrank a lead.
-  if (redis) {
+  //
+  // Waitlist leads skip this entirely: they never entered leads:v1, so there
+  // is nothing here for /admin to join against, and CRM was never attempted
+  // in the first place.
+  if (redis && !isWaitlist) {
     try {
       await redis.hset(DELIVERY_KEY, {
         [payload.leadId]: JSON.stringify({

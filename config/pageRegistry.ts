@@ -171,6 +171,15 @@ function implementedPages(): RegistryEntry[] {
     note: "Leads tab of the Control Room",
   });
   out.push({
+    path: "/admin/waitlist",
+    group: "internal",
+    title: "Waitlist",
+    status: "live",
+    indexed: false,
+    derivedFrom: "app/(site)/admin/(dashboard)/waitlist",
+    note: "out-of-area signups, kept out of the CRM and leads:v1 entirely — the expansion-demand signal",
+  });
+  out.push({
     path: "/marketing",
     group: "internal",
     title: "Marketing Hub",

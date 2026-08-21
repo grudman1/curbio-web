@@ -15,6 +15,7 @@ import { MUTED } from "./ui";
 const TABS = [
   { href: "/admin", label: "Pages" },
   { href: "/admin/leads", label: "Leads" },
+  { href: "/admin/waitlist", label: "Waitlist" },
   { href: "/marketing", label: "Marketing ↗" },
   { href: "/admin/design-system", label: "Design System" },
 ];
