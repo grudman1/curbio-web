@@ -81,7 +81,7 @@ export function HomeHero() {
           </span>
           <span aria-hidden="true">4.8/5 stars from 1,776 Featured Customers</span>
         </a>
-        <h1>Win more listings. Sell more homes.</h1>
+        <h1>Win more listings. Get them market-ready.</h1>
         <p className="dp-hero-sub">
           We do the repairs and updates that get homes sold — your seller pays nothing until
           closing.

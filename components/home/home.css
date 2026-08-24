@@ -444,12 +444,15 @@
   .dp-hero-inner { padding-bottom: 64px; }
   .dp-hero-sub { font-size: 18px; }
   /* The headline scales below 640 instead of sitting on --text-display's 46px
-     floor. "Win more listings. Sell more homes." is long enough that 46px
-     broke it across THREE lines at 375px — each sentence wrapping on its own —
-     and the hero is viewport-capped, so the extra line pushed the whole
-     bottom-aligned block up until the review line sat 60px BEHIND the fixed
-     header on a 375x667 phone. At ~36px each sentence holds one line. */
-  .dp-hero h1 { font-size: clamp(33px, 9.6vw, 46px); }
+     floor. The hero is viewport-capped and bottom-aligned, so every extra line
+     pushes the block UP into the fixed header — at 375x667 that put the review
+     line behind it. The rule is one sentence per line.
+     8.5vw, not 9.6vw: "Get them market-ready." is longer than the copy this
+     was tuned for ("Sell more homes."), and at the old 36px it wrapped to a
+     third line and cost 6px of header clearance. Measured threshold is 32px at
+     375px wide, so the ramp is set just under it. Re-measure if the headline
+     copy gets longer again. */
+  .dp-hero h1 { font-size: clamp(28px, 8.5vw, 46px); }
 }
 /* Short phones (SE/8 at 667, and anything in landscape) get the least hero
    height, because the cap subtracts the proof band from an already small
