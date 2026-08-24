@@ -24,7 +24,7 @@ export function HomeHeroVideo() {
             </label>
             <div className="dp-hero-search">
               <input id="dp-zip" type="text" placeholder="ZIP, market, or address" autoComplete="off" />
-              <button type="button">Find my manager</button>
+              <button type="button">Get free estimate</button>
             </div>
           </div>
           <div className="dp-hero-ctas">

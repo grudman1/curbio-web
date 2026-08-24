@@ -64,15 +64,6 @@
 .dp-hero-search:focus-within {
   border-color: var(--color-accent); box-shadow: 0 0 0 4px var(--color-accent-ring);
 }
-/* The WRAPPER owns the focus indicator here — that is the whole point of the
-   pill. globals.css puts an amber ring on every focusable via a zero-specificity
-   :where() rule, which on this compound control lands a second ring around the
-   bare input INSIDE the first one. Two concentric amber rings read as a
-   rendering bug (invisible over the old photo hero, obvious on a light
-   surface). Suppressing the inner one loses nothing: the wrapper's ring is
-   larger, higher contrast, and outlines the whole target. Scoped to this pill,
-   so the global default still applies to every other input on the site. */
-.dp-hero-search input:focus-visible { box-shadow: none; }
 .dp-hero-search input {
   flex: 1; min-width: 0; border: 0; outline: none; background: transparent;
   font-family: var(--font-family-sans); font-size: 17px; font-weight: 500; color: var(--color-text);
@@ -483,188 +474,6 @@
   }
 }
 
-/* ── HERO "A": EDITORIAL SPLIT — solid ground, copy left, art right ───────── */
-/* Replaces the full-bleed photo hero. Scoped under .dp-hero--editorial so the
-   base .dp-hero rules (which assume a photo: viewport-height, bottom-aligned,
-   white text, text-shadows) are overridden in one place rather than rewritten —
-   the same containment .dp-hero--split uses, and it keeps the two unmounted
-   variants working untouched.
-   SURFACE: Cloud White. ProofBand directly below is --color-surface-raised
-   (pure white) with hairline borders, so the hero reads as its own ground and
-   the band still separates from it. Stone was the alternative and is too heavy
-   for a full hero — it is used for the art placeholder instead, which is
-   exactly the two-step relationship the reference has. */
-.dp-hero--editorial {
-  min-height: 0; display: block; align-items: initial;
-  background: var(--color-surface);
-  /* Clears the fixed header (announce strip + nav), same as --split. */
-  padding: 168px 0 88px;
-}
-.dp-hero--editorial .dp-hero-grid {
-  display: grid; grid-template-columns: minmax(0, 56fr) minmax(0, 44fr);
-  gap: clamp(40px, 4.5vw, 72px); align-items: center;
-}
-/* The photo-era apparatus, deleted rather than tuned. Navy on Cloud White is
-   ~13:1; every one of these shadows existed only to survive the scrim. */
-.dp-hero--editorial h1,
-.dp-hero--editorial .dp-hero-sub,
-.dp-hero--editorial .dp-hero-eyebrow,
-.dp-hero--editorial .dp-hero-formlabel,
-.dp-hero--editorial .dp-hero-stars { text-shadow: none; }
-
-/* Steps DOWN from --text-display's 82px ceiling. The full-bleed hero had the
-   whole viewport to set type across; this one has a 56fr column, and at 78px
-   "Win more listings." broke mid-sentence ("Win more / listings. Sell / more
-   homes.") — three ragged lines out of two clean sentences. At this ceiling
-   each sentence holds its own line, which is what makes the reference read as
-   deliberate rather than merely large. */
-.dp-hero--editorial h1 {
-  color: var(--color-text); line-height: 1.05; max-width: 17ch;
-  font-size: clamp(40px, 4.6vw, 66px);
-}
-.dp-hero--editorial .dp-hero-sub {
-  font-size: 20px; font-weight: 400; color: var(--color-text-muted);
-  margin-top: 22px; max-width: 46ch;
-}
-.dp-hero--editorial .dp-hero-form { max-width: 560px; margin-top: 34px; }
-.dp-hero--editorial .dp-hero-formlabel {
-  color: var(--color-text-muted); font-size: 14px; margin-bottom: 10px;
-}
-/* The field, scaled up and given an edge. Over the old photo the pill was
-   defined by its drop shadow; on Cloud White a shadow alone leaves it floating
-   with no boundary, so it gets a real hairline that the focus ring then
-   replaces with amber. */
-.dp-hero--editorial .dp-hero-search {
-  border-color: var(--color-border-strong);
-  padding: 9px 9px 9px 28px;
-  box-shadow: var(--elevation-raised);
-}
-.dp-hero--editorial .dp-hero-search:focus-within {
-  border-color: var(--color-accent); box-shadow: 0 0 0 4px var(--color-accent-ring);
-}
-.dp-hero--editorial .dp-hero-search input { font-size: 18px; }
-.dp-hero--editorial .dp-hero-search button {
-  height: 58px; padding: 0 32px; font-size: 17px;
-}
-/* Review line, now UNDER the field. Muted rather than pure white — it is
-   proof, not headline, and on a light surface it no longer has to fight a
-   scrim for luminance. */
-.dp-hero--editorial .dp-hero-eyebrow {
-  color: var(--color-text-muted); font-size: 14.5px; margin: 26px 0 0;
-}
-.dp-hero--editorial .dp-hero-eyebrow:hover { color: var(--color-text); }
-
-/* ── the art column: before/after slider + proof numbers ─────────────────── */
-.dp-hero-art { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
-
-.dp-ba {
-  position: relative; aspect-ratio: 3 / 2; overflow: hidden;
-  border-radius: var(--radius-lg); background: var(--color-surface-sunken);
-  box-shadow: var(--elevation-card);
-  /* The whole frame is a mouse drag target. Touch is handled on the handle
-     alone — see the note in BeforeAfterSlider.tsx. */
-  cursor: ew-resize; user-select: none; -webkit-user-select: none;
-  touch-action: pan-y; /* a finger over the photo still scrolls the page */
-}
-.dp-ba-img { object-fit: cover; }
-.dp-ba-clip { position: absolute; inset: 0; }
-/* Only the KEYBOARD should animate. During a drag the divider must track the
-   pointer exactly — a transition there feels like lag, not polish. */
-.dp-ba-divider, .dp-ba-handle { transition: left var(--duration-fast) var(--easing-out); }
-.dp-ba[data-dragging] .dp-ba-divider,
-.dp-ba[data-dragging] .dp-ba-handle { transition: none; }
-
-.dp-ba-divider {
-  position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px;
-  background: #fff; box-shadow: 0 0 0 1px rgba(13, 37, 77, 0.16);
-  pointer-events: none;
-}
-.dp-ba-handle {
-  position: absolute; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px;
-  border: 0; padding: 0; cursor: ew-resize;
-  border-radius: var(--radius-pill); background: var(--color-accent);
-  box-shadow: 0 2px 10px rgba(13, 37, 77, 0.28);
-  display: flex; align-items: center; justify-content: center;
-  /* The one element that claims the touch stream, so a finger here drags
-     instead of scrolling. 44px square is the minimum comfortable tap target. */
-  touch-action: none;
-}
-.dp-ba-handle svg {
-  width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2;
-  stroke-linecap: round; stroke-linejoin: round; pointer-events: none;
-}
-.dp-ba-handle:focus-visible {
-  outline: none; box-shadow: 0 0 0 3px var(--color-accent-ring), 0 2px 10px rgba(13, 37, 77, 0.28);
-}
-
-/* Pill tags, bottom corners. Stone/navy for before, amber/white for after —
-   the same accent logic as everything else: amber marks the outcome. */
-.dp-ba-tag {
-  position: absolute; bottom: 14px; z-index: 1;
-  font-family: var(--font-family-sans); font-weight: 800; font-size: 11px;
-  letter-spacing: 0.14em; text-transform: uppercase;
-  padding: 6px 13px; border-radius: var(--radius-pill); pointer-events: none;
-}
-.dp-ba-tag--before { left: 14px; background: var(--color-surface-sunken); color: var(--color-text); }
-.dp-ba-tag--after { right: 14px; background: var(--color-accent); color: #fff; }
-
-/* Proof numbers, one row directly under the slider. */
-.dp-hero-stats {
-  list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 20px;
-}
-.dp-hero-stats li {
-  font-family: var(--font-family-sans); font-weight: 600; font-size: 13px;
-  line-height: 1.4; color: var(--color-text); text-wrap: balance;
-}
-.dp-hero-stat-fig { color: var(--color-accent); }
-
-@media (prefers-reduced-motion: reduce) {
-  .dp-ba-divider, .dp-ba-handle { transition: none; }
-}
-
-@media (max-width: 1024px) {
-  .dp-hero--editorial { padding: 146px 0 64px; }
-  /* minmax(0, 1fr), NOT 1fr. A bare `1fr` is minmax(AUTO, 1fr), and that auto
-     floor is the track's min-content width — the nowrap "Find my manager"
-     button inside the search pill pushed it to 378px inside a 335px content
-     box, so every row in the hero ran under the right gutter. Clipped rather
-     than scrolling, because body sets overflow-x: hidden, which is exactly
-     what makes this kind of blowout easy to miss. */
-  .dp-hero--editorial .dp-hero-grid { grid-template-columns: minmax(0, 1fr); gap: 40px; }
-  .dp-hero--editorial h1 { max-width: 18ch; }
-  /* Stacked, the slider sits BELOW the copy — the field is the point, and
-     the before/after is the argument that follows it. */
-  .dp-ba { aspect-ratio: 16 / 10; }
-}
-@media (max-width: 640px) {
-  .dp-hero--editorial { padding: 124px 0 48px; }
-  .dp-hero--editorial h1 { font-size: clamp(34px, 9vw, 46px); max-width: none; }
-  .dp-hero--editorial .dp-hero-sub { font-size: 17.5px; margin-top: 18px; }
-  .dp-hero--editorial .dp-hero-form { margin-top: 28px; }
-  .dp-hero--editorial .dp-hero-search { padding: 7px 7px 7px 16px; }
-  /* 16px, never smaller: iOS zooms the viewport on focus for anything under
-     16px, which throws the page off centre mid-typing. The base rule's 15px is
-     the one value here NOT inherited from it, and it is a KNOWN TRADE: at
-     375px the placeholder needs ~169px and the row gives ~159px, so
-     "ZIP, market, or address" clips by roughly one word. Accepted because the
-     <label> directly above states the instruction in full, so nothing is lost
-     but a hint — and a viewport that jumps on every focus is worse than a
-     short placeholder. Widening the row instead would mean shortening the
-     button's label, which is real copy. */
-  .dp-hero--editorial .dp-hero-search input { font-size: 16px; }
-  /* Restated, not inherited. The base `.dp-hero-search button` mobile rule is
-     (0,1,1) and this hero's desktop rule is (0,2,1) with no media query, so
-     the desktop 58px button would otherwise win at 375px and squeeze the field
-     far harder. These are the base mobile values verbatim. */
-  .dp-hero--editorial .dp-hero-search button { height: 46px; padding: 0 16px; font-size: 14px; }
-  .dp-ba { aspect-ratio: 3 / 2; }
-  /* Three stat columns at 375px gives each ~100px and shreds every label into
-     four ragged lines. One per row, left-aligned, reads as a short list. */
-  .dp-hero-stats { grid-template-columns: 1fr; gap: 7px; }
-  .dp-hero-stats li { font-size: 13.5px; }
-}
-
 /* ── PORT v2: hero — "B" VARIANT: split layout, transformation video right ── */
 /* Scoped under .dp-hero--split so the two variants can coexist for the A/B
    experiment; only one renders at a time (HomeHero vs HomeHeroVideo). */
@@ -994,7 +803,7 @@
 }
 .dp-rot-track {
   display: block;
-  animation: dp-rot-cycle 13.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  animation: dp-rot-cycle 8.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 }
 .dp-rot-item {
   display: block;
