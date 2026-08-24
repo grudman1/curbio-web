@@ -554,35 +554,73 @@
 }
 .dp-hero--editorial .dp-hero-eyebrow:hover { color: var(--color-text); }
 
-/* ── the art placeholder ─────────────────────────────────────────────────── */
-/* Stone panel with a hatch, because a placeholder must be unmistakably a
-   placeholder — a plain grey box reads as a broken image, and a styled one
-   reads as finished. The hatch is what makes it obviously WIP at a glance.
-   Delete this rule with the placeholder when real art lands. */
-.dp-hero-fpo {
-  position: relative; aspect-ratio: 4 / 5; max-height: 620px;
-  border-radius: var(--radius-lg); overflow: hidden;
-  background-color: var(--color-surface-sunken);
-  background-image: repeating-linear-gradient(
-    -45deg,
-    rgba(13, 37, 77, 0.045) 0 1px,
-    transparent 1px 11px
-  );
-  display: flex; align-items: center; justify-content: center; padding: 24px;
+/* ── the art column: before/after slider + proof numbers ─────────────────── */
+.dp-hero-art { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+
+.dp-ba {
+  position: relative; aspect-ratio: 3 / 2; overflow: hidden;
+  border-radius: var(--radius-lg); background: var(--color-surface-sunken);
+  box-shadow: var(--elevation-card);
+  /* The whole frame is a mouse drag target. Touch is handled on the handle
+     alone — see the note in BeforeAfterSlider.tsx. */
+  cursor: ew-resize; user-select: none; -webkit-user-select: none;
+  touch-action: pan-y; /* a finger over the photo still scrolls the page */
 }
-.dp-hero-fpo-card {
-  background: var(--color-surface-raised); border-radius: var(--radius-md);
-  box-shadow: var(--elevation-raised);
-  padding: 15px 22px 17px; text-align: center; max-width: 300px;
+.dp-ba-img { object-fit: cover; }
+.dp-ba-clip { position: absolute; inset: 0; }
+/* Only the KEYBOARD should animate. During a drag the divider must track the
+   pointer exactly — a transition there feels like lag, not polish. */
+.dp-ba-divider, .dp-ba-handle { transition: left var(--duration-fast) var(--easing-out); }
+.dp-ba[data-dragging] .dp-ba-divider,
+.dp-ba[data-dragging] .dp-ba-handle { transition: none; }
+
+.dp-ba-divider {
+  position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px;
+  background: #fff; box-shadow: 0 0 0 1px rgba(13, 37, 77, 0.16);
+  pointer-events: none;
 }
-.dp-hero-fpo-tag {
-  display: block; font-family: var(--font-family-sans); font-weight: 800;
-  font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
-  color: var(--color-text-muted); margin-bottom: 6px;
+.dp-ba-handle {
+  position: absolute; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px;
+  border: 0; padding: 0; cursor: ew-resize;
+  border-radius: var(--radius-pill); background: var(--color-accent);
+  box-shadow: 0 2px 10px rgba(13, 37, 77, 0.28);
+  display: flex; align-items: center; justify-content: center;
+  /* The one element that claims the touch stream, so a finger here drags
+     instead of scrolling. 44px square is the minimum comfortable tap target. */
+  touch-action: none;
 }
-.dp-hero-fpo-brief {
-  display: block; font-family: var(--font-family-sans); font-size: 14px;
-  line-height: 1.45; color: var(--color-text);
+.dp-ba-handle svg {
+  width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round; pointer-events: none;
+}
+.dp-ba-handle:focus-visible {
+  outline: none; box-shadow: 0 0 0 3px var(--color-accent-ring), 0 2px 10px rgba(13, 37, 77, 0.28);
+}
+
+/* Pill tags, bottom corners. Stone/navy for before, amber/white for after —
+   the same accent logic as everything else: amber marks the outcome. */
+.dp-ba-tag {
+  position: absolute; bottom: 14px; z-index: 1;
+  font-family: var(--font-family-sans); font-weight: 800; font-size: 11px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 6px 13px; border-radius: var(--radius-pill); pointer-events: none;
+}
+.dp-ba-tag--before { left: 14px; background: var(--color-surface-sunken); color: var(--color-text); }
+.dp-ba-tag--after { right: 14px; background: var(--color-accent); color: #fff; }
+
+/* Proof numbers, one row directly under the slider. */
+.dp-hero-stats {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 20px;
+}
+.dp-hero-stats li {
+  font-family: var(--font-family-sans); font-weight: 600; font-size: 13px;
+  line-height: 1.4; color: var(--color-text); text-wrap: balance;
+}
+.dp-hero-stat-fig { color: var(--color-accent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .dp-ba-divider, .dp-ba-handle { transition: none; }
 }
 
 @media (max-width: 1024px) {
@@ -595,12 +633,9 @@
      what makes this kind of blowout easy to miss. */
   .dp-hero--editorial .dp-hero-grid { grid-template-columns: minmax(0, 1fr); gap: 40px; }
   .dp-hero--editorial h1 { max-width: 18ch; }
-  /* Stacked, the portrait panel would push the whole page down for no
-     argument, so it flattens out. Copy stays first: the field is the point.
-     HEIGHT is set directly rather than via aspect-ratio + max-height — those
-     two fight, and max-height wins by shrinking the WIDTH, which left the
-     panel narrower than the copy above it instead of flush with it. */
-  .dp-hero-fpo { aspect-ratio: auto; height: clamp(240px, 38vw, 380px); max-height: none; }
+  /* Stacked, the slider sits BELOW the copy — the field is the point, and
+     the before/after is the argument that follows it. */
+  .dp-ba { aspect-ratio: 16 / 10; }
 }
 @media (max-width: 640px) {
   .dp-hero--editorial { padding: 124px 0 48px; }
@@ -623,7 +658,11 @@
      the desktop 58px button would otherwise win at 375px and squeeze the field
      far harder. These are the base mobile values verbatim. */
   .dp-hero--editorial .dp-hero-search button { height: 46px; padding: 0 16px; font-size: 14px; }
-  .dp-hero-fpo { height: clamp(200px, 52vw, 280px); padding: 16px; }
+  .dp-ba { aspect-ratio: 3 / 2; }
+  /* Three stat columns at 375px gives each ~100px and shreds every label into
+     four ragged lines. One per row, left-aligned, reads as a short list. */
+  .dp-hero-stats { grid-template-columns: 1fr; gap: 7px; }
+  .dp-hero-stats li { font-size: 13.5px; }
 }
 
 /* ── PORT v2: hero — "B" VARIANT: split layout, transformation video right ── */

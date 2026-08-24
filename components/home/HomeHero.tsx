@@ -1,3 +1,5 @@
+import { BeforeAfterSlider } from "./BeforeAfterSlider";
+
 // Hero — EDITORIAL SPLIT (Gavin, Aug 21). Copy left on a solid ground, art
 // right. Replaces the v1 full-bleed photo hero.
 //
@@ -32,13 +34,48 @@
 // and its backend still only parses ZIPs — see the note in lib/resolveMarket.ts
 // callers before wiring.
 //
-// STUB: the right column is a marked FPO placeholder, not art. Art direction
-// is on it in the panel; swap the placeholder for <Image> when the shot
-// exists, and drop .dp-hero-fpo's hatch with it.
-const FPO = {
-  label: "FPO",
-  brief: "Hero interior: staged living room, high key, morning light, 24mm",
-};
+// The right column is the 3 Paul Revere Rd kitchen as a draggable before/after
+// reveal — see BeforeAfterSlider.tsx. It replaced the FPO placeholder, and it
+// answers the standing objection the old full-bleed exterior never could: an
+// after-only shot shows a house that needs no work, so it argued against the
+// product. A before/after IS the product.
+//
+// ASSET DEPENDENCY: both photos must exist at
+//   /public/home/hero/paul-revere-kitchen-{before,after}.jpg
+// They are real project photography, NOT the frames in before-poster.jpg /
+// after-still.jpg — those are stills from the KlingAI-generated proof clip
+// (same kitchen, but upscaled video frames with a watermark crop, and their
+// provenance is exactly the question this hero should not reopen).
+
+// Real numbers from the project record, rounded for display ($275,000 increase
+// in home value; $138,206.93 project cost).
+//
+// Stored as SEGMENTS rather than strings so amber can land on the money and
+// nothing else — "amber for the dollar figures only" is a rule the markup has
+// to be able to express, and the middle stat carries two figures ($138K and
+// $0) inside one sentence. The address is not a figure, so it stays navy.
+//
+// Middots rather than em-dashes, per DESIGN.md's copy rules.
+type StatSegment = { text: string; money?: boolean };
+const PROOF_STATS: { key: string; segments: StatSegment[] }[] = [
+  {
+    key: "value",
+    segments: [{ text: "$275K", money: true }, { text: "increase in home value" }],
+  },
+  {
+    key: "cost",
+    segments: [
+      { text: "$138K", money: true },
+      { text: "project cost ·" },
+      { text: "$0", money: true },
+      { text: "until closing" },
+    ],
+  },
+  {
+    key: "project",
+    segments: [{ text: "3 Paul Revere Rd · real Curbio project" }],
+  },
+];
 
 export function HomeHero() {
   return (
@@ -94,14 +131,25 @@ export function HomeHero() {
           </a>
         </div>
 
-        {/* Marked placeholder, not art. aria-hidden with an empty accessible
-            name: an FPO brief is production chatter, and reading it out is
-            worse than silence. Nothing here is announced. */}
-        <div className="dp-hero-fpo" aria-hidden="true">
-          <div className="dp-hero-fpo-card">
-            <span className="dp-hero-fpo-tag">{FPO.label}</span>
-            <span className="dp-hero-fpo-brief">{FPO.brief}</span>
-          </div>
+        <div className="dp-hero-art">
+          <BeforeAfterSlider />
+
+          {/* The numbers under the slider are what turn a pretty photo into an
+              argument: this is what the transformation was worth and what it
+              cost. Amber on the figures ONLY — the accent marks the number, not
+              the sentence around it. */}
+          <ul className="dp-hero-stats">
+            {PROOF_STATS.map((s) => (
+              <li key={s.key}>
+                {s.segments.map((seg, i) => (
+                  <span key={i} className={seg.money ? "dp-hero-stat-fig" : undefined}>
+                    {i > 0 ? " " : ""}
+                    {seg.text}
+                  </span>
+                ))}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>
