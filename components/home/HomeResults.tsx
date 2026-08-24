@@ -61,11 +61,12 @@ function CardRow({ hidden }: { hidden?: boolean }) {
 
 export function HomeResults() {
   return (
-    <section id="results" className="dp-sect dp-sect--raised">
+    <section id="results" className="dp-sect">
       <div className="dp-container">
         <p className="dp-eyebrow">Results worth funding</p>
         <h2 className="dp-h2" style={{ maxWidth: "15em" }}>
-          Put the money into the work that moves the price.
+          From a bathroom remodel to staging, we do all the work that moves the
+          price.
         </h2>
       </div>
       <ServicesMarquee>

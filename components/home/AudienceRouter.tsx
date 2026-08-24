@@ -36,7 +36,7 @@ const CARDS = [
 
 export function AudienceRouter() {
   return (
-    <section className="dp-sect dp-sect--raised" id="audiences">
+    <section className="dp-sect" id="audiences">
       <div className="dp-container">
         <h2 className="dp-h2" style={{ maxWidth: "14em" }}>
           Where do you sit at the table?

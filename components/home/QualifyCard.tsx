@@ -29,7 +29,7 @@ const BENEFITS = [
 
 export function QualifyCard() {
   return (
-    <section id="payatclose" className="dp-sect dp-sect--sunken">
+    <section id="payatclose" className="dp-sect">
       <div className="dp-container">
         <div className="dpl2-grid">
           <div>

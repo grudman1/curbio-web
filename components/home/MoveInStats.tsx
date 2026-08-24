@@ -15,7 +15,7 @@ const CAPTIONS_READY = false; // flip when public/home/testimonial/agents-on-cur
 
 export function MoveInStats() {
   return (
-    <section id="movein" className="dp-sect dp-sect--sunken">
+    <section id="movein" className="dp-sect">
       <div className="dp-container">
         <h2 className="dp-h2" style={{ marginBottom: 20, maxWidth: "15em" }}>
           Make the updates buyers are looking for.
