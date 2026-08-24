@@ -803,7 +803,7 @@
 }
 .dp-rot-track {
   display: block;
-  animation: dp-rot-cycle 13.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  animation: dp-rot-cycle 8.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 }
 .dp-rot-item {
   display: block;
