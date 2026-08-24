@@ -116,7 +116,7 @@ export function BeforeAfterSlider() {
     // reaches for the arrow keys gets nothing — the keypress goes to the
     // document and scrolls the page instead. Verified: this is the difference
     // between arrows moving the seam and arrows scrolling.
-    e.currentTarget.focus();
+    (e.currentTarget as HTMLButtonElement).focus();
     // Capture keeps move events coming here once the pointer leaves the handle.
     // Guarded: it throws InvalidPointerId if the pointer is no longer active,
     // and a failed capture must not cost the drag — the window-level listeners

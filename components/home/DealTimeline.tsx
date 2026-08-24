@@ -3,78 +3,84 @@
 import { useState } from "react";
 import Image from "next/image";
 
-// "One deal, the way it actually ran" — 395 Meeting St, compressed: six
-// milestones visible, the other seven behind an expand, in true order. The
-// numbers card keeps the Shequira Edmonds quote attached.
-// All figures are real (signed contract + public listing record).
+// "One deal, the way it actually ran" — 6906 Deer Run Lane, Midlothian VA
+// (replaced 395 Meeting St, Gavin, Aug 24). A bigger, truer story: $78,754.91
+// of work including a full roof, new vinyl siding, and two rebuilt bathrooms,
+// contract to accepted offer in 90 days, seller out of pocket $0 the whole way.
+//
+// Every date and figure below comes from the signed contract
+// (Hughes-VA20230411C1) and the project's own message log — not marketing
+// copy. The quote is the homeowner's, written the day the offer was accepted.
+//
+// TWO STUBS pending listing-record data (same convention as [rating]/[count]):
+//   [sold price]  the settlement figure — closing was Aug 31, 2023
+//   [specs]       bd/ba/sqft/year built for the rail card
+// Ship-blocking for the card's bottom line; everything else is sourced.
 
 type Entry = {
   date: string;
   title: string;
   body: string;
-  quote?: string;
   figure?: boolean;
   collapsed?: boolean;
 };
 
 const ENTRIES: Entry[] = [
   {
-    date: "Jun 3",
-    title: "The agent calls",
-    body: "The ask: paint, drywall repairs, carpet.",
-  },
-  {
-    date: "Jun 4",
-    title: "Financing approved",
-    body: "$33,301 through Notable. Nothing out of pocket.",
-  },
-  {
-    date: "Jun 7",
-    title: "Walkthrough",
-    body: "Christine walks the house on a Sunday; a 3D scan prices the proposal off measurements.",
-    collapsed: true,
-  },
-  {
-    date: "Jun 9",
-    title: "Proposal delivered",
-    body: "Three line items, priced from the scan. No allowances, no contingency padding.",
-    collapsed: true,
-  },
-  {
-    date: "Jun 10",
+    date: "May 2",
     title: "Contract signed",
-    body: "Signed the same day: $19,731.00.",
+    body: "$78,754.91 across six trades. No deposit, no progress payments — due at settlement.",
   },
   {
-    date: "Jun 15",
-    title: "Crews on site",
-    body: "Kickoff at noon with Christine, the crew lead, and the agent.",
+    date: "May 10",
+    title: "Kick-off walkthrough",
+    body: "Project manager walks the house with the sellers and agent; finishes picked from install photos in real homes.",
     collapsed: true,
   },
   {
-    date: "Jun 22",
-    title: "Paint and exterior done",
-    body: "Paint done; carpet goes in the same day.",
+    date: "May 22",
+    title: "Crews on site",
+    body: "Prep starts inside; shingles come off two days later.",
+  },
+  {
+    date: "May 25",
+    title: "The roof was worse than it looked",
+    body: "Twenty boards of sheathing replaced under the old shingles — caught and fixed mid-tear-off, no new contract, no delay.",
+    collapsed: true,
+  },
+  {
+    date: "May 26",
+    title: "All the old siding comes down",
+    body: "Rot behind the masonite settled it. New vinyl over fresh underlayment, same crew, same week.",
     figure: true,
   },
-  { date: "Jun 25", title: "Mid-project walkthrough", body: "Walked and signed off.", collapsed: true },
   {
-    date: "Jun 30",
-    title: "Work complete",
-    body: "Twenty days after signing — inside the four-week estimate.",
+    date: "Jun 28",
+    title: "Bathrooms rebuilt",
+    body: "Both baths gutted to new surrounds, vanities, and fixtures — the biggest interior line on the job.",
     collapsed: true,
   },
-  { date: "Jul 10", title: "Final walkthrough", body: "Punch list cleared. Balance: $0.00.", collapsed: true },
-  { date: "Jul 17", title: "Listing goes live", body: "Painted, re-carpeted, photographed.", collapsed: true },
   {
-    date: "Jul 18",
-    title: "Two full-price offers",
-    body: "One day on market, both at asking.",
+    date: "Jul 12",
+    title: "Final walkthrough",
+    body: "Sellers, agent, and PM walk every room and write the punch list together.",
+    collapsed: true,
   },
   {
-    date: "Jul 23",
-    title: "Sold — $347,500",
-    body: "$37,500 over the area median — the work was 5.7% of sale.",
+    date: "Jul 18",
+    title: "Punch-out, then photos",
+    body: "Finishing touches cleared inside the week so the listing goes live on schedule.",
+    collapsed: true,
+  },
+  {
+    date: "Jul 31",
+    title: "Offer accepted",
+    body: "First week on market. Ninety days after the contract was signed.",
+  },
+  {
+    date: "Aug 31",
+    title: "Closed — Curbio paid from proceeds",
+    body: "The sellers wrote no checks at any point. The balance settled at the closing table.",
   },
 ];
 
@@ -88,54 +94,69 @@ export function DealTimeline() {
           One deal, the way it actually ran.
         </h2>
         <p className="dp-lede">
-          Fifty days, first call to two full-price offers. Every project runs on this rail.
+          Ninety days, contract to accepted offer — with a new roof, new siding, and two rebuilt
+          bathrooms in between. Every project runs on this rail.
         </p>
         <div className="dpl-grid">
           <aside className="dpl-rail">
             <div className="dpl-card">
               <p className="dpl-addr">
-                395 Meeting St
+                6906 Deer Run Lane
                 <br />
-                McDonough, GA 30252
+                Midlothian, VA 23112
               </p>
-              <p className="dpl-specs">5 bd · 3 ba · 3,472 sq ft · built 2018</p>
+              {/* STUB: bd/ba/sqft/built pending listing record */}
+              <p className="dpl-specs">Chesterfield County · sold Aug 2023</p>
               <div className="dpl-shot" style={{ aspectRatio: "16/10" }}>
                 <Image
-                  src="/home/deal/395-meeting-st-after-dusk.jpg"
-                  alt="395 Meeting St at dusk after Curbio's refresh"
+                  src="/home/deal/6906-deer-run-after.jpg"
+                  alt="6906 Deer Run Lane after Curbio's exterior renovation — new roof, new vinyl siding, painted porch"
                   fill
                   sizes="(max-width: 1024px) 90vw, 30vw"
                   style={{ objectFit: "cover" }}
                 />
               </div>
-              <h3 className="dpl-railh">The numbers at 395 Meeting St</h3>
+              <h3 className="dpl-railh">The numbers at 6906 Deer Run Lane</h3>
               <div className="dpl-math">
                 <div>
+                  <span>Siding &amp; roof</span>
+                  <span>$36,973.26</span>
+                </div>
+                <div>
+                  <span>Bathrooms</span>
+                  <span>$21,400.22</span>
+                </div>
+                <div>
+                  <span>Exterior repairs &amp; paint</span>
+                  <span>$9,512.18</span>
+                </div>
+                <div>
                   <span>Interior paint</span>
-                  <span>$13,950.00</span>
+                  <span>$5,409.54</span>
                 </div>
                 <div>
-                  <span>Carpet replacement</span>
-                  <span>$4,932.20</span>
+                  <span>Carpet</span>
+                  <span>$4,008.00</span>
                 </div>
                 <div>
-                  <span>Exterior</span>
-                  <span>$848.80</span>
+                  <span>Misc</span>
+                  <span>$1,451.71</span>
                 </div>
                 <div className="dpl-sum">
                   <span>Curbio scope</span>
-                  <span className="dpl-val">$19,731.00</span>
+                  <span className="dpl-val">$78,754.91</span>
                 </div>
                 <div className="dpl-sum">
-                  <span>Sold, Jul 23 2026</span>
-                  <span className="dpl-val">$347,500</span>
+                  <span>Seller paid before closing</span>
+                  <span className="dpl-val">$0.00</span>
                 </div>
               </div>
               <figure className="dpl-review" style={{ margin: "22px 0 0", padding: "20px 22px" }}>
                 <blockquote style={{ fontSize: 17, lineHeight: 1.5 }}>
-                  Curbio is nothing less than amazing — two full-price offers within one day of listing.
+                  We could not have had such a quick and successful offering without the work and
+                  effort provided by the entire Curbio team.
                 </blockquote>
-                <figcaption>Shequira Edmonds — listing agent, 395 Meeting St</figcaption>
+                <figcaption>John Hughes — seller, 6906 Deer Run Lane</figcaption>
               </figure>
             </div>
           </aside>
@@ -146,15 +167,14 @@ export function DealTimeline() {
                 <div>
                   <h3>{e.title}</h3>
                   <p>{e.body}</p>
-                  {e.quote && <p className="dpl-quote">{e.quote}</p>}
                   {e.figure && (
                     <figure className="dpl-fig">
                       <div className="dpl-ba">
                         <figure>
                           <div className="dpl-shot">
                             <Image
-                              src="/home/deal/395-meeting-st-before.jpg"
-                              alt="395 Meeting St before the refresh"
+                              src="/home/deal/6906-deer-run-before.jpg"
+                              alt="6906 Deer Run Lane before — worn siding and a mossy roof"
                               fill
                               sizes="(max-width: 640px) 90vw, 28vw"
                               style={{ objectFit: "cover" }}
@@ -165,8 +185,8 @@ export function DealTimeline() {
                         <figure>
                           <div className="dpl-shot">
                             <Image
-                              src="/home/deal/395-meeting-st-after.jpg"
-                              alt="395 Meeting St after the refresh"
+                              src="/home/deal/6906-deer-run-after.jpg"
+                              alt="6906 Deer Run Lane after — new roof, new siding, refreshed porch"
                               fill
                               sizes="(max-width: 640px) 90vw, 28vw"
                               style={{ objectFit: "cover" }}
@@ -181,7 +201,7 @@ export function DealTimeline() {
               </article>
             ))}
             <button type="button" className="dpl-expand" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded}>
-              {expanded ? "Show the six milestones" : `Every step, dated — show all ${ENTRIES.length}`}
+              {expanded ? "Show the five milestones" : `Every step, dated — show all ${ENTRIES.length}`}
             </button>
           </div>
         </div>
