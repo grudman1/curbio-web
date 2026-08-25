@@ -6,7 +6,7 @@ import Image from "next/image";
 
 export function HomeCloser() {
   return (
-    <section data-dark="true" className="dp-closer">
+    <section data-dark="true" className="c-closer">
       <Image
         src="/sold/los-angeles/2276LaGranada_HollywoodHills.jpg"
         alt="2276 La Granada, Hollywood Hills — prepped by Curbio"
@@ -14,15 +14,15 @@ export function HomeCloser() {
         sizes="100vw"
         style={{ objectFit: "cover" }}
       />
-      <div className="dp-closer-scrim" />
-      <div className="dp-container dp-closer-inner">
+      <div className="c-closer-scrim" />
+      <div className="c-container c-closer-inner">
         <h2>
           Your next listing,
           <br />
           handled.
         </h2>
-        <span className="dp-cta dp-closer-cta">Get a free estimate</span>
-        <p className="dp-closer-fine">Two minutes · no cost · seller pays at closing</p>
+        <span className="c-cta c-closer-cta">Get a free estimate</span>
+        <p className="c-closer-fine">Two minutes · no cost · seller pays at closing</p>
       </div>
     </section>
   );

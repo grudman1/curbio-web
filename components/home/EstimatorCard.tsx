@@ -131,8 +131,8 @@ export function EstimatorCard() {
   }
 
   return (
-    <div className="dpl2-card">
-      <h3 className="dpl2-cardh">Estimate what they&rsquo;d qualify for</h3>
+    <div className="cl2-card">
+      <h3 className="cl2-cardh">Estimate what they&rsquo;d qualify for</h3>
       {/* aria-live so the swap to results/denial is announced. */}
       <div aria-live="polite">
         {result === null ? (
@@ -142,25 +142,25 @@ export function EstimatorCard() {
               submit();
             }}
           >
-            <div className="dpl2-field">
-              <label className="dpl2-label" id="dpl2-credit-label" htmlFor="dpl2-credit">
+            <div className="cl2-field">
+              <label className="cl2-label" id="cl2-credit-label" htmlFor="cl2-credit">
                 Seller&rsquo;s credit score
               </label>
               <CreditSelect
                 bands={CREDIT_BANDS}
                 value={band}
                 onChange={setBand}
-                id="dpl2-credit"
-                labelledBy="dpl2-credit-label"
+                id="cl2-credit"
+                labelledBy="cl2-credit-label"
               />
             </div>
-            <div className="dpl2-field">
-              <label className="dpl2-label" htmlFor="dpl2-price">
+            <div className="cl2-field">
+              <label className="cl2-label" htmlFor="cl2-price">
                 Estimated sale price
               </label>
               <input
-                className="dpl2-input"
-                id="dpl2-price"
+                className="cl2-input"
+                id="cl2-price"
                 type="text"
                 inputMode="numeric"
                 placeholder="$ 700,000"
@@ -168,13 +168,13 @@ export function EstimatorCard() {
                 onChange={(e) => setPrice(formatMoney(e.target.value))}
               />
             </div>
-            <div className="dpl2-field">
-              <label className="dpl2-label" htmlFor="dpl2-balance">
+            <div className="cl2-field">
+              <label className="cl2-label" htmlFor="cl2-balance">
                 Outstanding mortgage balance
               </label>
               <input
-                className="dpl2-input"
-                id="dpl2-balance"
+                className="cl2-input"
+                id="cl2-balance"
                 type="text"
                 inputMode="numeric"
                 placeholder="$ 250,000"
@@ -183,13 +183,13 @@ export function EstimatorCard() {
               />
             </div>
             {stateOpen ? (
-              <div className="dpl2-field">
-                <label className="dpl2-label" htmlFor="dpl2-state">
+              <div className="cl2-field">
+                <label className="cl2-label" htmlFor="cl2-state">
                   Property state
                 </label>
                 <select
-                  className="dpl2-input"
-                  id="dpl2-state"
+                  className="cl2-input"
+                  id="cl2-state"
                   value={stateCode}
                   onChange={(e) => setStateCode(e.target.value)}
                 >
@@ -201,22 +201,22 @@ export function EstimatorCard() {
                 </select>
               </div>
             ) : (
-              <p className="dpl2-state">
+              <p className="cl2-state">
                 Based on a home in {STATE_NAMES[stateCode] ?? stateCode}.{" "}
                 <button
                   type="button"
-                  className="dpl2-state-change"
+                  className="cl2-state-change"
                   onClick={() => setStateOpen(true)}
                 >
                   Change
                 </button>
               </p>
             )}
-            <button className="dpl2-btn" type="submit" disabled={!canSubmit || loading}>
+            <button className="cl2-btn" type="submit" disabled={!canSubmit || loading}>
               {loading ? "Checking…" : "See their estimate"}
             </button>
             {failed && (
-              <p className="dpl2-error">
+              <p className="cl2-error">
                 Couldn&rsquo;t reach the estimator &mdash; try again, or{" "}
                 <a href={APPLY_URL} target="_blank" rel="noopener">
                   apply at Notable directly
@@ -224,41 +224,41 @@ export function EstimatorCard() {
                 .
               </p>
             )}
-            <p className="dpl2-fine">Instant estimate &middot; No impact on their credit score</p>
+            <p className="cl2-fine">Instant estimate &middot; No impact on their credit score</p>
           </form>
         ) : result.limit !== null ? (
           <div>
-            <p className="dpl2-result-label">Estimated credit limit</p>
-            <p className="dpl2-result-amount">${result.limit.toLocaleString("en-US")}</p>
+            <p className="cl2-result-label">Estimated credit limit</p>
+            <p className="cl2-result-amount">${result.limit.toLocaleString("en-US")}</p>
             {result.aprBps !== null && (
-              <p className="dpl2-result-rate">
+              <p className="cl2-result-rate">
                 Accrues at {(result.aprBps / 12 / 100).toFixed(2)}% per month (
                 {(result.aprBps / 100).toFixed(2)}% APR) &mdash; nothing due until close.
               </p>
             )}
-            <p className="dpl2-result-note">
+            <p className="cl2-result-note">
               An estimate from Notable based on the details entered, not an offer &mdash;
               applying is how the real number gets confirmed.
             </p>
-            <a className="dpl2-btn" href={APPLY_URL} target="_blank" rel="noopener">
+            <a className="cl2-btn" href={APPLY_URL} target="_blank" rel="noopener">
               Start their application
             </a>
-            <button className="dpl2-reset" type="button" onClick={reset}>
+            <button className="cl2-reset" type="button" onClick={reset}>
               Run another estimate
             </button>
           </div>
         ) : (
           <div>
-            <h4 className="dpl2-denial-h">No estimate for these details</h4>
-            <p className="dpl2-denial-p">
+            <h4 className="cl2-denial-h">No estimate for these details</h4>
+            <p className="cl2-denial-p">
               That combination didn&rsquo;t return a credit limit. Applying directly is the
               best way to confirm what your seller qualifies for &mdash; it takes minutes and
               won&rsquo;t impact their credit.
             </p>
-            <a className="dpl2-btn" href={APPLY_URL} target="_blank" rel="noopener">
+            <a className="cl2-btn" href={APPLY_URL} target="_blank" rel="noopener">
               Apply with Notable
             </a>
-            <button className="dpl2-reset" type="button" onClick={reset}>
+            <button className="cl2-reset" type="button" onClick={reset}>
               Try different details
             </button>
           </div>

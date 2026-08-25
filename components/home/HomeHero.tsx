@@ -39,7 +39,7 @@ const HERO_IMAGE = {
 
 export function HomeHero() {
   return (
-    <section data-hero="true" data-dark="true" className="dp-hero" id="get-estimate">
+    <section data-hero="true" data-dark="true" className="c-hero" id="get-estimate">
       <Image
         src={HERO_IMAGE.src}
         alt={HERO_IMAGE.alt}
@@ -48,8 +48,8 @@ export function HomeHero() {
         sizes="100vw"
         style={{ objectFit: "cover", objectPosition: HERO_IMAGE.objectPosition }}
       />
-      <div className="dp-hero-scrim" />
-      <div className="dp-container dp-hero-inner">
+      <div className="c-hero-scrim" />
+      <div className="c-container c-hero-inner">
         {/* Review line — eyebrow weight on purpose: it must not compete with
             the headline, so it is 14px/600 next to a ~76px serif, and it is a
             plain link, not a badge (no pill, no background).
@@ -59,39 +59,39 @@ export function HomeHero() {
             stars is the visual grammar of third-party review platforms, so
             the line reads as "someone else vouched for us" at a glance.
             Navy would read as Curbio talking about itself, and amber is
-            reserved for CTAs. See --review-green in home.css.
+            reserved for CTAs. See --review-green in site.css.
 
             No crowding risk against the "Pay at closing" utility strip: that
             strip is pinned to the TOP of the page inside the header, and hero
-            content is BOTTOM-aligned (.dp-hero align-items:flex-end, 140px
+            content is BOTTOM-aligned (.c-hero align-items:flex-end, 140px
             bottom padding) — they are at opposite ends of the viewport.
 
             The stars are aria-hidden and the link carries its own label, so a
             screen reader gets one clean sentence instead of five repetitions
             of "black star". */}
         <a
-          className="dp-hero-eyebrow"
+          className="c-hero-eyebrow"
           href="https://www.featuredcustomers.com/vendor/curbio"
           target="_blank"
           rel="noopener noreferrer"
           aria-label="Rated 4.8 out of 5 stars from 1,776 Featured Customers (opens in a new tab)"
         >
-          <span className="dp-hero-stars" aria-hidden="true">
+          <span className="c-hero-stars" aria-hidden="true">
             &#9733;&#9733;&#9733;&#9733;&#9733;
           </span>
           <span aria-hidden="true">4.8/5 stars from 1,776 Featured Customers</span>
         </a>
         <h1>Win more listings. Get them market-ready.</h1>
-        <p className="dp-hero-sub">
+        <p className="c-hero-sub">
           We do the repairs and updates that get homes sold — your seller pays nothing until
           closing.
         </p>
-        <div className="dp-hero-form">
-          <label className="dp-hero-formlabel" htmlFor="dp-zip">
+        <div className="c-hero-form">
+          <label className="c-hero-formlabel" htmlFor="c-zip">
             Enter your ZIP, market, or address to reach your local manager
           </label>
-          <div className="dp-hero-search">
-            <input id="dp-zip" type="text" placeholder="ZIP, market, or address" autoComplete="off" />
+          <div className="c-hero-search">
+            <input id="c-zip" type="text" placeholder="ZIP, market, or address" autoComplete="off" />
             <button type="button">Get free estimate</button>
           </div>
         </div>

@@ -10,25 +10,25 @@ import { HeroMedia } from "./HeroMedia";
 // vary between variants, only the presentation around it.
 export function HomeHeroVideo() {
   return (
-    <section data-hero="true" className="dp-hero dp-hero--split" id="get-estimate">
-      <div className="dp-container dp-hero-grid">
+    <section data-hero="true" className="c-hero c-hero--split" id="get-estimate">
+      <div className="c-container c-hero-grid">
         <div>
           <h1>Win the listing. Drop the hammer.</h1>
-          <p className="dp-hero-sub">
+          <p className="c-hero-sub">
             Curbio does the renovations and repairs that get homes sold — your seller pays
             nothing until closing.
           </p>
-          <div className="dp-hero-form">
-            <label className="dp-hero-formlabel" htmlFor="dp-zip">
+          <div className="c-hero-form">
+            <label className="c-hero-formlabel" htmlFor="c-zip">
               Enter your ZIP, market, or address to reach your local manager
             </label>
-            <div className="dp-hero-search">
-              <input id="dp-zip" type="text" placeholder="ZIP, market, or address" autoComplete="off" />
+            <div className="c-hero-search">
+              <input id="c-zip" type="text" placeholder="ZIP, market, or address" autoComplete="off" />
               <button type="button">Get free estimate</button>
             </div>
           </div>
-          <div className="dp-hero-ctas">
-            <a className="dp-cta--outline" style={{ fontSize: 15.5, padding: "13.5px 26px" }} href="#deal">
+          <div className="c-hero-ctas">
+            <a className="c-cta--outline" style={{ fontSize: 15.5, padding: "13.5px 26px" }} href="#deal">
               See a deal run start to finish
             </a>
           </div>

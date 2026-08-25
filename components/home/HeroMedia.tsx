@@ -56,15 +56,15 @@ export function HeroMedia() {
 
   if (variant === "static") {
     return (
-      <div className="dp-hero-media">
-        <div className="dp-hero-ba">
+      <div className="c-hero-media">
+        <div className="c-hero-ba">
           <figure>
             <Image src="/home/hero/before-poster.jpg" alt="Kitchen before Curbio's renovation" fill priority sizes="(max-width: 1024px) 50vw, 28vw" style={{ objectFit: "cover" }} />
-            <figcaption className="dp-hero-balabel">Before</figcaption>
+            <figcaption className="c-hero-balabel">Before</figcaption>
           </figure>
           <figure>
             <Image src="/home/hero/after-still.jpg" alt="The same kitchen after Curbio's renovation" fill priority sizes="(max-width: 1024px) 50vw, 28vw" style={{ objectFit: "cover" }} />
-            <figcaption className="dp-hero-balabel">After</figcaption>
+            <figcaption className="c-hero-balabel">After</figcaption>
           </figure>
         </div>
       </div>
@@ -72,7 +72,7 @@ export function HeroMedia() {
   }
 
   return (
-    <div className="dp-hero-media">
+    <div className="c-hero-media">
       <Image
         src="/home/hero/before-poster.jpg"
         alt=""

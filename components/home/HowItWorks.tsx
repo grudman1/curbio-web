@@ -21,16 +21,16 @@ import Image from "next/image";
 // A screen reader gets ONE complete sentence from the sr-only span; the
 // animated track is aria-hidden, so the rotating fragments are never announced
 // as five disconnected phrases. Under prefers-reduced-motion the animation is
-// off entirely and only phrase 1 shows (see home.css).
+// off entirely and only phrase 1 shows (see site.css).
 
 // Order matters twice over. "win the listing" must stay FIRST — it is the
 // first painted frame by construction, so a slow load or reduced-motion lands
 // on the strongest phrase. And "pay at close" is deliberately not adjacent to
 // "close with confidence": back to back, the two "close"s read as a stutter.
 //
-// The COUNT matters too: @keyframes dp-rot-cycle steps by 1/(phrases+1) and
+// The COUNT matters too: @keyframes c-rot-cycle steps by 1/(phrases+1) and
 // has one stop per item. Adding or removing a phrase means rewriting it — see
-// the note above the keyframes in home.css.
+// the note above the keyframes in site.css.
 const PHRASES = [
   "win the listing",
   "prep the house",
@@ -96,36 +96,36 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <section className="dp-sect dp-sect--tight-top" id="how-it-works">
-      <div className="dp-container">
-        <h2 className="dp-h2 dp-rot-h2">
-          <span className="dp-sr-only">{SPOKEN}</span>
-          <span className="dp-rot" aria-hidden="true">
-            <span className="dp-rot-static">Curbio helps you</span>{" "}
-            <span className="dp-rot-mask">
-              <span className="dp-rot-track">
+    <section className="c-sect c-sect--tight-top" id="how-it-works">
+      <div className="c-container">
+        <h2 className="c-h2 c-rot-h2">
+          <span className="c-sr-only">{SPOKEN}</span>
+          <span className="c-rot" aria-hidden="true">
+            <span className="c-rot-static">Curbio helps you</span>{" "}
+            <span className="c-rot-mask">
+              <span className="c-rot-track">
                 {PHRASES.map((p) => (
-                  <span key={p} className="dp-rot-item">
+                  <span key={p} className="c-rot-item">
                     {p}
-                    <span className="dp-rot-dot">.</span>
+                    <span className="c-rot-dot">.</span>
                   </span>
                 ))}
                 {/* Clone of phrase 1 — the animation ends here and snaps back
                     to the real phrase 1, which is pixel-identical. The dot has
                     to be cloned too or the reset would visibly drop it. */}
-                <span className="dp-rot-item" data-loop-clone="true">
+                <span className="c-rot-item" data-loop-clone="true">
                   {PHRASES[0]}
-                  <span className="dp-rot-dot">.</span>
+                  <span className="c-rot-dot">.</span>
                 </span>
               </span>
             </span>
           </span>
         </h2>
 
-        <div className="dp-how-grid">
+        <div className="c-how-grid">
           {STEPS.map((s) => (
-            <div key={s.num} className="dp-how-step">
-              <div className="dp-how-img">
+            <div key={s.num} className="c-how-step">
+              <div className="c-how-img">
                 <Image
                   src={s.src}
                   alt={s.alt}
@@ -134,9 +134,9 @@ export function HowItWorks() {
                   style={{ objectFit: "cover" }}
                 />
               </div>
-              <p className="dp-how-num">{s.num}</p>
-              <h3 className="dp-how-title">{s.title}</h3>
-              <p className="dp-how-line">{s.line}</p>
+              <p className="c-how-num">{s.num}</p>
+              <h3 className="c-how-title">{s.title}</h3>
+              <p className="c-how-line">{s.line}</p>
             </div>
           ))}
         </div>

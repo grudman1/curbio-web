@@ -110,7 +110,7 @@ export function ServicesMarquee({ children }: { children: React.ReactNode }) {
   return (
     <div
       ref={scrollerRef}
-      className="dpr-marquee"
+      className="cr-marquee"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
@@ -128,7 +128,7 @@ export function ServicesMarquee({ children }: { children: React.ReactNode }) {
         }
       }}
     >
-      <div ref={trackRef} className="dpr-track">
+      <div ref={trackRef} className="cr-track">
         {children}
       </div>
     </div>

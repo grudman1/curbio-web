@@ -50,7 +50,7 @@ export default async function MarketPage({ params }: { params: Promise<{ slug: s
   if (!market) notFound();
 
   return (
-    <div className="mx-auto max-w-container px-6 py-16">
+    <div className="mx-auto max-w-container px-6 pb-16 pt-40">
       <p className="text-label font-black uppercase tracking-[var(--tracking-label)] text-content-muted">
         {market.displayName}
       </p>

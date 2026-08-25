@@ -15,15 +15,15 @@ const CAPTIONS_READY = false; // flip when public/home/testimonial/agents-on-cur
 
 export function MoveInStats() {
   return (
-    <section id="movein" className="dp-sect dp-sect--sunken">
-      <div className="dp-container">
-        <h2 className="dp-h2" style={{ marginBottom: 20, maxWidth: "15em" }}>
+    <section id="movein" className="c-sect">
+      <div className="c-container">
+        <h2 className="c-h2" style={{ marginBottom: 20, maxWidth: "15em" }}>
           Make the updates buyers are looking for.
         </h2>
-        <p className="dp-lede">
+        <p className="c-lede">
           Selling costs money either way. Curbio puts that spend where buyers can see it.
         </p>
-        <div className="dps-video">
+        <div className="cs-video">
           <video
             controls
             playsInline
@@ -38,31 +38,31 @@ export function MoveInStats() {
             )}
           </video>
         </div>
-        <p className="dps-videocap">
+        <p className="cs-videocap">
           Agents in Washington DC, Los Angeles, and Baltimore on what changed once the house
           stopped being the problem.
         </p>
-        <div className="dps-grid">
-          <div className="dps-card">
-            <p className="dps-num">94%</p>
-            <p className="dps-label">
+        <div className="cs-grid">
+          <div className="cs-card">
+            <p className="cs-num">94%</p>
+            <p className="cs-label">
               of buyers want move-in ready<sup>1</sup>
             </p>
           </div>
-          <div className="dps-card">
-            <p className="dps-num">~25%</p>
-            <p className="dps-label">
+          <div className="cs-card">
+            <p className="cs-num">~25%</p>
+            <p className="cs-label">
               more for a staged home<sup>1</sup>
             </p>
           </div>
-          <div className="dps-card">
-            <p className="dps-num">~73%</p>
-            <p className="dps-label">
+          <div className="cs-card">
+            <p className="cs-num">~73%</p>
+            <p className="cs-label">
               less time on market<sup>1</sup>
             </p>
           </div>
         </div>
-        <p className="dps-foot">
+        <p className="cs-foot">
           <sup>1</sup> Sources being supplied separately.
         </p>
       </div>
