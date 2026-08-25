@@ -1,6 +1,11 @@
-// "Make the updates buyers are looking for" — the agent compilation video
-// plus three staging stats. Stays adjacent to the deal section: the video is
-// a five-agent compilation, so it can't be split across the router cards.
+// "Make the updates buyers are looking for" — the agent compilation video.
+// Stays adjacent to the deal section: the video is a five-agent compilation,
+// so it can't be split across the router cards.
+//
+// The three staging stats that used to sit under this caption are their own
+// section now (components/sections/StatBand, mounted next on the homepage) —
+// under the clip they read as a footnote to it rather than as the argument
+// they are. Their sourcing footnote went with them.
 //
 // Video: re-encoded from the 1080p master (Skeptical_New-Branding.mp4) —
 // logo cards stripped head and tail, 2 Mbps H.264 + WebM, both under 8MB.
@@ -8,8 +13,7 @@
 //
 // [PENDING] Captions: the <track> is wired but needs agents-on-curbio.en.vtt
 // — no speech-to-text exists on this machine, so the transcript has to be
-// supplied (or whisper installed) before launch. Stat sources (¹) are being
-// supplied separately.
+// supplied (or whisper installed) before launch.
 
 const CAPTIONS_READY = false; // flip when public/home/testimonial/agents-on-curbio.en.vtt lands
 
@@ -41,29 +45,6 @@ export function MoveInStats() {
         <p className="cs-videocap">
           Agents in Washington DC, Los Angeles, and Baltimore on what changed once the house
           stopped being the problem.
-        </p>
-        <div className="cs-grid">
-          <div className="cs-card">
-            <p className="cs-num">94%</p>
-            <p className="cs-label">
-              of buyers want move-in ready<sup>1</sup>
-            </p>
-          </div>
-          <div className="cs-card">
-            <p className="cs-num">~25%</p>
-            <p className="cs-label">
-              more for a staged home<sup>1</sup>
-            </p>
-          </div>
-          <div className="cs-card">
-            <p className="cs-num">~73%</p>
-            <p className="cs-label">
-              less time on market<sup>1</sup>
-            </p>
-          </div>
-        </div>
-        <p className="cs-foot">
-          <sup>1</sup> Sources being supplied separately.
         </p>
       </div>
     </section>

@@ -6,6 +6,7 @@ import { HowItWorks } from "@/components/home/HowItWorks";
 import { QualifyCard } from "@/components/home/QualifyCard";
 import { DealTimeline } from "@/components/home/DealTimeline";
 import { MoveInStats } from "@/components/home/MoveInStats";
+import { StatBand } from "@/components/sections/StatBand";
 import { HomeResults } from "@/components/home/HomeResults";
 import { BeforeAfterProof } from "@/components/home/BeforeAfterProof";
 import { AudienceRouter } from "@/components/home/AudienceRouter";
@@ -46,6 +47,14 @@ export const metadata: Metadata = {
   ...routeMetadata("/home-preview"),
 };
 
+// The three staging figures, pulled out of the agent-video section into their
+// own band. Values unchanged; they dial up from 0 on scroll (see CountUp).
+const BUYER_STATS = [
+  { value: 94, suffix: "%", label: <>of buyers want move-in ready<sup>1</sup></> },
+  { value: 25, prefix: "~", suffix: "%", label: <>more for a staged home<sup>1</sup></> },
+  { value: 73, prefix: "~", suffix: "%", label: <>less time on market<sup>1</sup></> },
+];
+
 export default function HomePreviewPage() {
   return (
     <>
@@ -57,6 +66,16 @@ export default function HomePreviewPage() {
       <QualifyCard />
       <DealTimeline />
       <MoveInStats />
+      <StatBand
+        id="buyer-stats"
+        label="What buyers reward"
+        stats={BUYER_STATS}
+        footnote={
+          <>
+            <sup>1</sup> Sources being supplied separately.
+          </>
+        }
+      />
       <AudienceRouter />
       <OurWork />
       <MarketsManagers />
