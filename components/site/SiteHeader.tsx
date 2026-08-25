@@ -81,9 +81,17 @@ export function SiteHeader() {
 
       <div className="ch-announce">
         <b>Pay at closing</b> — your seller pays nothing until the home sells.
-        <Link href="/how-it-works#pay-at-closing">
+        {/* Points at Notable's application, not our own /how-it-works page:
+            the banner is about the pay-at-closing FINANCING, and Notable is
+            the lender that underwrites it. External, so it opens in a new tab
+            and keeps the visitor's place on the site. */}
+        <a
+          href="https://notablehome.com/curbio/apply"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           <u>How it works →</u>
-        </Link>
+        </a>
       </div>
 
       <div className="ch-bar">

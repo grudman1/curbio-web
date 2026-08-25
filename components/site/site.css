@@ -92,7 +92,13 @@
 /* ── ARTIFACT: header (#c-header) ───────────────────────────────────────── */
 #c-header { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; }
 #c-header .ch-bar { position: relative; }
+/* box-sizing is EXPLICIT here, not inherited from the global `*` reset: with
+   content-box, `width: 100%` plus 40px of horizontal padding renders the bar
+   80px wider than its container, which pushed the CTA 40px past the right
+   edge at every width — invisibly, because <body> is overflow-x: hidden, so
+   it clipped instead of scrolling. */
 #c-header .ch-nav {
+  box-sizing: border-box;
   width: 100%; padding: 20px 40px; display: flex; align-items: center;
   gap: 28px; position: relative; z-index: 1;
 }
@@ -272,17 +278,45 @@
 #c-header .ch-burger span { display: block; width: 100%; height: 2px; border-radius: 2px; }
 
 /* responsive: shed in priority order — phone > log in > nav links */
-@media (max-width: 980px) {
+/* 1024, not the old 980. MEASURED: the desktop row needs 1015px of viewport
+   (80 padding + 161 logo + 28 gap + 48 list margin + 369 links + 28 gap + 301
+   actions). At 980 the links were still displayed between 981 and 1014px with
+   nowhere to go — .ch-links has min-width: 0, so its BOX shrank while its
+   nowrap children did not, and the list slid underneath the phone number.
+   Switching to the burger at 1024 clears that band with headroom.
+   IF A NAV ITEM IS ADDED, RE-MEASURE: every ~90px of new label pushes the
+   requirement up, and this breakpoint has to stay above it or the overlap
+   comes back. */
+@media (max-width: 1024px) {
   #c-header .ch-links { display: none; }
   #c-header .ch-burger { display: flex; }
   #c-header .ch-actions { margin-left: auto; }
 }
+/* MEASURED, same method as the 1024 step above: with the phone NUMBER and
+   "Log in" both showing, the right-hand cluster needs 640px of viewport
+   (logo 161 + 28 gap + 195 actions + 80 padding, plus the label widths).
+   Below that the burger ran past the padding and clipped — a second dead
+   band, 561-639, that the old single 560 step left open. Shedding the two
+   lowest-value items here (the number is still one tap on the glyph; Log in
+   lives in the menu) buys the cluster back its room. */
+@media (max-width: 640px) {
+  #c-header .ch-phone span { display: none; }  /* glyph only, still tappable */
+  #c-header .ch-login { display: none; }        /* lives in the menu */
+}
 @media (max-width: 560px) {
   #c-header .ch-nav { padding: 15px 16px; gap: 10px; }
   #c-header .ch-actions { gap: 14px; }
-  #c-header .ch-phone span { display: none; }  /* glyph only, still tappable */
-  #c-header .ch-login { display: none; }        /* lives in the menu */
   #c-header .ch-cta { height: 36px; padding: 0 14px; font-size: 13px; }
+}
+/* At the 375 floor the row fits with EXACTLY 0px to spare (161 logo + 10 gap
+   + 160 actions + 32 padding = 363), so every narrower phone — 360px Androids,
+   SE-class 320s — clipped the burger off the right edge. The logo takes the
+   cut rather than the phone glyph or the CTA: it is the widest item in the bar
+   and the only one that is purely brand rather than an action. */
+@media (max-width: 374px) {
+  #c-header .ch-logo { height: 26px; width: 116px; }
+  #c-header .ch-logo img { height: 26px; }
+  #c-header .ch-actions { gap: 12px; }
 }
 
 /* ── PORT: hero — CONTROL: v1 full-bleed photo, one field, one action ─────── */
