@@ -55,6 +55,33 @@ export function assertMarketListIsCoherent(): void {
       problems.push(`displayName "${m.displayName}" does not end with its state ", ${m.state}"`);
     }
     if (!/^\d{5}$/.test(m.canonicalZip)) problems.push(`market "${m.slug}" has a malformed canonicalZip`);
+
+    // `placeholder` and an empty `sold` must agree, in BOTH directions. The
+    // flag existed for three months as an unread annotation while the sold
+    // strip rendered whatever was in the array — so it is checked here rather
+    // than trusted. Without the second rule a market keeps its placeholder
+    // badge after real listings land; without the first, an empty market
+    // renders an empty strip.
+    if (m.sold.length === 0 && !m.placeholder) {
+      problems.push(
+        `market "${m.slug}" has no sold listings but is not marked placeholder — ` +
+          `set placeholder: true, or add listings`
+      );
+    }
+    if (m.placeholder && m.sold.length > 0) {
+      problems.push(
+        `market "${m.slug}" is marked placeholder but lists ${m.sold.length} sold listing(s) — ` +
+          `clear placeholder in the commit that adds real proof`
+      );
+    }
+    // An unverified price is a Zestimate. It may sit in the list (the campaign
+    // strip shows it; the homepage ticker filters it out), but a market whose
+    // proof is ENTIRELY unverified is not proof, and must say so.
+    if (m.sold.length > 0 && m.sold.every((s) => s.unverified) && !m.placeholder) {
+      problems.push(
+        `market "${m.slug}" has only unverified prices — mark it placeholder or add a verified sale`
+      );
+    }
   }
 
   if (problems.length) {

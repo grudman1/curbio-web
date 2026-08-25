@@ -160,7 +160,10 @@ export default function CampaignShell({
           source={page.attribution.source.replace(/\{marketSlug\}/g, marketSlug)}
         />
 
-        {page.sections.soldProof && !neutral && (
+        {/* A market with no verified listings renders no strip at all, rather
+            than an empty row under a "Prepped by Curbio" eyebrow. Gated on the
+            DATA, not on a slug — see Market.placeholder in config/markets.ts. */}
+        {page.sections.soldProof && !neutral && market.sold.length > 0 && (
           <SoldProofStrip
             market={market}
             soldByLine={

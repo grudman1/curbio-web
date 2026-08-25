@@ -174,6 +174,13 @@ const TEAM: Record<string, TeamMember> = {
     title: "Home Services Manager",
     bio: "With two decades as a licensed agent in Southern California, Trevor specializes in the upgrades that drive the highest ROI for sellers — delivering projects on time and on budget so clients maximize their equity.",
   },
+  "Bill Kirkland": {
+    photo: "/hsm/bill-kirkland.jpg",
+    title: "Home Services Manager",
+    // No {market} token: Bill serves Seattle only, and the bio names it
+    // directly. Add the token if he ever picks up a second market.
+    bio: "Bill has completed more than 200 Seattle-area remodels — cosmetic refreshes, kitchen and bath overhauls, and full down-to-the-studs rebuilds. He came up through the trades side of the business: four years running his own property preservation company, then managing 15 to 20 active renovations at a time for a residential investment group, where he was responsible for scoping rehab costs and holding budgets. That background is why his estimates hold. Agents keep coming back to him because the finished product goes to market and sells.",
+  },
   "Aaron Glines": {
     photo: "/hsm/aaron-glines.jpg",
     title: "VP, Sales & Operations",

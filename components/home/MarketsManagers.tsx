@@ -1,24 +1,52 @@
 import Image from "next/image";
+import { MARKETS } from "@/config/markets";
 
-// "Seven markets. A manager in each." — market list plus the four Home
-// Services Managers. Headshots already live under public/hsm/.
+// "Eight markets. A manager in each." — market list plus the Home Services
+// Managers, BOTH derived from config/markets.ts.
+//
+// This file used to carry its own seven-row market array, its own four-person
+// HSM array, and a hardcoded "Seven markets." headline — an eighth market list
+// in a codebase whose whole market model exists to have exactly one. Adding
+// Seattle is what surfaced it: every other market surface picked the row up
+// automatically and this one silently did not.
+//
+// Headshots live under public/hsm/ and are referenced by the market rows.
 
-const MARKETS = [
-  { name: "Atlanta", state: "GA" },
-  { name: "Washington", state: "DC" },
-  { name: "Dallas", state: "TX" },
-  { name: "Maryland", state: "MD" },
-  { name: "Los Angeles", state: "CA" },
-  { name: "Northern Virginia", state: "VA" },
-  { name: "Riverside", state: "CA" },
+/** Spelled-out counts, so the headline reads as copy rather than a stat. */
+const COUNT_WORDS = [
+  "Zero", "One", "Two", "Three", "Four", "Five", "Six",
+  "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve",
 ];
+const spell = (n: number) => COUNT_WORDS[n] ?? String(n);
 
-const HSMS = [
-  { src: "/hsm/christine-harvey.jpg", name: "Christine Harvey", area: "Atlanta" },
-  { src: "/hsm/joshua-collins.jpg", name: "Joshua Collins", area: "DC · Maryland · NoVA" },
-  { src: "/hsm/miguel-picart.jpg", name: "Miguel Picart", area: "Dallas" },
-  { src: "/hsm/trevor-laramee.jpg", name: "Trevor Laramee", area: "Los Angeles · Riverside" },
-];
+/**
+ * The market's name without a trailing state it already carries — "Washington,
+ * DC" → "Washington", so the state column doesn't print DC twice. Generic, not
+ * a per-market case: it fires only where `name` already ends in `, ${state}`.
+ */
+const withoutState = (name: string, state: string) =>
+  name.endsWith(`, ${state}`) ? name.slice(0, -(state.length + 2)) : name;
+
+const MARKET_ROWS = MARKETS.map((m) => ({
+  name: withoutState(m.name, m.state),
+  state: m.state,
+}));
+
+// One card per unique HSM, in first-appearance order, listing the markets they
+// cover. Same derivation the marketing hub's outreach page uses.
+const HSMS = (() => {
+  const byName = new Map<string, { src: string | null; areas: string[] }>();
+  for (const m of MARKETS) {
+    const existing = byName.get(m.hsm.name);
+    if (existing) existing.areas.push(withoutState(m.name, m.state));
+    else byName.set(m.hsm.name, { src: m.hsm.photo, areas: [withoutState(m.name, m.state)] });
+  }
+  return [...byName.entries()].map(([name, { src, areas }]) => ({
+    name,
+    src,
+    area: areas.join(" · "),
+  }));
+})();
 
 export function MarketsManagers() {
   return (
@@ -26,11 +54,11 @@ export function MarketsManagers() {
       <div className="c-container c-mkt-grid">
         <div>
           <h2 className="c-h2">
-            Seven markets.
+            {spell(MARKET_ROWS.length)} markets.
             <br />A manager in each.
           </h2>
           <div>
-            {MARKETS.map((m) => (
+            {MARKET_ROWS.map((m) => (
               <div key={m.name} className="c-mkt-row">
                 <span className="c-mkt-name">{m.name}</span>
                 <span className="c-mkt-state">{m.state}</span>
@@ -42,13 +70,15 @@ export function MarketsManagers() {
           <div className="c-mkt-hsms">
             {HSMS.map((h) => (
               <figure key={h.name}>
-                <Image
-                  src={h.src}
-                  alt={h.name}
-                  width={96}
-                  height={96}
-                  style={{ objectFit: "cover", objectPosition: "center top", display: "block" }}
-                />
+                {h.src && (
+                  <Image
+                    src={h.src}
+                    alt={h.name}
+                    width={96}
+                    height={96}
+                    style={{ objectFit: "cover", objectPosition: "center top", display: "block" }}
+                  />
+                )}
                 <figcaption>
                   <span className="c-mkt-hsm-name">{h.name}</span>
                   <span className="c-mkt-hsm-area">{h.area}</span>
@@ -57,7 +87,7 @@ export function MarketsManagers() {
             ))}
           </div>
           <p className="c-mkt-note">
-            Your ZIP routes to one of these four people. Not a call center.
+            Your ZIP routes to one of these {spell(HSMS.length).toLowerCase()} people. Not a call center.
           </p>
         </div>
       </div>
