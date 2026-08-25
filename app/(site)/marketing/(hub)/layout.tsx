@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { sessionSecret, touchSession } from "@/lib/adminAuth";
+import { SESSION_COOKIE, openSession } from "@/lib/adminSession";
 import { SNAPSHOT_MONTHS } from "@/config/appLeadsSnapshot";
 import { HubControls } from "./HubControls";
 import { Sidebar } from "./Sidebar";
@@ -81,7 +84,24 @@ const MK_CSS = `
 }
 `;
 
-export default function MarketingHubLayout({ children }: { children: React.ReactNode }) {
+/**
+ * Renew the session on a hub page load.
+ *
+ * The Control Room shell gets this for free — it reads the session to show who
+ * is signed in, and getSessionUser() slides the TTL. This hub reads no session
+ * at all (middleware is the gate, and nothing here is per-user), so without
+ * this call someone who lives in /marketing and never opens /admin would still
+ * be logged out 400 days after LOGIN rather than 400 days after their last
+ * visit. Verification stays in middleware; this only extends.
+ */
+async function renewSession(): Promise<void> {
+  const jar = await cookies();
+  const opened = await openSession(jar.get(SESSION_COOKIE)?.value, sessionSecret());
+  if (opened) await touchSession(opened.sid);
+}
+
+export default async function MarketingHubLayout({ children }: { children: React.ReactNode }) {
+  await renewSession();
   return (
     <div className="mk-root">
       <style>{MK_CSS}</style>

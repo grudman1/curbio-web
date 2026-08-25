@@ -239,11 +239,40 @@ export async function destroySession(sid: string): Promise<void> {
  * actions (see requireOwnerSession in app/(site)/admin/actions.ts) — never
  * trust a client-supplied role, always re-derive it from the session record.
  */
+/**
+ * Slide the session record's TTL forward from now.
+ *
+ * This is what turns the 400-day absolute lifetime into "400 days since you
+ * last used it" rather than "400 days since you logged in" — without it, an
+ * active user would still be logged out roughly once a year for no reason.
+ *
+ * It CANNOT live in middleware. The edge verifies sessions on the READ-ONLY
+ * Upstash credential precisely so a compromised edge can never mint or extend
+ * one; see the note in middleware.ts. So the refresh happens here, on Node,
+ * where the read-write credential already lives.
+ *
+ * Never throws: a failed EXPIRE means the session keeps its previous TTL,
+ * which is a slightly shorter session, not a broken one.
+ */
+export async function touchSession(sid: string): Promise<void> {
+  const redis = getAuthRedis();
+  if (!redis) return;
+  try {
+    await redis.expire(`admin:session:${sid}`, SESSION_ABSOLUTE_S);
+  } catch {
+    // Non-fatal by design — see above.
+  }
+}
+
 export async function getSessionUser(sid: string): Promise<SessionRecord | null> {
   const redis = getAuthRedis();
   if (!redis) return null;
   const raw = await redis.get<SessionRecord | string>(`admin:session:${sid}`);
   if (!raw) return null;
+  // Reading a session is proof of use, so it also renews it. Every Node-side
+  // consumer (the Control Room shell, every mutation's role check) gets the
+  // sliding window for free rather than each remembering to ask for it.
+  await touchSession(sid);
   return typeof raw === "string" ? (JSON.parse(raw) as SessionRecord) : raw;
 }
 
