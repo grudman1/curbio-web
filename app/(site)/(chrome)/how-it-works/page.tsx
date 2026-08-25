@@ -145,7 +145,7 @@ export default function HowItWorksPage() {
       {/* Pay at closing lives HERE now — the nav item is gone, the message
           is not. QualifyCard carries the full explanation plus the live
           Notable estimator. The header's announce bar links to this anchor. */}
-      <div id="pay-at-closing">
+      <div id="pay-at-closing" className="c-onwhite">
         <QualifyCard />
       </div>
 

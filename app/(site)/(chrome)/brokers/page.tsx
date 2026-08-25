@@ -78,7 +78,7 @@ export default function BrokersPage() {
         </div>
       </Section>
 
-      <Section variant="stone" id="co-branded">
+      <Section variant="white" id="co-branded">
         <SectionHeading
           title="Co-branded partner pages."
           lede={
