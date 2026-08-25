@@ -60,7 +60,9 @@ export const NAVIGATION: SiteNavigation = {
     // The nav LABEL is "For Brokerages"; the PATH is /brokers (migration plan).
     // Label and path differing is fine and intentional.
     { kind: "link", label: "For Brokerages", href: "/brokers" },
-    { kind: "link", label: "Contact", href: "/contact" },
+    // No Contact item: the persistent gold CTA already points at /contact, and
+    // a nav link beside it would be the same destination twice. Contact stays
+    // in the footer.
   ],
 
   cta: { label: "Free quote", href: "/contact" },

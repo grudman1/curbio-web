@@ -55,7 +55,7 @@ export default function ServicesPage() {
         ))}
       </Section>
 
-      <Section variant="stone">
+      <Section variant="white">
         <SectionHeading
           title="Not sure what the house needs?"
           lede={

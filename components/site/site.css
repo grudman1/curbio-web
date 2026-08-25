@@ -588,13 +588,15 @@
    gap under the strip 22 -> 12, which takes the band 134px -> ~100px; the
    only rule between strip and logos is a hairline at 55% alpha, so they read
    as two rows of one thing rather than two bands with a hard edge. */
-/* FIELD CHANGE 1 of 4 (Aug 24) — stone. DESIGN.md assigns stone to "quiet
-   dividers, icon discs, sold-strip bg": thin strips are what it is for, and a
-   white strip here was competing with the white sections further down instead
-   of reading as a shelf under the photo. The hairlines went with the swap —
-   --color-border IS stone, so they drew nothing once the fill landed. */
+/* REVERTED to white + hairlines (Gavin, Aug 25). The Aug 24 field plan filled
+   this strip with stone; DESIGN.md scopes stone to "quiet dividers, icon discs,
+   sold-strip bg", and as a full-width band under the hero it read as a slab of
+   grey rather than a shelf. White with a hairline top and bottom is the
+   original treatment and the one this reverts to — the hairlines are visible
+   again now that the fill behind them is white. */
 .c-proof {
-  position: relative; background: var(--color-surface-sunken);
+  position: relative; background: var(--color-surface-raised);
+  border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border);
   padding: 16px 0 18px;
 }
 /* The .c-proof-stat* family went with the trust strip (Gavin, Aug 8 — the
@@ -962,11 +964,21 @@
    mechanism of the alternation, and a live modifier is an invitation to put
    the stripes back one section at a time. */
 .c-sect { padding: 130px 0 140px; }
+/* ACCENT ONLY (Gavin, Aug 25). Stone is not a page background: DESIGN.md
+   scopes it to "quiet dividers, icon discs, sold-strip bg", and at full
+   section height it reads as a slab of grey between two light sections.
+   Page backgrounds alternate CLOUD (the default, no modifier) and WHITE
+   (.c-sect--white); this modifier stays for accent sections that genuinely
+   want the darker ground. */
 .c-sect--stone { background: var(--color-surface-sunken); }
 .c-sect--sage { background: var(--color-surface-accent); }
 .c-sect--white { background: var(--color-surface-raised); }
 .c-sect--inverse { background: var(--color-surface-inverse); }
 .c-sect--deal { background: var(--color-surface-raised); padding: 130px 0 150px; }
+/* Puts a shared section component (QualifyCard) on white without editing the
+   component, so the homepage's approved field plan is untouched while
+   /how-it-works keeps its cloud/white alternation. */
+.c-onwhite > .c-sect { background: var(--color-surface-raised); }
 .c-sect--work-gallery { padding: 130px 0 150px; overflow: hidden; }
 /* The hairline under markets is gone: navy opening beneath it is the break. */
 .c-sect--markets { padding: 140px 0 150px; }
