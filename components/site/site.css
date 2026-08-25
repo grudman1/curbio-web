@@ -647,12 +647,12 @@
 .c-proof-sep { margin: 0 18px; color: var(--color-text-subtle); }
 @media (max-width: 640px) { .c-proof-sep { margin: 0 10px; } }
 /* ── PORT: before/after proof — copy left, transformation clip right ─────── */
-/* FIELD CHANGE 2 of 4 — sage. DESIGN.md scopes sage to exactly one place:
-   "before/after section bg only". This is that section. It replaces the Aug 17
-   stone, which was chosen when the neighbours were near-white; they are both
-   cloud now, and stone this far down the page just repeated the strip under
-   the hero. Sage is the page's single soft-colour moment. */
-.c-proofvid { background: var(--color-surface-accent); padding: 118px 0; }
+/* STONE, restoring the Aug 17 treatment (Gavin, Aug 25). The Aug 24 field
+   plan made this the page's one sage moment; sage is out — the site's ground
+   is white and cloud, and stone is the single call-out colour. This section
+   is the call-out, so it takes it. Contrast re-checked on the new ground:
+   navy 11.08:1, fg-muted 5.11:1, both clear AA. */
+.c-proofvid { background: var(--color-surface-sunken); padding: 118px 0; }
 .c-proofvid-grid {
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
   gap: clamp(48px, 6vw, 96px); align-items: center;
@@ -661,7 +661,7 @@
    specificity trap as before: the shared .c-eyebrow rule is declared LATER
    in this file and would otherwise win at equal specificity. */
 /* Was teal. DESIGN.md: "Teal exists in the palette but is never used on
-   text." fg-muted is the eyebrow ink, and it clears 4.5:1 on sage. */
+   text." fg-muted is the eyebrow ink, and it clears 4.5:1 on stone (5.11). */
 .c-proofvid .c-eyebrow { color: var(--color-text-muted); }
 .c-proofvid-eyebrow { text-transform: uppercase; letter-spacing: var(--tracking-label); font-weight: 600; }
 .c-proofvid-h {
@@ -979,7 +979,9 @@
 
      cloud   default page bg          every section unless named below
      stone   strips and dividers      the trust strip under the hero
-     sage    "before/after only"      the before/after
+     stone   the ONE call-out colour  the before/after (its only use as a
+                                      full section; elsewhere stone is
+                                      dividers, discs and thin strips)
      white   cards, form card         the deal timeline — see below
      navy    navy panels, footer      app -> awards -> closer -> footer
 
@@ -1005,7 +1007,6 @@
    (.c-sect--white); this modifier stays for accent sections that genuinely
    want the darker ground. */
 .c-sect--stone { background: var(--color-surface-sunken); }
-.c-sect--sage { background: var(--color-surface-accent); }
 .c-sect--white { background: var(--color-surface-raised); }
 .c-sect--inverse { background: var(--color-surface-inverse); }
 .c-sect--deal { background: var(--color-surface-raised); padding: 130px 0 150px; }
