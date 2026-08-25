@@ -130,9 +130,28 @@ function implementedPages(): RegistryEntry[] {
     title: "Homepage",
     status: "stub", // building at /home-preview; promoted to / on sign-off
     indexed: false,
-    derivedFrom: "app/(site)/home-preview → app/(site)/(chrome)/page.tsx",
+    derivedFrom: "app/(site)/(chrome)/home-preview → app/(site)/(chrome)/page.tsx",
     note: "building at /home-preview — replaces the placeholder at / on sign-off",
   });
+  // The four marketing pages (Aug 2026), built on the promoted homepage design
+  // language. `stub` until Gavin flips them: built and rendering with real
+  // copy, but each still carries NEEDS FACT markers.
+  const MARKETING_PAGES: { path: string; title: string }[] = [
+    { path: "/how-it-works", title: "How It Works" },
+    { path: "/services", title: "Services" },
+    { path: "/brokers", title: "For Brokerages" },
+    { path: "/contact", title: "Contact" },
+  ];
+  for (const p of MARKETING_PAGES) {
+    out.push({
+      path: p.path,
+      group: "site",
+      title: p.title,
+      status: "stub",
+      indexed: indexedFor(p.path),
+      derivedFrom: `app/(site)/(chrome)${p.path}`,
+    });
+  }
   out.push({
     path: "/markets",
     group: "site",

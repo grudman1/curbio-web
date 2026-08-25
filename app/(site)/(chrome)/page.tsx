@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 export default function SiteHome() {
   return (
-    <div className="mx-auto max-w-container px-6 py-16">
+    <div className="mx-auto max-w-container px-6 pb-16 pt-40">
       <h1>Curbio — site group</h1>
       <p style={{ color: "var(--fg-muted)", marginTop: 12 }}>
         Phase 2 foundation. Marketing pages are not built yet. This placeholder

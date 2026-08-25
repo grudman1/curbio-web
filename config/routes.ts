@@ -145,6 +145,43 @@ export const ROUTES: RouteEntry[] = [
     indexed: false,
   },
 
+  // The four marketing pages built on the promoted homepage design language.
+  // noindex until DNS cutover — curbio.com is still served by WordPress and
+  // these must not compete with the pages currently ranking. Flip with the
+  // rest of the site tier.
+  {
+    publicPath: "/how-it-works",
+    internalPath: "/how-it-works",
+    cutoverPath: "/how-it-works",
+    tier: "site",
+    group: "site",
+    indexed: false,
+  },
+  {
+    publicPath: "/services",
+    internalPath: "/services",
+    cutoverPath: "/services",
+    tier: "site",
+    group: "site",
+    indexed: false,
+  },
+  {
+    publicPath: "/brokers",
+    internalPath: "/brokers",
+    cutoverPath: "/brokers",
+    tier: "site",
+    group: "site",
+    indexed: false,
+  },
+  {
+    publicPath: "/contact",
+    internalPath: "/contact",
+    cutoverPath: "/contact",
+    tier: "site",
+    group: "site",
+    indexed: false,
+  },
+
   {
     publicPath: "/exp/m/:market",
     internalPath: "/exp/m/:market",

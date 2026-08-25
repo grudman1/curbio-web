@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 export default function MarketsIndex() {
   return (
-    <div className="mx-auto max-w-container px-6 py-16">
+    <div className="mx-auto max-w-container px-6 pb-16 pt-40">
       <h1 className="font-serif text-h2 font-semibold text-content">Markets</h1>
       <p className="mt-4 max-w-[60ch] text-body text-content-muted">
         {MARKETS.length} markets. This list is the single source — nav entries,

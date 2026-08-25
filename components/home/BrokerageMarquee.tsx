@@ -7,7 +7,7 @@ import { BROKERAGE_LOGOS } from "@/lib/partners";
 // This component only decides how it is painted.
 //
 // Each logo is declared ONCE, in CSS (a mono layer and a hover-color layer as
-// custom properties on the span; home.css paints them as ::before/::after).
+// custom properties on the span; site.css paints them as ::before/::after).
 // Never a row of repeated inline <img> tags: repeating inline images to fake
 // a loop is what silently failed in this design's predecessor when the page
 // hit the browser's inline-asset weight ceiling. The track itself renders
@@ -26,7 +26,7 @@ function LogoRow({ hidden }: { hidden?: boolean }) {
       {BROKERAGE_LOGOS.map((b) => (
         <span
           key={b.id}
-          className="dp-logo"
+          className="c-logo"
           role={hidden ? undefined : "img"}
           aria-label={hidden ? undefined : b.name}
           aria-hidden={hidden || undefined}
@@ -45,12 +45,12 @@ function LogoRow({ hidden }: { hidden?: boolean }) {
 
 export function BrokerageMarquee() {
   return (
-    <section className="dp-sect--trust">
-      <div className="dp-container">
-        <div className="dp-trust">
-          <p className="dp-trust-label">Curbio agents work with brokerages nationwide.</p>
-          <div className="dp-marquee" data-animated="true">
-            <div className="dp-marquee-track">
+    <section className="c-sect--trust">
+      <div className="c-container">
+        <div className="c-trust">
+          <p className="c-trust-label">Curbio agents work with brokerages nationwide.</p>
+          <div className="c-marquee" data-animated="true">
+            <div className="c-marquee-track">
               <LogoRow />
               <LogoRow hidden />
             </div>

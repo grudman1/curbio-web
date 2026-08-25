@@ -22,24 +22,24 @@ const HSMS = [
 
 export function MarketsManagers() {
   return (
-    <section className="dp-sect--markets">
-      <div className="dp-container dp-mkt-grid">
+    <section className="c-sect--markets">
+      <div className="c-container c-mkt-grid">
         <div>
-          <h2 className="dp-h2">
+          <h2 className="c-h2">
             Seven markets.
             <br />A manager in each.
           </h2>
           <div>
             {MARKETS.map((m) => (
-              <div key={m.name} className="dp-mkt-row">
-                <span className="dp-mkt-name">{m.name}</span>
-                <span className="dp-mkt-state">{m.state}</span>
+              <div key={m.name} className="c-mkt-row">
+                <span className="c-mkt-name">{m.name}</span>
+                <span className="c-mkt-state">{m.state}</span>
               </div>
             ))}
           </div>
         </div>
-        <div className="dp-mkt-people">
-          <div className="dp-mkt-hsms">
+        <div className="c-mkt-people">
+          <div className="c-mkt-hsms">
             {HSMS.map((h) => (
               <figure key={h.name}>
                 <Image
@@ -50,13 +50,13 @@ export function MarketsManagers() {
                   style={{ objectFit: "cover", objectPosition: "center top", display: "block" }}
                 />
                 <figcaption>
-                  <span className="dp-mkt-hsm-name">{h.name}</span>
-                  <span className="dp-mkt-hsm-area">{h.area}</span>
+                  <span className="c-mkt-hsm-name">{h.name}</span>
+                  <span className="c-mkt-hsm-area">{h.area}</span>
                 </figcaption>
               </figure>
             ))}
           </div>
-          <p className="dp-mkt-note">
+          <p className="c-mkt-note">
             Your ZIP routes to one of these four people. Not a call center.
           </p>
         </div>

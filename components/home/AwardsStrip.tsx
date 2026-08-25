@@ -7,21 +7,21 @@
 
 export function AwardsStrip() {
   return (
-    <section data-dark="true" className="dp-strip" aria-label="Awards, reviews, and press">
-      <div className="dp-container">
-        <p className="dp-strip-row">
+    <section data-dark="true" className="c-strip" aria-label="Awards, reviews, and press">
+      <div className="c-container">
+        <p className="c-strip-row">
           <b>[Award]</b>
-          <span className="dp-proof-sep" aria-hidden>
+          <span className="c-proof-sep" aria-hidden>
             ·
           </span>
           <b>[Award]</b>
-          <span className="dp-proof-sep" aria-hidden>
+          <span className="c-proof-sep" aria-hidden>
             ·
           </span>
           <span>
             <b>[rating]</b> across <b>[count]</b> reviews
           </span>
-          <span className="dp-proof-sep" aria-hidden>
+          <span className="c-proof-sep" aria-hidden>
             ·
           </span>
           <span>

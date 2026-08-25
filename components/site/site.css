@@ -1,75 +1,77 @@
 /* ============================================================================
-   HOMEPAGE PREVIEW — /home-preview
+   SITE DESIGN LANGUAGE — the approved homepage design, promoted site-wide
    ============================================================================
 
-   v1 was the faithful port of the approved standalone design file ("Curbio
-   Homepage Design Preview.html", Aug 2026). v2 applies the written homepage
-   revisions (Aug 2026): reorder, split hero with the transformation video,
-   proof band, how-it-works, audience router, app + awards sections; the
-   editorial paragraph, Notable estimator, results marquee, and standalone
-   quotes block are gone. The design language — palette, type, tokens,
-   section rhythm — is unchanged and everything still resolves through the
-   semantic token layer (tokens.css).
+   Formerly components/home/home.css, scoped under .dp- ("design preview")
+   prefixes so it could not reach live pages. The homepage design was signed
+   off (Aug 2026), so this IS the site's design language now: renamed to
+   site.css and the prefixes renamed mechanically (dp-→c-, dph-→ch-, dpl-→cl-,
+   dpl2-→cl2-, dpr-→cr-, dps-→cs-). No rule changed in the rename.
+
+   History (still true, just one layer back): v1 was the faithful port of the
+   approved standalone design file; v2 applied the written homepage revisions.
+   The design language — palette, type, tokens, section rhythm — resolves
+   entirely through the semantic token layer (tokens.css). No raw hex, no raw
+   spacing that isn't already a token or an authored artifact value.
 
    Rule provenance:
 
-     ARTIFACT   copied from the v1 design file unchanged (dp-, dph-, dpl-,
-                dps- families, including their own breakpoints).
+     ARTIFACT   copied from the v1 design file unchanged (c-, ch-, cl-,
+                cs- families, including their own breakpoints).
      PORT       authored for the port or for the v2 revisions, at the design
                 brief's breakpoints (≤1024px, ≤640px).
 
-   Everything is scoped under .dp- / .dph- style prefixes; nothing here can
-   reach the live pages, which never render these class names.
+   Loaded by app/(site)/(chrome)/layout.tsx — every chromed page gets it.
    ========================================================================== */
 
 /* ── PORT: page shell ────────────────────────────────────────────────────── */
-.dp-page {
+.c-page {
   background: var(--color-surface);
   color: var(--color-text);
   font-family: var(--font-family-sans);
   font-size: 17px;
   line-height: 1.55;
 }
-.dp-container {
+.c-container {
   max-width: 1360px;
   margin: 0 auto;
   padding: 0 56px;
 }
 @media (max-width: 1024px) {
-  .dp-container { padding: 0 32px; }
+  .c-container { padding: 0 32px; }
 }
 @media (max-width: 640px) {
-  .dp-container { padding: 0 20px; }
+  .c-container { padding: 0 20px; }
 }
 
 /* ── ARTIFACT: shared atoms ──────────────────────────────────────────────── */
-.dp-cta { display: inline-block; background: var(--color-accent); color: var(--color-text-on-accent);
+.c-cta { display: inline-block; background: var(--color-accent); color: var(--color-text-on-accent);
   border-radius: var(--radius-pill); font-weight: 700; text-decoration: none; cursor: pointer; border: 0;
   transition: background 160ms; }
-.dp-cta:hover { background: var(--color-accent-hover); }
-.dp-leader { flex: 1; border-bottom: 1px dotted rgba(255,255,255,.32); margin: 0 12px 5px; }
-.dp-ulink { color: var(--color-text); text-decoration: underline; text-underline-offset: 5px;
+.c-cta:hover { background: var(--color-accent-hover); }
+.c-leader { flex: 1; border-bottom: 1px dotted rgba(255,255,255,.32); margin: 0 12px 5px; }
+.c-ulink { color: var(--color-text); text-decoration: underline; text-underline-offset: 5px;
   text-decoration-thickness: 1px; }
-/* .dp-row + its two breakpoints went with SixWaysIn (Gavin, Aug 7 — the
-   services marquee replaces that section). .dp-ulink stays: AudienceRouter
+/* .c-row + its two breakpoints went with SixWaysIn (Gavin, Aug 7 — the
+   services marquee replaces that section). .c-ulink stays: AudienceRouter
    and OurWork still use it. */
 
 /* ── ARTIFACT: hero address search — the eXp pattern ─────────────────────── */
-.dp-hero-search {
+.c-hero-search {
   display: flex; align-items: center; gap: 6px; width: 100%;
   background: var(--color-surface-raised); border-radius: var(--radius-pill);
   padding: 8px 8px 8px 26px; box-shadow: var(--elevation-card);
   border: 1px solid transparent; transition: border-color 160ms, box-shadow 160ms;
 }
-.dp-hero-search:focus-within {
+.c-hero-search:focus-within {
   border-color: var(--color-accent); box-shadow: 0 0 0 4px var(--color-accent-ring);
 }
-.dp-hero-search input {
+.c-hero-search input {
   flex: 1; min-width: 0; border: 0; outline: none; background: transparent;
   font-family: var(--font-family-sans); font-size: 17px; font-weight: 500; color: var(--color-text);
 }
-.dp-hero-search input::placeholder { color: var(--color-text-subtle); font-weight: 400; }
-.dp-hero-search button {
+.c-hero-search input::placeholder { color: var(--color-text-subtle); font-weight: 400; }
+.c-hero-search button {
   height: 52px; flex-shrink: 0; border: 0; cursor: pointer;
   padding: 0 28px; white-space: nowrap;
   border-radius: var(--radius-pill); background: var(--color-accent);
@@ -78,113 +80,114 @@
   letter-spacing: -0.005em; color: #fff;
   transition: background 160ms;
 }
-.dp-hero-search button:hover { background: var(--color-accent-hover); }
+.c-hero-search button:hover { background: var(--color-accent-hover); }
 
 /* PORT: keep the single pill on small screens, just tighter. */
 @media (max-width: 640px) {
-  .dp-hero-search { padding-left: 16px; }
-  .dp-hero-search input { font-size: 15px; }
-  .dp-hero-search button { height: 46px; padding: 0 16px; font-size: 14px; }
+  .c-hero-search { padding-left: 16px; }
+  .c-hero-search input { font-size: 15px; }
+  .c-hero-search button { height: 46px; padding: 0 16px; font-size: 14px; }
 }
 
-/* ── ARTIFACT: header (#dp-header) ───────────────────────────────────────── */
-#dp-header { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; }
-#dp-header .dph-bar { position: relative; }
-#dp-header .dph-nav {
+/* ── ARTIFACT: header (#c-header) ───────────────────────────────────────── */
+#c-header { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; }
+#c-header .ch-bar { position: relative; }
+#c-header .ch-nav {
   width: 100%; padding: 20px 40px; display: flex; align-items: center;
   gap: 28px; position: relative; z-index: 1;
 }
-/* Blur sits on its own empty layer, NOT on .dph-bar: Chromium mis-composites
+/* Blur sits on its own empty layer, NOT on .ch-bar: Chromium mis-composites
    descendants that overflow a backdrop-filtered element, which rendered the
    dropdown panels see-through. A childless sibling fixes it for free. */
-#dp-header .dph-scrim {
+#c-header .ch-scrim {
   position: absolute; inset: 0; pointer-events: none;
   transition: background var(--duration-base) var(--easing-out);
 }
 
-#dp-header .dph-announce {
+#c-header .ch-announce {
   background: var(--color-surface-sunken); color: var(--color-text);
   text-align: center; padding: 7px 24px; font-size: 13px; font-weight: 500;
   letter-spacing: -0.005em; line-height: 1.4;
 }
-#dp-header .dph-announce b { font-weight: 700; }
-#dp-header .dph-announce u {
+#c-header .ch-announce b { font-weight: 700; }
+#c-header .ch-announce a { color: inherit; text-decoration: none; }
+#c-header .ch-announce u {
   margin-left: 8px; font-weight: 700; text-underline-offset: 3px;
   text-decoration-thickness: 1px; cursor: pointer;
 }
 
 /* tone: over hero / over navy */
-#dp-header[data-tone="hero"] .dph-scrim,
-#dp-header[data-tone="dark"] .dph-scrim {
+#c-header[data-tone="hero"] .ch-scrim,
+#c-header[data-tone="dark"] .ch-scrim {
   background: rgba(13, 37, 77, 0.16);
   -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
 }
-#dp-header[data-tone="hero"] .dph-link,
-#dp-header[data-tone="dark"] .dph-link,
-#dp-header[data-tone="hero"] .dph-phone,
-#dp-header[data-tone="dark"] .dph-phone,
-#dp-header[data-tone="hero"] .dph-login,
-#dp-header[data-tone="dark"] .dph-login { color: #fff; }
-#dp-header[data-tone="hero"] .dph-link:hover,
-#dp-header[data-tone="dark"] .dph-link:hover,
-#dp-header[data-tone="hero"] .dph-login:hover,
-#dp-header[data-tone="dark"] .dph-login:hover { color: rgba(255,255,255,0.76); }
-#dp-header[data-tone="hero"] .dph-phone svg,
-#dp-header[data-tone="dark"] .dph-phone svg { stroke: rgba(255,255,255,0.8); }
-#dp-header[data-tone="hero"] .dph-burger span,
-#dp-header[data-tone="dark"] .dph-burger span { background: #fff; }
-#dp-header[data-tone="hero"] .dph-logo-navy,
-#dp-header[data-tone="dark"] .dph-logo-navy { opacity: 0; }
-#dp-header[data-tone="hero"] .dph-logo-white,
-#dp-header[data-tone="dark"] .dph-logo-white { opacity: 1; }
+#c-header[data-tone="hero"] .ch-link,
+#c-header[data-tone="dark"] .ch-link,
+#c-header[data-tone="hero"] .ch-phone,
+#c-header[data-tone="dark"] .ch-phone,
+#c-header[data-tone="hero"] .ch-login,
+#c-header[data-tone="dark"] .ch-login { color: #fff; }
+#c-header[data-tone="hero"] .ch-link:hover,
+#c-header[data-tone="dark"] .ch-link:hover,
+#c-header[data-tone="hero"] .ch-login:hover,
+#c-header[data-tone="dark"] .ch-login:hover { color: rgba(255,255,255,0.76); }
+#c-header[data-tone="hero"] .ch-phone svg,
+#c-header[data-tone="dark"] .ch-phone svg { stroke: rgba(255,255,255,0.8); }
+#c-header[data-tone="hero"] .ch-burger span,
+#c-header[data-tone="dark"] .ch-burger span { background: #fff; }
+#c-header[data-tone="hero"] .ch-logo-navy,
+#c-header[data-tone="dark"] .ch-logo-navy { opacity: 0; }
+#c-header[data-tone="hero"] .ch-logo-white,
+#c-header[data-tone="dark"] .ch-logo-white { opacity: 1; }
 
 /* tone: scrolled */
-#dp-header[data-tone="scrolled"] .dph-scrim {
+#c-header[data-tone="scrolled"] .ch-scrim {
   background: rgba(247, 247, 247, 0.82);
   -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--color-border);
 }
-#dp-header[data-tone="scrolled"] .dph-link,
-#dp-header[data-tone="scrolled"] .dph-phone,
-#dp-header[data-tone="scrolled"] .dph-login { color: var(--color-text); }
-#dp-header[data-tone="scrolled"] .dph-link:hover,
-#dp-header[data-tone="scrolled"] .dph-login:hover { color: var(--color-text-muted); }
-#dp-header[data-tone="scrolled"] .dph-phone svg { stroke: var(--color-text-muted); }
-#dp-header[data-tone="scrolled"] .dph-burger span { background: var(--color-text); }
-#dp-header[data-tone="scrolled"] .dph-logo-navy { opacity: 1; }
-#dp-header[data-tone="scrolled"] .dph-logo-white { opacity: 0; }
+#c-header[data-tone="scrolled"] .ch-link,
+#c-header[data-tone="scrolled"] .ch-phone,
+#c-header[data-tone="scrolled"] .ch-login { color: var(--color-text); }
+#c-header[data-tone="scrolled"] .ch-link:hover,
+#c-header[data-tone="scrolled"] .ch-login:hover { color: var(--color-text-muted); }
+#c-header[data-tone="scrolled"] .ch-phone svg { stroke: var(--color-text-muted); }
+#c-header[data-tone="scrolled"] .ch-burger span { background: var(--color-text); }
+#c-header[data-tone="scrolled"] .ch-logo-navy { opacity: 1; }
+#c-header[data-tone="scrolled"] .ch-logo-white { opacity: 0; }
 
 /* logo */
-#dp-header .dph-logo { position: relative; height: 36px; width: 161px; flex-shrink: 0; }
-#dp-header .dph-logo img {
+#c-header .ch-logo { position: relative; height: 36px; width: 161px; flex-shrink: 0; }
+#c-header .ch-logo img {
   position: absolute; inset: 0; height: 36px; width: auto; display: block;
   transition: opacity var(--duration-base) var(--easing-out);
 }
 
 /* links: sit close to the logo, not centred in the whole bar */
-#dp-header .dph-links {
+#c-header .ch-links {
   display: flex; align-items: center; gap: 26px; list-style: none; margin: 0 0 0 48px;
   padding: 0; min-width: 0;
 }
-#dp-header .dph-links > li { position: relative; }
-#dp-header .dph-link {
+#c-header .ch-links > li { position: relative; }
+#c-header .ch-link {
   display: flex; align-items: center; gap: 7px; cursor: pointer; white-space: nowrap;
   font-family: var(--font-family-sans); font-size: 15px; font-weight: 500;
   letter-spacing: 0.005em; text-decoration: none;
   transition: color var(--duration-base) var(--easing-out);
 }
-#dp-header .dph-link.has-drop::after {
+#c-header .ch-link.has-drop::after {
   content: ''; display: inline-block; width: 7px; height: 7px;
   border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
   transform: rotate(45deg); margin-top: -4px;
   transition: transform var(--duration-base) var(--easing-out);
 }
-#dp-header .dph-links > li:hover .dph-link.has-drop::after {
+#c-header .ch-links > li:hover .ch-link.has-drop::after {
   transform: rotate(225deg); margin-top: 2px;
 }
 
 /* dropdown */
-#dp-header .dph-drop {
+#c-header .ch-drop {
   position: absolute; top: 100%; left: 50%;
   transform: translateX(-50%) translateY(-8px); margin-top: 10px;
   background: var(--color-surface-raised); border-radius: var(--radius-lg);
@@ -193,60 +196,60 @@
   transition: opacity var(--duration-base) var(--easing-out),
               transform var(--duration-base) var(--easing-out);
 }
-#dp-header .dph-links > li:hover .dph-drop {
+#c-header .ch-links > li:hover .ch-drop {
   opacity: 1; visibility: visible; pointer-events: auto;
   transform: translateX(-50%) translateY(0);
 }
-#dp-header .dph-drop-head {
+#c-header .ch-drop-head {
   font-family: var(--font-family-sans); font-weight: 800; font-size: 11px;
   letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-accent);
   margin: 0 0 16px;
 }
-#dp-header .dph-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
-#dp-header .dph-item {
+#c-header .ch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+#c-header .ch-item {
   display: flex; align-items: center; gap: 12px; padding: 9px 10px;
   border-radius: var(--radius-md); cursor: pointer;
   transition: background var(--duration-base) var(--easing-out);
 }
-#dp-header .dph-item:hover { background: var(--color-surface); }
-#dp-header .dph-disc {
+#c-header .ch-item:hover { background: var(--color-surface); }
+#c-header .ch-disc {
   width: 42px; height: 42px; flex-shrink: 0; border-radius: var(--radius-pill);
   background: var(--color-surface-sunken); display: flex; align-items: center;
   justify-content: center;
 }
-#dp-header .dph-disc svg { width: 20px; height: 20px; stroke: var(--color-brand); }
-#dp-header .dph-item-text { display: flex; flex-direction: column; gap: 2px; }
-#dp-header .dph-item-title {
+#c-header .ch-disc svg { width: 20px; height: 20px; stroke: var(--color-brand); }
+#c-header .ch-item-text { display: flex; flex-direction: column; gap: 2px; }
+#c-header .ch-item-title {
   font-size: 14.5px; font-weight: 600; color: var(--color-text); white-space: nowrap;
 }
-#dp-header .dph-item-desc {
+#c-header .ch-item-desc {
   font-size: 12.5px; color: var(--color-text-muted); white-space: nowrap;
 }
-#dp-header .dph-drop-foot {
+#c-header .ch-drop-foot {
   margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--color-border);
   display: flex; align-items: baseline; gap: 18px;
 }
-#dp-header .dph-foot-label {
+#c-header .ch-foot-label {
   font-family: var(--font-family-sans); font-weight: 800; font-size: 11px;
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-subtle);
 }
-#dp-header .dph-foot-link {
+#c-header .ch-foot-link {
   font-size: 14.5px; font-weight: 600; color: var(--color-text); cursor: pointer;
   text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px;
 }
-#dp-header .dph-foot-link:hover { color: var(--color-accent); }
+#c-header .ch-foot-link:hover { color: var(--color-accent); }
 
 /* right cluster */
-#dp-header .dph-actions {
+#c-header .ch-actions {
   display: flex; align-items: center; gap: 22px; flex-shrink: 0; margin-left: auto;
 }
-#dp-header .dph-phone {
+#c-header .ch-phone {
   display: flex; align-items: center; gap: 7px; white-space: nowrap; cursor: pointer;
   font-family: var(--font-family-sans); font-size: 14.5px; font-weight: 700;
   text-decoration: none; transition: color var(--duration-base) var(--easing-out);
 }
-#dp-header .dph-phone svg { width: 15px; height: 15px; fill: none; }
-#dp-header .dph-login {
+#c-header .ch-phone svg { width: 15px; height: 15px; fill: none; }
+#c-header .ch-login {
   white-space: nowrap; cursor: pointer; text-decoration: none;
   font-family: var(--font-family-sans); font-size: 14.5px; font-weight: 500;
   transition: color var(--duration-base) var(--easing-out);
@@ -254,32 +257,32 @@
 
 /* v2: the persistent gold CTA. Same amber in every header tone, so the
    primary action survives scrolling — the bar it sits in is already fixed. */
-#dp-header .dph-cta {
+#c-header .ch-cta {
   display: inline-flex; align-items: center; white-space: nowrap;
   height: 40px; padding: 0 20px; border-radius: var(--radius-pill);
   background: var(--color-accent); color: var(--color-text-on-accent);
   font-family: var(--font-family-sans); font-size: 14.5px; font-weight: 700;
   text-decoration: none; cursor: pointer; transition: background 160ms;
 }
-#dp-header .dph-cta:hover { background: var(--color-accent-hover); }
-#dp-header .dph-burger {
+#c-header .ch-cta:hover { background: var(--color-accent-hover); }
+#c-header .ch-burger {
   display: none; flex-direction: column; justify-content: center; gap: 5px;
   width: 30px; height: 30px; padding: 4px; background: none; border: 0; cursor: pointer;
 }
-#dp-header .dph-burger span { display: block; width: 100%; height: 2px; border-radius: 2px; }
+#c-header .ch-burger span { display: block; width: 100%; height: 2px; border-radius: 2px; }
 
 /* responsive: shed in priority order — phone > log in > nav links */
 @media (max-width: 980px) {
-  #dp-header .dph-links { display: none; }
-  #dp-header .dph-burger { display: flex; }
-  #dp-header .dph-actions { margin-left: auto; }
+  #c-header .ch-links { display: none; }
+  #c-header .ch-burger { display: flex; }
+  #c-header .ch-actions { margin-left: auto; }
 }
 @media (max-width: 560px) {
-  #dp-header .dph-nav { padding: 15px 16px; gap: 10px; }
-  #dp-header .dph-actions { gap: 14px; }
-  #dp-header .dph-phone span { display: none; }  /* glyph only, still tappable */
-  #dp-header .dph-login { display: none; }        /* lives in the menu */
-  #dp-header .dph-cta { height: 36px; padding: 0 14px; font-size: 13px; }
+  #c-header .ch-nav { padding: 15px 16px; gap: 10px; }
+  #c-header .ch-actions { gap: 14px; }
+  #c-header .ch-phone span { display: none; }  /* glyph only, still tappable */
+  #c-header .ch-login { display: none; }        /* lives in the menu */
+  #c-header .ch-cta { height: 36px; padding: 0 14px; font-size: 13px; }
 }
 
 /* ── PORT: hero — CONTROL: v1 full-bleed photo, one field, one action ─────── */
@@ -293,7 +296,7 @@
    logos are on screen at landing at every height. svh (not vh) on the second
    declaration so mobile browser chrome can't eat the margin; the vh line
    above it is the fallback for engines without svh. */
-.dp-hero {
+.c-hero {
   position: relative;
   min-height: min(830px, calc(100vh - 78px));
   min-height: min(830px, calc(100svh - 78px));
@@ -323,7 +326,7 @@
    ~0.18 right edge, so the brick and lawn on the right read BRIGHTER than
    under the old flat scrim, not darker. The photo opens up; the text gets a
    floor. */
-.dp-hero-scrim {
+.c-hero-scrim {
   position: absolute; inset: 0;
   background:
     /* TOP EDGE — under the header only, fading out by 200px. The nav's white
@@ -360,33 +363,33 @@
    of shadow is invisible as an effect but worth ~1.5 stops of separation
    over a busy photo, which is what buys the vignette the right to stay
    subtle. */
-.dp-hero-eyebrow, .dp-hero-sub, .dp-hero-formlabel {
+.c-hero-eyebrow, .c-hero-sub, .c-hero-formlabel {
   text-shadow: 0 1px 3px rgba(4,14,32,0.68), 0 1px 10px rgba(4,14,32,0.34);
 }
-.dp-hero h1 { text-shadow: 0 2px 12px rgba(4,14,32,0.40); }
+.c-hero h1 { text-shadow: 0 2px 12px rgba(4,14,32,0.40); }
 /* Below 1024 the text column is nearly full-bleed, so a corner vignette would
    strand its right end. An even wash instead — and a light one, because the
    text-shadow above is doing part of the work now. */
 @media (max-width: 1024px) {
-  .dp-hero-scrim {
+  .c-hero-scrim {
     background:
       linear-gradient(180deg, rgba(8,24,50,0.34) 0px, rgba(8,24,50,0) 180px),
       linear-gradient(0deg, rgba(7,22,48,0.62) 0%, rgba(8,24,50,0.40) 46%, rgba(11,30,62,0.30) 100%);
   }
 }
-.dp-hero-inner { position: relative; width: 100%; padding-bottom: 140px; }
+.c-hero-inner { position: relative; width: 100%; padding-bottom: 140px; }
 /* Review line above the headline (Gavin, Aug 7 — credibility proof). Eyebrow
    weight, NOT a badge: no background, no border, no pill. Pure #fff rather
-   than the .dp-hero-sub's rgba(255,255,255,0.92) because this is 14px text
+   than the .c-hero-sub's rgba(255,255,255,0.92) because this is 14px text
    over the flat 0.46 scrim, where the subhead already measures under AA —
    every bit of luminance counts. See the scrim note above. */
-.dp-hero-eyebrow {
+.c-hero-eyebrow {
   display: inline-flex; align-items: center; gap: 10px;
   margin: 0 0 22px; text-decoration: none;
   font-family: var(--font-family-sans); font-weight: 600; font-size: 15px;
   letter-spacing: 0.005em; line-height: 1.4; color: #fff;
 }
-.dp-hero-eyebrow:hover {
+.c-hero-eyebrow:hover {
   text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px;
 }
 /* The ONLY green on this page, and deliberately not a design token: it is not
@@ -396,7 +399,7 @@
    navy stays on brand. If this colour ever appears anywhere else, that is a
    bug. Nudged one step brighter than stock Trustpilot green so it holds up
    against a photo instead of a white card. */
-.dp-hero-stars {
+.c-hero-stars {
   --review-green: #14c98e;
   color: var(--review-green);
   /* Larger than the text it sits beside: at 15px the five glyphs read as a
@@ -406,17 +409,17 @@
   margin-right: -1.5px;
   text-shadow: 0 1px 3px rgba(4,14,32,0.5);
 }
-.dp-hero h1 {
+.c-hero h1 {
   font-family: var(--font-family-serif); font-weight: 600; font-size: var(--text-display);
   line-height: 1.02; letter-spacing: -0.015em; color: var(--color-text-inverse);
   margin: 0; max-width: 15em;
 }
-.dp-hero-sub {
+.c-hero-sub {
   font-family: var(--font-family-sans); font-weight: 450; font-size: 21px; line-height: 1.5;
   color: rgba(255,255,255,0.92); margin: 24px 0 0; max-width: 44ch;
 }
-.dp-hero-form { max-width: 640px; margin-top: 32px; }
-.dp-hero-formlabel {
+.c-hero-form { max-width: 640px; margin-top: 32px; }
+.c-hero-formlabel {
   display: block; font-family: var(--font-family-sans); font-size: 13.5px; font-weight: 600;
   color: rgba(255,255,255,0.92); margin: 0 0 8px;
 }
@@ -430,19 +433,19 @@
    band entirely, taking it to 64px — so 78 here and 124 on mobile, where the
    band stacks to 111px. If the band changes height again, these move too. */
 @media (max-width: 1024px) {
-  .dp-hero {
+  .c-hero {
     min-height: min(700px, calc(100vh - 78px));
     min-height: min(700px, calc(100svh - 78px));
   }
-  .dp-hero-inner { padding-bottom: 96px; }
+  .c-hero-inner { padding-bottom: 96px; }
 }
 @media (max-width: 640px) {
-  .dp-hero {
+  .c-hero {
     min-height: min(620px, calc(100vh - 124px));
     min-height: min(620px, calc(100svh - 124px));
   }
-  .dp-hero-inner { padding-bottom: 64px; }
-  .dp-hero-sub { font-size: 18px; }
+  .c-hero-inner { padding-bottom: 64px; }
+  .c-hero-sub { font-size: 18px; }
   /* The headline scales below 640 instead of sitting on --text-display's 46px
      floor. The hero is viewport-capped and bottom-aligned, so every extra line
      pushes the block UP into the fixed header — at 375x667 that put the review
@@ -452,7 +455,7 @@
      third line and cost 6px of header clearance. Measured threshold is 32px at
      375px wide, so the ramp is set just under it. Re-measure if the headline
      copy gets longer again. */
-  .dp-hero h1 { font-size: clamp(28px, 8.5vw, 46px); }
+  .c-hero h1 { font-size: clamp(28px, 8.5vw, 46px); }
 }
 /* Short phones (SE/8 at 667, and anything in landscape) get the least hero
    height, because the cap subtracts the proof band from an already small
@@ -460,62 +463,62 @@
    header is closest. Trimming the bottom padding pushes the block down and
    away from it; 36px headline + this leaves ~31px of clearance instead of 7. */
 @media (max-width: 640px) and (max-height: 720px) {
-  .dp-hero-inner { padding-bottom: 40px; }
+  .c-hero-inner { padding-bottom: 40px; }
   /* "4.8/5 stars from 1,776 Featured Customers" plus five stars measures the
      full usable width at 375px, so it scales with the viewport rather than
      stepping — one fixed size either wrapped at 375 or went unreadably small
      at 320. Below ~340px it still wraps, deliberately: row-gap keeps the
      stars and the text as two tight lines instead of a broken one, which is
      the lesser evil against an 11px eyebrow nobody would trust. */
-  .dp-hero-eyebrow {
+  .c-hero-eyebrow {
     font-size: clamp(11px, 3.3vw, 13px);
     gap: 6px; row-gap: 1px; flex-wrap: wrap; max-width: 100%;
     margin-bottom: 14px;
   }
-  .dp-hero-stars {
+  .c-hero-stars {
     font-size: clamp(11.5px, 3.4vw, 13.5px); letter-spacing: 0.8px; margin-right: -0.8px;
   }
 }
 
 /* ── PORT v2: hero — "B" VARIANT: split layout, transformation video right ── */
-/* Scoped under .dp-hero--split so the two variants can coexist for the A/B
+/* Scoped under .c-hero--split so the two variants can coexist for the A/B
    experiment; only one renders at a time (HomeHero vs HomeHeroVideo). */
-.dp-hero--split {
+.c-hero--split {
   min-height: 0; display: block; align-items: initial;
   padding: 172px 0 56px; /* clears the fixed header (announce + nav) */
   background: var(--color-surface);
 }
-.dp-hero-grid {
+.c-hero-grid {
   display: grid; grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
   gap: clamp(40px, 4.5vw, 72px); align-items: center;
 }
-.dp-hero--split h1 {
+.c-hero--split h1 {
   line-height: var(--leading-tight); color: var(--color-text); max-width: none;
 }
-.dp-hero--split .dp-hero-sub {
+.c-hero--split .c-hero-sub {
   font-size: 20px; color: var(--color-text-muted); margin-top: 22px; max-width: 40ch;
 }
-.dp-hero-ctas { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 30px; }
-.dp-cta--outline {
+.c-hero-ctas { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 30px; }
+.c-cta--outline {
   display: inline-block; background: transparent; color: var(--color-text);
   border: 1.5px solid var(--color-border-strong); border-radius: var(--radius-pill);
   font-weight: 600; text-decoration: none; cursor: pointer;
   transition: border-color 160ms, color 160ms;
 }
-.dp-cta--outline:hover { border-color: var(--color-text); }
-.dp-hero--split .dp-hero-form { max-width: 440px; margin-top: 30px; }
-.dp-hero--split .dp-hero-formlabel { color: var(--color-text-muted); }
-.dp-hero-media {
+.c-cta--outline:hover { border-color: var(--color-text); }
+.c-hero--split .c-hero-form { max-width: 440px; margin-top: 30px; }
+.c-hero--split .c-hero-formlabel { color: var(--color-text-muted); }
+.c-hero-media {
   position: relative; border-radius: var(--radius-lg); overflow: hidden;
   background: var(--color-surface-sunken); aspect-ratio: 1500 / 1260;
   box-shadow: var(--elevation-card);
 }
-.dp-hero-media video, .dp-hero-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.c-hero-media video, .c-hero-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 /* static / reduced-motion variant: the two stills side by side */
-.dp-hero-ba { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-.dp-hero-ba figure { position: relative; margin: 0; overflow: hidden; }
-.dp-hero-ba img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.dp-hero-balabel {
+.c-hero-ba { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.c-hero-ba figure { position: relative; margin: 0; overflow: hidden; }
+.c-hero-ba img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.c-hero-balabel {
   position: absolute; left: 12px; bottom: 12px; z-index: 1; margin: 0;
   font-family: var(--font-family-sans); font-weight: 800; font-size: 10px;
   letter-spacing: 0.14em; text-transform: uppercase; color: #fff;
@@ -523,31 +526,31 @@
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
 }
 @media (max-width: 1024px) {
-  .dp-hero--split { padding-top: 150px; }
-  .dp-hero-grid { grid-template-columns: 1fr; gap: 36px; }
+  .c-hero--split { padding-top: 150px; }
+  .c-hero-grid { grid-template-columns: 1fr; gap: 36px; }
 }
 @media (max-width: 640px) {
   /* text first, video second; display type shrinks before the video does so
      the primary CTA stays above the fold */
-  .dp-hero--split { padding: 128px 0 40px; }
-  .dp-hero--split h1 { font-size: clamp(34px, 9vw, 44px); }
-  .dp-hero--split .dp-hero-sub { font-size: 17px; }
+  .c-hero--split { padding: 128px 0 40px; }
+  .c-hero--split h1 { font-size: clamp(34px, 9vw, 44px); }
+  .c-hero--split .c-hero-sub { font-size: 17px; }
 }
 
 /* ── ARTIFACT: brokerage logo marquee (v2: lives inside the proof band) ───── */
-.dp-marquee {
+.c-marquee {
   flex: 1; min-width: 0; position: relative; overflow: hidden;
   -webkit-mask-image: linear-gradient(90deg, transparent, black 48px, black calc(100% - 48px), transparent);
   mask-image: linear-gradient(90deg, transparent, black 48px, black calc(100% - 48px), transparent);
 }
-.dp-marquee-track {
+.c-marquee-track {
   display: flex; align-items: center; gap: 56px; width: max-content;
 }
-.dp-marquee[data-animated="true"] .dp-marquee-track {
-  animation: dp-marquee-scroll 46s linear infinite;
+.c-marquee[data-animated="true"] .c-marquee-track {
+  animation: c-marquee-scroll 46s linear infinite;
 }
-.dp-marquee[data-animated="true"]:hover .dp-marquee-track { animation-play-state: paused; }
-@keyframes dp-marquee-scroll {
+.c-marquee[data-animated="true"]:hover .c-marquee-track { animation-play-state: paused; }
+@keyframes c-marquee-scroll {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
@@ -557,22 +560,22 @@
    silently failed in the standalone file's predecessor. Boxes keep the
    design file's geometry: 28px tall, natural width via aspect-ratio (all
    source PNGs are 80px tall, so aspect-ratio is w/80). */
-.dp-logo { position: relative; flex-shrink: 0; height: 28px; }
-.dp-logo::before, .dp-logo::after {
+.c-logo { position: relative; flex-shrink: 0; height: 28px; }
+.c-logo::before, .c-logo::after {
   content: ""; position: absolute; inset: 0;
   background: center / contain no-repeat;
   transition: opacity 220ms var(--easing-out);
 }
-.dp-logo::before { background-image: var(--logo-mono); opacity: 0.82; }
-.dp-logo::after { background-image: var(--logo-color); opacity: 0; }
-.dp-logo:hover::before { opacity: 0; }
-.dp-logo:hover::after { opacity: 1; }
+.c-logo::before { background-image: var(--logo-mono); opacity: 0.82; }
+.c-logo::after { background-image: var(--logo-color); opacity: 0; }
+.c-logo:hover::before { opacity: 0; }
+.c-logo:hover::after { opacity: 1; }
 
 /* Motion is a preference, not a requirement — the strip is fully legible
    static. The hover crossfade stays either way. */
 @media (prefers-reduced-motion: reduce) {
-  .dp-marquee-track { animation: none !important; flex-wrap: wrap; justify-content: center; }
-  .dp-marquee { -webkit-mask-image: none; mask-image: none; }
+  .c-marquee-track { animation: none !important; flex-wrap: wrap; justify-content: center; }
+  .c-marquee { -webkit-mask-image: none; mask-image: none; }
 }
 
 /* ── PORT v2: proof band — one row, label left, logo marquee right ────────── */
@@ -590,82 +593,82 @@
    white strip here was competing with the white sections further down instead
    of reading as a shelf under the photo. The hairlines went with the swap —
    --color-border IS stone, so they drew nothing once the fill landed. */
-.dp-proof {
+.c-proof {
   position: relative; background: var(--color-surface-sunken);
   padding: 16px 0 18px;
 }
-/* The .dp-proof-stat* family went with the trust strip (Gavin, Aug 8 — the
-   four numbers are now the navy band below the carousel, see .dp-navyproof).
+/* The .c-proof-stat* family went with the trust strip (Gavin, Aug 8 — the
+   four numbers are now the navy band below the carousel, see .c-navyproof).
    Nothing else in this band changed; it is a single row again.
 
-   .dp-proof-sep SURVIVES, restored to its original margins, because
+   .c-proof-sep SURVIVES, restored to its original margins, because
    AwardsStrip is now its only consumer — and it got caught in the crossfire
    twice: #43 dropped its 18px margins (the strip used space-between to do the
    spacing, so the middots sat flush against the text everywhere AwardsStrip
    used them), and the follow-up set display:none, which would have hidden
    them outright. Scoped-by-accident shared classes; fixed by giving this one
    back to its actual owner. */
-.dp-proof-sep { margin: 0 18px; color: var(--color-text-subtle); }
-@media (max-width: 640px) { .dp-proof-sep { margin: 0 10px; } }
+.c-proof-sep { margin: 0 18px; color: var(--color-text-subtle); }
+@media (max-width: 640px) { .c-proof-sep { margin: 0 10px; } }
 /* ── PORT: before/after proof — copy left, transformation clip right ─────── */
 /* FIELD CHANGE 2 of 4 — sage. DESIGN.md scopes sage to exactly one place:
    "before/after section bg only". This is that section. It replaces the Aug 17
    stone, which was chosen when the neighbours were near-white; they are both
    cloud now, and stone this far down the page just repeated the strip under
    the hero. Sage is the page's single soft-colour moment. */
-.dp-proofvid { background: var(--color-surface-accent); padding: 118px 0; }
-.dp-proofvid-grid {
+.c-proofvid { background: var(--color-surface-accent); padding: 118px 0; }
+.c-proofvid-grid {
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
   gap: clamp(48px, 6vw, 96px); align-items: center;
 }
-/* Compound selector (0,2,0), NOT .dp-proofvid-eyebrow alone — same
-   specificity trap as before: the shared .dp-eyebrow rule is declared LATER
+/* Compound selector (0,2,0), NOT .c-proofvid-eyebrow alone — same
+   specificity trap as before: the shared .c-eyebrow rule is declared LATER
    in this file and would otherwise win at equal specificity. */
 /* Was teal. DESIGN.md: "Teal exists in the palette but is never used on
    text." fg-muted is the eyebrow ink, and it clears 4.5:1 on sage. */
-.dp-proofvid .dp-eyebrow { color: var(--color-text-muted); }
-.dp-proofvid-eyebrow { text-transform: uppercase; letter-spacing: var(--tracking-label); font-weight: 600; }
-.dp-proofvid-h {
+.c-proofvid .c-eyebrow { color: var(--color-text-muted); }
+.c-proofvid-eyebrow { text-transform: uppercase; letter-spacing: var(--tracking-label); font-weight: 600; }
+.c-proofvid-h {
   font-family: var(--font-family-serif); font-weight: 600;
   font-size: var(--text-h2); line-height: 1.15; letter-spacing: -0.015em;
   color: var(--color-text); margin: 0; max-width: 26ch;
 }
-.dp-proofvid-h-accent { color: var(--color-accent); }
-.dp-proofvid-rule {
+.c-proofvid-h-accent { color: var(--color-accent); }
+.c-proofvid-rule {
   display: block; width: 44px; height: 3px; margin: 22px 0 24px;
   background: var(--color-accent); border-radius: var(--radius-sm);
 }
-.dp-proofvid-sub {
+.c-proofvid-sub {
   font-family: var(--font-family-sans); font-size: 17.5px; line-height: 1.6;
   color: var(--color-text-muted); margin: 0; max-width: 44ch;
 }
-.dp-proofvid-points { list-style: none; margin: 30px 0 0; padding: 0; border-top: 1px solid var(--color-border-strong); }
-.dp-proofvid-points li {
+.c-proofvid-points { list-style: none; margin: 30px 0 0; padding: 0; border-top: 1px solid var(--color-border-strong); }
+.c-proofvid-points li {
   display: flex; align-items: center; gap: 16px; padding: 17px 0;
   border-bottom: 1px solid var(--color-border-strong);
   font-family: var(--font-family-sans); font-weight: 600; font-size: 16px; line-height: 1.5;
   color: var(--color-text);
 }
-.dp-proofvid-point-icon {
+.c-proofvid-point-icon {
   flex: none; width: 40px; height: 40px; border-radius: var(--radius-pill);
   background: var(--color-surface-raised);
   display: flex; align-items: center; justify-content: center;
 }
-.dp-proofvid-point-icon svg {
+.c-proofvid-point-icon svg {
   width: 19px; height: 19px;
   stroke: var(--color-text); fill: none; stroke-width: 1.75;
   stroke-linecap: round; stroke-linejoin: round;
 }
 /* aspect-ratio, not a fixed height: the clip is 1000x828 and a hard height
    would letterbox it at some column widths. */
-.dp-proofvid-fig { margin: 0; }
-.dp-proofvid-frame {
+.c-proofvid-fig { margin: 0; }
+.c-proofvid-frame {
   position: relative; aspect-ratio: 1000 / 828; overflow: hidden;
   border-radius: var(--radius-xl); background: rgba(0,0,0,0.25);
   box-shadow: var(--elevation-overlay);
 }
-.dp-proofvid-frame video { width: 100%; height: 100%; object-fit: cover; display: block; }
-.dp-proofvid-tag {
+.c-proofvid-frame video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.c-proofvid-tag {
   position: absolute; top: 18px; left: 18px;
   display: inline-flex; align-items: center; gap: 8px;
   background: #fff; color: var(--color-text);
@@ -673,25 +676,25 @@
   font-family: var(--font-family-sans); font-weight: 800; font-size: 11.5px;
   letter-spacing: 0.14em; text-transform: uppercase;
 }
-.dp-proofvid-tag svg {
+.c-proofvid-tag svg {
   width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.75;
   stroke-linecap: round; stroke-linejoin: round;
 }
-.dp-proofvid-fig figcaption {
+.c-proofvid-fig figcaption {
   font-family: var(--font-family-sans); font-size: 14px; line-height: 1.5;
   color: var(--color-text-muted); text-align: center; margin-top: 18px;
 }
 @media (max-width: 900px) {
-  .dp-proofvid { padding: 80px 0; }
-  .dp-proofvid-grid { grid-template-columns: 1fr; gap: 44px; }
+  .c-proofvid { padding: 80px 0; }
+  .c-proofvid-grid { grid-template-columns: 1fr; gap: 44px; }
   /* Clip first on mobile: it is the argument, the bullets are the footnotes. */
-  .dp-proofvid-fig { order: -1; }
-  .dp-proofvid-h { max-width: none; }
-  .dp-proofvid-sub { max-width: none; }
+  .c-proofvid-fig { order: -1; }
+  .c-proofvid-h { max-width: none; }
+  .c-proofvid-sub { max-width: none; }
 }
 @media (max-width: 560px) {
-  .dp-proofvid { padding: 60px 0; }
-  .dp-proofvid-points li { font-size: 15px; }
+  .c-proofvid { padding: 60px 0; }
+  .c-proofvid-points li { font-size: 15px; }
 }
 
 /* ── PORT: navy proof band — the four numbers, below the carousel ────────── */
@@ -703,25 +706,25 @@
    figure-over-label pairing MoveInStats and the deal timeline already use.
    Dividers are white at 18%, the lightest rule that still survives on navy.
    No amber: this band asks for nothing, and amber is the CTA colour. */
-.dp-navyproof {
+.c-navyproof {
   background: var(--color-surface-inverse);
   padding: 100px 0;
 }
-.dp-navyproof-grid {
+.c-navyproof-grid {
   list-style: none; margin: 0; padding: 0;
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
 }
-.dp-navyproof-item {
+.c-navyproof-item {
   padding: 0 clamp(20px, 3vw, 48px);
   border-left: 1px solid rgba(255,255,255,0.18);
 }
-.dp-navyproof-item:first-child { border-left: 0; padding-left: 0; }
-.dp-navyproof-figure {
+.c-navyproof-item:first-child { border-left: 0; padding-left: 0; }
+.c-navyproof-figure {
   font-family: var(--font-family-serif); font-weight: 600;
   font-size: var(--text-display-h2); line-height: 1.02; letter-spacing: -0.02em;
   color: var(--color-text-inverse); margin: 0 0 12px;
 }
-.dp-navyproof-label {
+.c-navyproof-label {
   font-family: var(--font-family-sans); font-weight: 500; font-size: var(--text-small);
   line-height: 1.45; letter-spacing: 0.02em;
   color: rgba(255,255,255,0.72); margin: 0;
@@ -729,52 +732,52 @@
 /* Two-up below 900: four serif display figures cannot share a phone width
    without shrinking to caption size, which would undo the entire point. */
 @media (max-width: 900px) {
-  .dp-navyproof { padding: 72px 0; }
-  .dp-navyproof-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 44px; }
-  .dp-navyproof-item:nth-child(odd) { border-left: 0; padding-left: 0; }
+  .c-navyproof { padding: 72px 0; }
+  .c-navyproof-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 44px; }
+  .c-navyproof-item:nth-child(odd) { border-left: 0; padding-left: 0; }
 }
 @media (max-width: 560px) {
-  .dp-navyproof { padding: 56px 0; }
-  .dp-navyproof-grid { row-gap: 36px; }
-  .dp-navyproof-item { padding: 0 14px; }
-  .dp-navyproof-item:nth-child(odd) { padding-left: 0; }
+  .c-navyproof { padding: 56px 0; }
+  .c-navyproof-grid { row-gap: 36px; }
+  .c-navyproof-item { padding: 0 14px; }
+  .c-navyproof-item:nth-child(odd) { padding-left: 0; }
 }
 
-.dp-proof-row { display: flex; align-items: center; gap: 44px; }
-.dp-proof-label {
+.c-proof-row { display: flex; align-items: center; gap: 44px; }
+.c-proof-label {
   flex: 0 0 auto; max-width: 200px; margin: 0;
   font-family: var(--font-family-sans); font-weight: 800; font-size: 11px;
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-subtle);
   line-height: 1.5;
 }
-.dp-proof .dp-logo::before { opacity: 0.45; } /* logos read quieter than v1 */
-.dp-proof .dp-logo:hover::before { opacity: 0; }
+.c-proof .c-logo::before { opacity: 0.45; } /* logos read quieter than v1 */
+.c-proof .c-logo:hover::before { opacity: 0; }
 @media (max-width: 640px) {
   /* Stacks below the label — the row would squeeze the marquee to nothing.
      width:100% is load-bearing, not tidiness: once the row turns to a column,
      `flex: 1` governs HEIGHT, and align-items:flex-start stops the cross-axis
      stretch — so the marquee sizes to its own max-content track (~5,700px)
      and the whole document scrolls sideways. */
-  .dp-proof { padding: 24px 0; }
-  .dp-proof-row { flex-direction: column; align-items: flex-start; gap: 16px; }
-  .dp-proof-label { max-width: none; }
-  .dp-marquee { width: 100%; }
+  .c-proof { padding: 24px 0; }
+  .c-proof-row { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .c-proof-label { max-width: none; }
+  .c-marquee { width: 100%; }
 }
 
 /* ── PORT v2: how it works — three steps, three words, three images ───────── */
-.dp-how-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 28px; margin-top: 64px; }
-.dp-how-step { position: relative; }
-.dp-how-img { position: relative; aspect-ratio: 4 / 3; border-radius: var(--radius-lg); overflow: hidden; background: var(--color-surface-sunken); }
-.dp-how-num {
+.c-how-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 28px; margin-top: 64px; }
+.c-how-step { position: relative; }
+.c-how-img { position: relative; aspect-ratio: 4 / 3; border-radius: var(--radius-lg); overflow: hidden; background: var(--color-surface-sunken); }
+.c-how-num {
   font-family: var(--font-family-sans); font-weight: 800; font-size: 11px;
   letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-accent);
   margin: 22px 0 8px;
 }
-.dp-how-title {
+.c-how-title {
   font-family: var(--font-family-serif); font-weight: 600; font-size: 27px;
   letter-spacing: -0.005em; color: var(--color-text); margin: 0;
 }
-.dp-how-line { font-size: 15px; line-height: 1.55; color: var(--color-text-muted); margin: 8px 0 0; max-width: 34ch; }
+.c-how-line { font-size: 15px; line-height: 1.55; color: var(--color-text-muted); margin: 8px 0 0; max-width: 34ch; }
 
 /* ── PORT: rotating section headline (Opendoor-style) ─────────────────────── */
 /* Navy static half + amber phrase cycling vertically. CSS-only on purpose:
@@ -795,28 +798,28 @@
    a small margin over that. It cannot be solved with padding instead: the
    track is continuous, so any extra room below the item reveals the top of
    the next one. */
-.dp-rot-h2 { --rot-lh: 1.46; line-height: var(--rot-lh); }
-.dp-rot { display: inline; }
+.c-rot-h2 { --rot-lh: 1.46; line-height: var(--rot-lh); }
+.c-rot { display: inline; }
 /* Same line-height as the items — NOT cosmetic. The mask is vertical-align:
    bottom, so the two halves only share a baseline when they share a line
-   box height; inheriting .dp-h2's 1.08 here left the amber sitting ~9px
+   box height; inheriting .c-h2's 1.08 here left the amber sitting ~9px
    above the navy, visibly breaking one sentence into two. */
-.dp-rot-static { color: var(--color-text); line-height: var(--rot-lh); }
+.c-rot-static { color: var(--color-text); line-height: var(--rot-lh); }
 
 /* Shrink-to-fit around the track, whose max-content width is the LONGEST
    phrase — so the box never changes width as phrases cycle and nothing
    reflows horizontally. */
-.dp-rot-mask {
+.c-rot-mask {
   display: inline-block;
   overflow: hidden;
   height: calc(var(--rot-lh) * 1em);
   vertical-align: bottom;
 }
-.dp-rot-track {
+.c-rot-track {
   display: block;
-  animation: dp-rot-cycle 8.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  animation: c-rot-cycle 8.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 }
-.dp-rot-item {
+.c-rot-item {
   display: block;
   height: calc(var(--rot-lh) * 1em);
   line-height: var(--rot-lh);
@@ -826,7 +829,7 @@
 /* The full stop is its own span so it can be coloured independently of the
    phrase, and so the clone carries it too (see HowItWorks.tsx). Amber like
    the phrase — the sentence ends in the accent, not in navy. */
-.dp-rot-dot { color: var(--color-accent); }
+.c-rot-dot { color: var(--color-accent); }
 
 /* REWRITE THIS WHEN A PHRASE IS ADDED OR REMOVED. The track holds
    PHRASES.length + 1 items (the clone), so each step is -100/(n+1) % and
@@ -835,7 +838,7 @@
    same 69% share of a step it has always had — that is why the phrases feel
    the same speed as before even though the cycle is longer (11s -> 13.2s,
    which is 5 -> 6 steps at an unchanged 2.2s each). */
-@keyframes dp-rot-cycle {
+@keyframes c-rot-cycle {
   0%,      11.5%   { transform: translateY(0); }
   16.6667%, 28.17% { transform: translateY(-14.2857%); }
   33.3333%, 44.83% { transform: translateY(-28.5714%); }
@@ -851,89 +854,89 @@
    phrase measures ~385px against ~335px of usable width at a 375px viewport,
    which would scroll the page sideways. Scale the heading below 640px so the
    longest phrase always fits its own line. */
-/* .dp-h2.dp-rot-h2, not .dp-rot-h2: .dp-h2 sets font-size and is defined
+/* .c-h2.c-rot-h2, not .c-rot-h2: .c-h2 sets font-size and is defined
    LATER in this file (shared headings, below). At equal specificity the later
    rule wins, so the single-class version of this rule never applied — the
    headline stayed at 38px and kept overflowing. Verified by computed style
    this time, not by projecting what the clamp should yield. */
 @media (max-width: 640px) {
-  .dp-h2.dp-rot-h2 { font-size: clamp(26px, 7.6vw, 38px); }
+  .c-h2.c-rot-h2 { font-size: clamp(26px, 7.6vw, 38px); }
 }
 
 /* Motion off entirely — the track stays at phrase 1, which the mask already
    clips to. Nothing else needed: the sr-only sentence carries the full
    meaning regardless. */
 @media (prefers-reduced-motion: reduce) {
-  .dp-rot-track { animation: none; transform: none; }
+  .c-rot-track { animation: none; transform: none; }
 }
 
 /* Visually hidden, still announced. The animated track is aria-hidden, so
    this span is the ONLY thing a screen reader gets from the heading. */
-.dp-sr-only {
+.c-sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }
-@media (max-width: 1024px) { .dp-how-grid { gap: 20px; margin-top: 48px; } }
-@media (max-width: 640px) { .dp-how-grid { grid-template-columns: 1fr; gap: 36px; margin-top: 40px; } }
+@media (max-width: 1024px) { .c-how-grid { gap: 20px; margin-top: 48px; } }
+@media (max-width: 640px) { .c-how-grid { grid-template-columns: 1fr; gap: 36px; margin-top: 40px; } }
 
 /* ── ARTIFACT: deal timeline (dpl) ───────────────────────────────────────── */
-.dpl-grid{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,7fr);gap:clamp(40px,5vw,88px);align-items:start;margin-top:70px}
-.dpl-rail{position:sticky;top:120px}
-.dpl-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:26px 26px 22px}
-.dpl-addr{font-family:var(--font-family-serif);font-weight:600;font-size:23px;line-height:1.25;letter-spacing:-0.01em;color:var(--color-text);margin:0 0 5px}
-.dpl-specs{font-family:var(--font-family-sans);font-size:14px;color:var(--color-text-muted);margin:0 0 20px}
-.dpl-shot{border-radius:var(--radius-md);overflow:hidden;background:var(--color-surface-sunken);margin-bottom:22px;position:relative}
-.dpl-shot img{width:100%;height:100%;object-fit:cover;display:block}
-.dpl-railh{font-family:var(--font-family-sans);font-weight:800;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-text-muted);margin:0 0 10px}
-.dpl-math{font-family:var(--font-family-sans);font-size:15px;font-variant-numeric:tabular-nums}
-.dpl-math div{display:flex;justify-content:space-between;gap:16px;padding:8px 7px;border-top:1px solid var(--color-border);color:var(--color-text)}
-.dpl-math div:last-child{border-bottom:1px solid var(--color-border)}
-.dpl-math .dpl-sum{font-weight:700;background:var(--color-accent-subtle)}
-.dpl-math .dpl-val{color:var(--color-text-accent)}
-.dpl-note{font-family:var(--font-family-sans);font-size:12px;line-height:1.5;color:var(--color-text-subtle);margin:15px 0 0}
-.dpl-entries{border-top:1px solid var(--color-border)}
-.dpl-entry{display:grid;grid-template-columns:110px minmax(0,1fr);gap:clamp(20px,3vw,40px);padding:30px 0;border-bottom:1px solid var(--color-border)}
-.dpl-date{font-family:var(--font-family-sans);font-weight:700;font-size:14px;letter-spacing:0.02em;color:var(--color-text);margin:0;padding-top:5px;white-space:nowrap;display:flex;align-items:baseline;gap:9px}
-.dpl-date::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--color-accent);flex:none;position:relative;top:-1px}
-.dpl-entry h3{font-family:var(--font-family-serif);font-weight:600;font-size:22px;letter-spacing:-0.005em;color:var(--color-text);margin:0 0 8px}
-.dpl-entry p{font-family:var(--font-family-sans);font-size:16px;line-height:1.6;color:var(--color-text-muted);margin:0;max-width:58ch}
-.dpl-entry p + p{margin-top:9px}
-.dpl-quote{border-left:2px solid var(--color-accent);padding-left:14px;font-style:italic;color:var(--color-text)}
-.dpl-fig{margin:22px 0 0}
-.dpl-ba{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.dpl-ba figure{margin:0}
-.dpl-ba .dpl-shot{aspect-ratio:4/3;margin:0}
-.dpl-balabel{font-family:var(--font-family-sans);font-weight:800;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-text-subtle);margin:7px 0 0}
-.dpl-fig figcaption{font-family:var(--font-family-sans);font-size:13px;line-height:1.5;color:var(--color-text-subtle);margin-top:12px}
-.dpl-review{margin:52px 0 0;padding:34px 38px;background:var(--color-surface);border-left:3px solid var(--color-accent);border-radius:0 var(--radius-lg) var(--radius-lg) 0}
-.dpl-review blockquote{font-family:var(--font-family-serif);font-weight:500;font-size:clamp(20px,1.7vw,25px);line-height:1.45;letter-spacing:-0.005em;color:var(--color-text);margin:0}
-.dpl-review figcaption{font-family:var(--font-family-sans);font-size:14px;font-weight:600;color:var(--color-text-muted);margin-top:18px}
-@media (max-width:1024px){.dpl-grid{grid-template-columns:1fr;margin-top:52px}.dpl-rail{position:static;max-width:560px}}
-@media (max-width:640px){.dpl-entry{grid-template-columns:1fr;gap:7px;padding:26px 0}.dpl-date{padding-top:0}.dpl-ba{grid-template-columns:1fr}.dpl-review{padding:26px 24px}}
+.cl-grid{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,7fr);gap:clamp(40px,5vw,88px);align-items:start;margin-top:70px}
+.cl-rail{position:sticky;top:120px}
+.cl-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:26px 26px 22px}
+.cl-addr{font-family:var(--font-family-serif);font-weight:600;font-size:23px;line-height:1.25;letter-spacing:-0.01em;color:var(--color-text);margin:0 0 5px}
+.cl-specs{font-family:var(--font-family-sans);font-size:14px;color:var(--color-text-muted);margin:0 0 20px}
+.cl-shot{border-radius:var(--radius-md);overflow:hidden;background:var(--color-surface-sunken);margin-bottom:22px;position:relative}
+.cl-shot img{width:100%;height:100%;object-fit:cover;display:block}
+.cl-railh{font-family:var(--font-family-sans);font-weight:800;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-text-muted);margin:0 0 10px}
+.cl-math{font-family:var(--font-family-sans);font-size:15px;font-variant-numeric:tabular-nums}
+.cl-math div{display:flex;justify-content:space-between;gap:16px;padding:8px 7px;border-top:1px solid var(--color-border);color:var(--color-text)}
+.cl-math div:last-child{border-bottom:1px solid var(--color-border)}
+.cl-math .cl-sum{font-weight:700;background:var(--color-accent-subtle)}
+.cl-math .cl-val{color:var(--color-text-accent)}
+.cl-note{font-family:var(--font-family-sans);font-size:12px;line-height:1.5;color:var(--color-text-subtle);margin:15px 0 0}
+.cl-entries{border-top:1px solid var(--color-border)}
+.cl-entry{display:grid;grid-template-columns:110px minmax(0,1fr);gap:clamp(20px,3vw,40px);padding:30px 0;border-bottom:1px solid var(--color-border)}
+.cl-date{font-family:var(--font-family-sans);font-weight:700;font-size:14px;letter-spacing:0.02em;color:var(--color-text);margin:0;padding-top:5px;white-space:nowrap;display:flex;align-items:baseline;gap:9px}
+.cl-date::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--color-accent);flex:none;position:relative;top:-1px}
+.cl-entry h3{font-family:var(--font-family-serif);font-weight:600;font-size:22px;letter-spacing:-0.005em;color:var(--color-text);margin:0 0 8px}
+.cl-entry p{font-family:var(--font-family-sans);font-size:16px;line-height:1.6;color:var(--color-text-muted);margin:0;max-width:58ch}
+.cl-entry p + p{margin-top:9px}
+.cl-quote{border-left:2px solid var(--color-accent);padding-left:14px;font-style:italic;color:var(--color-text)}
+.cl-fig{margin:22px 0 0}
+.cl-ba{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cl-ba figure{margin:0}
+.cl-ba .cl-shot{aspect-ratio:4/3;margin:0}
+.cl-balabel{font-family:var(--font-family-sans);font-weight:800;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--color-text-subtle);margin:7px 0 0}
+.cl-fig figcaption{font-family:var(--font-family-sans);font-size:13px;line-height:1.5;color:var(--color-text-subtle);margin-top:12px}
+.cl-review{margin:52px 0 0;padding:34px 38px;background:var(--color-surface);border-left:3px solid var(--color-accent);border-radius:0 var(--radius-lg) var(--radius-lg) 0}
+.cl-review blockquote{font-family:var(--font-family-serif);font-weight:500;font-size:clamp(20px,1.7vw,25px);line-height:1.45;letter-spacing:-0.005em;color:var(--color-text);margin:0}
+.cl-review figcaption{font-family:var(--font-family-sans);font-size:14px;font-weight:600;color:var(--color-text-muted);margin-top:18px}
+@media (max-width:1024px){.cl-grid{grid-template-columns:1fr;margin-top:52px}.cl-rail{position:static;max-width:560px}}
+@media (max-width:640px){.cl-entry{grid-template-columns:1fr;gap:7px;padding:26px 0}.cl-date{padding-top:0}.cl-ba{grid-template-columns:1fr}.cl-review{padding:26px 24px}}
 
 /* ── ARTIFACT: move-in stats + testimonial video (dps) ───────────────────── */
-.dps-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:20px;align-items:stretch}
+.cs-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:20px;align-items:stretch}
 /* On cloud now, so the card lifts rather than sits in a well: white, radius
    12, shadow sm — the "Sold card" recipe from DESIGN.md. */
-.dps-card{background:var(--color-surface-raised);border:1px solid var(--color-border);border-radius:var(--radius-lg);
+.cs-card{background:var(--color-surface-raised);border:1px solid var(--color-border);border-radius:var(--radius-lg);
   padding:34px 30px 30px;display:flex;flex-direction:column;justify-content:flex-end;min-height:340px;
   box-shadow:var(--elevation-raised)}
-.dps-num{font-family:var(--font-family-serif);font-weight:600;font-size:clamp(52px,4.6vw,72px);line-height:1;
+.cs-num{font-family:var(--font-family-serif);font-weight:600;font-size:clamp(52px,4.6vw,72px);line-height:1;
   letter-spacing:-0.02em;color:var(--color-text);margin:0 0 18px}
-.dps-label{font-family:var(--font-family-sans);font-weight:400;font-size:16.5px;line-height:1.5;
+.cs-label{font-family:var(--font-family-sans);font-weight:400;font-size:16.5px;line-height:1.5;
   color:var(--color-text-muted);margin:0;max-width:22ch}
-.dps-label sup{font-size:10px;font-weight:700;color:var(--color-accent);margin-left:2px;top:-0.6em;position:relative}
-.dps-video{position:relative;border-radius:var(--radius-lg);overflow:hidden;background:var(--color-surface-inverse);border:1px solid var(--color-border);margin-top:64px;aspect-ratio:16/9}
-.dps-video video{width:100%;height:100%;object-fit:cover;display:block;background:#000}
-.dps-videocap{font-family:var(--font-family-sans);font-size:13px;line-height:1.5;color:var(--color-text-subtle);margin:12px 0 0}
-.dps-foot{font-family:var(--font-family-sans);font-size:12.5px;line-height:1.6;color:var(--color-text-subtle);
+.cs-label sup{font-size:10px;font-weight:700;color:var(--color-accent);margin-left:2px;top:-0.6em;position:relative}
+.cs-video{position:relative;border-radius:var(--radius-lg);overflow:hidden;background:var(--color-surface-inverse);border:1px solid var(--color-border);margin-top:64px;aspect-ratio:16/9}
+.cs-video video{width:100%;height:100%;object-fit:cover;display:block;background:#000}
+.cs-videocap{font-family:var(--font-family-sans);font-size:13px;line-height:1.5;color:var(--color-text-subtle);margin:12px 0 0}
+.cs-foot{font-family:var(--font-family-sans);font-size:12.5px;line-height:1.6;color:var(--color-text-subtle);
   margin:26px 0 0;max-width:70ch}
-@media (max-width:1100px){.dps-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-/* min-height is for the text cards ONLY. .dps-video has aspect-ratio:16/9, and
+@media (max-width:1100px){.cs-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* min-height is for the text cards ONLY. .cs-video has aspect-ratio:16/9, and
    a min-height taller than the ratio allows drives the WIDTH instead
    (260 x 16/9 = 462px against ~335px of usable width at 375px) — that was the
    page's largest mobile horizontal-scroll source. The ratio sizes it. */
-@media (max-width:620px){.dps-grid{grid-template-columns:1fr}.dps-card{min-height:260px}}
+@media (max-width:620px){.cs-grid{grid-template-columns:1fr}.cs-card{min-height:260px}}
 
 /* ── PORT: section shells (backgrounds + vertical rhythm) ────────────────── */
 /* THE FIELD PLAN (Aug 24), built on the roles DESIGN.md already assigns:
@@ -958,119 +961,119 @@
    --raised / --sunken are deleted rather than left unused. They were the
    mechanism of the alternation, and a live modifier is an invitation to put
    the stripes back one section at a time. */
-.dp-sect { padding: 130px 0 140px; }
-.dp-sect--stone { background: var(--color-surface-sunken); }
-.dp-sect--sage { background: var(--color-surface-accent); }
-.dp-sect--white { background: var(--color-surface-raised); }
-.dp-sect--inverse { background: var(--color-surface-inverse); }
-.dp-sect--deal { background: var(--color-surface-raised); padding: 130px 0 150px; }
-.dp-sect--work-gallery { padding: 130px 0 150px; overflow: hidden; }
+.c-sect { padding: 130px 0 140px; }
+.c-sect--stone { background: var(--color-surface-sunken); }
+.c-sect--sage { background: var(--color-surface-accent); }
+.c-sect--white { background: var(--color-surface-raised); }
+.c-sect--inverse { background: var(--color-surface-inverse); }
+.c-sect--deal { background: var(--color-surface-raised); padding: 130px 0 150px; }
+.c-sect--work-gallery { padding: 130px 0 150px; overflow: hidden; }
 /* The hairline under markets is gone: navy opening beneath it is the break. */
-.dp-sect--markets { padding: 140px 0 150px; }
+.c-sect--markets { padding: 140px 0 150px; }
 @media (max-width: 1024px) {
-  .dp-sect, .dp-sect--deal, .dp-sect--work-gallery, .dp-sect--markets {
+  .c-sect, .c-sect--deal, .c-sect--work-gallery, .c-sect--markets {
     padding-top: 88px; padding-bottom: 96px;
   }
 }
 @media (max-width: 640px) {
-  .dp-sect, .dp-sect--deal, .dp-sect--work-gallery, .dp-sect--markets {
+  .c-sect, .c-sect--deal, .c-sect--work-gallery, .c-sect--markets {
     padding-top: 64px; padding-bottom: 72px;
   }
 }
 
 /* PORT: tighter lead-in, for a section that follows the proof band (Gavin,
    Aug 7 — "too much grey space between the scrolling banner and Curbio helps
-   you"). The band is a thin white strip, not a full section, so .dp-sect's
+   you"). The band is a thin white strip, not a full section, so .c-sect's
    standard 130px lead-in reads as a gap rather than as rhythm — and it was
    top-heavy besides, 130px above the headline against 64px below it.
-   Declared AFTER .dp-sect and its breakpoints: same specificity, so source
+   Declared AFTER .c-sect and its breakpoints: same specificity, so source
    order is what makes these win. Keep it that way. */
-.dp-sect--tight-top { padding-top: 76px; }
-@media (max-width: 1024px) { .dp-sect--tight-top { padding-top: 60px; } }
-@media (max-width: 640px)  { .dp-sect--tight-top { padding-top: 44px; } }
+.c-sect--tight-top { padding-top: 76px; }
+@media (max-width: 1024px) { .c-sect--tight-top { padding-top: 60px; } }
+@media (max-width: 640px)  { .c-sect--tight-top { padding-top: 44px; } }
 
 /* ── PORT: shared headings (were inline in the design file) ──────────────── */
-.dp-eyebrow {
+.c-eyebrow {
   font-family: var(--font-family-sans); font-weight: 500; font-size: 15px;
   color: var(--color-text-muted); margin: 0 0 16px;
 }
-.dp-h2 {
+.c-h2 {
   font-family: var(--font-family-serif); font-weight: 600; font-size: var(--text-display-h2);
   line-height: 1.08; letter-spacing: -0.01em; color: var(--color-text); margin: 0;
 }
-.dp-lede {
+.c-lede {
   font-family: var(--font-family-sans); font-weight: 400; font-size: 19px; line-height: 1.55;
   color: var(--color-text-muted); margin: 0; max-width: 56ch;
 }
 
 /* ── PORT v2: deal timeline collapse — 6 visible, the rest behind an expand ─ */
-.dpl-entry[data-collapsed="true"] { display: none; }
-.dpl-entries[data-expanded="true"] .dpl-entry[data-collapsed="true"] { display: grid; }
-.dpl-expand {
+.cl-entry[data-collapsed="true"] { display: none; }
+.cl-entries[data-expanded="true"] .cl-entry[data-collapsed="true"] { display: grid; }
+.cl-expand {
   display: flex; align-items: center; gap: 9px; width: 100%; padding: 16px 0;
   background: none; border: 0; border-bottom: 1px solid var(--color-border); cursor: pointer;
   font-family: var(--font-family-sans); font-weight: 700; font-size: 13.5px;
   color: var(--color-text-muted); transition: color 160ms;
 }
-.dpl-expand:hover { color: var(--color-text); }
-.dpl-expand::before {
+.cl-expand:hover { color: var(--color-text); }
+.cl-expand::before {
   content: ''; width: 7px; height: 7px; flex: none;
   border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
   transform: rotate(45deg) translateY(-1px); transition: transform 160ms;
 }
-.dpl-entries[data-expanded="true"] .dpl-expand::before { transform: rotate(225deg); }
+.cl-entries[data-expanded="true"] .cl-expand::before { transform: rotate(225deg); }
 
 /* ── PORT: our work / by address ─────────────────────────────────────────── */
-.dp-work-h2 { margin-bottom: 84px; max-width: 14em; }
-.dp-work-feature {
+.c-work-h2 { margin-bottom: 84px; max-width: 14em; }
+.c-work-feature {
   display: grid; grid-template-columns: minmax(380px, 34%) 1fr; gap: 64px; align-items: end;
   max-width: calc((100vw - 1248px) / 2 + 1248px); margin: 0 0 0 auto; padding-left: 56px;
 }
-.dp-work-featcopy { padding-bottom: 16px; }
-.dp-work-addr { font-family: var(--font-family-serif); font-weight: 600; font-size: 34px; margin: 0 0 10px; }
-.dp-work-sold {
+.c-work-featcopy { padding-bottom: 16px; }
+.c-work-addr { font-family: var(--font-family-serif); font-weight: 600; font-size: 34px; margin: 0 0 10px; }
+.c-work-sold {
   font-family: var(--font-family-sans); font-weight: 600; font-size: 14px;
   color: var(--color-text-muted); margin: 0 0 26px;
 }
-.dp-work-desc { font-size: 16.5px; color: var(--color-text-muted); margin: 0 0 40px; max-width: 26em; }
-.dp-work-featimg { position: relative; width: 100%; height: 640px; }
-.dp-work-gallery {
+.c-work-desc { font-size: 16.5px; color: var(--color-text-muted); margin: 0 0 40px; max-width: 26em; }
+.c-work-featimg { position: relative; width: 100%; height: 640px; }
+.c-work-gallery {
   display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 40px; margin-top: 120px; align-items: start;
 }
-.dp-work-fig { margin: 0; position: relative; top: 0; }
-.dp-work-fig--2 { top: 72px; }
-.dp-work-fig--3 { top: 24px; }
-.dp-work-fig--4 { top: 96px; }
-.dp-work-figimg { position: relative; width: 100%; }
-.dp-work-fig figcaption {
+.c-work-fig { margin: 0; position: relative; top: 0; }
+.c-work-fig--2 { top: 72px; }
+.c-work-fig--3 { top: 24px; }
+.c-work-fig--4 { top: 96px; }
+.c-work-figimg { position: relative; width: 100%; }
+.c-work-fig figcaption {
   font-family: var(--font-family-sans); font-weight: 600; font-size: 13.5px;
   color: var(--color-text-muted); margin-top: 12px; line-height: 1.6;
 }
-.dp-work-fig figcaption span { font-weight: 400; color: var(--color-text-subtle); }
-.dp-work-all { margin-top: 140px; }
+.c-work-fig figcaption span { font-weight: 400; color: var(--color-text-subtle); }
+.c-work-all { margin-top: 140px; }
 @media (max-width: 1024px) {
-  .dp-work-h2 { margin-bottom: 52px; }
-  .dp-work-feature { grid-template-columns: 1fr; gap: 40px; max-width: none; margin: 0; padding: 0 32px; }
-  .dp-work-featimg { height: 480px; }
-  .dp-work-gallery { grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 72px; }
-  .dp-work-fig--2, .dp-work-fig--3, .dp-work-fig--4 { top: 0; }
-  .dp-work-fig--2 { top: 40px; }
-  .dp-work-fig--4 { top: 40px; }
-  .dp-work-all { margin-top: 96px; }
+  .c-work-h2 { margin-bottom: 52px; }
+  .c-work-feature { grid-template-columns: 1fr; gap: 40px; max-width: none; margin: 0; padding: 0 32px; }
+  .c-work-featimg { height: 480px; }
+  .c-work-gallery { grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 72px; }
+  .c-work-fig--2, .c-work-fig--3, .c-work-fig--4 { top: 0; }
+  .c-work-fig--2 { top: 40px; }
+  .c-work-fig--4 { top: 40px; }
+  .c-work-all { margin-top: 96px; }
 }
 @media (max-width: 640px) {
-  .dp-work-feature { padding: 0 20px; }
-  .dp-work-featimg { height: 340px; }
-  .dp-work-gallery { grid-template-columns: 1fr; margin-top: 56px; }
-  .dp-work-fig--2, .dp-work-fig--3, .dp-work-fig--4 { top: 0; }
-  .dp-work-all { margin-top: 64px; }
+  .c-work-feature { padding: 0 20px; }
+  .c-work-featimg { height: 340px; }
+  .c-work-gallery { grid-template-columns: 1fr; margin-top: 56px; }
+  .c-work-fig--2, .c-work-fig--3, .c-work-fig--4 { top: 0; }
+  .c-work-all { margin-top: 64px; }
 }
 
 /* ── ARTIFACT: results — the scrolling services list (dpr) ───────────────── */
 /* Restored from v1 (4223269^) unchanged. The four-stat row that sat above the
-   marquee is NOT restored — see the note in HomeResults.tsx — so .dpr-stats /
-   .dpr-stat* / .dpr-foot are deliberately absent rather than left dead here. */
-.dpr-marquee{margin-top:64px;overflow:hidden;
+   marquee is NOT restored — see the note in HomeResults.tsx — so .cr-stats /
+   .cr-stat* / .cr-foot are deliberately absent rather than left dead here. */
+.cr-marquee{margin-top:64px;overflow:hidden;
   -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 5%,#000 95%,transparent 100%);
   mask-image:linear-gradient(90deg,transparent 0,#000 5%,#000 95%,transparent 100%)}
 /* 91s, not the v1 64s: the track carries 10 cards now instead of 7, and the
@@ -1082,48 +1085,39 @@
    overflow-x is auto rather than hidden for the same reason — that IS the
    drag surface. The scrollbar is hidden because the row is a marquee, not a
    list the user is meant to aim at. */
-.dpr-marquee{overflow-x:auto;overscroll-behavior-x:contain;cursor:grab;
+.cr-marquee{overflow-x:auto;overscroll-behavior-x:contain;cursor:grab;
   scrollbar-width:none;-ms-overflow-style:none;touch-action:pan-x pan-y}
-.dpr-marquee::-webkit-scrollbar{display:none}
-.dpr-marquee:active{cursor:grabbing}
-.dpr-track{display:flex;gap:14px;width:max-content}
+.cr-marquee::-webkit-scrollbar{display:none}
+.cr-marquee:active{cursor:grabbing}
+.cr-track{display:flex;gap:14px;width:max-content}
 /* The cards are background-images, so a drag would otherwise start a native
    image/anything drag and cancel the gesture. */
-.dpr-card{user-select:none;-webkit-user-drag:none}
-.dpr-card{position:relative;flex:none;width:280px;height:400px;border-radius:var(--radius-lg);
+.cr-card{user-select:none;-webkit-user-drag:none}
+.cr-card{position:relative;flex:none;width:280px;height:400px;border-radius:var(--radius-lg);
   overflow:hidden;background-color:var(--color-surface-sunken);
   background-size:cover;background-position:center}
-.dpr-pill{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);white-space:nowrap;
+.cr-pill{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);white-space:nowrap;
   -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);background:rgba(13,37,77,0.55);
   color:#fff;padding:7px 15px;border-radius:var(--radius-pill);
   font-family:var(--font-family-sans);font-weight:500;font-size:15px;line-height:1.4;margin:0}
-.dpr-t0{background-image:url(/home/results/interior-exterior-painting.jpg)}
-.dpr-t1{background-image:url(/home/results/flooring.jpg)}
-.dpr-t2{background-image:url(/home/results/kitchen-updates.jpg)}
-.dpr-t3{background-image:url(/home/results/bathroom-updates.jpg)}
-.dpr-t4{background-image:url(/home/results/lighting-electrical.jpg)}
-.dpr-t5{background-image:url(/home/results/curb-appeal-landscaping.jpg)}
-.dpr-t6{background-image:url(/home/results/staging.jpg)}
-.dpr-t7{background-image:url(/home/results/roofing-exterior-repair.jpg)}
-.dpr-t8{background-image:url(/home/results/hvac-plumbing.jpg)}
-.dpr-t9{background-image:url(/home/results/deep-cleaning-haul-away.jpg)}
+/* Card photos come inline from config/services.ts (see HomeResults.tsx). */
 /* Quiet CTA under the carousel — navy, small, centered. Deliberately not a
-   .dp-cta pill: the page already has a loud accent CTA in the nav and the
+   .c-cta pill: the page already has a loud accent CTA in the nav and the
    closer, and this one is a way out of the section, not a conversion point. */
-.dpr-cta{display:block;width:fit-content;margin:38px auto 0;
+.cr-cta{display:block;width:fit-content;margin:38px auto 0;
   font-family:var(--font-family-sans);font-weight:600;font-size:14.5px;line-height:1.4;
   color:var(--color-text);text-decoration:none;
   transition:opacity 160ms}
-.dpr-cta span{display:inline-block;margin-left:3px;transition:transform 200ms var(--easing-out)}
-.dpr-cta:hover{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
-.dpr-cta:hover span{transform:translateX(3px)}
+.cr-cta span{display:inline-block;margin-left:3px;transition:transform 200ms var(--easing-out)}
+.cr-cta:hover{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
+.cr-cta:hover span{transform:translateX(3px)}
 /* Pills shrink with the card. The v1 labels were one or two short words
    ("Baths", "Flooring"); the real service names are up to 25 characters, and
    at the desktop 15px they measured 214-218px inside a 220px card — clipped
    by the card's own overflow:hidden. */
 @media (max-width:560px){
-  .dpr-card{width:220px;height:314px}
-  .dpr-pill{font-size:13px;padding:6px 12px;bottom:16px}
+  .cr-card{width:220px;height:314px}
+  .cr-pill{font-size:13px;padding:6px 12px;bottom:16px}
 }
 /* Auto-advance is skipped in JS under reduced-motion; the row stays scrollable
    and draggable, so nothing becomes unreachable. */
@@ -1132,34 +1126,34 @@
 /* Recovered as-authored from v1 (PR #27), where this section shipped before
    v2 replaced it with the navy ledger. Restored rather than rebuilt so the
    markup and these rules stay the originals. */
-.dpl2-grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(48px,6vw,110px);align-items:center}
-.dpl2-check{list-style:none;margin:34px 0 0;padding:0;display:flex;flex-direction:column;gap:16px}
-.dpl2-check li{display:flex;align-items:flex-start;gap:13px;font-family:var(--font-family-sans);
+.cl2-grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:clamp(48px,6vw,110px);align-items:center}
+.cl2-check{list-style:none;margin:34px 0 0;padding:0;display:flex;flex-direction:column;gap:16px}
+.cl2-check li{display:flex;align-items:flex-start;gap:13px;font-family:var(--font-family-sans);
   font-size:17px;line-height:1.5;color:var(--color-text);max-width:46ch}
-.dpl2-check svg{flex:none;width:21px;height:21px;margin-top:1px;stroke:var(--color-accent);fill:none;
+.cl2-check svg{flex:none;width:21px;height:21px;margin-top:1px;stroke:var(--color-accent);fill:none;
   stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.dpl2-note{font-family:var(--font-family-sans);font-size:13.5px;line-height:1.6;
+.cl2-note{font-family:var(--font-family-sans);font-size:13.5px;line-height:1.6;
   color:var(--color-text-subtle);margin:26px 0 0;max-width:52ch}
-.dpl2-card{background:var(--color-surface-raised);border:1px solid var(--color-border);
+.cl2-card{background:var(--color-surface-raised);border:1px solid var(--color-border);
   border-radius:var(--radius-xl);padding:36px 36px 32px;box-shadow:var(--elevation-card)}
-.dpl2-cardh{font-family:var(--font-family-serif);font-weight:600;font-size:24px;letter-spacing:-0.01em;
+.cl2-cardh{font-family:var(--font-family-serif);font-weight:600;font-size:24px;letter-spacing:-0.01em;
   color:var(--color-text);margin:0 0 24px}
-.dpl2-field{margin:0 0 18px}
-.dpl2-label{display:block;font-family:var(--font-family-sans);font-weight:600;font-size:13.5px;
+.cl2-field{margin:0 0 18px}
+.cl2-label{display:block;font-family:var(--font-family-sans);font-weight:600;font-size:13.5px;
   color:var(--color-text-muted);margin:0 0 7px}
-.dpl2-input{width:100%;font-family:var(--font-family-sans);font-size:16px;color:var(--color-text);
+.cl2-input{width:100%;font-family:var(--font-family-sans);font-size:16px;color:var(--color-text);
   background:var(--color-surface);border:1px solid var(--color-border-strong);border-radius:var(--radius-md);
   padding:12px 14px;outline:none;transition:border-color 160ms,box-shadow 160ms}
-.dpl2-input::placeholder{color:var(--color-text-subtle)}
-.dpl2-input:focus{border-color:var(--color-accent);box-shadow:0 0 0 4px var(--color-accent-ring)}
+.cl2-input::placeholder{color:var(--color-text-subtle)}
+.cl2-input:focus{border-color:var(--color-accent);box-shadow:0 0 0 4px var(--color-accent-ring)}
 /* Credit band picker — a real listbox, matching Notable's (CreditSelect.tsx).
    The native <select> that used to live here is gone: its popup is drawn by
    the OS, so on macOS it rendered as a grey system menu with a checkmark
    column while Notable's is a white card with hairline-separated rows, and no
-   CSS reaches inside that popup. Trigger keeps .dpl2-input's box so it still
+   CSS reaches inside that popup. Trigger keeps .cl2-input's box so it still
    lines up with the two money fields under it. */
-.dpl2-sel { position: relative; }
-.dpl2-sel-btn {
+.cl2-sel { position: relative; }
+.cl2-sel-btn {
   width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px;
   font-family: var(--font-family-sans); font-size: 16px; text-align: left;
   color: var(--color-text); background: var(--color-surface);
@@ -1167,199 +1161,368 @@
   padding: 12px 14px; cursor: pointer;
   transition: border-color 160ms, box-shadow 160ms;
 }
-.dpl2-sel-btn.is-empty .dpl2-sel-value { color: var(--color-text-subtle); }
-.dpl2-sel-btn:hover { border-color: var(--color-border-accent); }
-.dpl2-sel-btn:focus-visible,
-.dpl2-sel-btn.is-open {
+.cl2-sel-btn.is-empty .cl2-sel-value { color: var(--color-text-subtle); }
+.cl2-sel-btn:hover { border-color: var(--color-border-accent); }
+.cl2-sel-btn:focus-visible,
+.cl2-sel-btn.is-open {
   outline: none; border-color: var(--color-accent);
   box-shadow: 0 0 0 4px var(--color-accent-ring);
 }
-.dpl2-sel-caret { width: 12px; height: 8px; flex: none; color: var(--color-text-muted); }
-.dpl2-sel-btn.is-open .dpl2-sel-caret { transform: rotate(180deg); }
+.cl2-sel-caret { width: 12px; height: 8px; flex: none; color: var(--color-text-muted); }
+.cl2-sel-btn.is-open .cl2-sel-caret { transform: rotate(180deg); }
 /* The list itself — white card, hairline rows, generous height. Notable's
    rows are noticeably taller than a system menu's; that is most of why theirs
    reads as part of the page and the native one did not. */
-.dpl2-sel-list {
+.cl2-sel-list {
   position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; right: 0;
   margin: 0; padding: 0; list-style: none;
   max-height: 268px; overflow-y: auto;
   background: var(--color-surface); border: 1px solid var(--color-border);
   border-radius: var(--radius-md); box-shadow: var(--elevation-card);
 }
-.dpl2-sel-opt {
+.cl2-sel-opt {
   padding: 13px 16px; cursor: pointer;
   font-family: var(--font-family-sans); font-size: 15.5px; color: var(--color-text);
   border-top: 1px solid var(--color-border);
 }
-.dpl2-sel-opt:first-child { border-top: 0; }
-.dpl2-sel-opt.is-active { background: var(--color-surface-sunken); }
-.dpl2-sel-opt[aria-selected="true"] { font-weight: 600; }
+.cl2-sel-opt:first-child { border-top: 0; }
+.cl2-sel-opt.is-active { background: var(--color-surface-sunken); }
+.cl2-sel-opt[aria-selected="true"] { font-weight: 600; }
 
-.dpl2-btn{display:flex;align-items:center;justify-content:center;width:100%;margin-top:6px;
+.cl2-btn{display:flex;align-items:center;justify-content:center;width:100%;margin-top:6px;
   height:52px;border:0;cursor:pointer;border-radius:var(--radius-pill);background:var(--color-accent);
   font-family:var(--font-family-sans);font-weight:600;font-size:16px;color:#fff;text-decoration:none;
   transition:background 160ms}
-.dpl2-btn:hover{background:var(--color-accent-hover)}
-.dpl2-fine{font-family:var(--font-family-sans);font-size:12.5px;line-height:1.55;text-align:center;
+.cl2-btn:hover{background:var(--color-accent-hover)}
+.cl2-fine{font-family:var(--font-family-sans);font-size:12.5px;line-height:1.55;text-align:center;
   color:var(--color-text-subtle);margin:14px 0 0}
 /* Live-estimator states (Aug 7): the card swaps form → result/denial once
    Notable's numbers come back through /api/notable-estimate. */
-.dpl2-btn:disabled{opacity:.5;cursor:not-allowed}
-.dpl2-btn:disabled:hover{background:var(--color-accent)}
-.dpl2-state{font-family:var(--font-family-sans);font-size:13.5px;color:var(--color-text-muted);
+.cl2-btn:disabled{opacity:.5;cursor:not-allowed}
+.cl2-btn:disabled:hover{background:var(--color-accent)}
+.cl2-state{font-family:var(--font-family-sans);font-size:13.5px;color:var(--color-text-muted);
   margin:-4px 0 18px}
-.dpl2-state-change{background:none;border:0;padding:0;cursor:pointer;font:inherit;font-weight:600;
+.cl2-state-change{background:none;border:0;padding:0;cursor:pointer;font:inherit;font-weight:600;
   color:var(--color-accent);text-decoration:underline;text-underline-offset:3px}
-.dpl2-error{font-family:var(--font-family-sans);font-size:13px;line-height:1.5;text-align:center;
+.cl2-error{font-family:var(--font-family-sans);font-size:13px;line-height:1.5;text-align:center;
   color:var(--color-state-error);margin:12px 0 0}
-.dpl2-error a{color:inherit}
-.dpl2-result-label{font-family:var(--font-family-sans);font-weight:600;font-size:13.5px;
+.cl2-error a{color:inherit}
+.cl2-result-label{font-family:var(--font-family-sans);font-weight:600;font-size:13.5px;
   color:var(--color-text-muted);margin:0 0 6px}
-.dpl2-result-amount{font-family:var(--font-family-serif);font-weight:600;font-size:46px;line-height:1.1;
+.cl2-result-amount{font-family:var(--font-family-serif);font-weight:600;font-size:46px;line-height:1.1;
   letter-spacing:-0.02em;color:var(--color-text);margin:0 0 10px}
-.dpl2-result-rate{font-family:var(--font-family-sans);font-size:15px;line-height:1.5;
+.cl2-result-rate{font-family:var(--font-family-sans);font-size:15px;line-height:1.5;
   color:var(--color-text);margin:0 0 14px}
-.dpl2-result-note{font-family:var(--font-family-sans);font-size:12.5px;line-height:1.55;
+.cl2-result-note{font-family:var(--font-family-sans);font-size:12.5px;line-height:1.55;
   color:var(--color-text-subtle);margin:0 0 20px}
-.dpl2-denial-h{font-family:var(--font-family-serif);font-weight:600;font-size:21px;
+.cl2-denial-h{font-family:var(--font-family-serif);font-weight:600;font-size:21px;
   color:var(--color-text);margin:0 0 10px}
-.dpl2-denial-p{font-family:var(--font-family-sans);font-size:15px;line-height:1.6;
+.cl2-denial-p{font-family:var(--font-family-sans);font-size:15px;line-height:1.6;
   color:var(--color-text-muted);margin:0 0 20px}
-.dpl2-reset{display:block;margin:14px auto 0;background:none;border:0;padding:0;cursor:pointer;
+.cl2-reset{display:block;margin:14px auto 0;background:none;border:0;padding:0;cursor:pointer;
   font-family:var(--font-family-sans);font-size:13.5px;color:var(--color-text-muted);
   text-decoration:underline;text-underline-offset:3px}
-@media (max-width:1024px){.dpl2-grid{grid-template-columns:1fr;gap:52px}.dpl2-card{max-width:520px}}
-@media (max-width:560px){.dpl2-card{padding:26px 22px 24px}}
+@media (max-width:1024px){.cl2-grid{grid-template-columns:1fr;gap:52px}.cl2-card{max-width:520px}}
+@media (max-width:560px){.cl2-card{padding:26px 22px 24px}}
 /* ── PORT v2: audience router — three cards, proof matched to audience ────── */
-.dp-route-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 20px; margin-top: 56px; align-items: stretch; }
-.dp-route-card {
+.c-route-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 20px; margin-top: 56px; align-items: stretch; }
+.c-route-card {
   display: flex; flex-direction: column; background: var(--color-surface-raised);
   border: 1px solid var(--color-border); border-radius: var(--radius-lg);
   padding: 32px 30px 28px; box-shadow: var(--elevation-raised);
   transition: box-shadow var(--duration-base) var(--easing-out);
 }
-.dp-route-card:hover { box-shadow: var(--elevation-card); }
-.dp-route-eyebrow {
+.c-route-card:hover { box-shadow: var(--elevation-card); }
+.c-route-eyebrow {
   font-family: var(--font-family-sans); font-weight: 800; font-size: 11px;
   letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-accent); margin: 0 0 12px;
 }
-.dp-route-title {
+.c-route-title {
   font-family: var(--font-family-serif); font-weight: 600; font-size: 26px;
   letter-spacing: -0.005em; color: var(--color-text); margin: 0 0 10px;
 }
-.dp-route-line { font-size: 15.5px; line-height: 1.55; color: var(--color-text-muted); margin: 0; }
-.dp-route-quote {
+.c-route-line { font-size: 15.5px; line-height: 1.55; color: var(--color-text-muted); margin: 0; }
+.c-route-quote {
   font-family: var(--font-family-serif); font-weight: 500; font-size: 17.5px; line-height: 1.5;
   color: var(--color-text); border-left: 2px solid var(--color-accent);
   padding-left: 14px; margin: 22px 0 0;
 }
-.dp-route-attr { font-family: var(--font-family-sans); font-weight: 700; font-size: 12.5px; color: var(--color-text-muted); margin: 10px 0 0; }
-.dp-route-cta { margin-top: auto; padding-top: 24px; font-size: 15.5px; font-weight: 600; }
-@media (max-width: 1024px) { .dp-route-grid { grid-template-columns: 1fr; gap: 16px; margin-top: 44px; } }
+.c-route-attr { font-family: var(--font-family-sans); font-weight: 700; font-size: 12.5px; color: var(--color-text-muted); margin: 10px 0 0; }
+.c-route-cta { margin-top: auto; padding-top: 24px; font-size: 15.5px; font-weight: 600; }
+@media (max-width: 1024px) { .c-route-grid { grid-template-columns: 1fr; gap: 16px; margin-top: 44px; } }
 
 /* ── PORT v2: the app ─────────────────────────────────────────────────────── */
-.dp-app-grid { display: grid; grid-template-columns: minmax(0,5fr) minmax(0,7fr); gap: clamp(48px,5vw,88px); align-items: center; }
-.dp-app-media {
+.c-app-grid { display: grid; grid-template-columns: minmax(0,5fr) minmax(0,7fr); gap: clamp(48px,5vw,88px); align-items: center; }
+.c-app-media {
   position: relative; aspect-ratio: 16 / 10; border-radius: var(--radius-lg); overflow: hidden;
   background: var(--color-surface-sunken); border: 1px solid var(--color-border);
 }
-.dp-app-media video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.dp-app-placeholder {
+.c-app-media video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.c-app-placeholder {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   text-align: center; font-family: var(--font-family-sans); font-weight: 800; font-size: 11px;
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-muted); line-height: 2.2;
 }
-@media (max-width: 1024px) { .dp-app-grid { grid-template-columns: 1fr; gap: 36px; } }
+@media (max-width: 1024px) { .c-app-grid { grid-template-columns: 1fr; gap: 36px; } }
 /* FIELD CHANGE 4 of 4 — navy opens at the app panel and does not close: app,
    awards, closer and footer are one block, so the page ends on ink rather
-   than trailing off. Compound selectors, because .dp-eyebrow / .dp-h2 /
-   .dp-lede are declared later in this file and would otherwise win at equal
-   specificity — the same trap .dp-proofvid hit.
+   than trailing off. Compound selectors, because .c-eyebrow / .c-h2 /
+   .c-lede are declared later in this file and would otherwise win at equal
+   specificity — the same trap .c-proofvid hit.
    The placeholder well stays navy with a hairline: a lighter navy step would
    be a derived shade, and the palette in DESIGN.md is closed. */
-.dp-sect--inverse .dp-eyebrow { color: rgba(255,255,255,0.72); }
-.dp-sect--inverse .dp-h2 { color: var(--color-text-inverse); }
-.dp-sect--inverse .dp-lede { color: rgba(255,255,255,0.78); }
-.dp-sect--inverse .dp-app-media {
+.c-sect--inverse .c-eyebrow { color: rgba(255,255,255,0.72); }
+.c-sect--inverse .c-h2 { color: var(--color-text-inverse); }
+.c-sect--inverse .c-lede { color: rgba(255,255,255,0.78); }
+.c-sect--inverse .c-app-media {
   background: transparent; border-color: rgba(255,255,255,0.18);
 }
-.dp-sect--inverse .dp-app-placeholder { color: rgba(255,255,255,0.62); }
+.c-sect--inverse .c-app-placeholder { color: rgba(255,255,255,0.62); }
 
 /* ── PORT v2: awards / reviews / press — thin, low emphasis ───────────────── */
 /* Navy, and no bottom rule. It sits between the app panel and the closer,
    both navy: on cloud it would have cut the page's one navy block in half for
    the sake of a thin line of low-emphasis text. Inverse colours follow the
-   .dp-navyproof convention already established on navy here — white at alpha,
+   .c-navyproof convention already established on navy here — white at alpha,
    never navy-30, which DESIGN.md reserves for fine print on light. */
-.dp-strip { background: var(--color-surface-inverse); padding: 26px 0; }
-.dp-strip-row {
+.c-strip { background: var(--color-surface-inverse); padding: 26px 0; }
+.c-strip-row {
   display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: 8px 0;
   font-family: var(--font-family-sans); font-size: 13.5px; color: rgba(255,255,255,0.62);
 }
-.dp-strip-row b { color: rgba(255,255,255,0.86); font-weight: 700; }
-.dp-strip .dp-proof-sep { color: rgba(255,255,255,0.38); }
+.c-strip-row b { color: rgba(255,255,255,0.86); font-weight: 700; }
+.c-strip .c-proof-sep { color: rgba(255,255,255,0.38); }
 
 /* ── PORT: markets + managers ────────────────────────────────────────────── */
-.dp-mkt-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 110px; }
-.dp-mkt-grid .dp-h2 { margin-bottom: 54px; max-width: 10em; }
-.dp-mkt-row {
+.c-mkt-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 110px; }
+.c-mkt-grid .c-h2 { margin-bottom: 54px; max-width: 10em; }
+.c-mkt-row {
   display: flex; align-items: baseline; justify-content: space-between;
   padding: 15px 0; border-top: 1px solid var(--color-border); max-width: 420px;
 }
-.dp-mkt-name { font-family: var(--font-family-serif); font-weight: 500; font-size: 23px; }
-.dp-mkt-state { font-family: var(--font-family-sans); font-weight: 700; font-size: 12px; color: var(--color-text-subtle); }
-.dp-mkt-people { align-self: end; }
-.dp-mkt-hsms { display: grid; grid-template-columns: 1fr 1fr; gap: 44px 36px; }
-.dp-mkt-hsms figure { margin: 0; }
-.dp-mkt-hsms figcaption { margin-top: 14px; }
-.dp-mkt-hsm-name { display: block; font-size: 15px; font-weight: 600; }
-.dp-mkt-hsm-area {
+.c-mkt-name { font-family: var(--font-family-serif); font-weight: 500; font-size: 23px; }
+.c-mkt-state { font-family: var(--font-family-sans); font-weight: 700; font-size: 12px; color: var(--color-text-subtle); }
+.c-mkt-people { align-self: end; }
+.c-mkt-hsms { display: grid; grid-template-columns: 1fr 1fr; gap: 44px 36px; }
+.c-mkt-hsms figure { margin: 0; }
+.c-mkt-hsms figcaption { margin-top: 14px; }
+.c-mkt-hsm-name { display: block; font-size: 15px; font-weight: 600; }
+.c-mkt-hsm-area {
   display: block; font-family: var(--font-family-sans); font-weight: 800; font-size: 11px;
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-subtle); margin-top: 5px;
 }
-.dp-mkt-note { font-size: 15.5px; color: var(--color-text-muted); margin-top: 44px; max-width: 26em; }
+.c-mkt-note { font-size: 15.5px; color: var(--color-text-muted); margin-top: 44px; max-width: 26em; }
 @media (max-width: 1024px) {
-  .dp-mkt-grid { grid-template-columns: 1fr; gap: 64px; }
-  .dp-mkt-people { align-self: start; }
+  .c-mkt-grid { grid-template-columns: 1fr; gap: 64px; }
+  .c-mkt-people { align-self: start; }
 }
 
 /* ── PORT: closer ────────────────────────────────────────────────────────── */
-.dp-closer { position: relative; min-height: 560px; display: flex; align-items: center; }
-.dp-closer-scrim { position: absolute; inset: 0; background: rgba(13,37,77,0.62); }
-.dp-closer-inner { position: relative; width: 100%; }
-.dp-closer h2 {
+.c-closer { position: relative; min-height: 560px; display: flex; align-items: center; }
+.c-closer-scrim { position: absolute; inset: 0; background: rgba(13,37,77,0.62); }
+.c-closer-inner { position: relative; width: 100%; }
+.c-closer h2 {
   font-family: var(--font-family-serif); font-weight: 600; font-size: clamp(44px, 4.6vw, 64px);
   line-height: 1.05; color: var(--color-text-inverse); margin: 0 0 40px; max-width: 11em;
 }
-.dp-closer-cta { font-size: 16.5px; padding: 18px 38px; }
-.dp-closer-fine {
+.c-closer-cta { font-size: 16.5px; padding: 18px 38px; }
+.c-closer-fine {
   font-family: var(--font-family-sans); font-weight: 800; font-size: 11.5px; letter-spacing: 0.14em;
   text-transform: uppercase; color: rgba(255,255,255,0.75); margin: 26px 0 0;
 }
 @media (max-width: 640px) {
-  .dp-closer { min-height: 460px; }
+  .c-closer { min-height: 460px; }
 }
 
 /* ── PORT: footer ────────────────────────────────────────────────────────── */
-.dp-foot { background: var(--color-surface-inverse); padding: 88px 0 48px; }
-.dp-foot-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 64px; color: var(--color-text-inverse); }
-.dp-foot-tag { font-size: 14.5px; color: var(--color-brand-subtle); margin-top: 22px; max-width: 22em; }
-.dp-foot-h {
+.c-foot { background: var(--color-surface-inverse); padding: 88px 0 48px; }
+.c-foot-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 64px; color: var(--color-text-inverse); }
+.c-foot-tag { font-size: 14.5px; color: var(--color-brand-subtle); margin-top: 22px; max-width: 22em; }
+.c-foot-h {
   font-family: var(--font-family-sans); font-weight: 800; font-size: 11px; letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--color-brand-subtle); margin: 0 0 18px;
 }
-.dp-foot-link { font-size: 14.5px; margin: 0 0 11px; opacity: 0.85; }
-.dp-foot-bar {
+.c-foot-link { font-size: 14.5px; margin: 0 0 11px; opacity: 0.85; }
+/* Column entries are real links now (the footer renders config/navigation.ts);
+   they keep the exact type styling the inert <p>s had. */
+.c-foot-link a { color: inherit; text-decoration: none; transition: opacity 160ms; }
+.c-foot-link a:hover { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+.c-foot-bar a { color: inherit; text-decoration: none; }
+.c-foot-bar a:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.c-foot-cookie { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; color: inherit; }
+.c-foot-cookie:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+.c-foot-bar {
   margin-top: 72px; padding-top: 28px; border-top: 1px solid var(--color-border-inverse);
   display: flex; gap: 28px; font-size: 13px; color: var(--color-brand-subtle);
 }
-.dp-foot-stamp { margin-left: auto; font-family: var(--font-family-sans); font-weight: 800; font-size: 11px; letter-spacing: 0.14em; }
+.c-foot-stamp { margin-left: auto; font-family: var(--font-family-sans); font-weight: 800; font-size: 11px; letter-spacing: 0.14em; }
 @media (max-width: 1024px) {
-  .dp-foot-grid { grid-template-columns: 1fr 1fr; gap: 48px; }
+  .c-foot-grid { grid-template-columns: 1fr 1fr; gap: 48px; }
 }
 @media (max-width: 640px) {
-  .dp-foot { padding: 64px 0 40px; }
-  .dp-foot-grid { grid-template-columns: 1fr; gap: 36px; }
-  .dp-foot-bar { flex-wrap: wrap; gap: 12px 20px; }
-  .dp-foot-stamp { margin-left: 0; flex-basis: 100%; }
+  .c-foot { padding: 64px 0 40px; }
+  .c-foot-grid { grid-template-columns: 1fr; gap: 36px; }
+  .c-foot-bar { flex-wrap: wrap; gap: 12px 20px; }
+  .c-foot-stamp { margin-left: 0; flex-basis: 100%; }
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   SITE PAGES — sections authored for the pages built on the promoted design
+   language (/how-it-works, /services, /brokers, /contact). Everything below
+   resolves through tokens.css or reuses values already authored above.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* Anchor targets must land below the fixed header, not under it. */
+.c-page [id] { scroll-margin-top: 130px; }
+
+/* ── Interior page hero — eyebrow + serif h1 + lede, clears the fixed header ─ */
+/* 172px matches .c-hero--split's clearance for the fixed header (announce bar
+   + nav). If the header changes height, both move together. */
+.c-pagehead { padding: 172px 0 0; }
+.c-pagehead h1 {
+  font-family: var(--font-family-serif); font-weight: 600;
+  font-size: var(--text-display-h2); line-height: 1.08; letter-spacing: -0.01em;
+  color: var(--color-text); margin: 0; max-width: 16em;
+}
+.c-pagehead .c-lede { margin-top: 20px; }
+@media (max-width: 1024px) { .c-pagehead { padding-top: 150px; } }
+@media (max-width: 640px)  { .c-pagehead { padding-top: 128px; } }
+
+/* ── Numbered step list — the how-it-works narrative, seven beats ──────────── */
+/* Reuses the homepage numbered-step typography (.c-how-num / -title / -line)
+   in a vertical rail, because seven steps cannot share the 3-across photo grid
+   without a ragged last row. Number column mirrors .cl-entry's date column. */
+.c-steps { border-top: 1px solid var(--color-border); margin-top: 56px; }
+.c-step {
+  display: grid; grid-template-columns: 96px minmax(0, 1fr);
+  gap: clamp(20px, 3vw, 40px); padding: 30px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.c-step .c-how-num { margin: 6px 0 0; }
+.c-step .c-how-line { max-width: 58ch; }
+@media (max-width: 640px) {
+  .c-step { grid-template-columns: 1fr; gap: 4px; padding: 24px 0; }
+}
+
+/* ── Comparison table — Curbio vs a traditional contractor ─────────────────── */
+/* Navy header row, amber accent on the Curbio column. White surface so the
+   table reads as a document, same reasoning as the deal timeline. */
+.c-compare-wrap { margin-top: 56px; overflow-x: auto; }
+.c-compare {
+  width: 100%; min-width: 640px; border-collapse: collapse;
+  font-family: var(--font-family-sans); font-size: 15.5px; line-height: 1.5;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+  /* border-radius on tables needs separate borders; keep the hairlines on rows */
+  border-collapse: separate; border-spacing: 0; overflow: hidden;
+}
+.c-compare th, .c-compare td {
+  padding: 16px 20px; text-align: left; vertical-align: top;
+  border-top: 1px solid var(--color-border);
+}
+.c-compare thead th {
+  background: var(--color-surface-inverse); color: var(--color-text-inverse);
+  font-weight: 700; font-size: 14px; letter-spacing: 0.02em; border-top: 0;
+}
+.c-compare thead th:nth-child(2) { color: var(--color-accent); }
+.c-compare tbody th {
+  font-weight: 600; color: var(--color-text); width: 26%;
+}
+.c-compare td { color: var(--color-text-muted); }
+.c-compare td:first-of-type { color: var(--color-text); background: var(--color-accent-subtle); }
+@media (max-width: 640px) {
+  .c-compare th, .c-compare td { padding: 13px 14px; font-size: 14px; }
+}
+
+/* ── Services index — category groups of photo cards ───────────────────────── */
+.c-svc-cat { margin-top: 72px; }
+.c-svc-cat:first-of-type { margin-top: 56px; }
+.c-svc-cath {
+  font-family: var(--font-family-sans); font-weight: 800; font-size: 11px;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--color-accent);
+  margin: 0 0 22px;
+}
+.c-svc-grid {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px;
+}
+.c-svc-card {
+  display: flex; flex-direction: column;
+  background: var(--color-surface-raised); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--elevation-raised);
+  /* anchor targets land under the fixed header without this */
+  scroll-margin-top: 140px;
+}
+.c-svc-img { position: relative; aspect-ratio: 16 / 10; background: var(--color-surface-sunken); }
+.c-svc-body { padding: 22px 24px 24px; }
+.c-svc-name {
+  font-family: var(--font-family-serif); font-weight: 600; font-size: 22px;
+  letter-spacing: -0.005em; color: var(--color-text); margin: 0 0 8px;
+}
+.c-svc-line { font-size: 15px; line-height: 1.55; color: var(--color-text-muted); margin: 0; }
+@media (max-width: 1024px) { .c-svc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px)  { .c-svc-grid { grid-template-columns: 1fr; } }
+
+/* ── Contact — form + the who-answers rail ─────────────────────────────────── */
+.c-contact-grid {
+  display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: clamp(48px, 6vw, 96px); align-items: start; margin-top: 56px;
+}
+/* Form fields reuse the estimator card family (.cl2-*) — one input recipe. */
+.c-contact-form textarea.cl2-input { resize: vertical; min-height: 120px; }
+.c-contact-form select.cl2-input {
+  appearance: none; -webkit-appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23666' stroke-width='1.75' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center;
+  padding-right: 40px;
+}
+.c-contact-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+@media (max-width: 560px) { .c-contact-2col { grid-template-columns: 1fr; } }
+.c-contact-success {
+  background: var(--color-surface-raised); border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl); padding: 40px 36px; box-shadow: var(--elevation-card);
+}
+.c-contact-success h2 {
+  font-family: var(--font-family-serif); font-weight: 600; font-size: 27px;
+  color: var(--color-text); margin: 0 0 10px;
+}
+.c-contact-success p { font-size: 16px; line-height: 1.6; color: var(--color-text-muted); margin: 0; }
+/* The rail: phone / email / hours, then the market-manager list. */
+.c-contact-rail-h {
+  font-family: var(--font-family-sans); font-weight: 800; font-size: 11px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-subtle);
+  margin: 0 0 14px;
+}
+.c-contact-rail-block { margin-bottom: 36px; }
+.c-contact-rail-line { font-size: 16px; line-height: 1.6; color: var(--color-text); margin: 0 0 4px; }
+.c-contact-rail-line a { color: inherit; text-decoration: none; }
+.c-contact-rail-line a:hover { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
+.c-contact-rail-sub { font-size: 13.5px; line-height: 1.55; color: var(--color-text-muted); margin: 0; }
+.c-contact-mkt {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 16px;
+  padding: 11px 0; border-top: 1px solid var(--color-border);
+}
+.c-contact-mkt-name { font-family: var(--font-family-serif); font-weight: 500; font-size: 17px; color: var(--color-text); }
+.c-contact-mkt-hsm { font-family: var(--font-family-sans); font-size: 13px; color: var(--color-text-muted); white-space: nowrap; }
+@media (max-width: 1024px) { .c-contact-grid { grid-template-columns: 1fr; gap: 56px; } }
+
+/* ── Small shared pieces for the new pages ─────────────────────────────────── */
+/* Two CTAs side by side (brokers page): primary amber pill + quiet outline. */
+.c-cta-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 36px; }
+.c-cta-row .c-cta { padding: 15px 30px; font-size: 16px; }
+.c-cta-row .c-cta--outline { padding: 15px 30px; font-size: 16px; }
+/* Feature list rows (brokers page) — reuses the before/after section's list
+   recipe (.c-proofvid-points) sizing without its section coupling. */
+.c-featlist { list-style: none; margin: 30px 0 0; padding: 0; border-top: 1px solid var(--color-border-strong); }
+.c-featlist li {
+  display: flex; align-items: flex-start; gap: 14px; padding: 17px 0;
+  border-bottom: 1px solid var(--color-border-strong);
+  font-family: var(--font-family-sans); font-size: 16px; line-height: 1.55;
+  color: var(--color-text);
+}
+.c-featlist b { font-weight: 600; }
+.c-featlist svg {
+  flex: none; width: 21px; height: 21px; margin-top: 2px; stroke: var(--color-accent);
+  fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+/* TCPA fine print carries a link on /contact. */
+.cl2-fine a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }

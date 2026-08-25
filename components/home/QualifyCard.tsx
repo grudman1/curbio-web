@@ -29,19 +29,19 @@ const BENEFITS = [
 
 export function QualifyCard() {
   return (
-    <section id="payatclose" className="dp-sect">
-      <div className="dp-container">
-        <div className="dpl2-grid">
+    <section id="payatclose" className="c-sect">
+      <div className="c-container">
+        <div className="cl2-grid">
           <div>
-            <p className="dp-eyebrow">Pay at closing, powered by Notable</p>
-            <h2 className="dp-h2" style={{ marginBottom: 20, maxWidth: "13em" }}>
+            <p className="c-eyebrow">Pay at closing, powered by Notable</p>
+            <h2 className="c-h2" style={{ marginBottom: 20, maxWidth: "13em" }}>
               See what your seller qualifies for.
             </h2>
-            <p className="dp-lede" style={{ maxWidth: "50ch" }}>
+            <p className="c-lede" style={{ maxWidth: "50ch" }}>
               Curbio partners with Notable Financing so qualified sellers can fund the entire
               project &mdash; and settle up from proceeds when the home sells.
             </p>
-            <ul className="dpl2-check">
+            <ul className="cl2-check">
               {BENEFITS.map((b) => (
                 <li key={b}>
                   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -51,7 +51,7 @@ export function QualifyCard() {
                 </li>
               ))}
             </ul>
-            <p className="dpl2-note">
+            <p className="cl2-note">
               Financing provided by Notable Finance, LLC (NMLS #1824748) or Quorum Federal Credit
               Union. Loan eligibility is not guaranteed; all loans subject to credit approval and
               lender underwriting. Funds, interest, and fees are due at closing, listing

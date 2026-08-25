@@ -88,26 +88,26 @@ export function DealTimeline() {
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <section id="deal" className="dp-sect--deal">
-      <div className="dp-container">
-        <h2 className="dp-h2" style={{ marginBottom: 20, maxWidth: "14em" }}>
+    <section id="deal" className="c-sect--deal">
+      <div className="c-container">
+        <h2 className="c-h2" style={{ marginBottom: 20, maxWidth: "14em" }}>
           One deal, the way it actually ran.
         </h2>
-        <p className="dp-lede">
+        <p className="c-lede">
           Ninety days, contract to accepted offer — with a new roof, new siding, and two rebuilt
           bathrooms in between. Every project runs on this rail.
         </p>
-        <div className="dpl-grid">
-          <aside className="dpl-rail">
-            <div className="dpl-card">
-              <p className="dpl-addr">
+        <div className="cl-grid">
+          <aside className="cl-rail">
+            <div className="cl-card">
+              <p className="cl-addr">
                 6906 Deer Run Lane
                 <br />
                 Midlothian, VA 23112
               </p>
               {/* STUB: bd/ba/sqft/built pending listing record */}
-              <p className="dpl-specs">Chesterfield County · sold Aug 2023</p>
-              <div className="dpl-shot" style={{ aspectRatio: "16/10" }}>
+              <p className="cl-specs">Chesterfield County · sold Aug 2023</p>
+              <div className="cl-shot" style={{ aspectRatio: "16/10" }}>
                 <Image
                   src="/home/deal/6906-deer-run-after.jpg"
                   alt="6906 Deer Run Lane after Curbio's exterior renovation — new roof, new vinyl siding, painted porch"
@@ -116,8 +116,8 @@ export function DealTimeline() {
                   style={{ objectFit: "cover" }}
                 />
               </div>
-              <h3 className="dpl-railh">The numbers at 6906 Deer Run Lane</h3>
-              <div className="dpl-math">
+              <h3 className="cl-railh">The numbers at 6906 Deer Run Lane</h3>
+              <div className="cl-math">
                 <div>
                   <span>Siding &amp; roof</span>
                   <span>$36,973.26</span>
@@ -142,16 +142,16 @@ export function DealTimeline() {
                   <span>Misc</span>
                   <span>$1,451.71</span>
                 </div>
-                <div className="dpl-sum">
+                <div className="cl-sum">
                   <span>Curbio scope</span>
-                  <span className="dpl-val">$78,754.91</span>
+                  <span className="cl-val">$78,754.91</span>
                 </div>
-                <div className="dpl-sum">
+                <div className="cl-sum">
                   <span>Seller paid before closing</span>
-                  <span className="dpl-val">$0.00</span>
+                  <span className="cl-val">$0.00</span>
                 </div>
               </div>
-              <figure className="dpl-review" style={{ margin: "22px 0 0", padding: "20px 22px" }}>
+              <figure className="cl-review" style={{ margin: "22px 0 0", padding: "20px 22px" }}>
                 <blockquote style={{ fontSize: 17, lineHeight: 1.5 }}>
                   We could not have had such a quick and successful offering without the work and
                   effort provided by the entire Curbio team.
@@ -160,18 +160,18 @@ export function DealTimeline() {
               </figure>
             </div>
           </aside>
-          <div className="dpl-entries" data-expanded={expanded}>
+          <div className="cl-entries" data-expanded={expanded}>
             {ENTRIES.map((e) => (
-              <article key={e.date + e.title} className="dpl-entry" data-collapsed={e.collapsed || undefined}>
-                <p className="dpl-date">{e.date}</p>
+              <article key={e.date + e.title} className="cl-entry" data-collapsed={e.collapsed || undefined}>
+                <p className="cl-date">{e.date}</p>
                 <div>
                   <h3>{e.title}</h3>
                   <p>{e.body}</p>
                   {e.figure && (
-                    <figure className="dpl-fig">
-                      <div className="dpl-ba">
+                    <figure className="cl-fig">
+                      <div className="cl-ba">
                         <figure>
-                          <div className="dpl-shot">
+                          <div className="cl-shot">
                             <Image
                               src="/home/deal/6906-deer-run-before.jpg"
                               alt="6906 Deer Run Lane before — worn siding and a mossy roof"
@@ -180,10 +180,10 @@ export function DealTimeline() {
                               style={{ objectFit: "cover" }}
                             />
                           </div>
-                          <p className="dpl-balabel">Before</p>
+                          <p className="cl-balabel">Before</p>
                         </figure>
                         <figure>
-                          <div className="dpl-shot">
+                          <div className="cl-shot">
                             <Image
                               src="/home/deal/6906-deer-run-after.jpg"
                               alt="6906 Deer Run Lane after — new roof, new siding, refreshed porch"
@@ -192,7 +192,7 @@ export function DealTimeline() {
                               style={{ objectFit: "cover" }}
                             />
                           </div>
-                          <p className="dpl-balabel">After</p>
+                          <p className="cl-balabel">After</p>
                         </figure>
                       </div>
                     </figure>
@@ -200,7 +200,7 @@ export function DealTimeline() {
                 </div>
               </article>
             ))}
-            <button type="button" className="dpl-expand" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded}>
+            <button type="button" className="cl-expand" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded}>
               {expanded ? "Show the five milestones" : `Every step, dated — show all ${ENTRIES.length}`}
             </button>
           </div>

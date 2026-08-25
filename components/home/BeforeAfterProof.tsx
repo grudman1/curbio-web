@@ -3,14 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 
 // "Real projects" — the before/after transformation clip (Gavin, Aug 9).
-// Ported from the landing page's lp-proof section, rebuilt on the dp- design
+// Ported from the landing page's lp-proof section, rebuilt on the c- design
 // system.
 //
 // Redesigned light (Gavin, Aug 17): the navy surface sat between two
 // near-white sections (HowItWorks default, HomeResults raised) and read as a
 // heavy interruption rather than a beat. Stone now gives it the separation
 // navy used to, without the section-order effect. `data-dark` comes off the
-// <section> with it — that attribute is what tells HomeHeader.tsx to swap
+// <section> with it — that attribute is what tells SiteHeader.tsx to swap
 // into its frosted-navy tone, and this section no longer qualifies.
 //
 // WHY THIS IS A CLIENT COMPONENT. An autoplaying loop is a motion source, and
@@ -87,24 +87,24 @@ export function BeforeAfterProof() {
   }, [reduced]);
 
   return (
-    <section className="dp-proofvid" aria-labelledby="proofvid-h">
-      <div className="dp-container dp-proofvid-grid">
-        <div className="dp-proofvid-copy">
-          <p className="dp-eyebrow dp-proofvid-eyebrow">Real projects</p>
-          <h2 className="dp-proofvid-h" id="proofvid-h">
+    <section className="c-proofvid" aria-labelledby="proofvid-h">
+      <div className="c-container c-proofvid-grid">
+        <div className="c-proofvid-copy">
+          <p className="c-eyebrow c-proofvid-eyebrow">Real projects</p>
+          <h2 className="c-proofvid-h" id="proofvid-h">
             After 8,000 projects, we&rsquo;ve gotten pretty good at{" "}
-            <span className="dp-proofvid-h-accent">before-and-afters.</span>
+            <span className="c-proofvid-h-accent">before-and-afters.</span>
           </h2>
-          <span className="dp-proofvid-rule" aria-hidden="true" />
-          <p className="dp-proofvid-sub">
+          <span className="c-proofvid-rule" aria-hidden="true" />
+          <p className="c-proofvid-sub">
             Today&rsquo;s buyers scroll past tired listings. Watch an outdated space become
             move-in ready &mdash; the kind of home that wins showings, draws offers, and sells
             for more, without your seller writing a check before closing.
           </p>
-          <ul className="dp-proofvid-points">
+          <ul className="c-proofvid-points">
             {POINTS.map((p) => (
               <li key={p.text}>
-                <span className="dp-proofvid-point-icon">
+                <span className="c-proofvid-point-icon">
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     {p.icon}
                   </svg>
@@ -115,8 +115,8 @@ export function BeforeAfterProof() {
           </ul>
         </div>
 
-        <figure className="dp-proofvid-fig">
-          <div className="dp-proofvid-frame">
+        <figure className="c-proofvid-fig">
+          <div className="c-proofvid-frame">
             <video
               ref={videoRef}
               // Under reduced motion: no autoplay, no loop, controls shown.
@@ -132,7 +132,7 @@ export function BeforeAfterProof() {
               <source src="/proof/before-after.webm" type="video/webm" />
               <source src="/proof/before-after.mp4" type="video/mp4" />
             </video>
-            <span className="dp-proofvid-tag">
+            <span className="c-proofvid-tag">
               Before
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M5 12h14" />

@@ -128,7 +128,7 @@ export function CreditSelect({
   };
 
   return (
-    <div className="dpl2-sel" ref={rootRef}>
+    <div className="cl2-sel" ref={rootRef}>
       <button
         ref={btnRef}
         type="button"
@@ -139,26 +139,26 @@ export function CreditSelect({
         aria-haspopup="listbox"
         aria-labelledby={`${labelledBy} ${id}`}
         aria-activedescendant={open && active >= 0 ? `${listId}-${active}` : undefined}
-        className={`dpl2-sel-btn${open ? " is-open" : ""}${selectedLabel ? "" : " is-empty"}`}
+        className={`cl2-sel-btn${open ? " is-open" : ""}${selectedLabel ? "" : " is-empty"}`}
         onClick={() => (open ? setOpen(false) : openWith(selectedIndex))}
         onKeyDown={onKeyDown}
       >
-        <span className="dpl2-sel-value">{selectedLabel || "Select…"}</span>
-        <svg className="dpl2-sel-caret" viewBox="0 0 12 8" aria-hidden="true">
+        <span className="cl2-sel-value">{selectedLabel || "Select…"}</span>
+        <svg className="cl2-sel-caret" viewBox="0 0 12 8" aria-hidden="true">
           <path d="M1 1l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.75"
             strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
 
       {open && (
-        <ul className="dpl2-sel-list" id={listId} role="listbox" ref={listRef} tabIndex={-1}>
+        <ul className="cl2-sel-list" id={listId} role="listbox" ref={listRef} tabIndex={-1}>
           {bands.map((b, i) => (
             <li
               key={b.value}
               id={`${listId}-${i}`}
               role="option"
               aria-selected={String(b.value) === value}
-              className={`dpl2-sel-opt${i === active ? " is-active" : ""}`}
+              className={`cl2-sel-opt${i === active ? " is-active" : ""}`}
               // pointerdown, not click: mousedown would blur the trigger first
               // and the outside-click handler would close before the choice
               // registered.

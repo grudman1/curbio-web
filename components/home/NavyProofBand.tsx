@@ -32,13 +32,13 @@ const STATS = [
 
 export function NavyProofBand() {
   return (
-    <section className="dp-navyproof" data-dark="true" aria-label="Curbio by the numbers">
-      <div className="dp-container">
-        <ul className="dp-navyproof-grid">
+    <section className="c-navyproof" data-dark="true" aria-label="Curbio by the numbers">
+      <div className="c-container">
+        <ul className="c-navyproof-grid">
           {STATS.map((s) => (
-            <li key={s.figure + s.label} className="dp-navyproof-item">
-              <p className="dp-navyproof-figure">{s.figure}</p>
-              <p className="dp-navyproof-label">{s.label}</p>
+            <li key={s.figure + s.label} className="c-navyproof-item">
+              <p className="c-navyproof-figure">{s.figure}</p>
+              <p className="c-navyproof-label">{s.label}</p>
             </li>
           ))}
         </ul>

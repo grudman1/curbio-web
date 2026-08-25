@@ -11,14 +11,14 @@ import { BROKERAGE_LOGOS } from "@/lib/partners";
 //
 // KEEPING THE LOGOS ON SCREEN AT LANDING is a standing requirement (Gavin,
 // Aug 6). The hero is viewport-capped by this band's height — see the
-// subtrahend in .dp-hero — so this band's height and that number move
+// subtrahend in .c-hero — so this band's height and that number move
 // together. Dropping the strip shrank it back, and the subtrahend went with
 // it.
 //
 // Placeholders still live elsewhere: AwardsStrip carries five
 // ([Award] ×2, [rating], [count], [press]).
 //
-// Logos: each declared once in CSS custom properties (see .dp-logo) — never
+// Logos: each declared once in CSS custom properties (see .c-logo) — never
 // repeated <img> tags; the duplicate loop track is aria-hidden.
 
 function LogoRow({ hidden }: { hidden?: boolean }) {
@@ -27,7 +27,7 @@ function LogoRow({ hidden }: { hidden?: boolean }) {
       {BROKERAGE_LOGOS.map((b) => (
         <span
           key={b.id}
-          className="dp-logo"
+          className="c-logo"
           role={hidden ? undefined : "img"}
           aria-label={hidden ? undefined : b.name}
           aria-hidden={hidden || undefined}
@@ -48,11 +48,11 @@ function LogoRow({ hidden }: { hidden?: boolean }) {
 // it is the hero eyebrow, and repeating it would spend the same proof twice.
 export function ProofBand() {
   return (
-    <section className="dp-proof" aria-label="Brokerages Curbio agents work with">
-      <div className="dp-container dp-proof-row">
-        <p className="dp-proof-label">Trusted by agents at</p>
-        <div className="dp-marquee" data-animated="true">
-          <div className="dp-marquee-track">
+    <section className="c-proof" aria-label="Brokerages Curbio agents work with">
+      <div className="c-container c-proof-row">
+        <p className="c-proof-label">Trusted by agents at</p>
+        <div className="c-marquee" data-animated="true">
+          <div className="c-marquee-track">
             <LogoRow />
             <LogoRow hidden />
           </div>

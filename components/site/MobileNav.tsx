@@ -95,7 +95,9 @@ export function MobileNav({
 
   return (
     <div
-      className="fixed inset-0 z-overlay bg-surface md:hidden"
+      // No md:hidden — the burger that opens this panel is visible up to 980px
+      // (the header's CSS breakpoint), which is wider than Tailwind's md.
+      className="fixed inset-0 z-overlay bg-surface"
       role="dialog"
       aria-modal="true"
       aria-label="Site navigation"
