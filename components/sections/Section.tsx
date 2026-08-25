@@ -4,12 +4,13 @@
 // components. Class names are the promoted homepage families in
 // components/site/site.css; nothing here invents a style.
 
-type SectionVariant = "default" | "stone" | "sage" | "white" | "inverse";
+// No sage/green: the site's ground is white and cloud, and stone is the one
+// call-out colour (Gavin, Aug 25).
+type SectionVariant = "default" | "stone" | "white" | "inverse";
 
 const VARIANT_CLASS: Record<SectionVariant, string> = {
   default: "c-sect",
   stone: "c-sect c-sect--stone",
-  sage: "c-sect c-sect--sage",
   white: "c-sect c-sect--white",
   inverse: "c-sect c-sect--inverse",
 };
