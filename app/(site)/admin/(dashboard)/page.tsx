@@ -1,5 +1,6 @@
 import { buildPageRegistry, type RegistryEntry } from "@/config/pageRegistry";
 import { Chip, MUTED, OK, SUBTLE, SectionHeading, WARN, mono } from "./ui";
+import { MARKETS } from "@/config/markets";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Pages tab — the landing view of the Control Room: is the site healthy,
@@ -17,7 +18,7 @@ import { Chip, MUTED, OK, SUBTLE, SectionHeading, WARN, mono } from "./ui";
 
 // ── Previews ────────────────────────────────────────────────────────────────
 // Registry path → the concrete URL worth looking at. Per-market rows fold
-// into their parent card as a "×7 markets" badge.
+// into their parent card as a "×N markets" badge, N from the market list.
 function previewPlan(entries: RegistryEntry[]) {
   const cards: { entry: RegistryEntry; src: string | null; note?: string; variants?: number }[] = [];
   for (const e of entries) {
@@ -25,7 +26,7 @@ function previewPlan(entries: RegistryEntry[]) {
     if (e.path.includes(":market")) {
       const parent = cards.find((c) => e.path.startsWith(`${c.entry.path}/m/`));
       if (parent) {
-        parent.variants = 7;
+        parent.variants = MARKETS.length;
         continue;
       }
     }

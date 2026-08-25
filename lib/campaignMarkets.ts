@@ -19,7 +19,12 @@ export type { SoldListing };
 export type CampaignMarket = {
   slug: string;
   name: string; // shown in the tag, eyebrows, form payload
-  /** true when sold listings lack verified prices (placeholder proof) */
+  /**
+   * true when this market has no verified sold proof. Mirrors
+   * Market.placeholder — the sold-proof strip is suppressed for these markets
+   * rather than rendering an empty row. Was previously declared here and
+   * dropped by both constructors below, so nothing could ever read it.
+   */
   placeholder?: boolean;
   sold: SoldListing[];
 };
@@ -27,6 +32,7 @@ export type CampaignMarket = {
 export const CAMPAIGN_MARKETS: CampaignMarket[] = MARKETS.map((m) => ({
   slug: m.slug,
   name: m.name,
+  placeholder: m.placeholder,
   sold: m.sold,
 }));
 
@@ -58,7 +64,7 @@ export function getCampaignMarket(slug?: string | null): CampaignMarket {
   const canonical = resolveMarketSlug(slug);
   if (!canonical) return fallback;
   const m = MARKET_BY_SLUG[canonical];
-  return { slug: m.slug, name: m.name, sold: m.sold };
+  return { slug: m.slug, name: m.name, placeholder: m.placeholder, sold: m.sold };
 }
 
 export const MARKET_OPTIONS = CAMPAIGN_MARKETS.map((m) => ({ slug: m.slug, name: m.name }));

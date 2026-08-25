@@ -164,11 +164,75 @@ Auto-deploys to Vercel on push to `main` via GitHub integration.
 
 ## Adding a new market
 
-1. Add an entry to `CAMPAIGN_MARKETS` in `lib/campaignMarkets.ts`.
-2. Add a slug alias in `getCampaignMarket()` if the old `lib/markets.ts` slugs differ.
-3. Drop HSM headshots in `public/hsm/` and sold photos in `public/sold/`.
-4. Add a catalog entry to `BY_MARKET_NAME` in `lib/markets.ts` to show the market
-   in the ZipModal chooser grid.
+Verified against Seattle (market #8, 2026-08-25). The previous version of this
+section described editing `CAMPAIGN_MARKETS`, `getCampaignMarket()` and
+`BY_MARKET_NAME` — none of which have owned market data since the list-driven
+refactor (#16).
+
+**Before you edit anything, ask the operator API what it already knows.** The
+market must be live in app.curbio.com first — this codebase reads its market
+name, HSM, phone and Calendly URL live, per request:
+
+```bash
+curl -s "https://app.curbio.com/api/Operator/GetOperatorLead?code=<canonical-zip>"
+```
+
+Use that response as the source for `operatorName` (its `marketName`, EXACTLY)
+and to confirm the HSM's name spelling. Do not copy the HSM's phone or Calendly
+URL into config — they are not stored here, and the operator admin's "Edit
+Market" form can disagree with what the API actually serves. The API wins.
+
+**1. Add one row to `config/markets.ts`.** That is the only place a market is
+named. Field sources:
+
+| Field | Comes from |
+|---|---|
+| `slug`, `name`, `displayName`, `coverage`, `cities` | Marketing. The sell.curbio.com picker is authoritative for public naming — verbatim, do not tidy. |
+| `operatorName` | The API's `marketName`, exactly. |
+| `crmName` | What the CRM expects. Usually matches the picker name; confirm, don't assume — an unknown market is worse than none. |
+| `appMarketCodes` | app.curbio.com's report codes. |
+| `state`, `coordinates` | Geo fallback. `displayName` must end in `, ${state}` — the guard checks it. |
+| `canonicalZip` | Any served ZIP that resolves. Must be unique across markets. |
+| `hsm` | Name + headshot path only. Live identity comes from the API. |
+| `legacySlugs` | See the gotcha below. Usually `[]`. |
+| `sold` / `placeholder` | See step 4. |
+
+**2. Drop the HSM headshot at the path `hsm.photo` names** (`public/hsm/`).
+Existing ones are ~1100-1320px, 75-250KB JPEGs. Every render site uses
+`object-fit: cover`, so square sources are fine. Convert PNGs — don't ship a
+2MB file behind a `.jpg` path.
+
+**3. Add the HSM to `TEAM` in `lib/markets.ts`**, keyed by the EXACT `pmName`
+the operator API returns. This does NOT derive from the market row: without an
+entry the confirm-page card silently falls back to a templated bio and a
+branded placeholder, even with the headshot on disk. Use `{market}` in the bio
+only if they cover more than one market.
+
+**4. Sold proof.** With verified sales: listings in `sold`, photos under
+`public/sold/<slug>/`. Without them: `sold: []` and `placeholder: true`. The
+strip is then suppressed rather than rendering an empty row. NEVER borrow
+another market's listings or invent a price. `markets.guard.ts` enforces that
+`placeholder` and `sold` agree in both directions, so clear the flag in the
+same commit that adds real proof.
+
+**That's the whole edit.** These all derive from the row with no further work,
+and each was confirmed for Seattle: the `/markets/<slug>` page and its
+`generateStaticParams`, the `/lp/<campaign>/m/<slug>` and `/exp/m/<slug>`
+prerenders (and their `/v/<variant>` twins), nav and footer entries, the
+sitemap URL, the ZipModal picker card, legacy 301s, ZIP and geo resolution, the
+CRM market string, the Control Room page registry and its `×N markets` badge,
+the homepage market/HSM lists, and the `N markets` counts in copy.
+
+### Gotchas
+
+- **`legacySlugs` only models `/markets/<old>` → `/markets/<new>`.** Putting the
+  market's OWN slug there 301s its page to itself — an infinite loop. The guard
+  catches it, but only when `/markets` renders. A root-level legacy path like
+  `/seattle` is a different URL shape this field does not handle.
+- **The guard runs on the `/markets` page, not on every build.** Hit
+  `/markets` after adding a row; a coherence failure throws there.
+- **No `if (slug === "…")`, ever.** If it is true of one market and not
+  another, it is a field in `config/markets.ts`.
 
 ---
 
@@ -228,9 +292,28 @@ opt-out against the visitor's session.
 
 ## Open flags
 
-- **Acworth $497,000** — marked `unverified: true` in `campaignMarkets.ts`.
-  Confirm this is a verified sale price before a real send.
-- **Joshua Collins' Calendly** event is named "General Meeting" — other HSMs use
-  "Call with Curbio Project Manager." Rename in Calendly admin for consistency.
+- **Acworth $497,000** — `unverified: true` in `config/markets.ts` (the flag was
+  dropped in e052048 when the photo was added, and restored 2026-08-25; it had
+  been rotating unflagged in the homepage ticker in between). Confirm this is a
+  verified sale price before a real send. It still shows on the Atlanta campaign
+  strip; only the homepage ticker filters unverified prices.
+- **`/seattle` → `/markets/seattle/`** — an active WordPress rule with 31
+  inlinks. The destination is live in this app, so nothing is needed now, but
+  the ROOT-level `/seattle` path is not served here. Phase 5 must carry the rule
+  over, and any bulk "market 404 → /markets" sweep must not swallow the live
+  destination.
+- **Confirm-page phone — BY DESIGN, do not "fix".** `components/ConfirmShell.tsx`
+  labels the call box "Call {firstName} directly" and serves `(844) 944-2629` for
+  every market. That is a DELIBERATE tracked line, not a missed personalisation:
+  `hsm.hsm.phone`/`phoneRaw` carry the HSM's real direct number from the operator
+  API and are intentionally unused here. Wiring the box to `phoneRaw` would
+  silently drop call attribution across all markets.
+- **Calendly event slugs — RESOLVED, do not re-file.** A previous flag here
+  claimed Joshua Collins' "General Meeting" was an outlier against a
+  "Call with Curbio Project Manager" standard. It had it backwards:
+  `ConfirmShell.tsx` builds `<profileUrl>/general-meeting` for EVERY HSM, and
+  `general-meeting` resolves on every profile checked (Christine, Bill). That
+  slug is the standard. A new HSM's Calendly event must use it — the fix for a
+  mismatch is renaming the event, never a per-HSM slug override.
 - **CRM webhook** — set `CURBIO_CRM_WEBHOOK_URL` in Vercel env vars to start
   receiving leads in the CRM. Until then they log server-side only.

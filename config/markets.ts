@@ -70,10 +70,12 @@ export type Market = {
   /**
    * Market codes app.curbio.com uses in its exports/reports ("ATL", "BAL"…).
    * A list because the app splits some metros we treat as one market
-   * (Maryland is BAL + NMD + SMD there). App codes with no row here (SEA,
-   * SD) are markets we don't serve landing pages for — reporting aggregates
-   * them under "Other markets"; they NEVER become market rows just to make
-   * a report add up.
+   * (Maryland is BAL + NMD + SMD there). App codes with no row here (SD) are
+   * markets we don't serve landing pages for — reporting aggregates them
+   * under "Other markets"; they NEVER become market rows just to make a
+   * report add up. A code EARNS a row by getting landing pages, which is how
+   * SEA became one: Seattle went live in the operator system with its own
+   * HSM, so the row followed the market, not the report.
    */
   appMarketCodes: string[];
   /** Two-letter state code, used for same-state geo disambiguation. */
@@ -98,6 +100,14 @@ export type Market = {
    * Append when a slug changes; never rename `slug` without adding the old one.
    */
   legacySlugs: string[];
+  /**
+   * This market ships WITHOUT verified sold proof — `sold` is empty and the
+   * campaign sold-proof strip is suppressed. A declaration of intent, not a
+   * cosmetic flag: markets.guard.ts enforces that an empty `sold` carries it
+   * and that a market carrying it lists no prices. Clear it in the same
+   * commit that adds real listings.
+   */
+  placeholder?: boolean;
   /** Campaign sold-proof listings. */
   sold: SoldListing[];
 };
@@ -122,7 +132,7 @@ export const MARKETS: Market[] = [
       { neighborhood: "Intown Atlanta", price: "$665,000", photo: "/sold/atlanta/959Berne_Intown.jpeg" },
       { neighborhood: "Marietta", price: "$365,000", photo: "/sold/atlanta/680Smithstone_Marietta.webp" },
       { neighborhood: "Roswell", price: "$785,000", photo: "/sold/atlanta/905Windsor_Roswell.webp" },
-      { neighborhood: "Acworth", price: "$497,000", photo: "/sold/atlanta/5076OakBranch_Acworth.webp" },
+      { neighborhood: "Acworth", price: "$497,000", unverified: true, photo: "/sold/atlanta/5076OakBranch_Acworth.webp" },
       { neighborhood: "Lawrenceville", price: "$354,000", photo: "/sold/atlanta/772Bostonian_Lawrenceville.webp" },
     ],
   },
@@ -266,6 +276,32 @@ export const MARKETS: Market[] = [
       { neighborhood: "Canyon Lake",     price: "$615,000", photo: "/sold/riverside/30287Skipjack_CanyonLake.jpg" },
       { neighborhood: "Temecula",        price: "$924,000", photo: "/sold/riverside/32049CorteCanel_Temecula.webp" },
     ],
+  },
+  {
+    slug: "seattle",
+    name: "Seattle",
+    displayName: "Seattle, WA",
+    coverage: "Puget Sound · King County",
+    operatorName: "Seattle",
+    crmName: "Seattle",
+    appMarketCodes: ["SEA"],
+    state: "WA",
+    canonicalZip: "98101",
+    coordinates: { lat: 47.6062, lng: -122.3321 },
+    cities: ["Seattle", "Bellevue", "Kirkland", "Renton", "Kent"],
+    hsm: { name: "Bill Kirkland", photo: "/hsm/bill-kirkland.jpg" },
+    brokerageLogos: [],
+    // EMPTY on purpose. The WordPress crawl carries one active Seattle rule:
+    // /seattle → /markets/seattle/ (31 inlinks). That is a ROOT-level path,
+    // and this field only models /markets/<old> → /markets/<new> — putting
+    // "seattle" here 301s /markets/seattle to itself. The destination is the
+    // path this row already builds, so no redirect is needed. The root-level
+    // /seattle rule lives in WordPress today and is a Phase 5 item; see the
+    // README's open flags.
+    legacySlugs: [],
+    // No verified Seattle sales yet. See `placeholder` above.
+    placeholder: true,
+    sold: [],
   },
 ];
 

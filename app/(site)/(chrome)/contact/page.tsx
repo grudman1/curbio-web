@@ -16,7 +16,7 @@ import { ContactForm } from "./ContactForm";
 export const metadata: Metadata = {
   title: "Contact — Curbio",
   description:
-    "Reach Curbio: get a free quote, talk through a listing, or start a brokerage partnership. Seven markets, a manager in each.",
+    `Reach Curbio: get a free quote, talk through a listing, or start a brokerage partnership. ${MARKETS.length} markets, a manager in each.`,
   ...routeMetadata("/contact"),
 };
 
