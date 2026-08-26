@@ -30,7 +30,9 @@ const SCAN = 500;
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const tf = parseTimeframe(url.searchParams.get("t") ?? undefined, SNAPSHOT_MONTHS);
+  // Day-grain default: this route only ever serves day-grain screens (Pages),
+  // so an absent ?t= means 30d, not the latest snapshot month.
+  const tf = parseTimeframe(url.searchParams.get("t") ?? undefined, SNAPSHOT_MONTHS, "day");
 
   // Day kinds carry their own range; month kinds resolve through the snapshot's
   // months so the window can never name a month with no data.

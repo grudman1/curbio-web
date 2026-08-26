@@ -1,106 +1,153 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// THE admin IA. One sidebar for what used to be two apps.
+// THE admin IA. Grouped the way the business is planned, not the way the app
+// was built.
 //
-// /admin had top tabs. /marketing had its own sidebar, its own header controls
-// and its own timeframe. Same session, same user, same data, two mental
-// models — and "Marketing" was a door that threw you into a different
-// interface. This file collapses them into one shell.
+// The previous structure — SITE / DEMAND / PRESENT — was a map of what we
+// happened to build, in the order we built it. It put Pages at the top (one
+// channel out of seven, Tier 2) and left Partnerships and Super Agents (two of
+// the three Tier 1 channels that carry the lead number) greyed out at the
+// bottom.
 //
-// GRAIN is declared per screen and is not cosmetic. It decides which timeframe
-// options the header offers and whether a requested timeframe has to be
-// coerced. See app/(site)/admin/_ui/timeframe.ts.
+// Groups follow the Magnificent Seven (config/channelPlan.ts) because that is
+// the planning taxonomy and the monthly review agenda. Every NUMBER underneath
+// is computed on the nine measured channels (lib/channels.ts). The two are
+// different axes — see DECISIONS.md.
 //
-//   day    backed by Redis leads:v1 and Vercel Web Analytics — real day
-//          resolution, so 7d/30d/90d are honest.
-//   month  backed by config/appLeadsSnapshot, a monthly export. Offers month
-//          options only; a day request coerces and the screen says so.
+// GRAIN is declared per screen and is not cosmetic: it decides which timeframe
+// options the header offers and whether a request has to be coerced.
+//   day    Redis leads:v1 + Vercel Web Analytics — real day resolution.
+//   month  config/appLeadsSnapshot — a monthly export.
 //
-// THE "NOT WIRED" GROUP exists on purpose. Those five screens have no data
-// source yet, but each carries a documented `needs` list in
-// config/marketingHub.ts, and that list is the build backlog. Burying them
-// under Settings would lose it; deleting them would lose the thinking. They
-// stay visible and visually muted, rendering EmptyState with their needs.
+// NO NAV ITEM MAY 404. Every href either resolves to a route in this app or
+// carries `externalHref` pointing at the screen's existing /marketing home
+// until it is ported. A 404 reached from our own navigation is
+// indistinguishable from a bug.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { Grain } from "@/app/(site)/admin/_ui/timeframe";
+import { CHANNEL_PLAN } from "./channelPlan";
+
+/**
+ * The SITE group is TEMPORARY and this flag is its expiry.
+ *
+ * A migration in flight needs its own surface; a steady-state channel does
+ * not. When every box in the Cutover checklist at the foot of DECISIONS.md is
+ * checked, flip this to `false`: Pages and Experiments move under Organic and
+ * the group disappears.
+ *
+ * The flag exists so that is ONE EDIT rather than a judgement call nobody ever
+ * makes. A temporary group with no expiry condition is a permanent group.
+ */
+export const SITE_GROUP_ACTIVE = true;
 
 export type NavItem = {
   href: string;
   label: string;
   grain: Grain;
-  /** Icon key — geometry lives in the shell, not in config. */
   icon: string;
   /** Slug in config/marketingHub.ts HUB_SURFACES, when this screen is one. */
   hubSlug?: string;
+  /** Slug in config/channelPlan.ts, for the Magnificent Seven screens. */
+  channelSlug?: string;
+  /** Set while a screen still lives at its old /marketing route. The nav links
+   *  HERE instead of at `href`, so nothing in the nav can 404 mid-port. */
+  externalHref?: string;
+  /** Tier badge, channels only. */
+  tier?: 1 | 2 | 3;
 };
 
-export type NavGroup = {
-  title: string;
-  items: NavItem[];
-  /** Rendered muted, at the bottom. The unwired backlog. */
-  muted?: boolean;
+export type NavGroup = { title: string; items: NavItem[]; muted?: boolean };
+
+const CHANNEL_ICON: Record<string, string> = {
+  email: "email",
+  partnerships: "partners",
+  "super-agents": "outreach",
+  paid: "paid",
+  organic: "organic",
+  events: "events",
+  content: "content",
 };
+
+/** The seven, in the CEO's tier order — which CHANNEL_PLAN already encodes. */
+function channelItems(): NavItem[] {
+  return CHANNEL_PLAN.map((c) => ({
+    href: `/admin/channels/${c.slug}`,
+    label: c.label,
+    grain: "month" as Grain,
+    icon: CHANNEL_ICON[c.slug] ?? "channels",
+    channelSlug: c.slug,
+    tier: c.tier,
+  }));
+}
 
 export const ADMIN_NAV: NavGroup[] = [
   {
     title: "Overview",
-    items: [{ href: "/admin", label: "Today", grain: "day", icon: "today" }],
+    items: [{ href: "/admin", label: "Today", grain: "month", icon: "today" }],
   },
   {
-    title: "Site",
+    // The strategy names the channel × market report the highest-leverage
+    // remaining build, three separate times. It is not a footnote in PRESENT.
+    title: "The number",
     items: [
-      { href: "/admin/pages", label: "Pages", grain: "day", icon: "pages" },
-      { href: "/admin/experiments", label: "Experiments", grain: "day", icon: "experiments" },
+      { href: "/admin/markets", label: "Markets", grain: "month", icon: "markets", hubSlug: "markets", externalHref: "/marketing/markets" },
+      { href: "/admin/funnel", label: "Funnel", grain: "month", icon: "report", hubSlug: "report", externalHref: "/marketing/report" },
     ],
   },
+  { title: "Channels", items: channelItems() },
+  ...(SITE_GROUP_ACTIVE
+    ? [
+        {
+          // Time-boxed — see SITE_GROUP_ACTIVE above.
+          title: "Site",
+          items: [
+            { href: "/admin/pages", label: "Pages", grain: "day" as Grain, icon: "pages" },
+            { href: "/admin/experiments", label: "Experiments", grain: "day" as Grain, icon: "experiments" },
+          ],
+        },
+      ]
+    : []),
   {
-    title: "Demand",
+    title: "Operate",
     items: [
       { href: "/admin/leads", label: "Leads", grain: "day", icon: "leads" },
-      { href: "/admin/attribution", label: "Attribution", grain: "month", icon: "attribution", hubSlug: "attribution" },
-      { href: "/admin/markets", label: "Markets", grain: "month", icon: "markets", hubSlug: "markets" },
-      { href: "/admin/channels", label: "Channels", grain: "month", icon: "channels", hubSlug: "channels" },
+      { href: "/admin/attribution", label: "Attribution", grain: "month", icon: "attribution", hubSlug: "attribution", externalHref: "/marketing/attribution" },
+      { href: "/admin/settings", label: "Settings", grain: "month", icon: "settings", hubSlug: "settings", externalHref: "/marketing/settings" },
     ],
   },
   {
     title: "Present",
     items: [
-      { href: "/admin/executive", label: "Executive", grain: "month", icon: "executive", hubSlug: "executive" },
-      { href: "/admin/report", label: "Reports", grain: "month", icon: "report", hubSlug: "report" },
-      { href: "/admin/links", label: "Links", grain: "month", icon: "links", hubSlug: "links" },
-      { href: "/admin/settings", label: "Settings", grain: "month", icon: "settings", hubSlug: "settings" },
-    ],
-  },
-  {
-    title: "Not wired",
-    muted: true,
-    items: [
-      { href: "/admin/contacts", label: "Contacts", grain: "month", icon: "contacts", hubSlug: "contacts" },
-      { href: "/admin/forms", label: "Forms", grain: "month", icon: "forms", hubSlug: "forms" },
-      { href: "/admin/partners", label: "Partners", grain: "month", icon: "partners", hubSlug: "partners" },
-      { href: "/admin/outreach", label: "Outreach", grain: "month", icon: "outreach", hubSlug: "outreach" },
-      { href: "/admin/events", label: "Events", grain: "month", icon: "events", hubSlug: "events" },
+      { href: "/admin/executive", label: "Executive", grain: "month", icon: "executive", hubSlug: "executive", externalHref: "/marketing/executive" },
     ],
   },
 ];
 
 export const ALL_NAV_ITEMS: NavItem[] = ADMIN_NAV.flatMap((g) => g.items);
 
+/** Where the nav should actually send you today. */
+export function navHref(item: NavItem): string {
+  return item.externalHref ?? item.href;
+}
+
 /** The nav item owning a pathname — longest matching href wins, so
- *  /admin/leads beats /admin. Returns null for routes outside the shell
- *  (login, signup) rather than guessing. */
+ *  /admin/leads beats /admin. Matches on both the eventual href and the
+ *  interim external one, so a ported-or-not screen highlights correctly. */
 export function navItemFor(pathname: string): NavItem | null {
   let best: NavItem | null = null;
   for (const item of ALL_NAV_ITEMS) {
-    const hit = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
-    if (hit && (!best || item.href.length > best.href.length)) best = item;
+    for (const href of [item.href, item.externalHref]) {
+      if (!href) continue;
+      const hit = href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+      if (hit && (!best || href.length > (best.externalHref ?? best.href).length)) best = item;
+    }
   }
   return best;
 }
 
 /** Grain for a pathname. Defaults to `day` — the finer grain, which offers
- *  every option and coerces nothing. An unknown screen must not silently get
- *  the more restrictive one. */
+ *  every option and coerces nothing. An unknown screen must not silently
+ *  inherit the more restrictive one. */
 export function grainFor(pathname: string): Grain {
   return navItemFor(pathname)?.grain ?? "day";
 }

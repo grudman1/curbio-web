@@ -21,7 +21,7 @@ export function Timeframe({ months }: { months: string[] }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const grain = grainFor(pathname);
-  const tf = parseTimeframe(searchParams.get("t") ?? undefined, months);
+  const tf = parseTimeframe(searchParams.get("t") ?? undefined, months, grain);
 
   function set(key: string, value: string | null) {
     const params = new URLSearchParams(searchParams.toString());

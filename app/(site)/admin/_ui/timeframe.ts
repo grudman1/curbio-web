@@ -41,6 +41,10 @@ export type DayKind = (typeof DAY_KINDS)[number];
 /** How many days each day-kind spans. */
 export const DAY_SPAN: Record<DayKind, number> = { "7d": 7, "30d": 30, "90d": 90 };
 
+/** Vercel's hard cap at day granularity. Verified against the live API — over
+ *  it the response is a 400 `invalid_group_by`, not a truncated result. */
+export const DAY_BUCKET_CAP = 62;
+
 /**
  * Vercel's aggregate API caps BUCKETS, not date range: 62 at day granularity,
  * 26 at week. So 90d cannot render 90 daily points — it renders 13 weekly
@@ -68,11 +72,19 @@ export function isDayKind(tf: Timeframe): tf is { kind: DayKind } {
   return (DAY_KINDS as readonly string[]).includes(tf.kind);
 }
 
-/** Parse ?t=. Falls back to the latest month with data (month-grain default),
- *  matching the Hub's original behaviour. */
+/**
+ * Parse ?t=.
+ *
+ * THE DEFAULT FOLLOWS THE GRAIN. A day-grain screen opening on "Aug 2026" was
+ * the bug: the options were right but the fallback always reached for the
+ * latest snapshot month, so Pages — which has real day resolution — opened on
+ * a monthly window it never needed. Day-grain defaults to 30d; month-grain
+ * defaults to the latest month WITH DATA and never invents one.
+ */
 export function parseTimeframe(
   raw: string | string[] | undefined,
-  availableMonths: readonly string[]
+  availableMonths: readonly string[],
+  grain: Grain = "month"
 ): Timeframe {
   const v = typeof raw === "string" ? raw : undefined;
   if (v && (DAY_KINDS as readonly string[]).includes(v)) return { kind: v as DayKind };
@@ -80,6 +92,7 @@ export function parseTimeframe(
     return { kind: v as (typeof MONTH_KINDS)[number] };
   }
   if (v && YM.test(v) && availableMonths.includes(v)) return { kind: "month", ym: v };
+  if (grain === "day") return { kind: "30d" };
   const latest = availableMonths[availableMonths.length - 1];
   return latest ? { kind: "month", ym: latest } : { kind: "ytd" };
 }
@@ -124,6 +137,25 @@ export function resolveForGrain(
     };
   }
   return { timeframe: tf, coercedFrom: null };
+}
+
+/**
+ * What one trend point actually represents, in words, WHENEVER it is coarser
+ * than the timeframe implies.
+ *
+ * 90d cannot render 90 daily points — Vercel's aggregate API caps day
+ * granularity at 62 buckets — so it renders 13 weekly ones. A 13-point line
+ * under a control that says "Last 90 days" reads as 90 daily points unless
+ * something says otherwise. Returns null when the bucket matches the
+ * expectation and no label is warranted.
+ */
+export function resampleNote(tf: Timeframe): string | null {
+  const bucket = bucketFor(tf);
+  if (isDayKind(tf) && bucket !== "day") {
+    return `trend shown ${bucket}ly — ${DAY_SPAN[tf.kind]} days exceeds the ${DAY_BUCKET_CAP}-bucket daily limit`;
+  }
+  if (tf.kind === "3m" && bucket === "week") return "trend shown weekly";
+  return null;
 }
 
 /** The one line a coerced screen renders. */
