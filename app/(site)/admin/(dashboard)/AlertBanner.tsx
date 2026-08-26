@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FAIL, MUTED } from "./ui";
+import Link from "next/link";
+import { InfoPopover } from "../_ui/InfoPopover";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // The alert banner: absent when healthy, unmissable when not. Sits directly
@@ -21,6 +22,12 @@ import { FAIL, MUTED } from "./ui";
 //
 // The store-error row is NOT dismissible: while the lead store is unreadable
 // the page is blind, and a hidden blindfold is worse than an annoying one.
+//
+// PROSE BUDGET: this banner used to carry three explanatory sentences — that
+// failures are persisted and recoverable, that dismissal is per-browser, that
+// a read failure is not proof the pipeline is down. All three claims still
+// need to be here; none of them needs to be a paragraph on a screen whose job
+// is to be glanced at. They live behind the ⓘ now.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type AlertEntry = {
@@ -83,66 +90,56 @@ export function AlertBanner({
   return (
     <div
       role="alert"
-      style={{
-        background: "rgba(226,75,74,0.06)",
-        border: `1px solid color-mix(in srgb, ${FAIL} 45%, transparent)`,
-        borderLeft: `3px solid ${FAIL}`,
-        borderRadius: "var(--radius-lg)",
-        padding: "16px 20px",
-        marginBottom: "var(--space-5)",
-        fontFamily: "var(--font-family-sans)",
-      }}
+      className="mb-ops-gap rounded-md border border-tone-bad/40 border-l-[3px] border-l-tone-bad bg-tone-bad/[0.06] px-3.5 py-2.5 font-sans"
     >
       {storeError && (
-        <div style={{ fontSize: "var(--text-small)", marginBottom: visible.length ? 10 : 0 }}>
-          <strong style={{ color: FAIL }}>Lead store unreadable:</strong> {storeError} — this is
-          an admin read failure, not proof the pipeline is down. Check /api/lead logs before
-          assuming leads are lost.
+        <div className={`flex items-center gap-1.5 text-ops-body ${visible.length ? "mb-2" : ""}`}>
+          <strong className="font-bold text-tone-bad">Lead store unreadable</strong>
+          <span className="min-w-0 flex-1 truncate text-content-muted">{storeError}</span>
+          <InfoPopover label="What a store read failure means" align="right">
+            This is an admin READ failure, not proof the pipeline is down. Leads may still be
+            arriving and delivering normally. Check <code className="font-mono">/api/lead</code>{" "}
+            logs before assuming anything was lost.
+          </InfoPopover>
         </div>
       )}
 
       {visible.length > 0 && (
         <>
-          <div style={{ fontSize: 15, fontWeight: 700, color: FAIL, marginBottom: 8 }}>
-            {visible.length} CRM delivery failure{visible.length > 1 ? "s" : ""} in the last
-            24 h
-          </div>
-          {visible.map((e) => (
-            <div
-              key={e.id}
-              style={{
-                display: "flex",
-                alignItems: "baseline",
-                gap: 10,
-                padding: "2px 0",
-              }}
+          <div className="flex items-center gap-1.5">
+            <span className="text-ops-body font-bold text-tone-bad">
+              {visible.length} CRM delivery failure{visible.length > 1 ? "s" : ""} in the last 24 h
+            </span>
+            <InfoPopover label="What happens to a failed delivery" align="right">
+              Every failure is persisted in Redis and alerted by email — recoverable, not lost.
+              Dismissing hides an entry in this browser only; entries age out after 24 h.
+            </InfoPopover>
+            <Link
+              href="/admin/leads"
+              className="ml-auto flex-none text-ops-label font-bold text-content-muted no-underline hover:text-content focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
-              <span style={{ fontSize: 13, color: MUTED, flex: 1, lineHeight: 1.5 }}>
-                {e.time} · {e.summary} — {e.detail}
-              </span>
-              <button
-                type="button"
-                onClick={() => dismiss(e.id)}
-                aria-label={`Dismiss alert: ${e.summary}`}
-                title="Dismiss (this browser only)"
-                style={{
-                  cursor: "pointer",
-                  border: "none",
-                  background: "transparent",
-                  color: MUTED,
-                  fontSize: 14,
-                  lineHeight: 1,
-                  padding: "0 2px",
-                }}
-              >
-                ×
-              </button>
-            </div>
-          ))}
-          <div style={{ fontSize: "var(--text-micro)", color: MUTED, marginTop: 6 }}>
-            Every failure is persisted in Redis and alerted by email — recoverable, not lost.
-            Dismissing hides an entry in this browser only; entries age out after 24 h.
+              Leads ›
+            </Link>
           </div>
+
+          <ul className="m-0 mt-1 list-none p-0">
+            {visible.map((e) => (
+              <li key={e.id} className="flex items-baseline gap-2 py-[1px]">
+                <span className="min-w-0 flex-1 truncate text-ops-label text-content-muted">
+                  <span className="tabular-nums">{e.time}</span> · {e.summary} — {e.detail}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => dismiss(e.id)}
+                  aria-label={`Dismiss alert: ${e.summary}`}
+                  title="Dismiss (this browser only)"
+                  className="flex-none cursor-pointer border-0 bg-transparent px-0.5 text-ops-label leading-none text-content-subtle hover:text-content focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
         </>
       )}
     </div>

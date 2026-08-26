@@ -9,7 +9,7 @@ import { EmptyState } from "../../_ui/EmptyState";
 import { InfoPopover } from "../../_ui/InfoPopover";
 import { MetricTile } from "../../_ui/MetricTile";
 import { Chip, DASH, Eyebrow, Panel } from "../../_ui/primitives";
-import { bucketFor, dayRange, monthsFor, parseTimeframe, timeframeLabel } from "../../_ui/timeframe";
+import { bucketFor, dayRange, monthsFor, parseTimeframe, resampleNote, timeframeLabel } from "../../_ui/timeframe";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Pages — the registry, as live previews with their real numbers attached.
@@ -71,9 +71,12 @@ export default async function PagesScreen({
   searchParams: Promise<{ t?: string; a?: string }>;
 }) {
   const sp = await searchParams;
-  const tf = parseTimeframe(sp.t, SNAPSHOT_MONTHS);
+  // Pages is day-grain (config/adminNav.ts) — so it opens on 30d, not on
+  // the latest snapshot month.
+  const tf = parseTimeframe(sp.t, SNAPSHOT_MONTHS, "day");
   const bucket = bucketFor(tf);
   const label = timeframeLabel(tf, SNAPSHOT_MONTHS);
+  const resample = resampleNote(tf);
 
   const registry = buildPageRegistry();
   const cards = previewPlan(registry);
@@ -97,8 +100,22 @@ export default async function PagesScreen({
     prev ? computePageStats(paths, prev.since, prev.until, bucket, SCAN) : Promise.resolve(null),
   ]);
 
-  const sum = (r: PageStatsResult | null, k: "views" | "leads") =>
-    r ? Object.values(r.stats).reduce((a, s) => a + (s[k] ?? 0), 0) : null;
+  /**
+   * Total across every page — null, never 0, when the source could not be
+   * read.
+   *
+   * This was a real bug caught by an expired API token: the per-card figures
+   * correctly showed em-dashes while the KPI tile above them read "0 views",
+   * because `?? 0` inside a reduce turns "unknown" into "none" silently. A
+   * broken analytics read must never render as "this site got no traffic".
+   */
+  const sum = (r: PageStatsResult | null, k: "views" | "leads"): number | null => {
+    if (!r) return null;
+    if (k === "views" && (!r.analyticsConfigured || r.analyticsError)) return null;
+    const vals = Object.values(r.stats).map((s) => s[k]);
+    if (vals.length === 0 || vals.every((v) => v === null)) return null;
+    return vals.reduce<number>((a, v) => a + (v ?? 0), 0);
+  };
 
   const totalViews = sum(stats, "views");
   const totalLeads = sum(stats, "leads");
@@ -111,11 +128,11 @@ export default async function PagesScreen({
     now === null || before === null || before === 0 ? null : (now - before) / before;
 
   const conversion =
-    totalViews && totalLeads !== null && !stats?.leadsTruncated && totalViews > 0 && totalLeads <= totalViews
+    totalViews !== null && totalViews > 0 && totalLeads !== null && !stats?.leadsTruncated && totalLeads <= totalViews
       ? totalLeads / totalViews
       : null;
   const prevConversion =
-    prevViews && prevLeads !== null && prevViews > 0 && prevLeads <= prevViews
+    prevViews !== null && prevViews > 0 && prevLeads !== null && prevLeads <= prevViews
       ? prevLeads / prevViews
       : null;
 
@@ -134,6 +151,7 @@ export default async function PagesScreen({
         subtitle={
           <span className="inline-flex items-center gap-1.5">
             {registry.length} pages · {label}
+            {resample && <Chip tone="unknown">{resample}</Chip>}
             {stats?.analyticsError && <Chip tone="bad">analytics unreadable</Chip>}
             {stats && !stats.analyticsConfigured && <Chip tone="unknown">analytics not configured</Chip>}
             {stats?.leadsTruncated && <Chip tone="unknown">partial range</Chip>}
@@ -154,7 +172,13 @@ export default async function PagesScreen({
           label="Views"
           value={totalViews}
           delta={delta(totalViews, prevViews)}
-          note={`Vercel · ${label.toLowerCase()}`}
+          note={
+            stats?.analyticsError
+              ? "Vercel read failed — not zero traffic"
+              : !stats?.analyticsConfigured
+                ? "analytics not configured"
+                : `Vercel · ${label.toLowerCase()}`
+          }
           info="Raw pageviews from Vercel Web Analytics across every page in the registry. GA4 is not wired yet, so there is no second source to compare against."
         />
         <MetricTile
