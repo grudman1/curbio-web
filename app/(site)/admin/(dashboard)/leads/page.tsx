@@ -30,7 +30,7 @@ import { LeadFeedTable, type FeedRow, type FeedDetailSection } from "./LeadFeedT
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {
-  title: "Leads · Control Room — Curbio",
+  title: "Leads · Ops — Curbio",
   robots: { index: false, follow: false },
 };
 

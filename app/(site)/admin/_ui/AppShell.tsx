@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Sidebar } from "./Sidebar";
 import { AttributionToggle, Timeframe } from "./HeaderControls";
 
@@ -32,43 +31,42 @@ export function AppShell({
   signOut: () => Promise<void>;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-surface font-sans text-content [&_*:focus-visible]:outline-accent">
-      <header className="sticky top-0 z-header flex h-ops-header flex-none items-center gap-3 border-b border-edge bg-surface-raised px-4 md:px-6">
-        <Link href="/admin" className="flex flex-none items-baseline gap-2 whitespace-nowrap no-underline">
-          <span className="font-serif text-ops-title font-semibold text-content">Curbio</span>
-          <span className="hidden font-sans text-ops-micro font-bold uppercase text-content-subtle sm:inline">
-            Ops
-          </span>
-        </Link>
+    <div className="flex min-h-screen flex-col bg-surface font-sans text-content md:flex-row">
+      {/* The rail owns the logo now — it is the full-height navy element, so
+          the brand belongs at its top rather than floating in the content
+          header beside it. */}
+      <Sidebar leadCount={leadCount} />
 
-        {/* The controls cannot all fit at 375px, and shrinking them to fit
-            would make the timeframe unreadable — the one control that changes
-            what every number on screen means. So the cluster scrolls
-            horizontally instead, keeping each control at a legible size. */}
-        <div className="ml-auto flex min-w-0 items-center gap-2.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <span className="flex-none">
-            <Timeframe months={months} />
-          </span>
-          <span className="flex-none">
-            <AttributionToggle />
-          </span>
-          <span className="hidden whitespace-nowrap font-sans text-ops-label text-content-subtle lg:inline">
-            {user?.email}
-            {user?.role === "owner" && <span className="text-content-subtle"> · owner</span>}
-          </span>
-          <form action={signOut} className="flex-none">
-            <button
-              type="submit"
-              className="cursor-pointer whitespace-nowrap rounded-pill border border-edge bg-transparent px-3 py-[5px] font-sans text-ops-label font-bold text-content-muted transition-colors duration-base ease-out hover:border-content hover:text-content focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-            >
-              Sign out
-            </button>
-          </form>
-        </div>
-      </header>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-header flex h-ops-header flex-none items-center gap-3 border-b border-edge bg-surface-raised px-4 md:px-6">
+          {/* These govern EVERY screen at once, which is why they live here and
+              on no page. State is in the URL and is carried across every nav
+              link, so moving between screens never resets the timeframe. */}
+          <div className="flex min-w-0 items-center gap-2.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <span className="flex-none">
+              <Timeframe months={months} />
+            </span>
+            <span className="flex-none">
+              <AttributionToggle />
+            </span>
+          </div>
 
-      <div className="flex min-h-0 flex-1 flex-col items-stretch md:flex-row">
-        <Sidebar leadCount={leadCount} />
+          <div className="ml-auto flex flex-none items-center gap-2.5">
+            <span className="hidden whitespace-nowrap font-sans text-ops-label text-content-subtle lg:inline">
+              {user?.email}
+              {user?.role === "owner" && <span className="text-content-subtle"> · owner</span>}
+            </span>
+            <form action={signOut} className="flex-none">
+              <button
+                type="submit"
+                className="cursor-pointer whitespace-nowrap rounded-pill border border-edge bg-transparent px-3 py-[5px] font-sans text-ops-label font-bold text-content-muted transition-colors duration-base ease-out hover:border-content hover:text-content focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              >
+                Sign out
+              </button>
+            </form>
+          </div>
+        </header>
+
         <main className="min-w-0 flex-1 px-4 pb-24 pt-5 md:px-6">
           <div className="mx-auto max-w-[1440px]">{children}</div>
         </main>

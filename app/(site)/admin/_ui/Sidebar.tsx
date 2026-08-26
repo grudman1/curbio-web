@@ -3,117 +3,180 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { ADMIN_NAV, navHref, navItemFor } from "@/config/adminNav";
+import { ADMIN_NAV, ADMIN_NAV_PINNED, navItemFor, type NavGroup } from "@/config/adminNav";
 import { NavIcon } from "./NavIcon";
 
-// The one sidebar. Nav never changes shape — that is the point of collapsing
-// two shells into one.
+// ─────────────────────────────────────────────────────────────────────────────
+// THE sidebar. One rail for what used to be two apps.
 //
-// ACTIVE STATE IS NAVY, NOT AMBER. Inside /admin amber means "warning" and
-// nothing else (DECISIONS.md → "Amber is signal-only inside /admin"). A colour
-// that means both "behind" and "you are here" means neither.
+// Navy, matching app.curbio.com — the two tools should look like they came
+// from the same company, because they did. The navy is the BRAND token
+// (--color-surface-inverse → --navy), not a value copied off a mockup.
+//
+// NOTHING HERE LINKS OUT. Every item is an internal route rendering inside
+// this shell; there are no external hrefs, no target="_blank", no ↗ glyphs.
+//
+// Colour rules, from the app's chrome:
+//   idle    white at ~70%
+//   hover   full white on a subtly lighter navy
+//   active  full white, lighter navy, AMBER left edge
+//
+// Amber appears in exactly one place on this rail — the active indicator. It
+// is the one signal that survived the "amber is signal-only" rule inside
+// /admin because on a navy ground it is not competing with a warning tone;
+// nothing on this rail carries state.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function NavGroupBlock({
+  group,
+  activeHref,
+  withQuery,
+  onNavigate,
+  leadCount,
+}: {
+  group: NavGroup;
+  activeHref: string | null;
+  withQuery: (href: string) => string;
+  onNavigate: () => void;
+  leadCount?: number;
+}) {
+  return (
+    <div className="mt-5 first:mt-0">
+      <p className="m-0 mb-1.5 px-3 font-sans text-ops-micro font-bold uppercase text-white/45">
+        {group.title}
+      </p>
+      {group.items.map((item) => {
+        const isActive = activeHref === item.href;
+        return (
+          <Link
+            key={item.href}
+            href={withQuery(item.href)}
+            aria-current={isActive ? "page" : undefined}
+            onClick={onNavigate}
+            className={`relative flex h-ops-nav-item items-center gap-2.5 rounded-md px-3 font-sans text-ops-body no-underline transition-colors duration-base ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent ${
+              isActive
+                ? "bg-white/[0.10] font-bold text-white"
+                : "font-semibold text-white/70 hover:bg-white/[0.05] hover:text-white"
+            }`}
+          >
+            {isActive && (
+              <span aria-hidden className="absolute inset-y-[3px] left-0 w-[3px] rounded-sm bg-accent" />
+            )}
+            <span className={`inline-flex flex-none ${isActive ? "opacity-100" : "opacity-65"}`}>
+              <NavIcon name={item.icon} />
+            </span>
+            <span className="min-w-0 flex-1 truncate">{item.label}</span>
+            {item.tier === 1 && (
+              <span
+                title="Tier 1 — carries the number"
+                className="flex-none rounded-sm border border-white/30 px-1 font-sans text-[9px] font-bold leading-[14px] text-white/70"
+              >
+                T1
+              </span>
+            )}
+            {item.href === "/admin/leads" && leadCount !== undefined && (
+              <span className="flex-none rounded-pill bg-white/15 px-1.5 py-[1px] font-sans text-ops-micro font-bold tabular-nums text-white/80">
+                {leadCount}
+              </span>
+            )}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
 
 export function Sidebar({ leadCount }: { leadCount?: number }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
 
-  // Navigating keeps the header's timeframe and attribution state — the whole
-  // reason that state lives in the URL.
+  // Navigating carries the header's timeframe and attribution state — one
+  // global state that never resets as you move between screens.
   const qs = searchParams.toString();
   const withQuery = (href: string) => (qs ? `${href}?${qs}` : href);
   const active = navItemFor(pathname);
+  const close = () => setOpen(false);
+
+  const shared = { activeHref: active?.href ?? null, withQuery, onNavigate: close, leadCount };
 
   return (
     <>
       {/* Mobile: the drawer toggle, labelled with where you are. */}
-      <div className="sticky top-ops-header z-30 border-b border-edge bg-surface-raised md:hidden">
+      <div className="sticky top-0 z-40 flex items-center gap-2.5 bg-surface-inverse px-4 py-2.5 md:hidden">
+        <Link href={withQuery("/admin")} onClick={close} className="flex flex-none items-center" aria-label="Curbio Ops — Today">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo/curbio-white.svg" alt="Curbio" width={100} height={26} className="h-[22px] w-auto" />
+        </Link>
         <button
           type="button"
           aria-expanded={open}
           aria-controls="admin-nav"
           onClick={() => setOpen(!open)}
-          className="flex w-full cursor-pointer items-center gap-2.5 border-0 bg-transparent px-4 py-2.5 font-sans text-ops-body font-bold text-content"
+          className="ml-auto flex cursor-pointer items-center gap-2 rounded-md border-0 bg-white/10 px-2.5 py-1.5 font-sans text-ops-label font-bold text-white"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
             <path d="M1.5 3h11M1.5 7h11M1.5 11h11" />
           </svg>
-          {active?.label ?? "Admin"}
+          {active?.label ?? "Menu"}
         </button>
       </div>
 
       <nav
         id="admin-nav"
-        aria-label="Admin sections"
+        aria-label="Ops sections"
         className={`${
-          open ? "block" : "hidden"
-        } w-full flex-none border-b border-edge bg-surface-raised px-3 pb-4 md:sticky md:top-ops-header md:block md:max-h-[calc(100vh-var(--ops-header-h))] md:w-ops-sidebar md:self-start md:overflow-y-auto md:border-b-0 md:border-r md:bg-transparent md:px-3 md:pb-12 md:pt-4`}
+          open ? "flex" : "hidden"
+        } w-full flex-none flex-col bg-surface-inverse px-2.5 pb-4 md:sticky md:top-0 md:flex md:h-screen md:w-ops-sidebar md:self-start md:px-2.5 md:pb-4`}
       >
-        {ADMIN_NAV.map((group) => (
-          <div key={group.title} className="mt-4 first:mt-0">
-            {/* Group labels are the MAP, not a caption. At text-content-subtle
-                they read as grey noise and the structure of the nav
-                disappears — so they take the full content colour at bold,
-                with a hairline under them to make the grouping structural
-                rather than merely typographic. */}
-            <p className="m-0 mb-1.5 flex items-center gap-2 px-2.5 pb-1 font-sans text-ops-micro font-bold uppercase text-content">
-              <span className="flex-none">{group.title}</span>
-              <span aria-hidden className="h-px min-w-0 flex-1 bg-edge" />
-            </p>
-            {group.items.map((item) => {
-              const isActive = active?.href === item.href;
-              // navHref(), not item.href: a screen still living at its old
-              // /marketing route links THERE until it is ported. Nothing in
-              // this nav may 404 — a 404 from our own navigation is
-              // indistinguishable from a bug.
-              return (
-                <Link
-                  key={item.href}
-                  href={withQuery(navHref(item))}
-                  aria-current={isActive ? "page" : undefined}
-                  onClick={() => setOpen(false)}
-                  className={`relative flex h-ops-nav-item items-center gap-2.5 rounded-md px-2.5 font-sans text-ops-body no-underline transition-colors duration-base ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent ${
-                    isActive
-                      ? "bg-navy-08 font-bold text-content"
-                      : group.muted
-                        ? "font-semibold text-content-subtle hover:text-content-muted"
-                        : "font-semibold text-content-muted hover:text-content"
-                  }`}
-                >
-                  {/* Active rail: navy, not amber. */}
-                  {isActive && (
-                    <span aria-hidden className="absolute inset-y-1 left-0 w-[2.5px] rounded-sm bg-content" />
-                  )}
-                  <span className={`inline-flex flex-none ${isActive ? "opacity-100" : "opacity-70"}`}>
-                    <NavIcon name={item.icon} />
-                  </span>
-                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                  {/* Tier badge — the CEO's priority stack, visible in the nav
-                      so Tier 1 is never buried under what we happened to build
-                      first. Tier 1 only; badging all three would be noise. */}
-                  {item.tier === 1 && (
-                    <span
-                      title="Tier 1 — carries the number"
-                      className="flex-none rounded-sm border border-tone-good px-1 font-sans text-[9px] font-bold leading-[14px] text-tone-good"
-                    >
-                      T1
-                    </span>
-                  )}
-                  {item.externalHref && (
-                    <span title="not ported yet — opens the current screen" className="flex-none font-sans text-ops-micro text-content-subtle">
-                      ↗
-                    </span>
-                  )}
-                  {item.href === "/admin/leads" && leadCount !== undefined && (
-                    <span className="flex-none rounded-pill bg-navy-08 px-1.5 py-[1px] font-sans text-ops-micro font-bold tabular-nums text-content-muted">
-                      {leadCount}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        ))}
+        {/* Logo slot — the same asset the campaign landing pages use, so the
+            two surfaces are unmistakably one product. */}
+        {/* Carries the query like every other link: the logo goes to Today,
+            and going to Today must not silently reset the timeframe you were
+            reading everything else through. */}
+        <Link
+          href={withQuery("/admin")}
+          onClick={close}
+          aria-label="Curbio Ops — Today"
+          className="hidden h-ops-header flex-none items-center px-3 md:flex"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo/curbio-white.svg" alt="Curbio" width={108} height={28} className="h-[28px] w-auto" />
+        </Link>
+
+        <div className="min-h-0 flex-1 overflow-y-auto pt-1">
+          {ADMIN_NAV.map((g) => (
+            <NavGroupBlock key={g.title} group={g} {...shared} />
+          ))}
+        </div>
+
+        {/* Pinned. A destination you reach deliberately, not one you scan past. */}
+        <div className="flex-none border-t border-white/10 pt-2">
+          {ADMIN_NAV_PINNED.items.map((item) => {
+            const isActive = active?.href === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={withQuery(item.href)}
+                aria-current={isActive ? "page" : undefined}
+                onClick={close}
+                className={`relative flex h-ops-nav-item items-center gap-2.5 rounded-md px-3 font-sans text-ops-body no-underline transition-colors duration-base ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent ${
+                  isActive
+                    ? "bg-white/[0.10] font-bold text-white"
+                    : "font-semibold text-white/70 hover:bg-white/[0.05] hover:text-white"
+                }`}
+              >
+                {isActive && (
+                  <span aria-hidden className="absolute inset-y-[3px] left-0 w-[3px] rounded-sm bg-accent" />
+                )}
+                <span className={`inline-flex flex-none ${isActive ? "opacity-100" : "opacity-65"}`}>
+                  <NavIcon name={item.icon} />
+                </span>
+                <span className="min-w-0 flex-1 truncate">{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
       </nav>
     </>
   );

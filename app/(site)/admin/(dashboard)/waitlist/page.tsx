@@ -16,7 +16,7 @@ import { MUTED, Meta, Panel, SCAN, SUBTLE, Stat } from "../ui";
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {
-  title: "Waitlist · Control Room — Curbio",
+  title: "Waitlist · Ops — Curbio",
   robots: { index: false, follow: false },
 };
 
