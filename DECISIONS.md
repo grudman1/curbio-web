@@ -7,6 +7,85 @@ Newest first.
 
 ---
 
+## One tone scale in /admin, and `unknown` is not on it
+
+Three colour vocabularies had grown for the same four states:
+
+| where | vocabulary |
+|---|---|
+| `hubUi.tsx` `PACE_TONE` | on / behind / risk |
+| `hubUi.tsx` `STATUS_TONE` | live / partial / waiting |
+| `adminLeads.ts` `deliveryState` | ok / warn / fail / unknown |
+
+They resolve to the same three constants, so green already meant three
+different things depending on which panel you were looking at.
+
+**One scale, four tones, for every admin surface:**
+
+| tone | colour | pace | delivery | wiring |
+|---|---|---|---|---|
+| `good` | green | on pace | delivered | live |
+| `warn` | amber | behind | stored, CRM not configured | partial |
+| `bad` | red | under half pace | CRM failed | — |
+| `unknown` | **grey, dashed** | no data | never attempted | not wired |
+
+**`unknown` is never rendered on the good/warn/bad ramp.** It is grey, and its
+border is dashed. This is the honesty rule the lead reader already enforces in
+data — a lead predating the delivery hash is reported "unknown", never
+"failed" — expressed in colour so it survives a glance. A missing number and a
+bad number must not look alike.
+
+Corollary, and the reason `CHANNEL_COLORS` in `lib/channels.ts` already avoids
+these three hues: green/amber/red carry state meaning and nothing else.
+
+### Amber is signal-only inside /admin
+
+`WARN` is `--color-accent`, and amber was simultaneously the active-nav
+indicator, the rule under the Control Room `h1`, and button fills. A colour
+that means "behind" and "you are here" at once means neither.
+
+Inside `/admin`: nav active state is navy, the decorative rule under the title
+is gone, buttons keep amber (a button is not a status). Amber that is not on a
+button is a warning.
+
+**The public site is untouched.** Its amber is the brand accent and stays
+exactly as it is; this is an admin-shell rule only.
+
+Accessibility: amber never renders as small text on white. `warn` appears as a
+dot, or as a chip with `--color-accent-active` text on a tinted fill.
+
+## Vercel Web Analytics: aggregate is bucket-limited, count is not
+
+Verified against the live API 2026-08-25, because getting this wrong is silent.
+
+`visits/count` returns one total and has **no window limit** — a full year
+returns fine. `visits/aggregate` returns rows grouped by `by=` and is capped on
+**bucket count, not date range or plan retention**:
+
+| `by=` | max buckets | max span |
+|---|---|---|
+| `hour` | 168 | 7 days |
+| `day` | 62 | ~2 months |
+| `week` | 26 | ~6 months |
+| `month` | 13+ | 12 months+ |
+
+Over the cap it is a `400 invalid_group_by`, not a truncated result — the one
+merciful part of this API.
+
+Two traps worth the comment they get in the client:
+
+- **The date params are `since`/`until`.** `from`/`to` are silently ignored and
+  the API returns `200` with its own default window. Wrong params look like
+  success.
+- **`groupBy=` is silently ignored.** The parameter is `by=`. Passing
+  `groupBy=route` returns ungrouped totals with a `200`.
+
+Consequences encoded in the timeframe options: **90d cannot render daily
+points** (90 > 62), so its trend is 13 weekly buckets and the UI says so. Two
+dimensions in one call (`by=day&by=route`) is supported and returns the whole
+Pages table with trends in a single ~134 KB request — which is why there is no
+per-card fetch and no per-path fan-out.
+
 ## config/markets.ts is the only place a market is named
 
 Six lists had drifted. The Maryland market alone carried SEVEN spellings:
@@ -84,14 +163,21 @@ properties do not work in `@media` conditions — that is a spec limitation, not
 a build problem. The 14 existing widths stay as they are; consolidating them
 into a scale would shift layout on live pages.
 
-## Tailwind is configured but unused
+## Tailwind is the styling system for new work
 
-`tailwind.config.ts` is a complete, well-built config that **nothing consumes**.
-Zero Tailwind utility classes appear in any component; all styling is `lp-*`
-classes plus inline styles. Only `@tailwind base` (preflight) has any effect.
+Supersedes "Tailwind is configured but unused" (Phase 2), which was true when
+written and is now wrong: 68 files carry `className`, including the admin
+shell's buttons, and `tailwind.config.ts` has `colors`, `fontSize` and
+`spacing` extended against the token layer.
 
-Left in place because Phase 3's design work is expected to use it. Do not
-assume a value in that config is reflected anywhere in the rendered output.
+**New work uses Tailwind classes against the token theme, not inline `style`
+objects.** The Control Room and Marketing Hub were built with inline styles
+because Tailwind genuinely wasn't consumed yet; the admin redesign converts
+them as it touches them.
+
+Unchanged: the `lp-*` rules in `globals.css` are still left alone until the
+Phase 3 design lands, and are still replaced wholesale rather than migrated.
+That decision is about live revenue pages and this one does not touch it.
 
 ## Route tiers live in one config object
 

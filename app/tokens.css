@@ -148,4 +148,47 @@
   --z-header: 40;
   --z-sticky-bar: var(--z-sticky);
   --z-overlay: 200;
+
+  /* ── Operational layer (/admin only) ──────────────────────────────────
+     The --text-* scale above is EDITORIAL: body 16, small 14, metrics in
+     serif. That is right for the public site and wrong for an instrument
+     panel, where 13px sans is the workhorse and numbers must align in a
+     column. This layer is additive and admin-scoped — nothing public reads
+     it, and the editorial scale is unchanged.
+
+     Serif survives in exactly two places: the page title, and the ONE hero
+     number on Today. Every other number is sans with tabular figures. */
+  --ops-hero: 34px;        /* one number per screen, Today only */
+  --ops-title: 20px;       /* page title, serif */
+  --ops-metric: 24px;      /* MetricTile value, sans tabular */
+  --ops-panel: 13px;       /* panel heading — caps, was 18px serif */
+  --ops-body: 13px;        /* the workhorse */
+  --ops-table: 13px;
+  --ops-label: 12px;
+  --ops-micro: 11px;       /* column headers, eyebrows */
+
+  /* Density. Numbers, not adjectives — a 36px row at 13px/18px puts all 18
+     registry pages on screen without a scroll. */
+  --ops-row-h: 36px;
+  --ops-row-head-h: 32px;
+  --ops-panel-pad: 16px;
+  --ops-gap: 12px;
+  --ops-tile-h: 88px;
+  --ops-sidebar-w: 240px;
+  --ops-nav-item-h: 30px;
+  --ops-header-h: 52px;
+
+  /* ── Tone scale — see DECISIONS.md "One tone scale in /admin" ──────────
+     Four tones for pace, delivery and wiring alike. `unknown` is
+     deliberately NOT on the good/warn/bad ramp: a missing number and a bad
+     number must never look alike. Grey, and dashed at the border. */
+  --tone-good: var(--color-state-success);
+  --tone-warn: var(--color-accent);
+  --tone-bad: var(--color-state-error);
+  --tone-unknown: var(--color-text-subtle);
+
+  /* Amber fails AA as small text on white, so `warn` never renders as amber
+     text — it is a dot, or a chip whose TEXT is this darker step on a
+     tinted fill. */
+  --tone-warn-text: var(--color-accent-active);
 }

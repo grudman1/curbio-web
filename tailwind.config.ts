@@ -70,6 +70,19 @@ const config: Config = {
           info: "var(--color-state-info)",
         },
 
+        // ── /admin tone scale — DECISIONS.md "One tone scale in /admin" ──
+        // Four tones covering pace, delivery and wiring alike. `unknown` is
+        // NOT on the good/warn/bad ramp on purpose: a missing number must
+        // never look like a bad one. `warn-text` exists because amber fails
+        // AA as small text on white — warn is a dot or a tinted chip.
+        tone: {
+          good: "var(--tone-good)",
+          warn: "var(--tone-warn)",
+          bad: "var(--tone-bad)",
+          unknown: "var(--tone-unknown)",
+          "warn-text": "var(--tone-warn-text)",
+        },
+
         // ── primitives (legacy; see header) ──
         navy: {
           DEFAULT: "var(--navy)",
@@ -116,6 +129,19 @@ const config: Config = {
         small: ["var(--text-small)", { lineHeight: "var(--leading-body)" }],
         label: ["var(--text-label)", { lineHeight: "var(--leading-heading)", letterSpacing: "var(--tracking-label)" }],
         micro: ["var(--text-micro)", { lineHeight: "var(--leading-heading)" }],
+
+        // ── operational scale (/admin) ──
+        // The scale above is editorial. This one is for a tool that gets
+        // scanned for thirty seconds: 13px sans is the workhorse, and every
+        // numeric class carries tabular figures so columns align.
+        "ops-hero": ["var(--ops-hero)", { lineHeight: "1.02", letterSpacing: "var(--tracking-heading)" }],
+        "ops-title": ["var(--ops-title)", { lineHeight: "1.15", letterSpacing: "var(--tracking-heading)" }],
+        "ops-metric": ["var(--ops-metric)", { lineHeight: "1.1", letterSpacing: "-0.01em" }],
+        "ops-panel": ["var(--ops-panel)", { lineHeight: "1.2", letterSpacing: "0.08em" }],
+        "ops-body": ["var(--ops-body)", { lineHeight: "1.45" }],
+        "ops-table": ["var(--ops-table)", { lineHeight: "1.35" }],
+        "ops-label": ["var(--ops-label)", { lineHeight: "1.3" }],
+        "ops-micro": ["var(--ops-micro)", { lineHeight: "1.2", letterSpacing: "0.1em" }],
       },
       fontWeight: {
         regular: "var(--weight-regular)",
@@ -137,6 +163,16 @@ const config: Config = {
         16: "var(--space-16)",
         20: "var(--space-20)",
         24: "var(--space-24)",
+
+        // ── /admin density ──
+        "ops-row": "var(--ops-row-h)",
+        "ops-row-head": "var(--ops-row-head-h)",
+        "ops-panel": "var(--ops-panel-pad)",
+        "ops-gap": "var(--ops-gap)",
+        "ops-tile": "var(--ops-tile-h)",
+        "ops-sidebar": "var(--ops-sidebar-w)",
+        "ops-nav-item": "var(--ops-nav-item-h)",
+        "ops-header": "var(--ops-header-h)",
       },
       borderRadius: {
         sm: "var(--radius-sm)",
