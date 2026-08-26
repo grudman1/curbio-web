@@ -7,6 +7,65 @@ Newest first.
 
 ---
 
+## The Magnificent Seven and the nine channels are different axes
+
+The CEO memo names seven channels. `lib/channels.ts` holds a closed list of
+nine. These are NOT the same taxonomy and collapsing them breaks both.
+
+| Magnificent Seven | nine-channel list |
+|---|---|
+| 1. Direct Email | `email` (+ the opt-in/cold split, a VIEW not a channel) |
+| 2. Partnerships | `partnership` |
+| 3. Super Agents & Teams | `hsm_field` |
+| 4. Paid | **three** — `paid_search`, `paid_social`, `creator` |
+| 5. Organic | `organic` |
+| 6. Events | **none** — attributed by campaign code |
+| 7. Content | **none** — an input to the other six |
+
+And in the other direction `referral` and `direct` belong to no channel of the
+Seven. `direct` is the unattributed bucket, which is the number the whole
+attribution effort exists to shrink — a structure spined only on the Seven
+orphans the most important measurement concept in the system.
+
+**The Seven is the PLANNING taxonomy** — tiers, owners, budgets, targets, the
+monthly review agenda. **The Nine is the MEASUREMENT taxonomy** — what a lead
+can actually be tagged with at the boundary. The strategy doc keeps them apart
+too: "the report that runs the budget" is sliced by *channel* × market, using
+the closed nine-value list, and `CHANNEL_FUNNEL_ORDER` is nine long for the
+same reason.
+
+So the admin navigation is grouped by the Seven (that is how the business is
+planned and reviewed) while every number underneath is computed on the Nine
+(that is what the data can honestly support). Two screens carry an explicit
+label saying their attribution does not work like the others:
+
+- **Events** — `attributed by campaign code, not channel`. Without call
+  tracking and event-specific codes every event lead lands as `direct`.
+- **Content** — `measured on other channels' screens`. Content has no channel
+  value because it is raw material the other six spend.
+
+Content keeps a nav row despite never showing a lead count of its own. The CEO
+wrote seven; a dashboard showing six invites "where did the seventh go?" at
+every monthly review, which is a worse conversation than a row reading `—`.
+
+## The SITE group expires at cutover — trigger, not vibes
+
+Pages and Experiments sit in their own `SITE` group even though the website is
+Organic, one channel out of seven, Tier 2. That is deliberate and TEMPORARY.
+
+A migration in flight needs its own surface; a steady-state channel does not.
+The curbio.com replatform is IN FLIGHT and carries a checklist with a
+legal-blocking item (`/privacy-policy`, linked from the TCPA consent text on
+every lead form). While that is true, the site is a project. After it lands,
+the site is a channel.
+
+**The trigger is a specific state, not a feeling:** when every box in the
+Cutover checklist at the foot of this file is checked, `SITE_GROUP_ACTIVE` in
+`config/adminNav.ts` flips to `false`. Pages and Experiments move under
+Organic and the group disappears. The flag exists so this is one edit rather
+than a judgement call that never gets made — a temporary group with no expiry
+condition is a permanent group.
+
 ## One tone scale in /admin, and `unknown` is not on it
 
 Three colour vocabularies had grown for the same four states:
