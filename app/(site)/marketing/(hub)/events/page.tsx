@@ -1,27 +1,52 @@
 import type { Metadata } from "next";
 import { Meta, MUTED, Panel, Stat, SUBTLE } from "@/app/(site)/admin/(dashboard)/ui";
 import { EVENT_FORMATS, HUB_SURFACE_BY_SLUG } from "@/config/marketingHub";
-import { ConsequenceNote, DASH, DefinitionsNote, EmptyLog, HubPageHeader, NeedsBlock } from "../hubUi";
+import { ownerSession } from "@/lib/adminGuards";
+import { readOpsEvents, type OpsEvent } from "@/lib/opsEvents";
+import { ConsequenceNote, DASH, DefinitionsNote, HubPageHeader, NeedsBlock } from "../hubUi";
+import { EventLog } from "./EventLog";
 
 export const metadata: Metadata = {
   title: "Events · Marketing — Curbio",
   robots: { index: false, follow: false },
 };
 
+export const dynamic = "force-dynamic";
+
 const surface = HUB_SURFACE_BY_SLUG.events;
 
-export default function EventsPage() {
+export default async function EventsPage() {
+  const [result, session] = await Promise.all([readOpsEvents(), ownerSession()]);
+  const isOwner = !!session;
+
+  const all: OpsEvent[] = result.configured ? result.records : [];
+  const events = all
+    .filter((e) => !e.archived)
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const archived = all.filter((e) => e.archived);
+
+  const byFormat = new Map<string, number>();
+  for (const e of events) byFormat.set(e.format, (byFormat.get(e.format) ?? 0) + 1);
+
   return (
     <>
       <HubPageHeader surface={surface} />
 
       {/* ── counts by format ── */}
       <div style={{ marginBottom: "var(--space-4)" }}>
-        <Panel title="Events by format" right={<Meta>this quarter</Meta>}>
+        <Panel title="Events by format" right={<Meta>all logged events</Meta>}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "20px 32px" }}>
-            {EVENT_FORMATS.map((f) => (
-              <Stat key={f} label={f.replace("_", " ")} value={DASH} tone={SUBTLE} />
-            ))}
+            {EVENT_FORMATS.map((f) => {
+              const n = byFormat.get(f) ?? 0;
+              return (
+                <Stat
+                  key={f}
+                  label={f.replace("_", " ")}
+                  value={n === 0 ? DASH : String(n)}
+                  tone={SUBTLE}
+                />
+              );
+            })}
           </div>
           <p
             style={{
@@ -42,24 +67,22 @@ export default function EventsPage() {
 
       {/* ── the event log ── */}
       <Panel title="Event log" right={<Meta>invited → registered → attended → leads</Meta>}>
-        <EmptyLog
-          columns={[
-            "Event",
-            "Format",
-            "Market",
-            "Date",
-            "Invited",
-            "Registered",
-            "Attended",
-            "Leads",
-            "Cost per attendee",
-          ]}
-          fedBy="the event log store and event_rsvp submissions from /api/intake"
-        />
+        {!result.configured && (
+          <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-small)", color: SUBTLE, margin: "0 0 12px" }}>
+            Ops store not configured — the log is read-only.
+          </p>
+        )}
+        {result.configured && result.error && (
+          <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-small)", color: "var(--color-state-error)", margin: "0 0 12px" }} role="alert">
+            Store read failed: {result.error}
+          </p>
+        )}
+        <EventLog events={events} archived={archived} isOwner={isOwner && result.configured} />
         <ConsequenceNote>
           Events without call tracking land as {`“`}direct{`”`} — the follow-up
           estimate request happens days later, on a typed-in URL, and nothing connects it
-          back to the room it started in.
+          back to the room it started in. The campaign code on each record is what closes
+          that gap.
         </ConsequenceNote>
       </Panel>
 

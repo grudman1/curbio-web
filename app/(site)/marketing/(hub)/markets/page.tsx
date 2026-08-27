@@ -17,6 +17,9 @@ import {
   SNAPSHOT_MONTHS,
 } from "@/config/appLeadsSnapshot";
 import { Meta, MUTED, Panel, SUBTLE } from "@/app/(site)/admin/(dashboard)/ui";
+import { ownerSession } from "@/lib/adminGuards";
+import { readOpsNotes, type OpsNote } from "@/lib/opsNotes";
+import { NotesPanel } from "../notes/NotesPanel";
 import { monthsFor, parseAttribution, parseTimeframe, timeframeLabel, timeframeParam } from "../timeframe";
 import { paceRead, paceSentence } from "../pacing";
 import { DASH, DefinitionsNote, HubPageHeader, NeedsBlock, PACE_TONE, td, tdDash, th } from "../hubUi";
@@ -65,6 +68,8 @@ function MixBar({ shares }: { shares: { channel: string; frac: number }[] }) {
   );
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function MarketsPage({
   searchParams,
 }: {
@@ -79,6 +84,19 @@ export default async function MarketsPage({
   const target = QUALIFIED_TARGET_PER_MARKET_PER_MONTH * months.length;
   const firstTouch = mode === "first";
   const linkQuery = `t=${timeframeParam(tf)}${firstTouch ? "&a=first" : ""}`;
+
+  // Notes hang off market slugs — one read for the whole screen, grouped
+  // below, rather than a fetch per market panel.
+  const [notesResult, session] = await Promise.all([readOpsNotes(), ownerSession()]);
+  const isOwner = !!session;
+  const notesByMarket = new Map<string, OpsNote[]>();
+  if (notesResult.configured) {
+    for (const n of notesResult.records) {
+      if (n.archived || n.subjectType !== "market") continue;
+      notesByMarket.set(n.subjectId, [...(notesByMarket.get(n.subjectId) ?? []), n]);
+    }
+    for (const list of notesByMarket.values()) list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
 
   const rowKeys: { key: string; label: string; sub?: string }[] = MARKETS.map((m) => ({
     key: m.slug,
@@ -189,6 +207,43 @@ export default async function MarketsPage({
         </p>
         <DefinitionsNote />
       </Panel>
+
+      {/* ── notes per market — claimed context beside the measured numbers ── */}
+      <div style={{ marginTop: "var(--space-4)" }}>
+        <Panel title="Market notes" right={<Meta>logged · author and date on every line</Meta>}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: "var(--space-4)",
+            }}
+          >
+            {MARKETS.map((m) => (
+              <div key={m.slug}>
+                <div
+                  style={{
+                    fontFamily: "var(--font-family-sans)",
+                    fontSize: "var(--text-small)",
+                    fontWeight: 700,
+                    marginBottom: 6,
+                  }}
+                >
+                  {m.name}
+                </div>
+                <NotesPanel
+                  subjectType="market"
+                  subjectId={m.slug}
+                  notes={notesByMarket.get(m.slug) ?? []}
+                  isOwner={isOwner && notesResult.configured}
+                  revalidate="/marketing/markets"
+                  emptyHint="No notes yet."
+                />
+              </div>
+            ))}
+          </div>
+        </Panel>
+      </div>
+
       <NeedsBlock surface={surface} />
     </>
   );

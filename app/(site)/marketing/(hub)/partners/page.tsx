@@ -30,7 +30,7 @@ export default async function PartnersPage() {
   const [result, session] = await Promise.all([readOpsPartners(), ownerSession()]);
   const isOwner = !!session;
 
-  const partners = result.configured ? result.partners : [];
+  const partners: Partner[] = result.configured ? result.records : [];
   const active = partners.filter((p) => !p.archived);
   const archived = partners.filter((p) => p.archived);
 

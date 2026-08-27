@@ -438,6 +438,16 @@ The convention that carries the decision:
   silently gone. Every write stamps who and when, and appends to a capped
   audit list (`ops:<object>:audit:v1`).
 
+The plumbing lives in `lib/opsStore.ts` and is written ONCE — Partner
+established the pattern, and Outreach, Event, Note and Spend inherit it
+rather than copying it. An object is a type plus its validation; the store
+discipline is not re-implemented per object, so it cannot drift per object.
+
+Notes attach to ops records, markets and leads. A note on a lead points at
+the lead's id FROM the ops store and never writes to the lead record — an
+editable field inside a measurement is exactly what the two-store rule
+exists to prevent.
+
 ## Test leads carry the `TEST` name prefix
 
 Every intentional test submission uses a name starting with `TEST ` and a
