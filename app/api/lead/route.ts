@@ -371,9 +371,9 @@ export async function POST(req: Request) {
       utmSource: payload.utm_source,
       utmMedium: payload.utm_medium,
       utmCampaign: payload.utm_campaign,
-      entryPoint: payload.entryPoint,
-      medium: payload.medium,
-      firstTouchChannel: payload.firstTouchChannel,
+      utmContent: payload.utm_content,
+      origin: payload.entryPoint,
+      leadSource: payload.firstTouchChannel,
       firstTouchCampaign: payload.firstTouchCampaign,
     };
     console.log("[lead] posting to CRM", logCtx); // payload itself is PII — never log it
