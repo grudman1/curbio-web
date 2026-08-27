@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { ADMIN_NAV, ADMIN_NAV_PINNED, navItemFor, type NavGroup } from "@/config/adminNav";
+import { ADMIN_NAV, navItemFor, type NavGroup } from "@/config/adminNav";
 import { NavIcon } from "./NavIcon";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -150,33 +150,6 @@ export function Sidebar({ leadCount }: { leadCount?: number }) {
           ))}
         </div>
 
-        {/* Pinned. A destination you reach deliberately, not one you scan past. */}
-        <div className="flex-none border-t border-white/10 pt-2">
-          {ADMIN_NAV_PINNED.items.map((item) => {
-            const isActive = active?.href === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={withQuery(item.href)}
-                aria-current={isActive ? "page" : undefined}
-                onClick={close}
-                className={`relative flex h-ops-nav-item items-center gap-2.5 rounded-md px-3 font-sans text-ops-body no-underline transition-colors duration-base ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent ${
-                  isActive
-                    ? "bg-white/[0.10] font-bold text-white"
-                    : "font-semibold text-white/70 hover:bg-white/[0.05] hover:text-white"
-                }`}
-              >
-                {isActive && (
-                  <span aria-hidden className="absolute inset-y-[3px] left-0 w-[3px] rounded-sm bg-accent" />
-                )}
-                <span className={`inline-flex flex-none ${isActive ? "opacity-100" : "opacity-65"}`}>
-                  <NavIcon name={item.icon} />
-                </span>
-                <span className="min-w-0 flex-1 truncate">{item.label}</span>
-              </Link>
-            );
-          })}
-        </div>
       </nav>
     </>
   );

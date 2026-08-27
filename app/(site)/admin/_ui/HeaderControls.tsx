@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { grainFor } from "@/config/adminNav";
+import { InfoPopover } from "./InfoPopover";
 import { monthLabel, parseAttribution, parseTimeframe, timeframeParam, type AttributionMode } from "./timeframe";
 
 // The controls that govern EVERY screen: timeframe and attribution mode. They
@@ -76,6 +77,7 @@ export function AttributionToggle() {
   }
 
   return (
+    <span className="inline-flex flex-none items-center gap-1.5">
     <div role="group" aria-label="Attribution mode" className="inline-flex flex-none overflow-hidden rounded-pill border border-edge">
       {([
         { key: "first", label: "First-touch", short: "First" },
@@ -98,5 +100,24 @@ export function AttributionToggle() {
         );
       })}
     </div>
+    {/* The first-vs-last explanation lives HERE — on the control that raises
+        the question — rather than as a paragraph on every screen that happens
+        to show attributed numbers. */}
+    <InfoPopover label="First-touch vs last-touch" align="right">
+      <p className="m-0 mb-2">
+        <strong className="font-bold text-content">Last touch</strong> credits the channel of the
+        final visit before the event — the channel that closed.
+      </p>
+      <p className="m-0 mb-2">
+        <strong className="font-bold text-content">First touch</strong> credits the channel that
+        introduced the contact — the channel that opened.
+      </p>
+      <p className="m-0">
+        They disagree whenever one channel opens a relationship and another closes it. The app&apos;s
+        first-touch fields are empty today, so first-touch views render em-dashes rather than
+        guesses.
+      </p>
+    </InfoPopover>
+    </span>
   );
 }

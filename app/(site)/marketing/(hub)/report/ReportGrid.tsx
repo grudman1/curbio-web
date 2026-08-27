@@ -11,12 +11,11 @@ import {
   REPORT_METRICS,
   ROW_DIMENSIONS,
   type ReportMetricKey,
-  type RowDimension,
-} from "@/config/marketingHub";
+  type RowDimension, DEFINITIONS_LINE } from "@/config/marketingHub";
 import type { Channel } from "@/lib/channels";
 import type { SnapshotAggregates, SourceBreakdownRow, CellAggregate } from "@/config/appLeadsSnapshot";
 import type { AttributionMode } from "../timeframe";
-import { DASH, DefinitionsNote, OutlineBar, td, th } from "../hubUi";
+import { DASH, OutlineBar, td, th } from "../hubUi";
 
 // The grid: rows × channel columns, ONE metric at a time — nine columns × six
 // numbers is a spreadsheet, not a view. Rows and metric are page-local
@@ -289,7 +288,15 @@ export function ReportGrid({
         </label>
       </div>
 
-      {/* ── what the current view means — the thing people misread ── */}
+      {/* PROSE BUDGET. This was five paragraphs before the first number:
+          what a cell means, last vs first touch, the email-split caveat, the
+          first-touch-empty caveat, the snapshot provenance, and the
+          Qualified/Engaged definitions.
+
+          Every one of those facts still ships. One line stays visible because
+          it changes how the grid is READ; the rest is a disclosure, and the
+          first-vs-last explanation moved to the ⓘ on the attribution toggle
+          in the header, which is the control that raises the question. */}
       <p
         style={{
           fontFamily: "var(--font-family-sans)",
@@ -297,29 +304,62 @@ export function ReportGrid({
           color: MUTED,
           margin: "0 0 4px",
           maxWidth: 860,
-          lineHeight: 1.6,
+          lineHeight: 1.5,
         }}
       >
         Each cell is <strong>{metricLabel}</strong> for that{" "}
         {rowDim === "market" ? "market" : "HSM"} from that channel, by{" "}
-        <strong>{modeLabel}</strong> attribution. Last touch credits the channel of the
-        final visit before the event — the channel that closed. First touch credits the
-        channel that introduced the contact — the channel that opened. The two disagree
-        whenever one channel opens a relationship and another closes it.
-        {emailSplit &&
-          " The email split is a view resolved from the source webhook (ActiveCampaign = opt-in, Instantly = cold), not a separate channel — those webhooks don't exist yet, so the split columns render em-dashes."}
-        {mode === "first" &&
-          " The app's first-touch fields are empty (verified against its attribution export), so first-touch views render em-dashes until the contact store exists."}
-        {rowDim === "market" && mode === "last" && (
-          <>
-            {" "}Populated numbers cover <strong>{tfLabel}</strong>, Qualified-side only,
-            from a one-time <strong>{snapshotLabel}</strong> — a point-in-time export, not
-            a live sync. Channel attribution is the app&apos;s referral source,
-            conservatively mapped; everything ambiguous is counted as direct.
-          </>
-        )}
+        <strong>{modeLabel}</strong> attribution.
       </p>
-      <DefinitionsNote />
+
+      <details style={{ margin: "0 0 4px", maxWidth: 860 }}>
+        <summary
+          style={{
+            cursor: "pointer",
+            listStyle: "none",
+            fontFamily: "var(--font-family-sans)",
+            fontSize: "var(--text-micro)",
+            fontWeight: 700,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: SUBTLE,
+          }}
+        >
+          Why this number?
+        </summary>
+        <div
+          style={{
+            marginTop: 8,
+            fontFamily: "var(--font-family-sans)",
+            fontSize: "var(--text-label)",
+            color: MUTED,
+            lineHeight: 1.6,
+          }}
+        >
+          <p style={{ margin: "0 0 8px" }}>{DEFINITIONS_LINE}</p>
+          {emailSplit && (
+            <p style={{ margin: "0 0 8px" }}>
+              The email split is a view resolved from the source webhook (ActiveCampaign =
+              opt-in, Instantly = cold), not a separate channel — those webhooks don&apos;t
+              exist yet, so the split columns render em-dashes.
+            </p>
+          )}
+          {mode === "first" && (
+            <p style={{ margin: "0 0 8px" }}>
+              The app&apos;s first-touch fields are empty (verified against its attribution
+              export), so first-touch views render em-dashes until the contact store exists.
+            </p>
+          )}
+          {rowDim === "market" && mode === "last" && (
+            <p style={{ margin: 0 }}>
+              Populated numbers cover <strong>{tfLabel}</strong>, Qualified-side only, from a
+              one-time <strong>{snapshotLabel}</strong> — a point-in-time export, not a live
+              sync. Channel attribution is the app&apos;s referral source, conservatively
+              mapped; everything ambiguous is counted as direct.
+            </p>
+          )}
+        </div>
+      </details>
 
       {/* ── the grid ── */}
       <div style={{ marginTop: "var(--space-4)" }}>
