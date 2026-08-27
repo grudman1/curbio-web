@@ -1,9 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
-import { SESSION_COOKIE, openSession } from "@/lib/adminSession";
-import { getSessionUser, sessionSecret } from "@/lib/adminAuth";
+import { ownerSession } from "@/lib/adminGuards";
 import {
   assembleTrackedUrl,
   campaignError,
@@ -18,16 +16,11 @@ import { VALID_CHANNELS, type Channel } from "@/lib/channels";
 import { MARKET_BY_SLUG } from "@/config/markets";
 
 // Save writes a row; it does not publish anything anywhere. The middleware
-// already gates POSTs to /marketing/*, and requireAdmin() re-checks the
-// session here — the same defense-in-depth rule the Control Room actions
-// follow: display gating is never the security boundary.
-
-async function requireAdmin(): Promise<void> {
-  const jar = await cookies();
-  const opened = await openSession(jar.get(SESSION_COOKIE)?.value, sessionSecret());
-  const user = opened ? await getSessionUser(opened.sid) : null;
-  if (!user) throw new Error("not signed in");
-}
+// already gates POSTs to /marketing/*, and ownerSession() (lib/adminGuards.ts)
+// re-checks the session here — the same defense-in-depth rule every mutation
+// follows: display gating is never the security boundary. This used to be a
+// signed-in-only check, which let any approved member write registry rows;
+// writes are owner-gated now, everywhere, by the one shared guard.
 
 export type SaveLinkInput = {
   /** Present when editing an existing registry row. */
@@ -50,11 +43,7 @@ export type SaveLinkInput = {
 export type SaveLinkResult = { ok: true; id: string } | { ok: false; error: string };
 
 export async function saveLinkAction(input: SaveLinkInput): Promise<SaveLinkResult> {
-  try {
-    await requireAdmin();
-  } catch {
-    return { ok: false, error: "Not signed in." };
-  }
+  if (!(await ownerSession())) return { ok: false, error: "Owner access required." };
 
   // ── validate — the same rules the builder shows live ─────────────────────
   const label = input.label.trim();

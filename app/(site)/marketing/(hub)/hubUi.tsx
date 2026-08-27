@@ -89,7 +89,7 @@ export function NeedsBlock({ surface }: { surface: HubSurface }) {
           color: SUBTLE,
         }}
       >
-        {surface.needs.length} things needed
+        {surface.needs.length} {surface.needs.length === 1 ? "thing" : "things"} needed
       </summary>
       <ol
         style={{
