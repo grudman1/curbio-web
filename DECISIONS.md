@@ -7,6 +7,103 @@ Newest first.
 
 ---
 
+## PII masking is role-gated, not absolute
+
+`lib/adminLeads.ts` masked every identity at the MODULE BOUNDARY: `maskEmail`,
+`maskPhone`, `maskName` were the only way to read a lead, so nothing rendered
+under `/admin` could show a full record. That was deliberate and the reasoning
+still holds — the page stays safe to screenshot, share in a ticket, or leave
+open on a laptop, and unmasking should be a decision rather than a default.
+
+**What was wrong with it:** the boundary applied to everyone, so the owner —
+accountable for the data, on a READ-ONLY view, already able to read the store
+directly with a Redis client — could not read the record they own. The masking
+was not protecting anything from that person; it was only making them go
+around it.
+
+Masking is now decided by ROLE, from the server-derived session:
+
+    owner      full email, full name, full phone on the expanded record
+    everyone   masked, exactly as before
+
+Three properties keep this honest:
+
+- The role comes from `currentAdminUser()` reading the signed session cookie —
+  never a prop, never a query param, never client state.
+- The visibility argument DEFAULTS TO MASKED, so a caller that forgets it
+  fails closed rather than leaking.
+- Nothing about the read-only credential changes. This widens what one role can
+  SEE; it does not widen what anything can DO.
+
+The list view stays masked for every role. Only the expanded record unmasks,
+so a shoulder-surfed screen or an accidental screenshot of the feed still
+carries nothing.
+
+## Waitlist signups live in two stores, split by date
+
+Not drift — history, and the count that disagreed was reading only half of it.
+
+    leads:v1        waitlist submissions written BEFORE 2026-08-20. They went
+                    into the lead store and WERE posted to the CRM, which
+                    answered 404 (a waitlist entry has no market to match).
+    waitlist:leads  every signup since commit 4169ad8 split them out.
+                    Authoritative going forward.
+
+Neither store alone answers "how many waitlist signups are there", so the
+Leads filter chip counts both and the waitlist view renders both, with the
+pre-split rows marked `legacy`. The chip previously showed only the new store
+while the feed showed only the old ones, which is how one screen managed to
+state two different numbers for the same thing.
+
+## Expected non-delivery is not a delivery failure
+
+A waitlist entry has no market, so the CRM has nothing to match and rejects
+it. Nothing failed. Counting that as a failure made a working system look
+broken and put a red number on the top-line tile — the same category error the
+tone scale exists to prevent: this is `unknown`, not `bad`.
+
+`expectedNonDelivery()` in `lib/adminLeads.ts` is the single place that
+judgement is made, so the tiles, the row chips and the alert banner cannot
+disagree. It is deliberately narrow — it returns a reason only when the record
+PROVES one — because wrongly calling a real failure "expected" is a lost lead
+nobody chases. Two cases qualify today:
+
+- `source === "waitlist"` — no market by design.
+- a **404** on a lead carrying **no market** — the CRM had no destination.
+  Narrowed to 404 specifically: a 5xx or an auth failure on a marketless lead
+  is still a real failure.
+
+The alert banner skips these too, or it would report historical waitlist 404s
+as live incidents on every page load.
+
+## The market source was never recorded, and cannot be reconstructed
+
+`resolveMarket()` returns exactly five sources — `param` (a `?market=` campaign
+link), `zip` (visitor-entered), `geo` (Vercel IP headers), `out-of-area`, and
+`none` — and it computes that at page render and **throws it away**. The form
+posts `market` and never the reason.
+
+So for every lead already in the store, which signal decided the market is
+genuinely unrecoverable, and `lib/marketSignals.ts` reports `unknown` rather
+than inferring one. Two signals agreeing does not prove which the resolver
+used, and a fabricated provenance is worse than an absent one.
+
+Corrections to the guessed enum, because they change what the field can claim:
+
+- `campaign` and `url_param` are the SAME signal. Nothing parses a campaign
+  name for a market; the campaign sets `?market=<slug>`, and that is `param`.
+- `operator_api` is not a source. Every branch calls it to ENRICH the match
+  (HSM, CRM market name); none lets it decide.
+- `manual` does not exist — the attribution spec lists rep-created leads as a
+  door that is NOT BUILT.
+
+What IS recoverable retroactively is which signals were PRESENT and whether
+they DISAGREED — a campaign naming Atlanta on a lead whose market is Seattle
+is visible in the stored record. That half is the half that catches real
+problems, and it works on history.
+
+`marketSource` is persisted from now on.
+
 ## The Magnificent Seven and the nine channels are different axes
 
 The CEO memo names seven channels. `lib/channels.ts` holds a closed list of

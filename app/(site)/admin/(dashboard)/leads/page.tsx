@@ -5,12 +5,17 @@ import {
   maskName,
   maskPhone,
   deliveryState,
+  piiVisibilityForRole,
+  type PiiVisibility,
   type LeadRow,
 } from "@/lib/adminLeads";
 import { Chip, FAIL, MUTED, Meta, OK, Panel, SCAN, SUBTLE, Stat, WARN } from "../ui";
 import { LeadFeedTable, type FeedRow, type FeedDetailSection } from "./LeadFeedTable";
 import { readRecentWaitlist } from "@/lib/adminWaitlist";
 import { FilterChips } from "../../_ui/FilterChips";
+import { readMarketSource } from "@/lib/marketSignals";
+import { marketSourceSection } from "./marketSourceSection";
+import { currentAdminUser } from "../../_ui/session";
 import { WaitlistPanel } from "./WaitlistPanel";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -42,7 +47,10 @@ type Aggregates = {
   last24h: number;
   last7d: number;
   delivered: number;
+  /** REAL failures only — a lead that should have delivered and didn't. */
   failed: number;
+  /** Never going to reach the CRM by design. Off the good/warn/bad ramp. */
+  expected: number;
   storedOnly: number;
   unknown: number;
   verified: number;
@@ -60,6 +68,7 @@ function aggregate(rows: LeadRow[]): Aggregates {
     last7d: 0,
     delivered: 0,
     failed: 0,
+    expected: 0,
     storedOnly: 0,
     unknown: 0,
     verified: 0,
@@ -75,10 +84,14 @@ function aggregate(rows: LeadRow[]): Aggregates {
       if (now - t < DAY) a.last24h++;
       if (now - t < 7 * DAY) a.last7d++;
     }
+    // One judgement, made in lib/adminLeads.ts, so the tiles, the row chips
+    // and the alert banner cannot disagree about what counts as broken.
     const d = row.delivery;
-    if (!d) a.unknown++;
-    else if (d.crmAttempted && d.crmOk) a.delivered++;
-    else if (d.crmAttempted && !d.crmOk) a.failed++;
+    const st = deliveryState(d, row.lead);
+    if (st.tone === "ok") a.delivered++;
+    else if (st.tone === "fail") a.failed++;
+    else if (st.reason) a.expected++;
+    else if (!d) a.unknown++;
     else a.storedOnly++;
 
     const v = row.lead.referralSourceVerified;
@@ -126,7 +139,7 @@ const v = (x: string | number | null | undefined) =>
   x === null || x === undefined || x === "" ? "—" : String(x);
 const yn = (x: boolean) => (x ? "yes" : "no");
 
-function detailSections({ lead, delivery }: LeadRow): FeedDetailSection[] {
+function detailSections({ lead, delivery }: LeadRow, pii: PiiVisibility): FeedDetailSection[] {
   const verified =
     lead.referralSourceVerified === undefined
       ? "untagged (pre-tag)"
@@ -140,13 +153,20 @@ function detailSections({ lead, delivery }: LeadRow): FeedDetailSection[] {
       fields: [
         { label: "Lead ID", value: v(lead.leadId) },
         { label: "Submitted (UTC)", value: v(lead.submittedAt) },
-        { label: "Email", value: maskEmail(lead.email) },
-        { label: "Phone", value: maskPhone(lead.phone) },
+        // Full name for the owner, masked for everyone else — the list column
+        // above stays masked for every role.
+        { label: "Name", value: maskName(lead, pii) },
+        { label: "Email", value: maskEmail(lead.email, pii) },
+        { label: "Phone", value: maskPhone(lead.phone, pii) },
         { label: "ZIP", value: v(lead.zip) },
         { label: "Detected location", value: v(detected) },
         { label: "Variant", value: v(lead.variant) },
       ],
     },
+    // WHICH SIGNAL decided the market, and what the others said. For leads
+    // written before marketSource was persisted this reports `unknown` rather
+    // than inferring — but the disagreement half works retroactively.
+    marketSourceSection(readMarketSource(lead)),
     {
       title: "Attribution",
       fields: [
@@ -173,7 +193,7 @@ function detailSections({ lead, delivery }: LeadRow): FeedDetailSection[] {
       title: "Delivery",
       fields: delivery
         ? [
-            { label: "Status", value: deliveryState(delivery).label },
+            { label: "Status", value: deliveryState(delivery, lead).label },
             { label: "Stored in Redis", value: yn(delivery.persistOk) },
             { label: "Alert email attempted", value: yn(delivery.resendAttempted) },
             { label: "Alert email sent", value: yn(delivery.resendOk) },
@@ -197,12 +217,15 @@ function detailSections({ lead, delivery }: LeadRow): FeedDetailSection[] {
   ];
 }
 
-function toFeedRow(row: LeadRow, i: number): FeedRow {
+function toFeedRow(row: LeadRow, i: number, pii: PiiVisibility): FeedRow {
   const { lead, delivery } = row;
-  const st = deliveryState(delivery);
+  const st = deliveryState(delivery, lead);
   return {
     id: lead.leadId ?? `row-${i}`,
     received: formatTime(lead.submittedAt),
+    // The LIST stays masked for every role, including owner. Unmasking is
+    // scoped to the EXPANDED record — a deliberate act — so a shoulder-surfed
+    // screen or an accidental screenshot of the feed still carries nothing.
     name: maskName(lead),
     market: v(lead.market),
     source: v(lead.source),
@@ -210,7 +233,7 @@ function toFeedRow(row: LeadRow, i: number): FeedRow {
     deliveryLabel: st.label,
     deliveryTone: st.tone,
     unverified: lead.referralSourceVerified === false,
-    detail: detailSections(row),
+    detail: detailSections(row, pii),
   };
 }
 
@@ -220,24 +243,51 @@ export default async function LeadsTab({
   searchParams: Promise<{ f?: string }>;
 }) {
   const sp = await searchParams;
+  // PII visibility is a ROLE decision, derived from the server session — never
+  // a prop, never a query param. A caller that forgets it gets masked output,
+  // so the failure mode is closed.
+  const me = await currentAdminUser();
+  const pii = piiVisibilityForRole(me?.role);
   const [leads, waitlist] = await Promise.all([readRecentLeads(SCAN), readRecentWaitlist(SCAN)]);
   const rows = leads.configured && !leads.error ? leads.rows : [];
   const agg = aggregate(rows);
 
-  // WAITLIST IS A FILTER, AND A FILTER YOU CAN SEE.
+  // ── WAITLIST LIVES IN TWO STORES, SPLIT BY DATE ────────────────────────────
   //
-  // It stopped being a tab and became a filter — then became invisible, which
-  // is strictly worse than the tab it replaced. Counts render on the chips so
-  // each filter states what it would show before you click it, and a count we
-  // could not read renders as an em-dash rather than 0.
+  // The chip said 1 while the feed showed 3 rows sourced `waitlist`, and the
+  // waitlist view showed a fourth entry appearing in neither. Nothing was
+  // double-counted — the two stores hold DIFFERENT ERAS of the same thing:
   //
-  // The two stores stay separate on purpose (lib/adminWaitlist.ts): waitlist
-  // entries are out-of-area signups that never enter leads:v1 or the CRM.
-  // This is one filter row over two sources, not a merge of them.
+  //   leads:v1        waitlist submissions written BEFORE 2026-08-20, when
+  //                   they still went into the lead store and were posted to
+  //                   the CRM (where they 404'd — see expectedNonDelivery).
+  //   waitlist:leads  every waitlist signup since commit 4169ad8 split them
+  //                   out. Authoritative going forward.
+  //
+  // Neither store alone answers "how many waitlist signups are there", so the
+  // chip counts BOTH and the view shows both, with the legacy rows marked.
+  // Letting either number stand alone is what produced the disagreement.
+  const legacyWaitlistRows = rows.filter((r) => r.lead.source === "waitlist");
+  const currentWaitlist =
+    waitlist.configured && !waitlist.error ? waitlist.entries : [];
+  const waitlistReadable = waitlist.configured && !waitlist.error;
+  const leadsReadable = leads.configured && !leads.error;
+
+  // Estimate requests = the lead store MINUS the legacy waitlist strays, so
+  // the two chips partition the total instead of overlapping.
+  const estimateCount = leadsReadable ? rows.length - legacyWaitlistRows.length : null;
   const waitlistCount =
-    waitlist.configured && !waitlist.error ? waitlist.entries.length : null;
-  const leadCount = leads.configured && !leads.error ? rows.length : null;
+    waitlistReadable && leadsReadable
+      ? currentWaitlist.length + legacyWaitlistRows.length
+      : null;
+  const allCount =
+    estimateCount === null || waitlistCount === null ? null : estimateCount + waitlistCount;
+
   const filter = sp.f === "waitlist" || sp.f === "estimates" ? sp.f : "all";
+  const feedRows =
+    filter === "estimates"
+      ? rows.filter((r) => r.lead.source !== "waitlist")
+      : rows;
 
   return (
     <>
@@ -245,8 +295,8 @@ export default async function LeadsTab({
         param="f"
         active={filter}
         options={[
-          { key: "all", label: "All", count: leadCount === null || waitlistCount === null ? null : leadCount + waitlistCount },
-          { key: "estimates", label: "Estimate requests", count: leadCount },
+          { key: "all", label: "All", count: allCount },
+          { key: "estimates", label: "Estimate requests", count: estimateCount },
           { key: "waitlist", label: "Waitlist", count: waitlistCount },
         ]}
       />
@@ -272,9 +322,12 @@ export default async function LeadsTab({
           </div>
         </Panel>
         <Panel title="Delivery" right={<Meta>last {agg.scanned} leads</Meta>}>
-          <div style={{ display: "flex", gap: 32 }}>
+          <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
             <Stat label="delivered" value={agg.delivered} tone={OK} />
+            {/* REAL failures only. Counting expected non-delivery here made a
+                working system look broken — see expectedNonDelivery(). */}
             <Stat label="CRM failed" value={agg.failed} tone={agg.failed ? FAIL : undefined} />
+            <Stat label="not delivered (expected)" value={agg.expected} tone={SUBTLE} />
             <Stat label="pre-observability" value={agg.unknown} tone={SUBTLE} />
           </div>
         </Panel>
@@ -296,7 +349,7 @@ export default async function LeadsTab({
             </p>
           ) : (
             <>
-              <LeadFeedTable rows={rows.slice(0, 25).map(toFeedRow)} />
+              <LeadFeedTable rows={feedRows.slice(0, 25).map((r, i) => toFeedRow(r, i, pii))} />
               <p style={{ fontSize: "var(--text-label)", color: SUBTLE, margin: "12px 0 0" }}>
                 Click a row for the full record — attribution, detection, and delivery.
                 Identities stay masked; the CRM is the contact list.
@@ -309,7 +362,13 @@ export default async function LeadsTab({
       </>)}
 
       {filter === "waitlist" && (
-        <WaitlistPanel entries={waitlist.configured && !waitlist.error ? waitlist.entries : []} error={waitlist.configured && waitlist.error ? waitlist.error : null} configured={waitlist.configured} />
+        <WaitlistPanel
+          entries={currentWaitlist}
+          legacy={legacyWaitlistRows}
+          error={waitlist.configured && waitlist.error ? waitlist.error : null}
+          configured={waitlist.configured}
+          pii={pii}
+        />
       )}
 
       {filter !== "waitlist" && (<>

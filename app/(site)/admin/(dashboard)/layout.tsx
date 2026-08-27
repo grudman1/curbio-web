@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import { readRecentLeads, recentCrmFailures, type LeadRow } from "@/lib/adminLeads";
-import { getSessionUser, listPendingUsers, sessionSecret, type AdminUser } from "@/lib/adminAuth";
-import { SESSION_COOKIE, openSession } from "@/lib/adminSession";
+import { listPendingUsers, type AdminUser } from "@/lib/adminAuth";
 import { SNAPSHOT_MONTHS } from "@/config/appLeadsSnapshot";
 import { logout } from "../login/actions";
 import { approveUserAction, denyUserAction } from "../actions";
 import { AlertBanner, type AlertEntry } from "./AlertBanner";
 import { AppShell } from "../_ui/AppShell";
+import { currentAdminUser } from "../_ui/session";
 import { Panel } from "../_ui/primitives";
 import { SCAN } from "./ui";
 
@@ -36,20 +35,6 @@ export const metadata: Metadata = {
   title: "Ops — Curbio",
   robots: { index: false, follow: false },
 };
-
-/**
- * The middleware already guarantees a valid session before this layout
- * renders — this re-reads it purely for DISPLAY. It is not a security
- * boundary; the actual boundary is requireOwnerSession() in actions.ts, which
- * re-derives role independently for every mutation.
- */
-async function currentAdminUser(): Promise<{ email: string; role: string } | null> {
-  const jar = await cookies();
-  const opened = await openSession(jar.get(SESSION_COOKIE)?.value, sessionSecret());
-  if (!opened) return null;
-  const session = await getSessionUser(opened.sid);
-  return session ? { email: session.email, role: session.role } : null;
-}
 
 function failureEntries(rows: LeadRow[]): AlertEntry[] {
   return recentCrmFailures(rows).map((f) => ({
