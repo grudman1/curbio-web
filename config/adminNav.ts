@@ -18,10 +18,15 @@
 //   day    Redis leads:v1 + Vercel Web Analytics — real day resolution.
 //   month  config/appLeadsSnapshot — a monthly export.
 //
-// NO NAV ITEM MAY 404. Every href either resolves to a route in this app or
-// carries `externalHref` pointing at the screen's existing /marketing home
-// until it is ported. A 404 reached from our own navigation is
-// indistinguishable from a bug.
+// NOTHING LINKS OUT. Ops and Marketing are ONE app now. Every screen the
+// Marketing Hub used to own is served at an /admin route (a thin re-export of
+// the hub implementation, see app/(site)/admin/(dashboard)/*/page.tsx), so
+// every nav item renders inside this shell. There are no external hrefs, no
+// new tabs, and no ↗ affordances — the browser stays on one domain and inside
+// one layout for the whole session.
+//
+// The old /marketing/* routes still resolve for anyone with a bookmark; the
+// navigation simply never points at them.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { Grain } from "@/app/(site)/admin/_ui/timeframe";
@@ -49,9 +54,6 @@ export type NavItem = {
   hubSlug?: string;
   /** Slug in config/channelPlan.ts, for the Magnificent Seven screens. */
   channelSlug?: string;
-  /** Set while a screen still lives at its old /marketing route. The nav links
-   *  HERE instead of at `href`, so nothing in the nav can 404 mid-port. */
-  externalHref?: string;
   /** Tier badge, channels only. */
   tier?: 1 | 2 | 3;
 };
@@ -87,11 +89,14 @@ export const ADMIN_NAV: NavGroup[] = [
   },
   {
     // The strategy names the channel × market report the highest-leverage
-    // remaining build, three separate times. It is not a footnote in PRESENT.
-    title: "The number",
+    // remaining build. "Report" and "Funnel" were the same screen under two
+    // names — one item, kept as Funnel.
+    title: "Analyze",
     items: [
-      { href: "/admin/markets", label: "Markets", grain: "month", icon: "markets", hubSlug: "markets", externalHref: "/marketing/markets" },
-      { href: "/admin/funnel", label: "Funnel", grain: "month", icon: "report", hubSlug: "report", externalHref: "/marketing/report" },
+      { href: "/admin/funnel", label: "Funnel", grain: "month", icon: "report", hubSlug: "report" },
+      { href: "/admin/channels", label: "Channels", grain: "month", icon: "channels", hubSlug: "channels" },
+      { href: "/admin/markets", label: "Markets", grain: "month", icon: "markets", hubSlug: "markets" },
+      { href: "/admin/attribution", label: "Attribution", grain: "month", icon: "attribution", hubSlug: "attribution" },
     ],
   },
   { title: "Channels", items: channelItems() },
@@ -103,6 +108,8 @@ export const ADMIN_NAV: NavGroup[] = [
           items: [
             { href: "/admin/pages", label: "Pages", grain: "day" as Grain, icon: "pages" },
             { href: "/admin/experiments", label: "Experiments", grain: "day" as Grain, icon: "experiments" },
+            { href: "/admin/forms", label: "Forms", grain: "month" as Grain, icon: "forms", hubSlug: "forms" },
+            { href: "/admin/links", label: "Links", grain: "month" as Grain, icon: "links", hubSlug: "links" },
           ],
         },
       ]
@@ -111,36 +118,37 @@ export const ADMIN_NAV: NavGroup[] = [
     title: "Operate",
     items: [
       { href: "/admin/leads", label: "Leads", grain: "day", icon: "leads" },
-      { href: "/admin/attribution", label: "Attribution", grain: "month", icon: "attribution", hubSlug: "attribution", externalHref: "/marketing/attribution" },
-      { href: "/admin/settings", label: "Settings", grain: "month", icon: "settings", hubSlug: "settings", externalHref: "/marketing/settings" },
+      { href: "/admin/contacts", label: "Contacts", grain: "month", icon: "contacts", hubSlug: "contacts" },
+      { href: "/admin/partners", label: "Partners", grain: "month", icon: "partners", hubSlug: "partners" },
+      { href: "/admin/outreach", label: "Outreach", grain: "month", icon: "outreach", hubSlug: "outreach" },
     ],
   },
   {
     title: "Present",
     items: [
-      { href: "/admin/executive", label: "Executive", grain: "month", icon: "executive", hubSlug: "executive", externalHref: "/marketing/executive" },
+      { href: "/admin/executive", label: "Executive", grain: "month", icon: "executive", hubSlug: "executive" },
     ],
   },
 ];
 
-export const ALL_NAV_ITEMS: NavItem[] = ADMIN_NAV.flatMap((g) => g.items);
+/** Pinned to the foot of the sidebar, below everything and after a spacer.
+ *  Settings is a destination you reach deliberately, not one you scan past. */
+export const ADMIN_NAV_PINNED: NavGroup = {
+  title: "Settings",
+  items: [
+    { href: "/admin/settings", label: "Settings", grain: "month", icon: "settings", hubSlug: "settings" },
+  ],
+};
 
-/** Where the nav should actually send you today. */
-export function navHref(item: NavItem): string {
-  return item.externalHref ?? item.href;
-}
+export const ALL_NAV_ITEMS: NavItem[] = [...ADMIN_NAV, ADMIN_NAV_PINNED].flatMap((g) => g.items);
 
 /** The nav item owning a pathname — longest matching href wins, so
- *  /admin/leads beats /admin. Matches on both the eventual href and the
- *  interim external one, so a ported-or-not screen highlights correctly. */
+ *  /admin/leads beats /admin and /admin/channels/email beats /admin/channels. */
 export function navItemFor(pathname: string): NavItem | null {
   let best: NavItem | null = null;
   for (const item of ALL_NAV_ITEMS) {
-    for (const href of [item.href, item.externalHref]) {
-      if (!href) continue;
-      const hit = href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
-      if (hit && (!best || href.length > (best.externalHref ?? best.href).length)) best = item;
-    }
+    const hit = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
+    if (hit && (!best || item.href.length > best.href.length)) best = item;
   }
   return best;
 }
