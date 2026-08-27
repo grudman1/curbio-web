@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
-import { MARKETS } from "@/config/markets";
-import { Meta, Panel, SUBTLE } from "@/app/(site)/admin/(dashboard)/ui";
-import {
-  CHANNEL_FUNNEL_ORDER,
-  CHANNEL_LABELS,
-  HUB_SURFACE_BY_SLUG,
-  SYNC_SURFACES,
-} from "@/config/marketingHub";
+import { Meta, Panel } from "@/app/(site)/admin/(dashboard)/ui";
+import { HUB_SURFACE_BY_SLUG, SYNC_SURFACES } from "@/config/marketingHub";
 import { SNAPSHOT_AS_OF } from "@/config/appLeadsSnapshot";
+import { ownerSession } from "@/lib/adminGuards";
+import { readOpsSpend, type SpendEntry } from "@/lib/opsSpend";
 import { ConsequenceNote, DASH, HubPageHeader, NeedsBlock, StatusChip, td, tdDash, th } from "../hubUi";
+import { SpendEntryPanel } from "./SpendEntry";
 import { UtmBuilder } from "./UtmBuilder";
 
 export const metadata: Metadata = {
@@ -18,29 +15,19 @@ export const metadata: Metadata = {
 
 const surface = HUB_SURFACE_BY_SLUG.settings;
 
-const field: React.CSSProperties = {
-  fontFamily: "var(--font-family-sans)",
-  fontSize: "var(--text-small)",
-  color: "var(--color-text)",
-  border: "1px solid var(--color-border)",
-  borderRadius: "var(--radius-lg)",
-  padding: "8px 10px",
-  background: "var(--color-surface-raised)",
-  width: "100%",
-};
 
-const fieldLabel: React.CSSProperties = {
-  fontFamily: "var(--font-family-sans)",
-  fontSize: "var(--text-micro)",
-  fontWeight: 700,
-  letterSpacing: "0.1em",
-  textTransform: "uppercase",
-  color: SUBTLE,
-  display: "block",
-  marginBottom: 6,
-};
 
-export default function SettingsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function SettingsPage() {
+  const [spendResult, session] = await Promise.all([readOpsSpend(), ownerSession()]);
+  const isOwner = !!session;
+  const allSpend: SpendEntry[] = spendResult.configured ? spendResult.records : [];
+  const spend = allSpend
+    .filter((e) => !e.archived)
+    .sort((a, b) => b.month.localeCompare(a.month) || b.createdAt.localeCompare(a.createdAt));
+  const spendArchived = allSpend.filter((e) => e.archived);
+
   return (
     <>
       <HubPageHeader surface={surface} />
@@ -53,46 +40,18 @@ export default function SettingsPage() {
           marginBottom: "var(--space-4)",
         }}
       >
-        {/* ── spend entry — disabled, and honest about why ── */}
+        {/* ── spend entry — live; the store it waited on now exists ── */}
         <Panel title="Spend entry" right={<Meta>month × market × channel</Meta>}>
-          <fieldset disabled style={{ border: 0, margin: 0, padding: 0, opacity: 0.55 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <label>
-                <span style={fieldLabel}>Month</span>
-                <input type="month" style={field} />
-              </label>
-              <label>
-                <span style={fieldLabel}>Market</span>
-                <select style={field} defaultValue="">
-                  <option value="" />
-                  {MARKETS.map((m) => (
-                    <option key={m.slug} value={m.slug}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span style={fieldLabel}>Channel</span>
-                <select style={field} defaultValue="">
-                  <option value="" />
-                  {CHANNEL_FUNNEL_ORDER.map((c) => (
-                    <option key={c} value={c}>
-                      {CHANNEL_LABELS[c]}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span style={fieldLabel}>Amount (USD)</span>
-                <input type="number" min={0} step="0.01" placeholder="0.00" style={field} />
-              </label>
-            </div>
-          </fieldset>
+          <SpendEntryPanel
+            entries={spend}
+            archived={spendArchived}
+            isOwner={isOwner && spendResult.configured}
+            configured={spendResult.configured}
+          />
           <ConsequenceNote>
-            Disabled until the spend store exists — an entry made now would have nowhere
-            to go. Without spend, CAC and every cost-per number on the Report, Outreach,
-            and Events pages stay em-dashes.
+            Spend is typed in from invoices, so it is logged, not measured — and every
+            cost-per number derived from it inherits that. Without it, CAC and the
+            cost-per numbers on the Report, Outreach and Events pages stay em-dashes.
           </ConsequenceNote>
         </Panel>
 
