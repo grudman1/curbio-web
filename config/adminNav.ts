@@ -85,16 +85,17 @@ function channelItems(): NavItem[] {
 export const ADMIN_NAV: NavGroup[] = [
   {
     title: "Overview",
-    items: [{ href: "/admin", label: "Today", grain: "month", icon: "today" }],
+    items: [
+      { href: "/admin", label: "Today", grain: "month", icon: "today" },
+      { href: "/admin/executive", label: "Executive", grain: "month", icon: "executive", hubSlug: "executive" },
+    ],
   },
   {
-    // The strategy names the channel × market report the highest-leverage
-    // remaining build. "Report" and "Funnel" were the same screen under two
-    // names — one item, kept as Funnel.
+    // Funnel absorbed the old standalone Channels screen and Report — all
+    // three were views of channel × market.
     title: "Analyze",
     items: [
       { href: "/admin/funnel", label: "Funnel", grain: "month", icon: "report", hubSlug: "report" },
-      { href: "/admin/channels", label: "Channels", grain: "month", icon: "channels", hubSlug: "channels" },
       { href: "/admin/markets", label: "Markets", grain: "month", icon: "markets", hubSlug: "markets" },
       { href: "/admin/attribution", label: "Attribution", grain: "month", icon: "attribution", hubSlug: "attribution" },
     ],
@@ -108,8 +109,6 @@ export const ADMIN_NAV: NavGroup[] = [
           items: [
             { href: "/admin/pages", label: "Pages", grain: "day" as Grain, icon: "pages" },
             { href: "/admin/experiments", label: "Experiments", grain: "day" as Grain, icon: "experiments" },
-            { href: "/admin/forms", label: "Forms", grain: "month" as Grain, icon: "forms", hubSlug: "forms" },
-            { href: "/admin/links", label: "Links", grain: "month" as Grain, icon: "links", hubSlug: "links" },
           ],
         },
       ]
@@ -118,29 +117,34 @@ export const ADMIN_NAV: NavGroup[] = [
     title: "Operate",
     items: [
       { href: "/admin/leads", label: "Leads", grain: "day", icon: "leads" },
-      { href: "/admin/contacts", label: "Contacts", grain: "month", icon: "contacts", hubSlug: "contacts" },
-      { href: "/admin/partners", label: "Partners", grain: "month", icon: "partners", hubSlug: "partners" },
-      { href: "/admin/outreach", label: "Outreach", grain: "month", icon: "outreach", hubSlug: "outreach" },
-    ],
-  },
-  {
-    title: "Present",
-    items: [
-      { href: "/admin/executive", label: "Executive", grain: "month", icon: "executive", hubSlug: "executive" },
+      { href: "/admin/settings", label: "Settings", grain: "month", icon: "settings", hubSlug: "settings" },
     ],
   },
 ];
 
-/** Pinned to the foot of the sidebar, below everything and after a spacer.
- *  Settings is a destination you reach deliberately, not one you scan past. */
-export const ADMIN_NAV_PINNED: NavGroup = {
-  title: "Settings",
-  items: [
-    { href: "/admin/settings", label: "Settings", grain: "month", icon: "settings", hubSlug: "settings" },
-  ],
-};
+// ── Sub-navigation ───────────────────────────────────────────────────────────
+//
+// The working views of a screen are not peers of it. Outreach is HOW
+// Partnerships gets done and Partners is its call plan; Links, Forms and
+// Contacts are instruments of Attribution. As top-level rows they made the
+// sidebar 22 items long and implied more places to check than there are.
+//
+// These are real routes with their own URLs, not client-side state.
 
-export const ALL_NAV_ITEMS: NavItem[] = [...ADMIN_NAV, ADMIN_NAV_PINNED].flatMap((g) => g.items);
+export const PARTNERSHIP_TABS = [
+  { href: "/admin/channels/partnerships", label: "Overview" },
+  { href: "/admin/channels/partnerships/call-plan", label: "Call plan" },
+  { href: "/admin/channels/partnerships/outreach", label: "Outreach" },
+];
+
+export const ATTRIBUTION_TABS = [
+  { href: "/admin/attribution", label: "Health" },
+  { href: "/admin/attribution/links", label: "Links" },
+  { href: "/admin/attribution/forms", label: "Forms" },
+  { href: "/admin/attribution/contacts", label: "Contacts" },
+];
+
+export const ALL_NAV_ITEMS: NavItem[] = ADMIN_NAV.flatMap((g) => g.items);
 
 /** The nav item owning a pathname — longest matching href wins, so
  *  /admin/leads beats /admin and /admin/channels/email beats /admin/channels. */

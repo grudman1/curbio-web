@@ -43,14 +43,20 @@ export function HubPageHeader({ surface }: { surface: HubSurface }) {
         <StatusChip status={surface.status} />
         {surface.target && <Meta>Target: {surface.target}</Meta>}
       </div>
+      {/* The purpose line was a paragraph under every title. It is context,
+          not a number, so it moves to a hover/─title─ and out of the default
+          view. Screens that genuinely need it visible say so themselves. */}
       <p
+        title={surface.purpose}
         style={{
           fontFamily: "var(--font-family-sans)",
-          fontSize: "var(--text-small)",
-          color: MUTED,
-          margin: "8px 0 0",
+          fontSize: "var(--text-label)",
+          color: SUBTLE,
+          margin: "4px 0 0",
           maxWidth: 720,
-          lineHeight: 1.5,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
         }}
       >
         {surface.purpose}
@@ -65,22 +71,32 @@ export function HubPageHeader({ surface }: { surface: HubSurface }) {
  */
 export function NeedsBlock({ surface }: { surface: HubSurface }) {
   if (surface.status === "live") return null;
+  // PROSE BUDGET: was an always-open list of up to four sentences under every
+  // unwired screen. The list is the build backlog and must survive, but it is
+  // not what someone opening the screen came to read — so it collapses to one
+  // line and opens on request.
   return (
-    <aside
-      style={{
-        border: "1px dashed var(--color-border)",
-        borderRadius: "var(--radius-lg)",
-        padding: "var(--space-4) var(--space-5)",
-        marginTop: "var(--space-4)",
-      }}
-    >
-      <p style={{ ...eyebrow, marginBottom: 8 }}>Not wired yet — needs</p>
+    <details style={{ marginTop: "var(--space-4)" }}>
+      <summary
+        style={{
+          cursor: "pointer",
+          listStyle: "none",
+          fontFamily: "var(--font-family-sans)",
+          fontSize: "var(--text-micro)",
+          fontWeight: 700,
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          color: SUBTLE,
+        }}
+      >
+        {surface.needs.length} things needed
+      </summary>
       <ol
         style={{
-          margin: 0,
+          margin: "8px 0 0",
           paddingLeft: 18,
           fontFamily: "var(--font-family-sans)",
-          fontSize: "var(--text-small)",
+          fontSize: "var(--text-label)",
           color: MUTED,
           lineHeight: 1.7,
         }}
@@ -89,7 +105,7 @@ export function NeedsBlock({ surface }: { surface: HubSurface }) {
           <li key={n}>{n}</li>
         ))}
       </ol>
-    </aside>
+    </details>
   );
 }
 

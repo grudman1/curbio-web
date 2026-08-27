@@ -9,6 +9,9 @@ import {
 } from "@/lib/adminLeads";
 import { Chip, FAIL, MUTED, Meta, OK, Panel, SCAN, SUBTLE, Stat, WARN } from "../ui";
 import { LeadFeedTable, type FeedRow, type FeedDetailSection } from "./LeadFeedTable";
+import { readRecentWaitlist } from "@/lib/adminWaitlist";
+import { FilterChips } from "../../_ui/FilterChips";
+import { WaitlistPanel } from "./WaitlistPanel";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Leads tab — volume / delivery / attribution numbers, the referral values
@@ -211,13 +214,44 @@ function toFeedRow(row: LeadRow, i: number): FeedRow {
   };
 }
 
-export default async function LeadsTab() {
-  const leads = await readRecentLeads(SCAN);
+export default async function LeadsTab({
+  searchParams,
+}: {
+  searchParams: Promise<{ f?: string }>;
+}) {
+  const sp = await searchParams;
+  const [leads, waitlist] = await Promise.all([readRecentLeads(SCAN), readRecentWaitlist(SCAN)]);
   const rows = leads.configured && !leads.error ? leads.rows : [];
   const agg = aggregate(rows);
 
+  // WAITLIST IS A FILTER, AND A FILTER YOU CAN SEE.
+  //
+  // It stopped being a tab and became a filter — then became invisible, which
+  // is strictly worse than the tab it replaced. Counts render on the chips so
+  // each filter states what it would show before you click it, and a count we
+  // could not read renders as an em-dash rather than 0.
+  //
+  // The two stores stay separate on purpose (lib/adminWaitlist.ts): waitlist
+  // entries are out-of-area signups that never enter leads:v1 or the CRM.
+  // This is one filter row over two sources, not a merge of them.
+  const waitlistCount =
+    waitlist.configured && !waitlist.error ? waitlist.entries.length : null;
+  const leadCount = leads.configured && !leads.error ? rows.length : null;
+  const filter = sp.f === "waitlist" || sp.f === "estimates" ? sp.f : "all";
+
   return (
     <>
+      <FilterChips
+        param="f"
+        active={filter}
+        options={[
+          { key: "all", label: "All", count: leadCount === null || waitlistCount === null ? null : leadCount + waitlistCount },
+          { key: "estimates", label: "Estimate requests", count: leadCount },
+          { key: "waitlist", label: "Waitlist", count: waitlistCount },
+        ]}
+      />
+
+      {filter !== "waitlist" && (<>
       {/* ── numbers row ── */}
       <div
         style={{
@@ -272,6 +306,13 @@ export default async function LeadsTab() {
         </Panel>
       </div>
 
+      </>)}
+
+      {filter === "waitlist" && (
+        <WaitlistPanel entries={waitlist.configured && !waitlist.error ? waitlist.entries : []} error={waitlist.configured && waitlist.error ? waitlist.error : null} configured={waitlist.configured} />
+      )}
+
+      {filter !== "waitlist" && (<>
       {/* ── attribution detail ── */}
       <div style={{ maxWidth: 720 }}>
         <Panel title="Referral sources arriving" right={<Meta>raw values, last {agg.scanned}</Meta>}>
@@ -313,6 +354,7 @@ export default async function LeadsTab() {
           </p>
         </Panel>
       </div>
+      </>)}
     </>
   );
 }

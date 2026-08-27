@@ -1,5 +1,7 @@
 "use client";
 
+import { deriveChannel } from "@/lib/channels";
+
 import { useEffect, useMemo, useState } from "react";
 import { FAIL, Meta, MUTED, Panel, SUBTLE, WARN, eyebrow } from "@/app/(site)/admin/(dashboard)/ui";
 import { CHANNEL_FUNNEL_ORDER, CHANNEL_LABELS } from "@/config/marketingHub";
@@ -99,22 +101,42 @@ function QrBlock({ url, label }: { url: string; label: string }) {
 
   return (
     <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+      {/* The QR is GENERATED at 160px and was being injected into a 120px box
+          with no overflow rule, so it spilled out and rendered underneath the
+          download links beside it. The wrapper now clips and the injected
+          <svg> is forced to fill it — the only way to size markup that arrives
+          as a string. */}
+      <style>{`.qr-box > svg { width: 100%; height: 100%; display: block; }`}</style>
       <div
+        className="qr-box"
         aria-label={`QR code for ${url}`}
         role="img"
-        style={{ width: 120, height: 120, flex: "none", border: "1px solid var(--color-border)", borderRadius: 8, padding: 6, background: "#fff" }}
+        style={{
+          width: 120,
+          height: 120,
+          flex: "none",
+          overflow: "hidden",
+          border: "1px solid var(--color-border)",
+          borderRadius: 8,
+          padding: 6,
+          background: "#fff",
+          boxSizing: "border-box",
+        }}
         dangerouslySetInnerHTML={{ __html: qr.svg }}
       />
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 150, flex: 1 }}>
         <a href={qr.png} download={`${fileBase}.png`} style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", fontWeight: 700, color: "var(--color-text)" }}>
           Download PNG (640px)
         </a>
         <a href={svgHref} download={`${fileBase}.svg`} style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", fontWeight: 700, color: "var(--color-text)" }}>
           Download SVG
         </a>
-        <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-micro)", color: SUBTLE, margin: 0, maxWidth: 220, lineHeight: 1.5 }}>
-          Encodes the tracked URL exactly as saved. Print only from a row whose
-          destination is a redirect we control.
+        {/* One line. The print caveat moved to the title attribute. */}
+        <p
+          title="Print only from a row whose destination is a redirect we control — a direct URL cannot be repointed later."
+          style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-micro)", color: SUBTLE, margin: 0, lineHeight: 1.5 }}
+        >
+          Encodes the tracked URL exactly as saved.
         </p>
       </div>
     </div>
@@ -722,7 +744,7 @@ export function LinksTable({
               <p style={{ ...eyebrow, marginBottom: 8 }}>URLs</p>
               {selected.trackedUrl ? (
                 <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                  <span style={{ flex: 1, fontFamily: "var(--font-mono)", fontSize: 12, wordBreak: "break-all", lineHeight: 1.5 }}>{selected.trackedUrl}</span>
+                  <span style={{ flex: 1, fontFamily: "var(--font-mono)", fontSize: 12, overflowWrap: "anywhere", wordBreak: "normal", lineHeight: 1.5 }}>{selected.trackedUrl}</span>
                   <CopyButton text={selected.trackedUrl} />
                 </div>
               ) : (
@@ -736,16 +758,29 @@ export function LinksTable({
                 </p>
               )}
               {selected.destination && selected.destination !== selected.trackedUrl && (
-                <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: MUTED, margin: "6px 0 0", wordBreak: "break-all" }}>
+                <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: MUTED, margin: "6px 0 0", overflowWrap: "anywhere", wordBreak: "normal" }}>
                   lands: {selected.destination}
                 </p>
               )}
-              {selected.rawUtmSource && (
-                <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: "6px 0 0" }}>
-                  carries utm_source={selected.rawUtmSource} — outside the nine channels,
-                  so its leads land as direct.
-                </p>
-              )}
+              {/* CHECK, don't assume. This line used to claim "outside the nine
+                  channels, so its leads land as direct" for EVERY row carrying
+                  a raw utm_source — including exp, whose source is
+                  `partnership`, which is one of the nine. The row's own
+                  channel field said partnership and the qualified list showed
+                  partnership-touch leads, so the screen contradicted itself
+                  and the data. deriveChannel() is the authority; ask it. */}
+              {selected.rawUtmSource &&
+                (deriveChannel(selected.rawUtmSource) === "direct" &&
+                selected.rawUtmSource.trim().toLowerCase() !== "direct" ? (
+                  <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: "6px 0 0" }}>
+                    carries utm_source={selected.rawUtmSource} — outside the nine channels,
+                    so its leads land as direct.
+                  </p>
+                ) : (
+                  <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: "6px 0 0" }}>
+                    carries utm_source={selected.rawUtmSource} → {deriveChannel(selected.rawUtmSource)}
+                  </p>
+                ))}
             </div>
 
             <div style={{ marginTop: 20 }}>

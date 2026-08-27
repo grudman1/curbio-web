@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { RegistryEntry } from "@/config/pageRegistry";
 import type { PageStat } from "@/lib/pageStats";
 import { DASH, Chip, Eyebrow, StatusDot } from "./primitives";
@@ -105,8 +106,18 @@ export function PageCard({
   const cvr = stat?.conversion ?? null;
   const trend = stat?.viewTrend ?? [];
 
+  // THE WHOLE CARD IS THE LINK. It regressed to a non-interactive article in
+  // the shell rewrite; before that the card opened its live page. The target
+  // is the entire card rather than the title alone — the preview is the thing
+  // you actually point at, and a 300px card with a 14px hit area is a card you
+  // miss.
+  //
+  // The iframe is pointer-events:none and aria-hidden, so it cannot swallow
+  // the click or announce itself twice to a screen reader.
+  const href = src ?? entry.path;
+
   return (
-    <article className="flex flex-col overflow-hidden rounded-lg border border-edge bg-surface-raised">
+    <article className="group relative flex flex-col overflow-hidden rounded-lg border border-edge bg-surface-raised transition-colors duration-base ease-out focus-within:border-content hover:border-content">
       {src ? (
         <Frame src={src} title={entry.title} />
       ) : (
@@ -123,7 +134,14 @@ export function PageCard({
           </span>
           <div className="min-w-0 flex-1">
             <h3 className="m-0 truncate font-sans text-ops-body font-bold text-content">
-              {entry.title}
+              {/* The stretched link: covers the card, but stays a real anchor
+                  with a real href so middle-click and copy-link behave. */}
+              <Link
+                href={href}
+                className="no-underline after:absolute after:inset-0 after:content-[''] focus-visible:outline-none group-focus-within:underline"
+              >
+                {entry.title}
+              </Link>
             </h3>
             <p className="m-0 truncate font-mono text-ops-micro text-content-subtle">{entry.path}</p>
           </div>
@@ -167,7 +185,8 @@ export function PageCard({
             it — it names the source and holds the slot GA4 will fill, which is
             the honesty requirement (two sources, labelled, never averaged)
             without spending a second line on the same number. */}
-        <div className="flex items-center gap-1.5">
+        {/* z-10: these sit above the stretched link so the ⓘ stays clickable. */}
+        <div className="relative z-10 flex items-center gap-1.5">
           <span className="font-sans text-ops-micro text-content-subtle">
             Views: Vercel · GA4 {DASH}
           </span>

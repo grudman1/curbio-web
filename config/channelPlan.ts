@@ -39,9 +39,10 @@ export type AttributionBasis = "channel" | "campaign-code" | "indirect";
 
 export type ChannelPlan = {
   slug: string;
-  /** Position in the CEO memo, 1–7. Kept so the memo and the nav can be read
-   *  side by side. */
-  memoNumber: number;
+  /** Position(s) in the CEO memo. A list because Partnerships covers two of
+   *  the memo's seven — #2 and #3 are one motion at different sizes. Kept so
+   *  the memo and the nav can still be read side by side. */
+  memoNumbers: number[];
   label: string;
   tier: Tier;
   owner: string;
@@ -72,7 +73,7 @@ export function tierWhy(tier: Tier): string {
 export const CHANNEL_PLAN: ChannelPlan[] = [
   {
     slug: "email",
-    memoNumber: 1,
+    memoNumbers: [1],
     label: "Email",
     tier: 1,
     owner: "Gavin / Levi",
@@ -93,47 +94,41 @@ export const CHANNEL_PLAN: ChannelPlan[] = [
   },
   {
     slug: "partnerships",
-    memoNumber: 2,
+    // ONE motion at different sizes. The CEO memo lists brokerages (#2) and
+    // super agents / teams / single-location shops (#3) separately, but both
+    // end in the same event: a booked meeting with one decision-maker who
+    // brings a book of agents. Split across two screens they compete for the
+    // same weekly HSM time and get scored on two cards for one number.
+    //
+    // The merge keeps BOTH measured channels and BOTH targets. Collapsing
+    // those too would lose the enterprise motion's economics, which is the
+    // part with an actual cost attached.
+    memoNumbers: [2, 3],
     label: "Partnerships",
     tier: 1,
-    owner: "Aaron / Gavin",
+    owner: "Aaron / Gavin / Levi / HSMs",
     purpose:
-      "The multiplier. A partner blast lands in every agent's inbox at once — one brokerage can supply a market's whole number.",
-    channels: ["partnership"],
+      "One relationship, one meeting, one decision-maker with a book of agents — from a national brokerage down to a single-location shop. HSMs close MEETINGS, not quotes.",
+    channels: ["partnership", "hsm_field"],
     basis: "channel",
     targets: [
+      { label: "Cost per meeting", value: `$${COST_PER_MEETING_TARGET_USD}` },
+      { label: "Weekly per HSM", value: `${OUTREACH_WEEKLY_MAILINGS_TARGET} mailings · ${OUTREACH_WEEKLY_CALLS_TARGET} calls` },
       { label: "Marketing fee (proposed)", value: "$100 per proposal — pending Adam" },
     ],
     needs: [
       "Partner record store (stage, owner, next step, next step date)",
       "Brokerage list pulled from the App + Becca's signed agreements",
-      "Partner-page inquiry events flowing from /api/intake",
-      "Per-partner campaign codes so blast traffic is not `direct`",
-    ],
-  },
-  {
-    slug: "super-agents",
-    memoNumber: 3,
-    label: "Super Agents",
-    tier: 1,
-    owner: "Gavin / Levi / HSMs",
-    purpose:
-      "The enterprise motion. HSMs close MEETINGS, not quotes — one good account is worth ~$250k in annual sales.",
-    channels: ["hsm_field"],
-    basis: "channel",
-    targets: [
-      { label: "Cost per meeting", value: `$${COST_PER_MEETING_TARGET_USD}` },
-      { label: "Weekly per HSM", value: `${OUTREACH_WEEKLY_MAILINGS_TARGET} mailings · ${OUTREACH_WEEKLY_CALLS_TARGET} calls` },
-    ],
-    needs: [
       "Mailing log (who, which arm, when) per HSM",
       "Meeting-booked events attributable to an arm",
+      "Partner-page inquiry events flowing from /api/intake",
+      "Per-partner campaign codes so blast traffic is not `direct`",
       "Spend entry for card cost (the $15 Starbucks arm)",
     ],
   },
   {
     slug: "paid",
-    memoNumber: 4,
+    memoNumbers: [4],
     label: "Paid",
     tier: 2,
     owner: "Gavin (+ agency)",
@@ -157,7 +152,7 @@ export const CHANNEL_PLAN: ChannelPlan[] = [
   },
   {
     slug: "organic",
-    memoNumber: 5,
+    memoNumbers: [5],
     label: "Organic",
     tier: 2,
     owner: "Gavin",
@@ -174,7 +169,7 @@ export const CHANNEL_PLAN: ChannelPlan[] = [
   },
   {
     slug: "events",
-    memoNumber: 6,
+    memoNumbers: [6],
     label: "Events",
     tier: 3,
     owner: "Gavin / HSMs",
@@ -198,7 +193,7 @@ export const CHANNEL_PLAN: ChannelPlan[] = [
   },
   {
     slug: "content",
-    memoNumber: 7,
+    memoNumbers: [7],
     label: "Content",
     tier: 3,
     owner: "Gavin / freelancers",
