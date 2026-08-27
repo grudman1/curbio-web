@@ -28,6 +28,11 @@ export type StoredLead = {
   phone?: string;
   zip?: string;
   market?: string | null;
+  /** WHICH SIGNAL decided `market` — "param" | "zip" | "geo" | "out-of-area"
+   *  | "none", straight from lib/resolveMarket.ts. Absent on every lead
+   *  written before this field shipped; see lib/marketSignals.ts, which
+   *  reports that absence as `unknown` rather than inferring one. */
+  marketSource?: string | null;
   source?: string;
   submittedAt?: string;
   channel?: string;
@@ -149,6 +154,10 @@ export function recentCrmFailures(rows: LeadRow[], windowMs = 86_400_000): CrmFa
   const out: CrmFailure[] = [];
   for (const { lead, delivery } of rows) {
     if (!delivery?.crmAttempted || delivery.crmOk) continue;
+    // An expected non-delivery is not an incident. Without this the banner
+    // reports historical waitlist 404s as live CRM failures every time the
+    // page loads.
+    if (expectedNonDelivery(lead, delivery)) continue;
     const t = Date.parse(lead.submittedAt ?? "") || Date.parse(delivery.recordedAt ?? "");
     if (!Number.isFinite(t) || now - t >= windowMs) continue;
     out.push({
@@ -169,31 +178,114 @@ export function recentCrmFailures(rows: LeadRow[], windowMs = 86_400_000): CrmFa
 // page stays safe to screenshot, share in a ticket, or leave open on a laptop.
 // Unmasking is a deliberate change, not a default.
 
-export function maskEmail(email: string | undefined): string {
+/**
+ * PII visibility is now a ROLE decision, not a module-boundary one.
+ *
+ * Masking stays the default for every role — the page remains safe to
+ * screenshot, share in a ticket, or leave open on a laptop, which is why it
+ * was built this way. What changed is that masking at the boundary meant even
+ * an owner could not read the record they are accountable for, on a
+ * READ-ONLY view, with no way to unmask short of opening Redis.
+ *
+ * The gate is the role on the server-derived session — never a prop, never a
+ * query param, never client state. Callers that pass nothing keep the old
+ * masked behaviour, so a forgotten argument fails CLOSED.
+ *
+ * See DECISIONS.md → "PII masking is role-gated, not absolute".
+ */
+export type PiiVisibility = "masked" | "full";
+
+export function piiVisibilityForRole(role: string | undefined): PiiVisibility {
+  return role === "owner" ? "full" : "masked";
+}
+
+export function maskEmail(email: string | undefined, visibility: PiiVisibility = "masked"): string {
   if (!email) return "—";
+  if (visibility === "full") return email;
   const [user, domain] = email.split("@");
   if (!domain) return "—";
   const head = user.slice(0, 1);
   return `${head}${"•".repeat(Math.max(user.length - 1, 1))}@${domain}`;
 }
 
-export function maskPhone(phone: string | undefined): string {
+export function maskPhone(phone: string | undefined, visibility: PiiVisibility = "masked"): string {
   const d = (phone ?? "").replace(/\D/g, "");
   if (d.length < 4) return "—";
+  if (visibility === "full") return phone ?? "—";
   return `•••-•••-${d.slice(-4)}`;
 }
 
 /** First name only — enough to correlate with a CRM record, not a contact list. */
-export function maskName(lead: StoredLead): string {
+export function maskName(lead: StoredLead, visibility: PiiVisibility = "masked"): string {
   const first = lead.firstName || (lead.name ?? "").trim().split(/\s+/)[0];
+  if (visibility === "full") return (lead.name ?? first ?? "").trim() || "—";
   return first ? `${first} ${"•".repeat(3)}` : "—";
 }
 
-/** Delivery state for display. "unknown" is a real, distinct state. */
-export function deliveryState(d: DeliveryRecord | null): {
+// ── Expected non-delivery ────────────────────────────────────────────────────
+//
+// Some leads have NO CRM DESTINATION BY DESIGN. Counting those as failures
+// makes a working system look broken — and it is the same category error the
+// tone scale exists to prevent: this is `unknown`/expected, not `bad`.
+//
+// The waitlist is the case that matters. A waitlist signup is out-of-area, so
+// there is no market to route it to and the CRM has nothing to match against;
+// it answers 404. Since 2026-08-20 (commit 4169ad8) the lead route does not
+// send them at all — `isWaitlist ? Promise.resolve(false) : postToCrm()` — and
+// records crmAttempted: false. Entries written BEFORE that date were sent, did
+// 404, and still carry crmAttempted: true with a 404 status. Those historical
+// rows are what makes the failure count wrong today.
+//
+// This function is the single place that judgement is made, so the tiles, the
+// row chips and the alert banner cannot disagree about what counts as broken.
+
+export type ExpectedNonDelivery = { reason: string };
+
+/**
+ * Why this lead was never going to reach the CRM — or null when it should
+ * have. Deliberately narrow: it only returns a reason it can PROVE from the
+ * record, because the cost of wrongly calling a real failure "expected" is a
+ * lost lead nobody chases.
+ */
+export function expectedNonDelivery(
+  lead: StoredLead,
+  d: DeliveryRecord | null
+): ExpectedNonDelivery | null {
+  if (lead.source === "waitlist") {
+    return {
+      reason:
+        "Waitlist signup — out of area, so there is no market to route to and the CRM has nothing to match against. Not sent since 2026-08-20; earlier entries were sent and answered 404.",
+    };
+  }
+  // A 404 on a lead carrying no market is the same shape of rejection: the CRM
+  // could not find a destination. Narrowed to 404 specifically — a 5xx or an
+  // auth failure on a marketless lead is still a real failure.
+  if (d?.crmAttempted && !d.crmOk && d.crmStatus === 404 && !lead.market) {
+    return {
+      reason:
+        "No market on the record, so the CRM had no destination to match and answered 404. Not a delivery failure — but worth knowing why the market never resolved.",
+    };
+  }
+  return null;
+}
+
+/** Delivery state for display. "unknown" and "expected" are real, distinct
+ *  states — neither is a failure and neither renders on the good/warn/bad
+ *  ramp. Takes the lead as well as the record because whether a
+ *  non-delivery was EXPECTED is a property of the lead, not the outcome. */
+export function deliveryState(
+  d: DeliveryRecord | null,
+  lead?: StoredLead
+): {
   label: string;
   tone: "ok" | "warn" | "fail" | "unknown";
+  /** Present when tone is "unknown" because delivery was never going to
+   *  happen. One line, shown on hover. */
+  reason?: string;
 } {
+  const expected = lead ? expectedNonDelivery(lead, d) : null;
+  if (expected) return { label: "not delivered (expected)", tone: "unknown", reason: expected.reason };
+
   if (!d) return { label: "unknown", tone: "unknown" };
   if (d.crmAttempted && d.crmOk) return { label: "delivered", tone: "ok" };
   if (d.crmAttempted && !d.crmOk) return { label: `CRM FAILED${d.crmStatus ? ` (${d.crmStatus})` : ""}`, tone: "fail" };

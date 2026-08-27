@@ -41,6 +41,11 @@ type LeadBody = {
   market?: string | null;
   crmMarketName?: string | null;
   source?: string; // "quote" | "magnet" | "closer" | "waitlist" | campaign slugs (e.g. "email-campaign-atlanta")
+  /** WHICH SIGNAL decided `market`, straight from lib/resolveMarket.ts:
+   *  "param" | "zip" | "geo" | "out-of-area" | "none". The resolver computed
+   *  this at render and threw it away, which is why no historical lead can
+   *  say how its market was chosen. Persisted from here on. */
+  marketSource?: string;
   variant?: string; // A/B variant (cta-copy: "control" | "treatment")
   magnet?: "checklist" | "spring-listings" | "resource-kit" | null;
   submittedAt?: string;
@@ -260,6 +265,9 @@ export async function POST(req: Request) {
     // Attribution model fields (spec): how + where the lead entered, and the
     // visitor's first-touch attribution captured client-side.
     entryPoint: body.entryPoint ?? "web_form",
+    // Provenance for `market`. Never inferred server-side — if the client did
+    // not say, the record says nothing rather than guessing.
+    marketSource: body.marketSource ?? null,
     medium: body.medium ?? body.utm_medium ?? null,
     firstTouchChannel: body.firstTouchChannel ?? null,
     firstTouchCampaign: body.firstTouchCampaign ?? null,
