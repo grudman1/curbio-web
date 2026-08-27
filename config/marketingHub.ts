@@ -335,10 +335,9 @@ export const HUB_SURFACES: HubSurface[] = [
     slug: "partners",
     label: "Partners",
     purpose: "The brokerage call plan — who to move next, sorted by next step date.",
-    status: "waiting",
+    status: "partial",
     needs: [
-      "Partner record store (stage, owner, next step, next step date)",
-      "Partner-page inquiry events flowing from /api/intake",
+      "Partner-page inquiry events flowing from /api/intake — agents reached and meetings are LOGGED (typed in) until then",
     ],
   },
   {

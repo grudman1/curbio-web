@@ -1,9 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
-import { SESSION_COOKIE, openSession } from "@/lib/adminSession";
-import { getSessionUser, sessionSecret } from "@/lib/adminAuth";
+import { ownerSession } from "@/lib/adminGuards";
 import { writeExecNotes } from "@/lib/marketingExecNotes";
 
 export type SaveNotesResult = { ok: true } | { ok: false; error: string };
@@ -15,11 +13,9 @@ export async function saveExecNotesAction(
   decisions: string
 ): Promise<SaveNotesResult> {
   // Same defense-in-depth as every Hub mutation: the middleware gates the
-  // POST, and the session is re-checked here.
-  const jar = await cookies();
-  const opened = await openSession(jar.get(SESSION_COOKIE)?.value, sessionSecret());
-  const user = opened ? await getSessionUser(opened.sid) : null;
-  if (!user) return { ok: false, error: "Not signed in." };
+  // POST, and the shared owner guard re-checks here. (Was signed-in-only —
+  // any approved member could write the exec agenda.)
+  if (!(await ownerSession())) return { ok: false, error: "Owner access required." };
 
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return { ok: false, error: "Bad month." };
 

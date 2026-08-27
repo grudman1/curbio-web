@@ -409,3 +409,40 @@ Must be true before DNS moves curbio.com off WordPress.
 - [ ] Publish `CUTOVER_REDIRECTS` from `config/routes.ts` as the 301 set.
 - [ ] Point `go.curbio.com` at its redirect target and retire it.
 - [ ] Re-verify the CookieYes installation checker against the new domain.
+
+## Leads are measured; operational records are claimed
+
+The Control Room writes now: partners, and in coming rounds outreach, events,
+spend, notes. These operational records live in the SAME Upstash database as
+everything else, under the `ops:` key prefix — one database, deliberately.
+A second database was considered (it would make lead-store isolation
+structural rather than conventional) and rejected: one instance, one set of
+credentials to rotate, one place to look.
+
+The convention that carries the decision:
+
+- **The lead store stays read-only.** `lib/adminLeads.ts` and
+  `lib/adminWaitlist.ts` keep the read-only token forever. Ops code never
+  reads or writes a `leads:*` or `waitlist:*` key.
+- **Why the wall exists:** a lead that arrived over the wire is *measured*; a
+  meeting someone typed in is *claimed*. They are different kinds of fact,
+  and the store boundary keeps that distinction structural. In the UI, every
+  self-reported number carries the `logged` marker
+  (`app/(site)/admin/_ui/Logged.tsx`) — a claim must never impersonate a
+  measurement, same rule as the tone scale.
+- **Writes are owner-gated**, re-checked server-side in every mutation via
+  the one shared guard (`lib/adminGuards.ts`). This closed a hole: exec
+  notes and registry links were signed-in-gated only, so any approved member
+  could write them.
+- **No deletes.** Records archive (`archived: true`); nothing is ever
+  silently gone. Every write stamps who and when, and appends to a capped
+  audit list (`ops:<object>:audit:v1`).
+
+## Test leads carry the `TEST` name prefix
+
+Every intentional test submission uses a name starting with `TEST ` and a
+`utm_campaign` starting with `testcampaign-` (e.g. "TEST Attribution
+DoNotWork" / `testcampaign-lasttouch-v2`). Detection keys on the NAME prefix
+first — campaign values also arrive from real links, name is the convention
+we control. This is what lets the admin exclude test leads from every count
+by rule instead of by patching per-lead patterns after each intake test.

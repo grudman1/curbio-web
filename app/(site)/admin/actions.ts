@@ -1,25 +1,20 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { redirect, notFound } from "next/navigation";
-import { authConfigured, approveUser, denyUser, getSessionUser, sessionSecret } from "@/lib/adminAuth";
-import { SESSION_COOKIE, openSession } from "@/lib/adminSession";
+import { authConfigured, approveUser, denyUser } from "@/lib/adminAuth";
+import { ownerSession } from "@/lib/adminGuards";
 
 /**
- * Re-derive the caller's role from the session cookie and reject anything
- * but `owner`. This is DEFENSE IN DEPTH, not the only gate — the Control
- * Room UI already hides the approve/deny panel from non-owners — but a
- * mutating action must never trust that the client only sent the request
- * because the button was hidden. Every check here re-reads state from Redis;
- * nothing is taken on faith from the request.
+ * The redirect-flavoured wrapper around the shared owner guard
+ * (lib/adminGuards.ts — the re-check every mutation uses). Form actions
+ * redirect on failure; result-returning actions return an error instead.
  */
 async function requireOwnerSession(): Promise<{ email: string }> {
   if (!authConfigured()) notFound();
-  const jar = await cookies();
-  const opened = await openSession(jar.get(SESSION_COOKIE)?.value, sessionSecret());
-  if (!opened) redirect("/admin/login");
-  const session = await getSessionUser(opened.sid);
-  if (!session || session.role !== "owner") redirect("/admin");
+  const session = await ownerSession();
+  // Signed-out lands on /admin and bounces to login via middleware; a
+  // signed-in member lands on /admin proper — same destinations as before.
+  if (!session) redirect("/admin");
   return { email: session.email };
 }
 
