@@ -150,11 +150,18 @@ export function Timeframe({ months }: { months: string[] }) {
   );
 }
 
+// First-touch vs last-touch is an ANALYSIS control, not a global one. Only two
+// screens can answer differently depending on it, so only those two show it —
+// on Home (a briefing) it was a knob with nothing to turn.
+const ATTRIBUTION_SCREENS = ["/admin/performance", "/admin/attribution"];
+
 export function AttributionToggle() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const mode = parseAttribution(searchParams.get("a") ?? undefined);
+
+  if (!ATTRIBUTION_SCREENS.some((p) => pathname.startsWith(p))) return null;
 
   function set(k: AttributionMode) {
     const params = new URLSearchParams(searchParams.toString());
