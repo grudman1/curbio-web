@@ -1,8 +1,8 @@
-// "▲ 12% vs Jul" — direction-coded text, no pill, no background. Green/red
+// "▲ 12%" as a tinted pill, "vs Jul" as plain muted text after it. Green/red
 // are reserved for exactly this (and HealthDot); nothing else on the
 // redesigned screen carries colour. `value === null` renders a grey em-dash
-// rather than 0% — no comparable prior period is a different fact from "no
-// change", same honesty rule the rest of /admin already enforces.
+// with no pill at all — no comparable prior period is a different fact from
+// "no change", same honesty rule the rest of /admin already enforces.
 
 export function DeltaChip({
   value,
@@ -21,7 +21,7 @@ export function DeltaChip({
 }) {
   if (value === null || !Number.isFinite(value)) {
     return (
-      <span className="inline-flex items-center gap-1 font-ui2 text-ui2-caption font-medium text-ui2-text-muted">
+      <span className="inline-flex items-center gap-1.5 font-ui2 text-[12px] font-medium text-ui2-gray-400">
         <span aria-hidden>—</span>
         <span>{label}</span>
       </span>
@@ -31,14 +31,19 @@ export function DeltaChip({
   const up = value > 0;
   const flat = value === 0;
   const favorable = up === (goodDirection === "up");
-  const color = flat ? "text-ui2-text-muted" : favorable ? "text-ui2-green" : "text-ui2-red";
+  const pillBg = flat ? "bg-ui2-well" : favorable ? "bg-ui2-green-10" : "bg-ui2-red-10";
+  const pillText = flat ? "text-ui2-gray-400" : favorable ? "text-ui2-green" : "text-ui2-red";
   const arrow = flat ? "" : up ? "▲" : "▼";
 
   return (
-    <span className={`inline-flex items-center gap-1 font-ui2 text-ui2-caption font-semibold tabular-nums ${color}`}>
-      {arrow && <span aria-hidden>{arrow}</span>}
-      <span>{Math.abs(value * 100).toFixed(0)}%</span>
-      <span className="font-medium text-ui2-text-muted">{label}</span>
+    <span className="inline-flex items-center gap-1.5">
+      <span
+        className={`inline-flex items-center gap-0.5 rounded-full px-2.5 py-1 font-ui2 text-[12px] font-semibold tabular-nums ${pillBg} ${pillText}`}
+      >
+        {arrow && <span aria-hidden>{arrow}</span>}
+        <span>{Math.abs(value * 100).toFixed(0)}%</span>
+      </span>
+      <span className="font-ui2 text-[12px] font-medium text-ui2-gray-400">{label}</span>
     </span>
   );
 }

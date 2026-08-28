@@ -31,7 +31,7 @@ export function SegmentedControl<K extends string>({
       role="group"
       aria-label={label}
       onKeyDown={onKeyDown}
-      className="inline-flex flex-none items-center gap-0.5 rounded-md border border-app-border-strong bg-app-well p-0.5"
+      className="inline-flex flex-none items-center gap-0.5 rounded-md border border-nav3-border bg-app-card p-0.5"
     >
       {options.map((o) => {
         const active = o.key === value;
@@ -42,12 +42,12 @@ export function SegmentedControl<K extends string>({
             aria-pressed={active}
             title={o.title}
             onClick={() => onChange(o.key)}
-            className={`cursor-pointer whitespace-nowrap rounded-[5px] border-0 font-sans font-semibold transition-colors duration-fast ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent ${
-              size === "sm" ? "px-2 py-[3px] text-ops-micro" : "px-2.5 py-[4px] text-ops-label"
+            className={`cursor-pointer whitespace-nowrap rounded-[5px] border-0 font-sans transition-colors duration-fast ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent ${
+              size === "sm" ? "px-2 py-[3px] text-ops-micro font-semibold" : "px-2.5 py-[5px] text-[13px] font-medium"
             } ${
               active
-                ? "bg-app-card text-content shadow-app-card"
-                : "bg-transparent text-content-muted hover:text-content"
+                ? "bg-app-well font-semibold text-nav3-hover-text"
+                : "bg-transparent text-nav3-muted-text hover:text-nav3-hover-text"
             }`}
           >
             {o.shortLabel ? (

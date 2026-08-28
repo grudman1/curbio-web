@@ -16,7 +16,7 @@ export function PageHeader({
 }) {
   return (
     <header className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-1">
-      <h1 className="m-0 font-ui2 text-ui2-title font-semibold text-ui2-text">{title}</h1>
+      <h1 className="m-0 font-ui2 text-ui2-title font-bold text-ui2-text">{title}</h1>
       <div className="ml-auto flex flex-wrap items-center gap-3">
         {freshness && <span className="font-ui2 text-ui2-caption text-ui2-text-muted">{freshness}</span>}
         {right}

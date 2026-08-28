@@ -23,7 +23,7 @@ export function HealthDot({ health, title }: { health: Health; title?: string })
     <span
       title={title}
       aria-hidden
-      className={`inline-block h-[7px] w-[7px] flex-none rounded-full border-[1.5px] ${BORDER[health]} ${FILL[health]} ${
+      className={`inline-block h-2 w-2 flex-none rounded-full border-[1.5px] ${BORDER[health]} ${FILL[health]} ${
         health === "unknown" ? "border-dashed" : ""
       }`}
     />
@@ -38,7 +38,7 @@ export function WiringDot({ tooltip }: { tooltip: string }) {
     <span
       title={tooltip}
       aria-label={tooltip}
-      className="inline-block h-[6px] w-[6px] flex-none rounded-full bg-ui2-text-muted/40"
+      className="inline-block h-2 w-2 flex-none rounded-full bg-ui2-gray-300"
     />
   );
 }
