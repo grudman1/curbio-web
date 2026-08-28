@@ -52,7 +52,7 @@ function PendingRequestsPanel({ pending }: { pending: AdminUser[] }) {
         {pending.map((u) => (
           <div
             key={u.email}
-            className="flex h-ops-row items-center gap-2.5 border-b border-edge font-sans text-ops-body last:border-b-0"
+            className="flex h-ops-row items-center gap-2.5 border-b border-app-border font-sans text-ops-body last:border-b-0"
           >
             <span className="flex-1 truncate">{u.email}</span>
             <span className="font-sans text-ops-micro tabular-nums text-content-subtle">
@@ -71,7 +71,7 @@ function PendingRequestsPanel({ pending }: { pending: AdminUser[] }) {
               <input type="hidden" name="email" value={u.email} />
               <button
                 type="submit"
-                className="cursor-pointer rounded-pill border border-edge-strong bg-transparent px-3 py-[4px] font-sans text-ops-micro font-bold text-content-muted transition-colors duration-base ease-out hover:border-content hover:text-content"
+                className="cursor-pointer rounded-pill border border-app-border-strong bg-transparent px-3 py-[4px] font-sans text-ops-micro font-bold text-content-muted transition-colors duration-base ease-out hover:border-content hover:text-content"
               >
                 Deny
               </button>

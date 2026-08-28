@@ -7,7 +7,7 @@ import { PageHeader } from "../../_ui/AppShell";
 import { PageCard } from "../../_ui/PageCard";
 import { EmptyState } from "../../_ui/EmptyState";
 import { InfoPopover } from "../../_ui/InfoPopover";
-import { MetricTile } from "../../_ui/MetricTile";
+import { StatCard } from "../../_ui/StatCard";
 import { Chip, DASH, Eyebrow, Panel } from "../../_ui/primitives";
 import { bucketFor, dayRange, monthsFor, parseTimeframe, resampleNote, timeframeLabel } from "../../_ui/timeframe";
 
@@ -168,7 +168,7 @@ export default async function PagesScreen({
 
       {/* ── the four tiles ── */}
       <div className="mb-ops-gap grid grid-cols-2 gap-ops-gap lg:grid-cols-4">
-        <MetricTile
+        <StatCard
           label="Views"
           value={totalViews}
           delta={delta(totalViews, prevViews)}
@@ -181,14 +181,14 @@ export default async function PagesScreen({
           }
           info="Raw pageviews from Vercel Web Analytics across every page in the registry. GA4 is not wired yet, so there is no second source to compare against."
         />
-        <MetricTile
+        <StatCard
           label="Leads"
           value={totalLeads}
           delta={delta(totalLeads, prevLeads)}
           note={stats?.leadsTruncated ? `last ${SCAN} scanned — partial` : `last ${SCAN} scanned`}
           info={`Leads are read from the Redis store, newest ${SCAN} only. The store is capped, so a long timeframe can reach further back than the scan does — when that happens the range is labelled partial and conversion rates are withheld rather than reported wrong.`}
         />
-        <MetricTile
+        <StatCard
           label="Conversion"
           value={conversion}
           delta={delta(conversion, prevConversion)}
@@ -196,7 +196,7 @@ export default async function PagesScreen({
           note={stats?.leadsTruncated ? "withheld — partial lead range" : "leads ÷ views"}
           info="Leads divided by Vercel pageviews. Withheld entirely when the lead scan does not cover the whole timeframe — a conversion rate computed on a truncated numerator is a wrong number stated confidently."
         />
-        <MetricTile
+        <StatCard
           label="Unattributed share"
           value={null}
           note="needs attribution wiring"
@@ -255,7 +255,7 @@ export default async function PagesScreen({
             {planned.map((e) => (
               <li
                 key={e.path}
-                className="flex h-ops-row items-center gap-3 border-b border-edge last:border-b-0"
+                className="flex h-ops-row items-center gap-3 border-b border-app-border last:border-b-0"
               >
                 <span className="font-mono text-ops-label text-content">{e.path}</span>
                 <span className="truncate font-sans text-ops-label text-content-muted">{e.title}</span>

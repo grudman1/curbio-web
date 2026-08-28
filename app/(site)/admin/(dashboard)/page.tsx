@@ -125,20 +125,20 @@ export default async function TodayScreen({
     attention.push({
       tone: "bad",
       text: `${underHalf[0].label} is under half pace — ${underHalf[0].qualified}/${underHalf[0].target}`,
-      href: "/marketing/markets",
+      href: "/admin/markets",
     });
   } else if (underHalf.length > 1) {
     attention.push({
       tone: "bad",
       text: `${underHalf.length} of ${MARKETS.length} markets are under half pace`,
-      href: "/marketing/markets",
+      href: "/admin/markets",
     });
   }
   if (unattributed !== null && unattributed >= 0.5) {
     attention.push({
       tone: "warn",
       text: `${Math.round(unattributed * 100)}% of qualified leads have no known channel`,
-      href: "/marketing/attribution",
+      href: "/admin/attribution",
     });
   }
   if (underHalf.length === 0 && behind.length > 0) {
@@ -147,7 +147,7 @@ export default async function TodayScreen({
     attention.push({
       tone: "warn",
       text: `${behind.length} market${behind.length === 1 ? " is" : "s are"} behind pace`,
-      href: "/marketing/markets",
+      href: "/admin/markets",
     });
   }
 
@@ -165,8 +165,8 @@ export default async function TodayScreen({
 
       <div className="grid grid-cols-1 gap-ops-gap lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
         <div className="flex flex-col gap-ops-gap">
-          {/* ── THE number. The one place serif survives outside a title. ── */}
-          <section className="rounded-lg border border-edge bg-surface-raised p-ops-panel">
+          {/* ── THE number. ── */}
+          <section className="rounded-lg border border-app-border bg-app-card p-ops-panel shadow-app-card">
             <div className="flex items-center gap-1.5">
               <Eyebrow>Qualified leads · {label}</Eyebrow>
               <InfoPopover label="What qualified means">
@@ -177,7 +177,7 @@ export default async function TodayScreen({
             </div>
 
             <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="font-serif text-ops-hero font-semibold tabular-nums text-content">
+              <span className="font-sans text-ops-hero font-bold tabular-nums text-content">
                 {companyQualified.toLocaleString("en-US")}
               </span>
               <span className="font-sans text-ops-body tabular-nums text-content-subtle">
@@ -215,7 +215,7 @@ export default async function TodayScreen({
             ) : (
               <ul className="m-0 list-none p-0">
                 {attention.map((a) => (
-                  <li key={a.text} className="border-b border-edge last:border-b-0">
+                  <li key={a.text} className="border-b border-app-border last:border-b-0">
                     <Link
                       href={a.href}
                       className="flex h-ops-row items-center gap-2.5 font-sans text-ops-table text-content no-underline hover:text-content-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent"

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
-import { Meta, MUTED, Panel, Stat, SUBTLE } from "@/app/(site)/admin/(dashboard)/ui";
+import { InfoPopover } from "@/app/(site)/admin/_ui/InfoPopover";
+import { Meta, Panel } from "@/app/(site)/admin/_ui/primitives";
+import { StatCard } from "@/app/(site)/admin/_ui/StatCard";
 import { FORM_TYPES, HUB_SURFACE_BY_SLUG } from "@/config/marketingHub";
-import { ConsequenceNote, DASH, DefinitionsNote, EmptyLog, HubPageHeader, NeedsBlock } from "../hubUi";
+import { DefinitionsInfo, EmptyLog, HubPageHeader, NeedsBlock } from "../hubUi";
 
 export const metadata: Metadata = {
   title: "Forms · Marketing — Curbio",
@@ -13,44 +15,48 @@ const surface = HUB_SURFACE_BY_SLUG.forms;
 export default function FormsPage() {
   return (
     <>
-      <HubPageHeader surface={surface} />
+      <HubPageHeader surface={surface} right={<DefinitionsInfo align="right" />} />
 
-      {/* ── counts by form type ── */}
-      <div style={{ marginBottom: "var(--space-4)" }}>
-        <Panel title="Submissions by form type" right={<Meta>this month</Meta>}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "20px 32px" }}>
-            {FORM_TYPES.map((t) => (
-              <Stat key={t} label={t} value={DASH} tone={SUBTLE} />
-            ))}
-          </div>
-          <p
-            style={{
-              fontFamily: "var(--font-family-sans)",
-              fontSize: "var(--text-small)",
-              color: MUTED,
-              margin: "16px 0 0",
-              maxWidth: 720,
-              lineHeight: 1.6,
-            }}
-          >
-            Every submission here is an Engaged conversion. <strong>estimate</strong> is
-            not a form type on this page and never will be — estimates go to the app and
-            appear in the Hub only as Qualified numbers synced back from it.
-          </p>
-          <DefinitionsNote />
-        </Panel>
+      {/* ── counts by form type — unwired, so every value is an em-dash ── */}
+      <div className="mb-ops-gap grid grid-cols-2 gap-ops-gap lg:grid-cols-4">
+        {FORM_TYPES.map((t) => (
+          <StatCard
+            key={t}
+            label={t}
+            value={null}
+            info={
+              t === FORM_TYPES[0] ? (
+                <p className="m-0">
+                  Every submission here is an Engaged conversion. &ldquo;estimate&rdquo; is not a
+                  form type on this page and never will be — estimates go to the app and appear in
+                  the Hub only as Qualified numbers synced back from it.
+                </p>
+              ) : undefined
+            }
+          />
+        ))}
       </div>
 
       {/* ── the submission log ── */}
-      <Panel title="Submission log" right={<Meta>newest first</Meta>}>
+      <Panel
+        flush
+        title="Submission log"
+        right={
+          <span className="inline-flex items-center gap-1.5">
+            <Meta>newest first</Meta>
+            <InfoPopover label="Why the asset-delivered column exists" align="right">
+              <p className="m-0">
+                An unconfirmed toolkit delivery is a broken promise to an agent — the
+                asset-delivered column exists so that promise is checked, not assumed.
+              </p>
+            </InfoPopover>
+          </span>
+        }
+      >
         <EmptyLog
           columns={["Received", "Form type", "Contact", "Market", "Channel", "Asset delivered"]}
           fedBy="/api/intake"
         />
-        <ConsequenceNote>
-          An unconfirmed toolkit delivery is a broken promise to an agent — the
-          asset-delivered column exists so that promise is checked, not assumed.
-        </ConsequenceNote>
       </Panel>
 
       <NeedsBlock surface={surface} />

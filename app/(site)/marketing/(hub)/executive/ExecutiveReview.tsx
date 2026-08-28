@@ -5,8 +5,9 @@
 // understood. No toggles, no drill-downs, no attribution switches — those
 // stay in the operator pages.
 //
-// Server component shared by /marketing/executive (operator chrome, editable
-// agenda) and the tokened share route (no sidebar, larger type, read-only).
+// Server component shared by the operator route (editable agenda) and the
+// tokened share route (no sidebar, larger type, read-only). The share view
+// keeps its definitions PRINTED — a projected document cannot rely on hover.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { MARKETS } from "@/config/markets";
@@ -31,35 +32,36 @@ import {
   SNAPSHOT_MONTHS,
 } from "@/config/appLeadsSnapshot";
 import type { ExecNotes } from "@/lib/marketingExecNotes";
-import { Meta, MUTED, Panel, SUBTLE, eyebrow } from "@/app/(site)/admin/(dashboard)/ui";
+import { Table, Td, Th, Tr } from "@/app/(site)/admin/_ui/DataTable";
+import { DASH, Eyebrow, Meta, Panel } from "@/app/(site)/admin/_ui/primitives";
 import { monthLabelFull, monthShort } from "../timeframe";
-import { DASH } from "../hubUi";
 import { NotesEditor } from "./NotesEditor";
-
-const num: React.CSSProperties = {
-  fontFamily: "var(--font-family-serif)",
-  fontVariantNumeric: "tabular-nums",
-  fontWeight: 600,
-  lineHeight: 1,
-  color: "var(--color-text)",
-};
-
-const noteProse: React.CSSProperties = {
-  fontFamily: "var(--font-family-sans)",
-  fontSize: "var(--text-small)",
-  color: "var(--color-text)",
-  margin: 0,
-  lineHeight: 1.65,
-  whiteSpace: "pre-wrap",
-};
 
 function Arrow({ delta }: { delta: number }) {
   const glyph = delta > 0 ? "▲" : delta < 0 ? "▼" : "→";
-  const tone = delta > 0 ? "var(--color-state-success)" : delta < 0 ? "var(--color-state-error)" : SUBTLE;
+  const tone = delta > 0 ? "text-tone-good" : delta < 0 ? "text-tone-bad" : "text-content-subtle";
   return (
-    <span aria-label={`${delta > 0 ? "up" : delta < 0 ? "down" : "flat"} vs last month`} style={{ color: tone, fontSize: 10 }}>
+    <span aria-label={`${delta > 0 ? "up" : delta < 0 ? "down" : "flat"} vs last month`} className={`${tone} text-[10px] font-bold tabular-nums`}>
       {glyph} {delta > 0 ? `+${delta}` : delta}
     </span>
+  );
+}
+
+function SectionHead({ label, right }: { label: string; right?: React.ReactNode }) {
+  return (
+    <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
+      <Eyebrow>{label}</Eyebrow>
+      {right}
+    </div>
+  );
+}
+
+function DashStat({ label }: { label: string }) {
+  return (
+    <div>
+      <div className="font-sans text-[26px] font-semibold leading-none tabular-nums text-content-subtle">{DASH}</div>
+      <div className="mt-1.5 font-sans text-ops-label text-content-muted">{label}</div>
+    </div>
   );
 }
 
@@ -148,161 +150,134 @@ export function ExecutiveReview({
   const conv = (from: number | null, to: number | null) =>
     from === null || to === null || from === 0 ? DASH : `${Math.round((to / from) * 100)}%`;
 
-  const headlineSize = share ? 40 : 30;
-
   return (
-    <div style={share ? { fontSize: 17 } : undefined}>
+    <div className={share ? "text-[17px]" : undefined}>
       {/* ── 1. the headline — one sentence, no chart above it ── */}
-      <section style={{ margin: "0 0 var(--space-8)" }}>
+      <section className="mb-8">
         <p
-          style={{
-            fontFamily: "var(--font-family-serif)",
-            fontSize: headlineSize,
-            fontWeight: 600,
-            letterSpacing: "var(--tracking-heading)",
-            lineHeight: 1.25,
-            color: "var(--color-text)",
-            margin: 0,
-            maxWidth: "26em",
-          }}
+          className={`m-0 max-w-[30em] font-sans font-bold leading-[1.25] text-content ${
+            share ? "text-[36px]" : "text-[26px]"
+          }`}
         >
           In {monthName.split(" ")[0]}, Curbio produced {companyQ} qualified lead
           {companyQ === 1 ? "" : "s"} across {MARKETS.length} markets against a target of{" "}
           {companyTarget}.
         </p>
-        <p style={{ fontFamily: "var(--font-family-sans)", fontSize: share ? 17 : "var(--text-body)", color: MUTED, margin: "14px 0 0" }}>
-          <strong style={{ ...num, fontSize: share ? 26 : 22 }}>{companyQ}</strong> of{" "}
-          {companyTarget} — {companyTarget - companyQ} short.
+        <p className={`m-0 mt-3.5 font-sans text-content-muted ${share ? "text-[17px]" : "text-body"}`}>
+          <strong className={`font-semibold tabular-nums text-content ${share ? "text-[26px]" : "text-[22px]"}`}>
+            {companyQ}
+          </strong>{" "}
+          of {companyTarget} — {companyTarget - companyQ} short.
           {otherQ > 0 && ` (+${otherQ} in app markets without landing pages, outside the target.)`}
         </p>
-        <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: "10px 0 0" }}>
+        <p className="m-0 mt-2.5 font-sans text-ops-label text-content-subtle">
           {monthName} · {SNAPSHOT_LABEL}
         </p>
       </section>
 
       {/* ── 2. market scorecard — the table the meeting is about ── */}
-      <section style={{ margin: "0 0 var(--space-8)" }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: "var(--space-3)" }}>
-          <p style={{ ...eyebrow }}>Markets, worst gap first</p>
-          <Meta>target {target} each · arrow vs {prevMonth ? monthShort(prevMonth) : "last month"}</Meta>
-        </div>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <section className="mb-8">
+        <SectionHead
+          label="Markets, worst gap first"
+          right={<Meta>target {target} each · arrow vs {prevMonth ? monthShort(prevMonth) : "last month"}</Meta>}
+        />
+        <Panel flush>
+          <Table>
             <thead>
               <tr>
-                {["Market", "Qualified", "Target", "Gap", "Close rate", "Revenue", "vs last"].map((h, i) => (
-                  <th
-                    key={h}
-                    style={{
-                      fontFamily: "var(--font-family-sans)",
-                      fontSize: "var(--text-micro)",
-                      fontWeight: 700,
-                      letterSpacing: "0.1em",
-                      textTransform: "uppercase",
-                      color: SUBTLE,
-                      textAlign: i === 0 ? "left" : "right",
-                      padding: "0 0 8px 16px",
-                      paddingLeft: i === 0 ? 0 : 16,
-                      borderBottom: "1px solid var(--color-border)",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
+                <Th>Market</Th>
+                <Th align="right">Qualified</Th>
+                <Th align="right">Target</Th>
+                <Th align="right">Gap</Th>
+                <Th align="right">Close rate</Th>
+                <Th align="right">Revenue</Th>
+                <Th align="right">vs last</Th>
               </tr>
             </thead>
             <tbody>
               {scorecard.map((r) => (
-                <tr key={r.name}>
-                  <td style={{ padding: "10px 0", borderBottom: "1px solid var(--color-border)", fontFamily: "var(--font-family-sans)", fontSize: share ? 16 : "var(--text-small)", fontWeight: 600 }}>
-                    {r.name}
-                  </td>
-                  <td style={{ padding: "10px 0 10px 16px", borderBottom: "1px solid var(--color-border)", textAlign: "right", fontFamily: "var(--font-family-sans)", fontVariantNumeric: "tabular-nums", fontSize: share ? 16 : "var(--text-small)", fontWeight: 700 }}>
-                    {r.qualified}
-                  </td>
-                  <td style={{ padding: "10px 0 10px 16px", borderBottom: "1px solid var(--color-border)", textAlign: "right", fontFamily: "var(--font-family-sans)", fontVariantNumeric: "tabular-nums", fontSize: share ? 15 : "var(--text-small)", color: MUTED }}>
-                    {target}
-                  </td>
-                  <td style={{ padding: "10px 0 10px 16px", borderBottom: "1px solid var(--color-border)", textAlign: "right", fontFamily: "var(--font-family-sans)", fontVariantNumeric: "tabular-nums", fontSize: share ? 16 : "var(--text-small)", fontWeight: 700, color: r.gap > 0 ? "var(--color-state-error)" : "var(--color-state-success)" }}>
+                <Tr key={r.name}>
+                  <Td className={`font-semibold ${share ? "text-[16px]" : ""}`}>{r.name}</Td>
+                  <Td align="right" className="font-bold">{r.qualified}</Td>
+                  <Td align="right" muted>{target}</Td>
+                  <Td align="right" className={`font-bold ${r.gap > 0 ? "text-tone-bad" : "text-tone-good"}`}>
                     {r.gap > 0 ? `−${r.gap}` : `+${-r.gap}`}
-                  </td>
-                  <td style={{ padding: "10px 0 10px 16px", borderBottom: "1px solid var(--color-border)", textAlign: "right", fontFamily: "var(--font-family-sans)", fontVariantNumeric: "tabular-nums", fontSize: share ? 15 : "var(--text-small)", color: MUTED }}>
-                    {r.qualified ? `${Math.round((r.closed / r.qualified) * 100)}%` : DASH}
-                  </td>
-                  <td style={{ padding: "10px 0 10px 16px", borderBottom: "1px solid var(--color-border)", textAlign: "right", fontFamily: "var(--font-family-sans)", fontVariantNumeric: "tabular-nums", fontSize: share ? 15 : "var(--text-small)", color: r.revenue ? "var(--color-text)" : SUBTLE }}>
+                  </Td>
+                  <Td align="right" muted>{r.qualified ? `${Math.round((r.closed / r.qualified) * 100)}%` : DASH}</Td>
+                  <Td align="right" muted={!r.revenue}>
                     {r.revenue ? `$${Math.round(r.revenue).toLocaleString("en-US")}` : "$0"}
-                  </td>
-                  <td style={{ padding: "10px 0 10px 16px", borderBottom: "1px solid var(--color-border)", textAlign: "right", fontFamily: "var(--font-family-sans)", fontSize: "var(--text-small)", whiteSpace: "nowrap" }}>
-                    {r.delta === null ? <span style={{ color: SUBTLE }}>{DASH}</span> : <Arrow delta={r.delta} />}
-                  </td>
-                </tr>
+                  </Td>
+                  <Td align="right" className="whitespace-nowrap">
+                    {r.delta === null ? <span className="text-content-subtle">{DASH}</span> : <Arrow delta={r.delta} />}
+                  </Td>
+                </Tr>
               ))}
             </tbody>
-          </table>
-        </div>
+          </Table>
+        </Panel>
         {otherQ > 0 && (
-          <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: "8px 0 0" }}>
-            {OTHER_MARKETS_LABEL}: {otherQ} Qualified — app markets without landing pages,
-            no target.
+          <p className="m-0 mt-2 font-sans text-ops-label text-content-subtle">
+            {OTHER_MARKETS_LABEL}: {otherQ} Qualified — app markets without landing pages, no target.
           </p>
         )}
       </section>
 
       {/* ── 3. what produced them ── */}
-      <section style={{ margin: "0 0 var(--space-8)" }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: "var(--space-3)" }}>
-          <p style={{ ...eyebrow }}>What produced them</p>
-          <Meta>last touch · all app markets · unattributed broken out</Meta>
-        </div>
+      <section className="mb-8">
+        <SectionHead label="What produced them" right={<Meta>last touch · all app markets · unattributed broken out</Meta>} />
         {totalWithOther === 0 ? (
-          <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-small)", color: MUTED, margin: 0 }}>
-            No Qualified leads in {monthName}.
-          </p>
+          <p className="m-0 font-sans text-ops-body text-content-muted">No Qualified leads in {monthName}.</p>
         ) : (
           <>
-            <div aria-hidden style={{ display: "flex", height: 26, borderRadius: 6, overflow: "hidden", border: "1px solid var(--color-border)" }}>
+            <div aria-hidden className="flex h-[26px] overflow-hidden rounded-md border border-app-border">
               {byChannel
                 .filter((r) => r.q > 0)
                 .map((r) => (
-                  <span key={r.channel} title={`${CHANNEL_LABELS[r.channel]}: ${r.q}`} style={{ width: `${(r.q / totalWithOther) * 100}%`, background: CHANNEL_COLORS[r.channel] }} />
+                  <span
+                    key={r.channel}
+                    title={`${CHANNEL_LABELS[r.channel]}: ${r.q}`}
+                    style={{ width: `${(r.q / totalWithOther) * 100}%`, background: CHANNEL_COLORS[r.channel] }}
+                  />
                 ))}
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 16px", marginTop: 8 }}>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
               {byChannel
                 .filter((r) => r.q > 0)
                 .map((r) => (
-                  <span key={r.channel} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "var(--font-family-sans)", fontSize: share ? 13 : 11.5, fontWeight: 600, color: MUTED }}>
-                    <span aria-hidden style={{ width: 9, height: 9, borderRadius: 2, background: CHANNEL_COLORS[r.channel], flex: "none" }} />
+                  <span
+                    key={r.channel}
+                    className={`inline-flex items-center gap-1.5 font-sans font-semibold text-content-muted ${share ? "text-[13px]" : "text-[11.5px]"}`}
+                  >
+                    <span aria-hidden className="h-[9px] w-[9px] flex-none rounded-sm" style={{ background: CHANNEL_COLORS[r.channel] }} />
                     {r.channel === "direct" ? "Unattributed" : CHANNEL_LABELS[r.channel]} {r.q}
                   </span>
                 ))}
             </div>
-            <p style={{ fontFamily: "var(--font-family-sans)", fontSize: share ? 15 : "var(--text-small)", color: "var(--color-text)", margin: "12px 0 0", lineHeight: 1.6, maxWidth: 700 }}>
-              <strong>{Math.round((unattributed / totalWithOther) * 100)}% is unattributed</strong> —
-              {" "}{unattributed} of {totalWithOther} arrived with no UTM, no first-touch cookie,
-              and no tracked phone number. We do not know what produced them.
+            <p className={`m-0 mt-3 max-w-[700px] font-sans leading-[1.6] text-content ${share ? "text-[15px]" : "text-ops-body"}`}>
+              <strong>{Math.round((unattributed / totalWithOther) * 100)}% is unattributed</strong> — {unattributed} of{" "}
+              {totalWithOther} arrived with no UTM, no first-touch cookie, and no tracked phone number. We do not know
+              what produced them.
             </p>
-            <div style={{ display: "flex", gap: 40, flexWrap: "wrap", marginTop: 14 }}>
+            <div className="mt-3.5 flex flex-wrap gap-10">
               <div>
-                <p style={{ ...eyebrow, marginBottom: 6 }}>Grew most{prevMonth ? ` vs ${monthShort(prevMonth)}` : ""}</p>
+                <Eyebrow className="mb-1.5 block">Grew most{prevMonth ? ` vs ${monthShort(prevMonth)}` : ""}</Eyebrow>
                 {grew.length === 0 ? (
-                  <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: 0 }}>no attributed channel grew</p>
+                  <p className="m-0 font-sans text-ops-label text-content-subtle">no attributed channel grew</p>
                 ) : (
                   grew.map((g) => (
-                    <p key={g.channel} style={{ fontFamily: "var(--font-family-sans)", fontSize: share ? 15 : "var(--text-small)", margin: "2px 0", color: "var(--color-text)" }}>
+                    <p key={g.channel} className={`my-0.5 font-sans text-content ${share ? "text-[15px]" : "text-ops-body"}`}>
                       {CHANNEL_LABELS[g.channel]} <strong>+{g.delta}</strong> ({g.prevQ} → {g.q})
                     </p>
                   ))
                 )}
               </div>
               <div>
-                <p style={{ ...eyebrow, marginBottom: 6 }}>Shrank most{prevMonth ? ` vs ${monthShort(prevMonth)}` : ""}</p>
+                <Eyebrow className="mb-1.5 block">Shrank most{prevMonth ? ` vs ${monthShort(prevMonth)}` : ""}</Eyebrow>
                 {shrank.length === 0 ? (
-                  <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: 0 }}>no attributed channel shrank</p>
+                  <p className="m-0 font-sans text-ops-label text-content-subtle">no attributed channel shrank</p>
                 ) : (
                   shrank.map((g) => (
-                    <p key={g.channel} style={{ fontFamily: "var(--font-family-sans)", fontSize: share ? 15 : "var(--text-small)", margin: "2px 0", color: "var(--color-text)" }}>
+                    <p key={g.channel} className={`my-0.5 font-sans text-content ${share ? "text-[15px]" : "text-ops-body"}`}>
                       {CHANNEL_LABELS[g.channel]} <strong>{g.delta}</strong> ({g.prevQ} → {g.q})
                     </p>
                   ))
@@ -314,32 +289,36 @@ export function ExecutiveReview({
       </section>
 
       {/* ── 4. the funnel — lead problem or closing problem ── */}
-      <section style={{ margin: "0 0 var(--space-8)" }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: "var(--space-3)" }}>
-          <p style={{ ...eyebrow }}>Funnel — is it a lead problem or a closing problem</p>
-          <Meta>{monthName}{prevMonth ? ` beside ${monthShort(prevMonth)}` : ""} · all app markets</Meta>
-        </div>
-        <div style={{ overflowX: "auto" }}>
-          <div style={{ display: "flex", alignItems: "stretch", gap: 8, minWidth: 560 }}>
+      <section className="mb-8">
+        <SectionHead
+          label="Funnel — is it a lead problem or a closing problem"
+          right={<Meta>{monthName}{prevMonth ? ` beside ${monthShort(prevMonth)}` : ""} · all app markets</Meta>}
+        />
+        <div className="overflow-x-auto">
+          <div className="flex min-w-[560px] items-stretch gap-2">
             {stages.map((s, i) => (
-              <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
-                <div style={{ border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", padding: share ? "14px 18px" : "10px 14px", flex: 1, background: "var(--color-surface-raised)" }}>
-                  <div style={{ ...num, fontSize: share ? 30 : 24, color: s.cur === null ? SUBTLE : "var(--color-text)" }}>
+              <div key={s.label} className="flex flex-1 items-center gap-2">
+                <div className={`flex-1 rounded-lg border border-app-border bg-app-card shadow-app-card ${share ? "px-4 py-3.5" : "px-3.5 py-2.5"}`}>
+                  <div
+                    className={`font-sans font-semibold leading-none tabular-nums ${share ? "text-[30px]" : "text-[24px]"} ${
+                      s.cur === null ? "text-content-subtle" : "text-content"
+                    }`}
+                  >
                     {s.cur ?? DASH}
                   </div>
-                  <div style={{ fontFamily: "var(--font-family-sans)", fontSize: share ? 13 : "var(--text-label)", color: MUTED, marginTop: 4, whiteSpace: "nowrap" }}>
+                  <div className={`mt-1 whitespace-nowrap font-sans text-content-muted ${share ? "text-[13px]" : "text-ops-label"}`}>
                     {s.label}
                   </div>
-                  <div style={{ fontFamily: "var(--font-family-sans)", fontSize: share ? 12 : "var(--text-micro)", color: SUBTLE, marginTop: 3 }}>
+                  <div className={`mt-0.5 font-sans text-content-subtle ${share ? "text-[12px]" : "text-ops-micro"}`}>
                     {prevMonth ? `${monthShort(prevMonth)}: ${s.prev ?? DASH}` : ""}
                   </div>
                 </div>
                 {i < stages.length - 1 && (
-                  <div style={{ flex: "none", textAlign: "center" }}>
-                    <div style={{ fontFamily: "var(--font-family-sans)", fontSize: share ? 13 : "var(--text-label)", fontWeight: 700, color: "var(--color-text)" }}>
+                  <div className="flex-none text-center">
+                    <div className={`font-sans font-bold text-content ${share ? "text-[13px]" : "text-ops-label"}`}>
                       {conv(s.cur, stages[i + 1].cur)}
                     </div>
-                    <div style={{ fontFamily: "var(--font-family-sans)", fontSize: share ? 11 : "var(--text-micro)", color: SUBTLE }}>
+                    <div className={`font-sans text-content-subtle ${share ? "text-[11px]" : "text-ops-micro"}`}>
                       {prevMonth ? conv(s.prev, stages[i + 1].prev) : ""}
                     </div>
                   </div>
@@ -348,58 +327,43 @@ export function ExecutiveReview({
             ))}
           </div>
         </div>
-        <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: "10px 0 0", lineHeight: 1.6 }}>
-          Cumulative reached-at-least counts; Closed = status Won only. Engaged has no
-          wired source yet and renders an em-dash, never a zero.
+        <p className="m-0 mt-2.5 font-sans text-ops-label leading-[1.6] text-content-subtle">
+          Cumulative reached-at-least counts; Closed = status Won only. Engaged has no wired source yet and renders an
+          em-dash, never a zero.
         </p>
       </section>
 
       {/* ── 5. initiatives ── */}
-      <section style={{ margin: "0 0 var(--space-8)" }}>
-        <p style={{ ...eyebrow, marginBottom: "var(--space-3)" }}>Initiatives</p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "var(--space-4)" }}>
+      <section className="mb-8">
+        <SectionHead label="Initiatives" />
+        <div className="grid grid-cols-1 gap-ops-gap md:grid-cols-3">
           <Panel title="Partners" right={<Meta>vs ${COST_PER_MEETING_TARGET_USD} per meeting</Meta>}>
-            <div style={{ display: "flex", gap: 28 }}>
-              <div>
-                <div style={{ ...num, fontSize: 26, color: SUBTLE }}>{DASH}</div>
-                <div style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: MUTED, marginTop: 5 }}>meetings booked</div>
-              </div>
-              <div>
-                <div style={{ ...num, fontSize: 26, color: SUBTLE }}>{DASH}</div>
-                <div style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: MUTED, marginTop: 5 }}>cost per meeting</div>
-              </div>
+            <div className="flex gap-7">
+              <DashStat label="meetings booked" />
+              <DashStat label="cost per meeting" />
             </div>
-            <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: "10px 0 0", lineHeight: 1.5 }}>
+            <p className="m-0 mt-2.5 font-sans text-ops-label leading-[1.5] text-content-subtle">
               No on-track read until the meeting log and spend entry exist.
             </p>
           </Panel>
           <Panel title="Events" right={<Meta>vs ${COST_PER_ATTENDEE_TARGET_USD} per attendee</Meta>}>
-            <div style={{ display: "flex", gap: 28 }}>
-              <div>
-                <div style={{ ...num, fontSize: 26, color: SUBTLE }}>{DASH}</div>
-                <div style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: MUTED, marginTop: 5 }}>events held</div>
-              </div>
-              <div>
-                <div style={{ ...num, fontSize: 26, color: SUBTLE }}>{DASH}</div>
-                <div style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: MUTED, marginTop: 5 }}>cost per attendee</div>
-              </div>
+            <div className="flex gap-7">
+              <DashStat label="events held" />
+              <DashStat label="cost per attendee" />
             </div>
-            <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: "10px 0 0", lineHeight: 1.5 }}>
+            <p className="m-0 mt-2.5 font-sans text-ops-label leading-[1.5] text-content-subtle">
               No on-track read until the event log and spend entry exist.
             </p>
           </Panel>
-          <Panel title="Outreach" right={<Meta>target {OUTREACH_WEEKLY_MAILINGS_TARGET} mailings · {OUTREACH_WEEKLY_CALLS_TARGET} calls / HSM / wk</Meta>}>
-            <div style={{ display: "flex", gap: 28 }}>
-              <div>
-                <div style={{ ...num, fontSize: 26, color: SUBTLE }}>{DASH}</div>
-                <div style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: MUTED, marginTop: 5 }}>cadence kept</div>
-              </div>
-              <div>
-                <div style={{ ...num, fontSize: 26, color: SUBTLE }}>{DASH}</div>
-                <div style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: MUTED, marginTop: 5 }}>meetings booked</div>
-              </div>
+          <Panel
+            title="Outreach"
+            right={<Meta>target {OUTREACH_WEEKLY_MAILINGS_TARGET} mailings · {OUTREACH_WEEKLY_CALLS_TARGET} calls / HSM / wk</Meta>}
+          >
+            <div className="flex gap-7">
+              <DashStat label="cadence kept" />
+              <DashStat label="meetings booked" />
             </div>
-            <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: "10px 0 0", lineHeight: 1.5 }}>
+            <p className="m-0 mt-2.5 font-sans text-ops-label leading-[1.5] text-content-subtle">
               No on-track read until the mailing log exists.
             </p>
           </Panel>
@@ -407,15 +371,15 @@ export function ExecutiveReview({
       </section>
 
       {/* ── 6. the agenda: wins · concerns · decisions ── */}
-      <section style={{ margin: "0 0 var(--space-8)" }}>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: "var(--space-3)" }}>
-          <p style={{ ...eyebrow }}>Wins · Concerns · Decisions needed</p>
-          {notes?.updatedAt && <Meta>written {notes.updatedAt.slice(0, 10)}</Meta>}
-        </div>
+      <section className="mb-8">
+        <SectionHead
+          label="Wins · Concerns · Decisions needed"
+          right={notes?.updatedAt ? <Meta>written {notes.updatedAt.slice(0, 10)}</Meta> : undefined}
+        />
         {editable ? (
           <NotesEditor month={month} initial={notes} />
         ) : (
-          <div style={{ display: "grid", gap: "var(--space-4)" }}>
+          <div className="grid gap-4">
             {(
               [
                 ["Wins", notes?.wins],
@@ -424,13 +388,13 @@ export function ExecutiveReview({
               ] as const
             ).map(([label, text]) => (
               <div key={label}>
-                <p style={{ ...eyebrow, marginBottom: 6 }}>{label}</p>
+                <Eyebrow className="mb-1.5 block">{label}</Eyebrow>
                 {text ? (
-                  <p style={{ ...noteProse, fontSize: share ? 16 : "var(--text-small)" }}>{text}</p>
-                ) : (
-                  <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: 0 }}>
-                    Not written for {monthName}.
+                  <p className={`m-0 whitespace-pre-wrap font-sans leading-[1.65] text-content ${share ? "text-[16px]" : "text-ops-body"}`}>
+                    {text}
                   </p>
+                ) : (
+                  <p className="m-0 font-sans text-ops-label text-content-subtle">Not written for {monthName}.</p>
                 )}
               </div>
             ))}
@@ -438,14 +402,16 @@ export function ExecutiveReview({
         )}
       </section>
 
-      {/* ── 7. definitions — always printed, never a tooltip ── */}
-      <section>
-        <p style={{ ...eyebrow, marginBottom: 8 }}>Definitions</p>
-        <p style={{ fontFamily: "var(--font-family-sans)", fontSize: share ? 15 : "var(--text-small)", color: MUTED, margin: 0, lineHeight: 1.7, maxWidth: 700 }}>
-          {QUALIFIED_DEFINITION} {ENGAGED_DEFINITION} Engaged is never added into a
-          Qualified number, on any screen.
-        </p>
-      </section>
+      {/* ── 7. definitions — printed on the projected share view, where nobody
+             can hover an ⓘ. The operator view carries them in the header. ── */}
+      {share && (
+        <section>
+          <Eyebrow className="mb-2 block">Definitions</Eyebrow>
+          <p className="m-0 max-w-[700px] font-sans text-[15px] leading-[1.7] text-content-muted">
+            {QUALIFIED_DEFINITION} {ENGAGED_DEFINITION} Engaged is never added into a Qualified number, on any screen.
+          </p>
+        </section>
+      )}
     </div>
   );
 }

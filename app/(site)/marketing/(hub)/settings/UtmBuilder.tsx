@@ -1,36 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Meta, Panel, SUBTLE, mono } from "@/app/(site)/admin/(dashboard)/ui";
+import { Field, Input, Select } from "@/app/(site)/admin/_ui/Field";
+import { InfoPopover } from "@/app/(site)/admin/_ui/InfoPopover";
+import { Badge, Panel } from "@/app/(site)/admin/_ui/primitives";
 import { CHANNEL_FUNNEL_ORDER } from "@/config/marketingHub";
-import { ConsequenceNote } from "../hubUi";
 
 // Live UTM builder — the one Settings tool that needs no data source. The
 // utm_source list is the closed channel vocabulary from lib/channels.ts (via
 // the funnel ordering); anything outside it would be mapped back to `direct`
 // at the boundary, so the builder simply doesn't offer anything outside it.
-
-const field: React.CSSProperties = {
-  fontFamily: "var(--font-family-sans)",
-  fontSize: "var(--text-small)",
-  color: "var(--color-text)",
-  border: "1px solid var(--color-border)",
-  borderRadius: "var(--radius-lg)",
-  padding: "8px 10px",
-  background: "var(--color-surface-raised)",
-  width: "100%",
-};
-
-const fieldLabel: React.CSSProperties = {
-  fontFamily: "var(--font-family-sans)",
-  fontSize: "var(--text-micro)",
-  fontWeight: 700,
-  letterSpacing: "0.1em",
-  textTransform: "uppercase",
-  color: SUBTLE,
-  display: "block",
-  marginBottom: 6,
-};
 
 export function UtmBuilder() {
   const [base, setBase] = useState("https://sell.curbio.com/");
@@ -52,54 +31,46 @@ export function UtmBuilder() {
   }
 
   return (
-    <Panel title="UTM builder" right={<Meta>live</Meta>}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <label style={{ gridColumn: "1 / -1" }}>
-          <span style={fieldLabel}>Base URL</span>
-          <input type="url" value={base} onChange={(e) => setBase(e.target.value)} style={field} />
-        </label>
-        <label>
-          <span style={fieldLabel}>utm_source (channel)</span>
-          <select value={source} onChange={(e) => setSource(e.target.value)} style={field}>
+    <Panel
+      title="UTM builder"
+      right={
+        <span className="inline-flex items-center gap-1.5">
+          <Badge tone="good">live</Badge>
+          <InfoPopover label="Why only nine utm_source values" align="right">
+            <p className="m-0">
+              utm_source values outside the nine channels map back to direct at the boundary — the
+              builder only offers the closed list, so a link built here always attributes.
+            </p>
+          </InfoPopover>
+        </span>
+      }
+    >
+      <div className="grid grid-cols-2 gap-x-3 gap-y-3.5">
+        <Field label="Base URL" className="col-span-2">
+          <Input type="url" value={base} onChange={(e) => setBase(e.target.value)} />
+        </Field>
+        <Field label="utm_source (channel)">
+          <Select value={source} onChange={(e) => setSource(e.target.value)}>
             {CHANNEL_FUNNEL_ORDER.map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>
             ))}
-          </select>
-        </label>
-        <label>
-          <span style={fieldLabel}>utm_medium</span>
-          <input value={medium} onChange={(e) => setMedium(e.target.value)} placeholder="newsletter" style={field} />
-        </label>
-        <label>
-          <span style={fieldLabel}>utm_campaign</span>
-          <input value={campaign} onChange={(e) => setCampaign(e.target.value)} placeholder="sept-toolkit" style={field} />
-        </label>
-        <label>
-          <span style={fieldLabel}>utm_content</span>
-          <input value={content} onChange={(e) => setContent(e.target.value)} placeholder="cta-a" style={field} />
-        </label>
+          </Select>
+        </Field>
+        <Field label="utm_medium">
+          <Input value={medium} onChange={(e) => setMedium(e.target.value)} placeholder="newsletter" />
+        </Field>
+        <Field label="utm_campaign">
+          <Input value={campaign} onChange={(e) => setCampaign(e.target.value)} placeholder="sept-toolkit" />
+        </Field>
+        <Field label="utm_content">
+          <Input value={content} onChange={(e) => setContent(e.target.value)} placeholder="cta-a" />
+        </Field>
       </div>
-      <p
-        style={{
-          fontFamily: mono,
-          fontSize: 12.5,
-          color: "var(--color-text)",
-          background: "color-mix(in srgb, var(--color-border) 30%, transparent)",
-          borderRadius: "var(--radius-lg)",
-          padding: "10px 12px",
-          margin: "14px 0 0",
-          wordBreak: "break-all",
-          lineHeight: 1.5,
-        }}
-      >
+      <p className="m-0 mt-3.5 break-all rounded-md bg-app-well px-3 py-2.5 font-mono text-[12.5px] leading-[1.5] text-content">
         {preview}
       </p>
-      <ConsequenceNote>
-        utm_source values outside the nine channels map back to direct at the boundary —
-        the builder only offers the closed list, so a link built here always attributes.
-      </ConsequenceNote>
     </Panel>
   );
 }

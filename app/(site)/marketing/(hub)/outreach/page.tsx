@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { MARKETS } from "@/config/markets";
-import { Meta, MUTED, Panel, Stat, SUBTLE } from "@/app/(site)/admin/(dashboard)/ui";
+import { InfoPopover } from "@/app/(site)/admin/_ui/InfoPopover";
+import { DASH, Meta, Panel } from "@/app/(site)/admin/_ui/primitives";
 import {
   COST_PER_MEETING_TARGET_USD,
   HUB_SURFACE_BY_SLUG,
@@ -11,7 +12,7 @@ import {
 import { ownerSession } from "@/lib/adminGuards";
 import { readOpsOutreach, weekStart, type OutreachEntry } from "@/lib/opsOutreach";
 import { LoggedTag } from "@/app/(site)/admin/_ui/Logged";
-import { DASH, HubPageHeader, NeedsBlock } from "../hubUi";
+import { HubPageHeader, NeedsBlock } from "../hubUi";
 import { CadenceTable } from "./CadenceTable";
 
 export const metadata: Metadata = {
@@ -51,6 +52,24 @@ function armTotals(entries: OutreachEntry[], arm: string) {
   return { mailed: sum((e) => e.mailingsSent), meetings: sum((e) => e.meetingsBooked) };
 }
 
+function ArmStat({ label, value, logged }: { label: string; value: number | null; logged?: boolean }) {
+  return (
+    <div className="min-w-[86px]">
+      <div className="flex items-baseline gap-1.5">
+        <span
+          className={`font-sans text-ops-metric font-semibold tabular-nums ${
+            value === null ? "text-content-subtle" : "text-content"
+          }`}
+        >
+          {value === null ? DASH : value.toLocaleString("en-US")}
+        </span>
+        {logged && value !== null && <LoggedTag />}
+      </div>
+      <div className="mt-1 font-sans text-ops-label text-content-muted">{label}</div>
+    </div>
+  );
+}
+
 export default async function OutreachPage() {
   const [result, session] = await Promise.all([readOpsOutreach(), ownerSession()]);
   const isOwner = !!session;
@@ -73,49 +92,39 @@ export default async function OutreachPage() {
       <HubPageHeader surface={surface} />
 
       {/* ── the A/B: two arms side by side ── */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-          gap: "var(--space-4)",
-          marginBottom: "var(--space-4)",
-        }}
-      >
+      <div className="mb-ops-gap grid grid-cols-1 gap-ops-gap md:grid-cols-2">
         {OUTREACH_ARMS.map((arm) => {
           const totals = armTotals(entries, arm.key);
           return (
-            <Panel key={arm.key} title={arm.label} right={<Meta>vs. ${COST_PER_MEETING_TARGET_USD} per meeting</Meta>}>
-              <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
-                <Stat label="mailed" value={totals.mailed === null ? DASH : String(totals.mailed)} tone={SUBTLE} />
-                <Stat label="meetings" value={totals.meetings === null ? DASH : String(totals.meetings)} tone={SUBTLE} />
-                <Stat label="cost per meeting" value={DASH} tone={SUBTLE} />
+            <Panel
+              key={arm.key}
+              title={arm.label}
+              right={
+                <span className="inline-flex items-center gap-1.5">
+                  <Meta>vs. ${COST_PER_MEETING_TARGET_USD} per meeting</Meta>
+                  <InfoPopover label="How this A/B is scored" align="right">
+                    <p className="m-0">
+                      The conversion event is a meeting, not a quote — the A/B decides which arm
+                      books face time, and nothing downstream of the meeting is credited to it.
+                      Cost per meeting stays a dash until the spend store carries the card cost.
+                    </p>
+                  </InfoPopover>
+                </span>
+              }
+            >
+              <div className="flex items-start gap-8">
+                <ArmStat label="Mailed" value={totals.mailed} logged />
+                <ArmStat label="Meetings" value={totals.meetings} logged />
+                <ArmStat label="Cost per meeting" value={null} />
               </div>
-              {(totals.mailed !== null || totals.meetings !== null) && (
-                <div style={{ marginTop: 10 }}>
-                  <LoggedTag />
-                </div>
-              )}
             </Panel>
           );
         })}
       </div>
-      <p
-        style={{
-          fontFamily: "var(--font-family-sans)",
-          fontSize: "var(--text-small)",
-          color: MUTED,
-          margin: "0 0 var(--space-4)",
-          maxWidth: 720,
-          lineHeight: 1.6,
-        }}
-      >
-        The conversion event is a <strong>meeting</strong>, not a quote — the A/B decides
-        which arm books face time, and nothing downstream of the meeting is credited to it.
-        Cost per meeting stays a dash until the spend store carries the card cost.
-      </p>
 
       {/* ── per-HSM cadence ── */}
       <Panel
+        flush
         title="Weekly cadence by HSM"
         right={
           <Meta>
@@ -124,7 +133,7 @@ export default async function OutreachPage() {
         }
       >
         {!result.configured && (
-          <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-small)", color: SUBTLE, margin: "0 0 12px" }}>
+          <p className="m-0 px-ops-panel pb-3 font-sans text-ops-label text-content-subtle">
             Ops store not configured — cadence is read-only.
           </p>
         )}

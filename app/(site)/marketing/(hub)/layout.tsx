@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { sessionSecret, touchSession } from "@/lib/adminAuth";
 import { SESSION_COOKIE, openSession } from "@/lib/adminSession";
 import { SNAPSHOT_MONTHS } from "@/config/appLeadsSnapshot";
+import { ToastProvider } from "@/app/(site)/admin/_ui/Toast";
 import { HubControls } from "./HubControls";
 import { Sidebar } from "./Sidebar";
 
@@ -36,7 +37,7 @@ const MK_CSS = `
 .mk-header { display: flex; align-items: center; gap: 14px; padding: 0 24px; height: 58px; border-bottom: 1px solid var(--color-border); background: var(--color-surface-raised); position: sticky; top: 0; z-index: 40; }
 .mk-brand { display: flex; align-items: baseline; gap: 10px; white-space: nowrap; }
 .mk-brand-eyebrow { font-family: var(--font-family-sans); font-size: var(--text-micro); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-subtle); }
-.mk-brand-name { font-family: var(--font-family-serif); font-size: 20px; font-weight: 600; letter-spacing: var(--tracking-heading); color: var(--color-text); }
+.mk-brand-name { font-family: var(--font-family-sans); font-size: 17px; font-weight: 700; letter-spacing: var(--tracking-heading); color: var(--color-text); }
 .mk-back { font-family: var(--font-family-sans); font-size: 12px; font-weight: 600; color: var(--color-text-muted); text-decoration: none; border: 1px solid var(--color-border); border-radius: var(--radius-pill); padding: 4px 12px; white-space: nowrap; transition: color var(--duration-base) ease-out, border-color var(--duration-base) ease-out; }
 .mk-back:hover { color: var(--color-text); border-color: var(--color-border-strong, var(--color-border)); }
 .mk-controls { margin-left: auto; display: flex; align-items: center; gap: 12px; min-width: 0; }
@@ -103,6 +104,7 @@ async function renewSession(): Promise<void> {
 export default async function MarketingHubLayout({ children }: { children: React.ReactNode }) {
   await renewSession();
   return (
+    <ToastProvider>
     <div className="mk-root">
       <style>{MK_CSS}</style>
       <header className="mk-header">
@@ -125,5 +127,6 @@ export default async function MarketingHubLayout({ children }: { children: React
         <main className="mk-main">{children}</main>
       </div>
     </div>
+    </ToastProvider>
   );
 }

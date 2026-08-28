@@ -53,7 +53,7 @@ export function InfoPopover({
         aria-expanded={open}
         aria-controls={open ? id : undefined}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-[15px] w-[15px] cursor-pointer items-center justify-center rounded-full border border-edge bg-transparent font-sans text-[9.5px] font-bold leading-none text-content-subtle transition-colors duration-base ease-out hover:border-content hover:text-content focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        className="inline-flex h-[15px] w-[15px] cursor-pointer items-center justify-center rounded-full border border-app-border bg-transparent font-sans text-[9.5px] font-bold leading-none text-content-subtle transition-colors duration-base ease-out hover:border-content hover:text-content focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         i
       </button>
@@ -61,7 +61,7 @@ export function InfoPopover({
         <span
           id={id}
           role="note"
-          className={`absolute top-[21px] z-overlay w-[280px] rounded-md border border-edge bg-surface-raised p-3 font-sans text-ops-label leading-[1.5] text-content-muted shadow-overlay ${
+          className={`absolute top-[21px] z-overlay w-[280px] rounded-md border border-app-border bg-app-card p-3 font-sans text-ops-label leading-[1.5] text-content-muted shadow-overlay ${
             align === "right" ? "right-0" : "left-0"
           }`}
         >

@@ -52,7 +52,7 @@ export function FilterChips({
             className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-pill border px-3 py-[4px] font-sans text-ops-label no-underline transition-colors duration-base ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
               on
                 ? "border-content bg-content font-bold text-content-on-accent"
-                : "border-edge font-semibold text-content-muted hover:border-content hover:text-content"
+                : "border-app-border font-semibold text-content-muted hover:border-content hover:text-content"
             }`}
           >
             {o.label}

@@ -1,11 +1,9 @@
-// Shared presentational pieces for the Control Room tabs. Pure styling —
-// no data access lives here. Server and client components both import from
-// this file (nothing below touches server-only APIs).
-//
-// Design language: the public site's, tool-shaped. Serif (Lora) for panel
-// and section headings, sans (Libre Franklin) for everything operational,
-// navy on white with stone hairlines, amber only as accent. Mono is
-// reserved for genuinely code-like values (URL slugs) — nothing else.
+// LEGACY. The previous era's inline-style pieces, kept only for the off-nav
+// screens that still consume them (waitlist, design-system, the legacy
+// /marketing chrome) and for SCAN.
+// Everything on the 15-screen IA uses app/(site)/admin/_ui/* instead
+// (DESIGN-APP.md). Do not import this file in new work; delete it when the
+// last legacy screen migrates.
 
 export const mono = "var(--font-mono)";
 export const OK = "var(--color-state-success)";

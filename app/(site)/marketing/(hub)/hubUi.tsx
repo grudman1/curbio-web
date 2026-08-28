@@ -1,26 +1,29 @@
-// Shared presentational pieces for the Marketing Hub — the Control Room's
-// design language (ui.tsx), specialised for the Hub's unwired state. Pure
-// styling, no data access. Server and client components both import from here.
+// Shared presentational pieces for the Hub screens — thin wrappers over the
+// app design system in app/(site)/admin/_ui (DESIGN-APP.md). Pure styling,
+// no data access. Server and client components both import from here.
 
-import { Chip, FAIL, Meta, MUTED, OK, SUBTLE, WARN, eyebrow, panelHeading } from "@/app/(site)/admin/(dashboard)/ui";
+import { PageHeader } from "@/app/(site)/admin/_ui/AppShell";
+import { Table, Td, Th, Tr } from "@/app/(site)/admin/_ui/DataTable";
+import { InfoPopover } from "@/app/(site)/admin/_ui/InfoPopover";
+import { Badge, DASH, Meta } from "@/app/(site)/admin/_ui/primitives";
+import { WIRING_TONE } from "@/app/(site)/admin/_ui/tone";
 import { DEFINITIONS_LINE, type HubSurface, type WiringStatus } from "@/config/marketingHub";
-import type { PaceState } from "./pacing";
 
-/** The em-dash every unwired metric renders. Never a zero, never a spinner. */
-export const DASH = "—";
+export { DASH };
+
+// CSS colour strings for the legacy /marketing chrome's SVG charts and dots.
+// New surfaces use the tone classes (tone.ts); these exist so the legacy
+// screens keep compiling against one vocabulary.
+export const PACE_TONE = {
+  on: "var(--tone-good)",
+  behind: "var(--tone-warn)",
+  risk: "var(--tone-bad)",
+} as const;
 
 export const STATUS_TONE: Record<WiringStatus, string> = {
-  live: OK,
-  partial: WARN,
-  waiting: SUBTLE,
-};
-
-/** Pace tones — the ONLY meaning green/amber/red carry anywhere in the Hub:
- *  on pace, behind, under half pace. */
-export const PACE_TONE: Record<PaceState, string> = {
-  on: OK,
-  behind: WARN,
-  risk: FAIL,
+  live: "var(--tone-good)",
+  partial: "var(--tone-warn)",
+  waiting: "var(--tone-unknown)",
 };
 
 export const STATUS_LABEL: Record<WiringStatus, string> = {
@@ -30,77 +33,41 @@ export const STATUS_LABEL: Record<WiringStatus, string> = {
 };
 
 export function StatusChip({ status }: { status: WiringStatus }) {
-  return <Chip text={STATUS_LABEL[status]} color={STATUS_TONE[status]} dashed={status === "waiting"} />;
+  return <Badge tone={WIRING_TONE[status]}>{STATUS_LABEL[status]}</Badge>;
 }
 
-/** Page header: serif title, wiring status, purpose line, target where one
- *  exists. An h1 — each Hub page is its own screen now, not a tab section. */
-export function HubPageHeader({ surface }: { surface: HubSurface }) {
+/** Page header: sans title, wiring pill, target. The purpose line lives
+ *  behind the ⓘ — context, not a number. */
+export function HubPageHeader({ surface, right }: { surface: HubSurface; right?: React.ReactNode }) {
   return (
-    <header style={{ marginBottom: "var(--space-5)" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <h1 style={{ ...panelHeading, fontSize: 24 }}>{surface.label}</h1>
-        <StatusChip status={surface.status} />
-        {surface.target && <Meta>Target: {surface.target}</Meta>}
-      </div>
-      {/* The purpose line was a paragraph under every title. It is context,
-          not a number, so it moves to a hover/─title─ and out of the default
-          view. Screens that genuinely need it visible say so themselves. */}
-      <p
-        title={surface.purpose}
-        style={{
-          fontFamily: "var(--font-family-sans)",
-          fontSize: "var(--text-label)",
-          color: SUBTLE,
-          margin: "4px 0 0",
-          maxWidth: 720,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {surface.purpose}
-      </p>
-    </header>
+    <PageHeader
+      title={surface.label}
+      right={
+        <>
+          <StatusChip status={surface.status} />
+          {surface.target && <Meta>Target: {surface.target}</Meta>}
+          <InfoPopover label={`About ${surface.label}`} align="right">
+            <p className="m-0">{surface.purpose}</p>
+          </InfoPopover>
+          {right}
+        </>
+      }
+    />
   );
 }
 
 /**
- * The build order for the page. Emptiness as direction, not apology: this is
- * what must exist before the surface can show real numbers.
+ * The build order for the page — what must exist before the surface can show
+ * real numbers. One line, opens on request.
  */
 export function NeedsBlock({ surface }: { surface: HubSurface }) {
   if (surface.status === "live") return null;
-  // PROSE BUDGET: was an always-open list of up to four sentences under every
-  // unwired screen. The list is the build backlog and must survive, but it is
-  // not what someone opening the screen came to read — so it collapses to one
-  // line and opens on request.
   return (
-    <details style={{ marginTop: "var(--space-4)" }}>
-      <summary
-        style={{
-          cursor: "pointer",
-          listStyle: "none",
-          fontFamily: "var(--font-family-sans)",
-          fontSize: "var(--text-micro)",
-          fontWeight: 700,
-          letterSpacing: "0.1em",
-          textTransform: "uppercase",
-          color: SUBTLE,
-        }}
-      >
-        {surface.needs.length} {surface.needs.length === 1 ? "thing" : "things"} needed
+    <details className="mt-4">
+      <summary className="cursor-pointer list-none font-sans text-ops-label font-semibold text-content-subtle hover:text-content [&::-webkit-details-marker]:hidden">
+        {surface.needs.length} {surface.needs.length === 1 ? "thing" : "things"} needed ›
       </summary>
-      <ol
-        style={{
-          margin: "8px 0 0",
-          paddingLeft: 18,
-          fontFamily: "var(--font-family-sans)",
-          fontSize: "var(--text-label)",
-          color: MUTED,
-          lineHeight: 1.7,
-        }}
-      >
+      <ol className="m-0 mt-2 list-decimal pl-5 font-sans text-ops-label leading-[1.7] text-content-muted">
         {surface.needs.map((n) => (
           <li key={n}>{n}</li>
         ))}
@@ -109,40 +76,13 @@ export function NeedsBlock({ surface }: { surface: HubSurface }) {
   );
 }
 
-/** The Qualified / Engaged definitions — rendered as prose on every page that
- *  shows either number. One string, defined once in config/marketingHub.ts. */
-export function DefinitionsNote() {
+/** The Qualified / Engaged definitions, behind an ⓘ beside the number that
+ *  raises the question. Never rendered as a paragraph. */
+export function DefinitionsInfo({ align = "left" }: { align?: "left" | "right" }) {
   return (
-    <p
-      style={{
-        fontFamily: "var(--font-family-sans)",
-        fontSize: "var(--text-label)",
-        color: SUBTLE,
-        margin: "12px 0 0",
-        maxWidth: 720,
-        lineHeight: 1.6,
-      }}
-    >
-      {DEFINITIONS_LINE}
-    </p>
-  );
-}
-
-/** One line of consequence micro copy — what a blank on this surface costs. */
-export function ConsequenceNote({ children }: { children: React.ReactNode }) {
-  return (
-    <p
-      style={{
-        fontFamily: "var(--font-family-sans)",
-        fontSize: "var(--text-label)",
-        color: SUBTLE,
-        margin: "10px 0 0",
-        maxWidth: 720,
-        lineHeight: 1.6,
-      }}
-    >
-      {children}
-    </p>
+    <InfoPopover label="How Qualified and Engaged are defined" align={align}>
+      <p className="m-0">{DEFINITIONS_LINE}</p>
+    </InfoPopover>
   );
 }
 
@@ -154,67 +94,21 @@ export function ConsequenceNote({ children }: { children: React.ReactNode }) {
 export function OutlineBar({ label, fraction }: { label?: string; fraction?: number }) {
   const pct = fraction === undefined ? 0 : Math.max(0, Math.min(1, fraction)) * 100;
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+    <span className="inline-flex min-w-0 items-center gap-2">
       <span
         aria-hidden
-        style={{
-          display: "inline-block",
-          width: 72,
-          height: 6,
-          border: "1px solid var(--color-border-strong, var(--color-border))",
-          borderRadius: 3,
-          flex: "none",
-          overflow: "hidden",
-          position: "relative",
-        }}
+        className="relative inline-block h-1.5 w-[72px] flex-none overflow-hidden rounded-pill border border-app-border-strong"
       >
         {fraction !== undefined && (
-          <span
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: `${pct}%`,
-              background: "var(--color-accent)",
-              borderRadius: 2,
-            }}
-          />
+          <span className="absolute inset-0 rounded-pill bg-brand" style={{ width: `${pct}%` }} />
         )}
       </span>
       {label && (
-        <span
-          style={{
-            fontFamily: "var(--font-family-sans)",
-            fontSize: "var(--text-label)",
-            color: SUBTLE,
-            whiteSpace: "nowrap",
-          }}
-        >
-          {label}
-        </span>
+        <span className="whitespace-nowrap font-sans text-ops-label tabular-nums text-content-subtle">{label}</span>
       )}
-    </div>
+    </span>
   );
 }
-
-// ── Table primitives (match the Leads tab's table voice) ─────────────────────
-
-export const th: React.CSSProperties = {
-  ...eyebrow,
-  textAlign: "left",
-  padding: "0 16px 8px 0",
-  borderBottom: "1px solid var(--color-border)",
-  whiteSpace: "nowrap",
-};
-
-export const td: React.CSSProperties = {
-  padding: "8px 16px 8px 0",
-  borderBottom: "1px solid var(--color-border)",
-  fontSize: "var(--text-small)",
-  color: "var(--color-text)",
-  verticalAlign: "baseline",
-};
-
-export const tdDash: React.CSSProperties = { ...td, color: SUBTLE };
 
 /**
  * A table whose structure is real and whose values are not yet: named rows
@@ -230,57 +124,51 @@ export function DashTable({
   firstColumnLabel: string;
 }) {
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr>
-            <th style={th}>{firstColumnLabel}</th>
-            {columns.map((c) => (
-              <th key={c} style={{ ...th, textAlign: "right" }}>
-                {c}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.key}>
-              <td style={{ ...td, fontWeight: 600 }}>{r.label}</td>
-              {columns.map((c) => (
-                <td key={c} style={{ ...tdDash, textAlign: "right" }}>
-                  {DASH}
-                </td>
-              ))}
-            </tr>
+    <Table>
+      <thead>
+        <tr>
+          <Th>{firstColumnLabel}</Th>
+          {columns.map((c) => (
+            <Th key={c} align="right">
+              {c}
+            </Th>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <Tr key={r.key}>
+            <Td className="font-semibold">{r.label}</Td>
+            {columns.map((c) => (
+              <Td key={c} align="right" muted>
+                {DASH}
+              </Td>
+            ))}
+          </Tr>
+        ))}
+      </tbody>
+    </Table>
   );
 }
 
 /** An empty log: real columns, one honest line about where rows come from. */
 export function EmptyLog({ columns, fedBy }: { columns: string[]; fedBy: string }) {
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr>
-            {columns.map((c) => (
-              <th key={c} style={th}>
-                {c}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style={{ ...tdDash, borderBottom: 0 }} colSpan={columns.length}>
-              No rows yet — this table fills from {fedBy}.
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <Table>
+      <thead>
+        <tr>
+          {columns.map((c) => (
+            <Th key={c}>{c}</Th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <Td muted className="border-b-0" colSpan={columns.length}>
+            No rows yet — this table fills from {fedBy}.
+          </Td>
+        </tr>
+      </tbody>
+    </Table>
   );
 }

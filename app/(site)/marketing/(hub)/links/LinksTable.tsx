@@ -3,7 +3,14 @@
 import { deriveChannel } from "@/lib/channels";
 
 import { useEffect, useMemo, useState } from "react";
-import { FAIL, Meta, MUTED, Panel, SUBTLE, WARN, eyebrow } from "@/app/(site)/admin/(dashboard)/ui";
+import { useRouter } from "next/navigation";
+import { Button } from "@/app/(site)/admin/_ui/Button";
+import { Table, Td, Th, Tr } from "@/app/(site)/admin/_ui/DataTable";
+import { Drawer } from "@/app/(site)/admin/_ui/Drawer";
+import { Field, FieldError, Input, Select } from "@/app/(site)/admin/_ui/Field";
+import { InfoPopover } from "@/app/(site)/admin/_ui/InfoPopover";
+import { Badge, DASH, Eyebrow, Meta, Panel } from "@/app/(site)/admin/_ui/primitives";
+import { useToast } from "@/app/(site)/admin/_ui/Toast";
 import { CHANNEL_FUNNEL_ORDER, CHANNEL_LABELS } from "@/config/marketingHub";
 import { MARKETS } from "@/config/markets";
 import {
@@ -15,14 +22,13 @@ import {
   printedDirectRisk,
   type TrackedLink,
 } from "@/lib/marketingLinks";
-import { DASH, td, th } from "../hubUi";
 import { saveLinkAction, type SaveLinkInput } from "./actions";
 
 // The registry table, its row drawer (QR preview + downloads, the leads a
-// campaign produced, notes), and the builder that makes a wrong URL hard to
-// build. All state is local; saving goes through the server action, which
-// re-validates everything — the form's live checks are a courtesy, not the
-// boundary.
+// campaign produced, notes), and the builder drawer that makes a wrong URL
+// hard to build. All state is local; saving goes through the server action,
+// which re-validates everything — the form's live checks are a courtesy, not
+// the boundary.
 
 export type LeadLite = {
   date: string;
@@ -35,33 +41,11 @@ export type LeadLite = {
 
 type Orphan = { campaign: string; count: number };
 
-const STATUS_TONE: Record<TrackedLink["status"], string> = {
-  draft: "var(--color-text-subtle)",
-  live: "var(--color-state-success)",
-  printed: "var(--color-brand)",
-  retired: "var(--color-text-subtle)",
-};
-
-const field: React.CSSProperties = {
-  fontFamily: "var(--font-family-sans)",
-  fontSize: "var(--text-small)",
-  color: "var(--color-text)",
-  border: "1px solid var(--color-border)",
-  borderRadius: "var(--radius-lg)",
-  padding: "7px 10px",
-  background: "var(--color-surface-raised)",
-  width: "100%",
-};
-
-const fieldLabel: React.CSSProperties = {
-  fontFamily: "var(--font-family-sans)",
-  fontSize: "var(--text-micro)",
-  fontWeight: 700,
-  letterSpacing: "0.1em",
-  textTransform: "uppercase",
-  color: SUBTLE,
-  display: "block",
-  marginBottom: 5,
+const STATUS_TONE: Record<TrackedLink["status"], "good" | "info" | "neutral"> = {
+  draft: "neutral",
+  live: "good",
+  printed: "info",
+  retired: "neutral",
 };
 
 function typeLabel(key: string): string {
@@ -89,7 +73,7 @@ function QrBlock({ url, label }: { url: string; label: string }) {
 
   if (!url) {
     return (
-      <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: 0 }}>
+      <p className="m-0 font-sans text-ops-label text-content-subtle">
         No tracked URL recorded — nothing to encode.
       </p>
     );
@@ -100,41 +84,26 @@ function QrBlock({ url, label }: { url: string; label: string }) {
   const fileBase = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "qr";
 
   return (
-    <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
-      {/* The QR is GENERATED at 160px and was being injected into a 120px box
-          with no overflow rule, so it spilled out and rendered underneath the
-          download links beside it. The wrapper now clips and the injected
-          <svg> is forced to fill it — the only way to size markup that arrives
-          as a string. */}
+    <div className="flex flex-wrap items-start gap-4">
+      {/* The injected markup arrives as a string; force the <svg> to fill its
+          clipped box. */}
       <style>{`.qr-box > svg { width: 100%; height: 100%; display: block; }`}</style>
       <div
-        className="qr-box"
+        className="qr-box box-border h-[120px] w-[120px] flex-none overflow-hidden rounded-md border border-app-border bg-white p-1.5"
         aria-label={`QR code for ${url}`}
         role="img"
-        style={{
-          width: 120,
-          height: 120,
-          flex: "none",
-          overflow: "hidden",
-          border: "1px solid var(--color-border)",
-          borderRadius: 8,
-          padding: 6,
-          background: "#fff",
-          boxSizing: "border-box",
-        }}
         dangerouslySetInnerHTML={{ __html: qr.svg }}
       />
-      <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 150, flex: 1 }}>
-        <a href={qr.png} download={`${fileBase}.png`} style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", fontWeight: 700, color: "var(--color-text)" }}>
+      <div className="flex min-w-[150px] flex-1 flex-col gap-1.5">
+        <a href={qr.png} download={`${fileBase}.png`} className="font-sans text-ops-label font-bold text-content hover:underline">
           Download PNG (640px)
         </a>
-        <a href={svgHref} download={`${fileBase}.svg`} style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", fontWeight: 700, color: "var(--color-text)" }}>
+        <a href={svgHref} download={`${fileBase}.svg`} className="font-sans text-ops-label font-bold text-content hover:underline">
           Download SVG
         </a>
-        {/* One line. The print caveat moved to the title attribute. */}
         <p
           title="Print only from a row whose destination is a redirect we control — a direct URL cannot be repointed later."
-          style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-micro)", color: SUBTLE, margin: 0, lineHeight: 1.5 }}
+          className="m-0 font-sans text-ops-micro leading-[1.5] text-content-subtle"
         >
           Encodes the tracked URL exactly as saved.
         </p>
@@ -157,24 +126,16 @@ function CopyButton({ text }: { text: string }) {
         });
       }}
       title={text}
-      style={{
-        cursor: "pointer",
-        border: "1px solid var(--color-border)",
-        borderRadius: "var(--radius-pill)",
-        background: "transparent",
-        color: copied ? "var(--color-state-success)" : MUTED,
-        fontFamily: "var(--font-family-sans)",
-        fontSize: 11,
-        fontWeight: 700,
-        padding: "2px 9px",
-      }}
+      className={`cursor-pointer rounded-pill border border-app-border-strong bg-transparent px-2.5 py-0.5 font-sans text-[11px] font-bold transition-colors duration-fast ease-out ${
+        copied ? "text-tone-good" : "text-content-muted hover:text-content"
+      }`}
     >
       {copied ? "copied" : "copy"}
     </button>
   );
 }
 
-// ── the builder ──────────────────────────────────────────────────────────────
+// ── the builder (drawer) ─────────────────────────────────────────────────────
 
 type BuilderState = SaveLinkInput;
 
@@ -194,7 +155,7 @@ function emptyBuilder(): BuilderState {
   };
 }
 
-function Builder({
+function BuilderDrawer({
   initial,
   existingPrinted,
   rows,
@@ -244,171 +205,129 @@ function Builder({
   }
 
   return (
-    <div style={{ marginTop: "var(--space-4)" }}>
-      <Panel
-        title={initial.id ? "Edit link" : "New link"}
-        right={<Meta>save writes a row — it publishes nothing</Meta>}
-      >
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-          <label style={{ gridColumn: "1 / -1" }}>
-            <span style={fieldLabel}>Label — the human name</span>
-            <input value={form.label} onChange={(e) => set("label", e.target.value)} placeholder="Trevor Laramee · business card QR" style={field} />
-          </label>
-          <label>
-            <span style={fieldLabel}>Type</span>
-            <select value={form.type} onChange={(e) => set("type", e.target.value)} style={field}>
-              {LINK_TYPES.filter((t) => t.key !== "redirect").map((t) => (
-                <option key={t.key} value={t.key}>{t.label}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span style={fieldLabel}>Owner</span>
-            <input value={form.owner} onChange={(e) => set("owner", e.target.value)} placeholder="Marketing" style={field} />
-          </label>
-          <label>
-            <span style={fieldLabel}>utm_source — the channel, never free text</span>
-            <select value={form.channel} onChange={(e) => set("channel", e.target.value)} style={field}>
-              {CHANNEL_FUNNEL_ORDER.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span style={fieldLabel}>utm_medium</span>
-            <input value={form.medium} onChange={(e) => set("medium", e.target.value)} list="mk-mediums" placeholder="business_card" style={field} />
-            <datalist id="mk-mediums">
-              {mediumSuggestions.map((m) => (
-                <option key={m} value={m} />
-              ))}
-            </datalist>
-          </label>
-          <label>
-            <span style={fieldLabel}>utm_campaign</span>
-            <input value={form.campaign} onChange={(e) => set("campaign", e.target.value)} placeholder="biz-card-los-angeles" style={{ ...field, borderColor: campErr ? FAIL : "var(--color-border)" }} />
-            {campErr && (
-              <span style={{ display: "block", fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: FAIL, marginTop: 4, lineHeight: 1.4 }}>
-                {campErr}
-              </span>
-            )}
-          </label>
-          <label>
-            <span style={fieldLabel}>Market</span>
-            <select value={form.market} onChange={(e) => set("market", e.target.value)} style={field}>
-              <option value="all">all</option>
-              {MARKETS.map((m) => (
-                <option key={m.slug} value={m.slug}>{m.name}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span style={fieldLabel}>Status</span>
-            <select value={form.status} onChange={(e) => set("status", e.target.value)} style={field}>
-              {LINK_STATUSES.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </label>
-          <label style={{ gridColumn: "1 / -1" }}>
-            <span style={fieldLabel}>Destination — where it actually lands</span>
-            <input value={form.destination} onChange={(e) => set("destination", e.target.value)} disabled={urlLocked} style={{ ...field, opacity: urlLocked ? 0.55 : 1 }} />
-          </label>
-          <label style={{ gridColumn: "1 / -1" }}>
-            <span style={fieldLabel}>Short link (go.curbio.com / curbio.com/…), if any</span>
-            <input value={form.shortLink} onChange={(e) => set("shortLink", e.target.value)} placeholder="curbio.com/trevor" style={field} />
-          </label>
-          <label style={{ gridColumn: "1 / -1" }}>
-            <span style={fieldLabel}>Notes</span>
-            <input value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="where it's printed, who approved it, anything the next person needs" style={field} />
-          </label>
-        </div>
-
-        {existingPrinted && (
-          <label style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 12, fontFamily: "var(--font-family-sans)", fontSize: "var(--text-small)", color: "var(--color-text)", cursor: "pointer" }}>
-            <input type="checkbox" checked={reprint} onChange={(e) => setReprint(e.target.checked)} style={{ accentColor: "var(--color-accent)" }} />
-            <span>
-              The physical asset is being <strong>reprinted</strong> — unlock the URL
-              fields. The paper already in the world keeps the old URL forever.
-            </span>
-          </label>
-        )}
-
-        {/* live preview of the assembled URL */}
-        <p
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 12.5,
-            color: preview ? "var(--color-text)" : FAIL,
-            background: "color-mix(in srgb, var(--color-border) 30%, transparent)",
-            borderRadius: "var(--radius-lg)",
-            padding: "10px 12px",
-            margin: "14px 0 0",
-            wordBreak: "break-all",
-            lineHeight: 1.5,
-          }}
-        >
-          {preview ?? "— destination is not a valid URL —"}
-        </p>
-
-        {directRisk && (
-          <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: WARN, fontWeight: 700, margin: "10px 0 0", lineHeight: 1.5 }}>
-            Printed links are permanent — this one points at sell.curbio.com directly and
-            cannot be repointed if the page moves. Point it at a curbio.com or
-            go.curbio.com redirect instead.
-          </p>
-        )}
-        {duplicate && (
-          <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: WARN, fontWeight: 700, margin: "10px 0 0", lineHeight: 1.5 }}>
-            A row with this channel + medium + campaign already exists: “{duplicate.label}”.
-            Two rows with identical tags report as one line — reuse that row or change the
-            campaign.
-          </p>
-        )}
-        {serverError && (
-          <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-small)", color: FAIL, margin: "10px 0 0", lineHeight: 1.5 }}>
-            {serverError}
-          </p>
-        )}
-
-        <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-          <button
-            type="button"
-            onClick={save}
-            disabled={saving}
-            style={{
-              cursor: saving ? "wait" : "pointer",
-              border: 0,
-              borderRadius: "var(--radius-pill)",
-              background: "var(--color-text)",
-              color: "var(--color-surface-raised, #fff)",
-              fontFamily: "var(--font-family-sans)",
-              fontSize: 12.5,
-              fontWeight: 700,
-              padding: "8px 18px",
-            }}
-          >
+    <Drawer
+      open
+      onClose={onClose}
+      title={initial.id ? "Edit link" : "New link"}
+      width={520}
+      footer={
+        <>
+          <Button variant="primary" disabled={saving} onClick={save}>
             {saving ? "Saving…" : "Save row"}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              cursor: "pointer",
-              border: "1px solid var(--color-border)",
-              borderRadius: "var(--radius-pill)",
-              background: "transparent",
-              color: MUTED,
-              fontFamily: "var(--font-family-sans)",
-              fontSize: 12.5,
-              fontWeight: 700,
-              padding: "8px 18px",
-            }}
-          >
+          </Button>
+          <Button variant="ghost" onClick={onClose}>
             Cancel
-          </button>
-        </div>
-      </Panel>
-    </div>
+          </Button>
+          <Meta>saves a row — publishes nothing</Meta>
+        </>
+      }
+    >
+      <div className="grid grid-cols-2 gap-x-3 gap-y-3.5">
+        <Field label="Label — the human name" className="col-span-2">
+          <Input value={form.label} onChange={(e) => set("label", e.target.value)} placeholder="Trevor Laramee · business card QR" />
+        </Field>
+        <Field label="Type">
+          <Select value={form.type} onChange={(e) => set("type", e.target.value)}>
+            {LINK_TYPES.filter((t) => t.key !== "redirect").map((t) => (
+              <option key={t.key} value={t.key}>{t.label}</option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Owner">
+          <Input value={form.owner} onChange={(e) => set("owner", e.target.value)} placeholder="Marketing" />
+        </Field>
+        <Field label="utm_source — the channel, never free text">
+          <Select value={form.channel} onChange={(e) => set("channel", e.target.value)}>
+            {CHANNEL_FUNNEL_ORDER.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="utm_medium">
+          <Input value={form.medium} onChange={(e) => set("medium", e.target.value)} list="mk-mediums" placeholder="business_card" />
+          <datalist id="mk-mediums">
+            {mediumSuggestions.map((m) => (
+              <option key={m} value={m} />
+            ))}
+          </datalist>
+        </Field>
+        <Field label="utm_campaign">
+          <Input
+            value={form.campaign}
+            onChange={(e) => set("campaign", e.target.value)}
+            placeholder="biz-card-los-angeles"
+            className={campErr ? "border-tone-bad" : ""}
+          />
+          {campErr && <FieldError>{campErr}</FieldError>}
+        </Field>
+        <Field label="Market">
+          <Select value={form.market} onChange={(e) => set("market", e.target.value)}>
+            <option value="all">all</option>
+            {MARKETS.map((m) => (
+              <option key={m.slug} value={m.slug}>{m.name}</option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Status">
+          <Select value={form.status} onChange={(e) => set("status", e.target.value)}>
+            {LINK_STATUSES.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Destination — where it actually lands" className="col-span-2">
+          <Input value={form.destination} onChange={(e) => set("destination", e.target.value)} disabled={urlLocked} />
+        </Field>
+        <Field label="Short link (go.curbio.com / curbio.com/…), if any" className="col-span-2">
+          <Input value={form.shortLink} onChange={(e) => set("shortLink", e.target.value)} placeholder="curbio.com/trevor" />
+        </Field>
+        <Field label="Notes" className="col-span-2">
+          <Input
+            value={form.notes}
+            onChange={(e) => set("notes", e.target.value)}
+            placeholder="where it's printed, who approved it, anything the next person needs"
+          />
+        </Field>
+      </div>
+
+      {existingPrinted && (
+        <label className="mt-3 flex cursor-pointer items-baseline gap-2 font-sans text-ops-body text-content">
+          <input
+            type="checkbox"
+            checked={reprint}
+            onChange={(e) => setReprint(e.target.checked)}
+            className="accent-[var(--color-accent)]"
+          />
+          <span>
+            The physical asset is being <strong>reprinted</strong> — unlock the URL fields. The
+            paper already in the world keeps the old URL forever.
+          </span>
+        </label>
+      )}
+
+      {/* live preview of the assembled URL */}
+      <p
+        className={`m-0 mt-3.5 break-all rounded-md bg-app-well px-3 py-2.5 font-mono text-[12.5px] leading-[1.5] ${
+          preview ? "text-content" : "text-tone-bad"
+        }`}
+      >
+        {preview ?? "— destination is not a valid URL —"}
+      </p>
+
+      {directRisk && (
+        <p className="m-0 mt-2.5 font-sans text-ops-label font-bold leading-[1.5] text-tone-warn-text">
+          Printed links are permanent — this one points at sell.curbio.com directly and cannot be
+          repointed if the page moves. Point it at a curbio.com or go.curbio.com redirect instead.
+        </p>
+      )}
+      {duplicate && (
+        <p className="m-0 mt-2.5 font-sans text-ops-label font-bold leading-[1.5] text-tone-warn-text">
+          A row with this channel + medium + campaign already exists: &ldquo;{duplicate.label}&rdquo;. Two rows with
+          identical tags report as one line — reuse that row or change the campaign.
+        </p>
+      )}
+      <FieldError>{serverError}</FieldError>
+    </Drawer>
   );
 }
 
@@ -431,6 +350,8 @@ export function LinksTable({
   registryIssue: string | null;
   orphans: Orphan[];
 }) {
+  const router = useRouter();
+  const toast = useToast();
   const [q, setQ] = useState("");
   const [owner, setOwner] = useState("all");
   const [channel, setChannel] = useState("all");
@@ -475,425 +396,370 @@ export function LinksTable({
   }, [rows, q, owner, channel, type, market, status, sort, campaignLeads]);
 
   const selected = selectedId ? rows.find((r) => r.id === selectedId) ?? null : null;
-
-  useEffect(() => {
-    if (!selected) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setSelectedId(null);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [selected]);
-
   const selLeads = selected?.campaign ? campaignLeads[selected.campaign] ?? [] : [];
+
+  const filterControl = "h-[30px] !w-auto";
 
   return (
     <>
       {registryIssue && (
-        <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-small)", color: FAIL, margin: "0 0 12px", lineHeight: 1.6 }}>
+        <p className="m-0 mb-3 font-sans text-ops-body leading-[1.6] text-tone-bad" role="alert">
           {registryIssue}
         </p>
       )}
 
       {/* ── orphans: the wild vs the registry ── */}
       {orphans.length > 0 && (
-        <div
-          style={{
-            border: `1px solid color-mix(in srgb, ${WARN} 45%, transparent)`,
-            borderLeft: `3px solid ${WARN}`,
-            borderRadius: "var(--radius-lg)",
-            padding: "12px 16px",
-            marginBottom: "var(--space-4)",
-          }}
-        >
-          <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-small)", fontWeight: 700, margin: 0, color: "var(--color-text)" }}>
-            {orphans.length} campaign tag{orphans.length > 1 ? "s are" : " is"} producing
-            leads but {orphans.length > 1 ? "aren't" : "isn't"} documented here
+        <div className="mb-ops-gap rounded-lg border border-tone-warn bg-pill-warn-bg px-4 py-3">
+          <p className="m-0 font-sans text-ops-body font-bold text-content">
+            {orphans.length} campaign tag{orphans.length > 1 ? "s are" : " is"} producing leads but{" "}
+            {orphans.length > 1 ? "aren't" : "isn't"} documented here
           </p>
-          <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: MUTED, margin: "4px 0 0", lineHeight: 1.6 }}>
-            {orphans.map((o) => `${o.campaign} (${o.count})`).join(" · ")} — computed
-            against the last {leadWindow} leads at page load. Document each one below so
-            its performance has somewhere to live.
+          <p className="m-0 mt-1 font-sans text-ops-label leading-[1.6] text-content-muted">
+            {orphans.map((o) => `${o.campaign} (${o.count})`).join(" · ")} — computed against the
+            last {leadWindow} leads at page load. Document each one so its performance has
+            somewhere to live.
           </p>
         </div>
       )}
 
       {/* ── filters ── */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginBottom: "var(--space-3)" }}>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search label, campaign, URL…" style={{ ...field, width: 220, flex: "none" }} aria-label="Search links" />
-        <select value={owner} onChange={(e) => setOwner(e.target.value)} style={{ ...field, width: "auto" }} aria-label="Filter by owner">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <Input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search label, campaign, URL…"
+          aria-label="Search links"
+          className="h-[30px] !w-[220px] flex-none"
+        />
+        <Select value={owner} onChange={(e) => setOwner(e.target.value)} aria-label="Filter by owner" className={filterControl}>
           <option value="all">owner: all</option>
           {owners.map((o) => (
             <option key={o} value={o}>{o}</option>
           ))}
-        </select>
-        <select value={channel} onChange={(e) => setChannel(e.target.value)} style={{ ...field, width: "auto" }} aria-label="Filter by channel">
+        </Select>
+        <Select value={channel} onChange={(e) => setChannel(e.target.value)} aria-label="Filter by channel" className={filterControl}>
           <option value="all">channel: all</option>
           {CHANNEL_FUNNEL_ORDER.map((c) => (
             <option key={c} value={c}>{c}</option>
           ))}
-        </select>
-        <select value={type} onChange={(e) => setType(e.target.value)} style={{ ...field, width: "auto" }} aria-label="Filter by type">
+        </Select>
+        <Select value={type} onChange={(e) => setType(e.target.value)} aria-label="Filter by type" className={filterControl}>
           <option value="all">type: all</option>
           {LINK_TYPES.map((t) => (
             <option key={t.key} value={t.key}>{t.label}</option>
           ))}
-        </select>
-        <select value={market} onChange={(e) => setMarket(e.target.value)} style={{ ...field, width: "auto" }} aria-label="Filter by market">
+        </Select>
+        <Select value={market} onChange={(e) => setMarket(e.target.value)} aria-label="Filter by market" className={filterControl}>
           <option value="all">market: all</option>
           {MARKETS.map((m) => (
             <option key={m.slug} value={m.slug}>{m.name}</option>
           ))}
-        </select>
-        <select value={status} onChange={(e) => setStatus(e.target.value)} style={{ ...field, width: "auto" }} aria-label="Filter by status">
+        </Select>
+        <Select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter by status" className={filterControl}>
           <option value="all">status: all</option>
           {LINK_STATUSES.map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
-        </select>
-        <select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)} style={{ ...field, width: "auto" }} aria-label="Sort">
+        </Select>
+        <Select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)} aria-label="Sort" className={filterControl}>
           <option value="qualified">sort: Qualified</option>
           <option value="hits">sort: lifetime hits</option>
           <option value="label">sort: label</option>
-        </select>
-        <button
-          type="button"
-          onClick={() => setBuilder({ initial: emptyBuilder(), printed: false })}
-          style={{
-            marginLeft: "auto",
-            cursor: "pointer",
-            border: 0,
-            borderRadius: "var(--radius-pill)",
-            background: "var(--color-text)",
-            color: "var(--color-surface-raised, #fff)",
-            fontFamily: "var(--font-family-sans)",
-            fontSize: 12.5,
-            fontWeight: 700,
-            padding: "8px 16px",
-          }}
-        >
+        </Select>
+        <Button variant="primary" size="sm" className="ml-auto" onClick={() => setBuilder({ initial: emptyBuilder(), printed: false })}>
           New link
-        </button>
+        </Button>
       </div>
-
-      {builder && (
-        <Builder
-          initial={builder.initial}
-          existingPrinted={builder.printed}
-          rows={rows}
-          onClose={() => setBuilder(null)}
-          onSaved={() => {
-            setBuilder(null);
-            window.location.reload();
-          }}
-        />
-      )}
 
       {/* ── the table ── */}
-      <div style={{ marginTop: "var(--space-4)" }}>
-        <Panel
-          title={`${filtered.length} of ${rows.length} links`}
-          right={
-            <Meta>
-              seed: redirect export {seedExportedAt} + HSM cards · Qualified = estimate
-              requests carrying the campaign, last {leadWindow} leads
-            </Meta>
-          }
-        >
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  <th style={th}>Label</th>
-                  <th style={th}>Type</th>
-                  <th style={th}>Channel</th>
-                  <th style={th}>Campaign</th>
-                  <th style={th}>Link</th>
-                  <th style={th}>Status</th>
-                  <th style={{ ...th, textAlign: "right" }}>Clicks 30d</th>
-                  <th style={{ ...th, textAlign: "right" }}>Lifetime</th>
-                  <th style={{ ...th, textAlign: "right" }}>Qualified</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((r) => {
-                  const direct = printedDirectRisk(r);
-                  const wp = migrationRisk(r);
-                  const qual = qualifiedOf(r);
-                  return (
-                    <tr
-                      key={r.id}
-                      onClick={() => setSelectedId(r.id)}
-                      style={{ cursor: "pointer", background: selectedId === r.id ? "color-mix(in srgb, var(--color-accent) 7%, transparent)" : undefined }}
+      <Panel
+        flush
+        title={`${filtered.length} of ${rows.length} links`}
+        right={
+          <span className="inline-flex items-center gap-1.5">
+            <Meta>Qualified = estimate requests carrying the campaign, last {leadWindow} leads</Meta>
+            <InfoPopover label="Where these rows come from" align="right">
+              <p className="m-0 mb-2">
+                Seed rows come from the redirect export of {seedExportedAt} plus the HSM business
+                cards. Seed redirects live in the WordPress Redirection plugin and must be
+                recreated at website cutover.
+              </p>
+              <p className="m-0">
+                A link with clicks and zero Qualified is worth seeing; so is a link with zero of
+                both.
+              </p>
+            </InfoPopover>
+          </span>
+        }
+      >
+        <Table wide>
+          <thead>
+            <tr>
+              <Th>Label</Th>
+              <Th>Type</Th>
+              <Th>Channel</Th>
+              <Th>Campaign</Th>
+              <Th>Link</Th>
+              <Th>Status</Th>
+              <Th align="right">Clicks 30d</Th>
+              <Th align="right">Lifetime</Th>
+              <Th align="right">Qualified</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((r) => {
+              const direct = printedDirectRisk(r);
+              const wp = migrationRisk(r);
+              const qual = qualifiedOf(r);
+              return (
+                <tr
+                  key={r.id}
+                  onClick={() => setSelectedId(r.id)}
+                  className="group/row cursor-pointer transition-colors duration-fast ease-out hover:bg-app-well"
+                >
+                  <Td className="min-w-[180px]">
+                    <span className="font-semibold">{r.label}</span>
+                    <span className="mt-px block font-sans text-ops-label text-content-subtle">
+                      {r.owner}
+                      {r.market !== "all" ? ` · ${r.market}` : ""}
+                    </span>
+                  </Td>
+                  <Td className="whitespace-nowrap text-content-muted">{typeLabel(r.type)}</Td>
+                  <Td className="whitespace-nowrap">
+                    <span className={r.channel === "direct" ? "text-content-subtle" : "text-content"}>
+                      {CHANNEL_LABELS[r.channel]}
+                    </span>
+                    {r.medium && <span className="block font-sans text-ops-label text-content-subtle">{r.medium}</span>}
+                  </Td>
+                  <Td muted={!r.campaign} className="font-mono text-[12px]">
+                    {r.campaign || DASH}
+                  </Td>
+                  <Td className="max-w-[200px]">
+                    <span
+                      className="block truncate font-mono text-[12px]"
+                      title={r.trackedUrl || r.destination}
                     >
-                      <td style={{ ...td, minWidth: 180, borderLeft: direct ? `3px solid ${WARN}` : "3px solid transparent", paddingLeft: 8 }}>
-                        <span style={{ fontWeight: 600 }}>{r.label}</span>
-                        <span style={{ display: "block", fontSize: "var(--text-label)", color: SUBTLE, marginTop: 1 }}>
-                          {r.owner}
-                          {r.market !== "all" ? ` · ${r.market}` : ""}
-                        </span>
-                      </td>
-                      <td style={{ ...td, whiteSpace: "nowrap", color: MUTED }}>{typeLabel(r.type)}</td>
-                      <td style={{ ...td, whiteSpace: "nowrap" }}>
-                        <span style={{ color: r.channel === "direct" ? SUBTLE : "var(--color-text)" }}>
-                          {CHANNEL_LABELS[r.channel]}
-                        </span>
-                        {r.medium && (
-                          <span style={{ display: "block", fontSize: "var(--text-label)", color: SUBTLE }}>{r.medium}</span>
-                        )}
-                      </td>
-                      <td style={{ ...td, fontFamily: "var(--font-mono)", fontSize: 12, color: r.campaign ? "var(--color-text)" : SUBTLE }}>
-                        {r.campaign || DASH}
-                      </td>
-                      <td style={{ ...td, maxWidth: 200 }}>
-                        <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "var(--font-mono)", fontSize: 12 }} title={r.trackedUrl || r.destination}>
-                          {r.shortLink || r.destination || DASH}
-                        </span>
-                        {wp && (
-                          <span style={{ fontSize: "var(--text-micro)", fontWeight: 700, color: WARN }} title="Destination is a WordPress page — it may not survive the website migration.">
-                            WP page — migration risk
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ ...td, whiteSpace: "nowrap" }}>
-                        <span style={{ fontSize: "var(--text-label)", fontWeight: 700, color: STATUS_TONE[r.status] }}>{r.status}</span>
-                        {(r.printedAt || r.createdAt) && (
-                          <span style={{ display: "block", fontSize: "var(--text-micro)", color: SUBTLE }}>
-                            {r.status === "printed" && r.printedAt ? `printed ${r.printedAt}` : r.createdAt ? r.createdAt.slice(0, 10) : ""}
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ ...td, textAlign: "right", color: SUBTLE }} title="30-day clicks need a click source for the redirects — none exists yet.">
-                        {DASH}
-                      </td>
-                      <td style={{ ...td, textAlign: "right", fontVariantNumeric: "tabular-nums", color: r.lifetimeHits ? "var(--color-text)" : SUBTLE }} title={`Lifetime hits as of the ${seedExportedAt} export`}>
-                        {r.lifetimeHits != null ? r.lifetimeHits.toLocaleString("en-US") : DASH}
-                      </td>
-                      <td style={{ ...td, textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: qual ? 700 : 400, color: qual ? "var(--color-text)" : SUBTLE }}>
-                        {leadJoinAvailable ? qual : DASH}
-                      </td>
-                    </tr>
-                  );
-                })}
-                {filtered.length === 0 && (
-                  <tr>
-                    <td style={{ ...td, color: SUBTLE, borderBottom: 0 }} colSpan={9}>
-                      No links match these filters.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          <p style={{ fontSize: "var(--text-label)", color: SUBTLE, margin: "12px 0 0", lineHeight: 1.6 }}>
-            A link with clicks and zero Qualified is worth seeing; so is a link with zero
-            of both. Amber edge = printed asset pointing straight at sell.curbio.com.
-            Seed redirects live in the WordPress Redirection plugin and must be recreated
-            at website cutover.
-          </p>
-        </Panel>
-      </div>
+                      {r.shortLink || r.destination || DASH}
+                    </span>
+                    <span className="flex flex-wrap gap-1 pt-0.5 empty:hidden">
+                      {direct && (
+                        <Badge tone="warn" title="Printed asset pointing straight at sell.curbio.com — it cannot be repointed.">
+                          printed → direct
+                        </Badge>
+                      )}
+                      {wp && (
+                        <Badge tone="warn" title="Destination is a WordPress page — it may not survive the website migration.">
+                          WP migration risk
+                        </Badge>
+                      )}
+                    </span>
+                  </Td>
+                  <Td className="whitespace-nowrap">
+                    <Badge tone={STATUS_TONE[r.status]}>{r.status}</Badge>
+                    {(r.printedAt || r.createdAt) && (
+                      <span className="mt-0.5 block font-sans text-ops-micro text-content-subtle">
+                        {r.status === "printed" && r.printedAt ? `printed ${r.printedAt}` : r.createdAt ? r.createdAt.slice(0, 10) : ""}
+                      </span>
+                    )}
+                  </Td>
+                  <Td align="right" muted title="30-day clicks need a click source for the redirects — none exists yet.">
+                    {DASH}
+                  </Td>
+                  <Td align="right" muted={!r.lifetimeHits} title={`Lifetime hits as of the ${seedExportedAt} export`}>
+                    {r.lifetimeHits != null ? r.lifetimeHits.toLocaleString("en-US") : DASH}
+                  </Td>
+                  <Td align="right" muted={!qual} className={qual ? "font-bold" : ""}>
+                    {leadJoinAvailable ? qual : DASH}
+                  </Td>
+                </tr>
+              );
+            })}
+            {filtered.length === 0 && (
+              <tr>
+                <Td muted colSpan={9} className="border-b-0">
+                  No links match these filters.
+                </Td>
+              </tr>
+            )}
+          </tbody>
+        </Table>
+      </Panel>
 
-      {/* ── row drawer ── */}
-      {selected && (
-        <>
-          <div aria-hidden onClick={() => setSelectedId(null)} style={{ position: "fixed", inset: 0, background: "rgba(16, 42, 67, 0.18)", zIndex: 60 }} />
-          <aside
-            role="dialog"
-            aria-label={`${selected.label} details`}
-            style={{
-              position: "fixed",
-              top: 0,
-              right: 0,
-              bottom: 0,
-              width: "min(440px, 94vw)",
-              background: "var(--color-surface-raised)",
-              borderLeft: "1px solid var(--color-border)",
-              boxShadow: "var(--elevation-raised)",
-              zIndex: 61,
-              overflowY: "auto",
-              padding: "20px 22px 40px",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-              <h3 style={{ fontFamily: "var(--font-family-serif)", fontSize: 19, fontWeight: 600, margin: 0, flex: 1 }}>
-                {selected.label}
-              </h3>
-              <button type="button" onClick={() => setSelectedId(null)} aria-label="Close details" style={{ cursor: "pointer", border: 0, background: "transparent", color: MUTED, fontSize: 18, lineHeight: 1, padding: 4 }}>
-                ×
-              </button>
-            </div>
-            <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: "3px 0 0" }}>
-              {typeLabel(selected.type)} · {selected.owner} · {selected.market} ·{" "}
-              <span style={{ fontWeight: 700, color: STATUS_TONE[selected.status] }}>{selected.status}</span>
+      {/* ── row detail drawer ── */}
+      <Drawer
+        open={!!selected && !builder}
+        onClose={() => setSelectedId(null)}
+        title={selected?.label ?? ""}
+        width={460}
+        footer={
+          selected?.origin === "registry" ? (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (!selected) return;
+                setBuilder({
+                  initial: {
+                    id: selected.id,
+                    label: selected.label,
+                    type: selected.type,
+                    owner: selected.owner,
+                    channel: selected.channel,
+                    medium: selected.medium,
+                    campaign: selected.campaign,
+                    market: selected.market,
+                    destination: selected.destination,
+                    shortLink: selected.shortLink,
+                    status: selected.status,
+                    notes: selected.notes ?? "",
+                  },
+                  printed: selected.status === "printed",
+                });
+                setSelectedId(null);
+              }}
+            >
+              Edit row
+            </Button>
+          ) : (
+            <Meta>Seed row — corrections happen in git (config/linkRegistry.ts), where they are reviewable.</Meta>
+          )
+        }
+      >
+        {selected && (
+          <>
+            <p className="m-0 flex flex-wrap items-center gap-1.5 font-sans text-ops-label text-content-subtle">
+              {typeLabel(selected.type)} · {selected.owner} · {selected.market}
+              <Badge tone={STATUS_TONE[selected.status]}>{selected.status}</Badge>
             </p>
 
             {printedDirectRisk(selected) && (
-              <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: WARN, fontWeight: 700, margin: "12px 0 0", lineHeight: 1.5 }}>
-                Printed links are permanent — this one points at sell.curbio.com directly
-                and cannot be repointed if the page moves.
+              <p className="m-0 mt-3 font-sans text-ops-label font-bold leading-[1.5] text-tone-warn-text">
+                Printed links are permanent — this one points at sell.curbio.com directly and
+                cannot be repointed if the page moves.
               </p>
             )}
 
-            <div style={{ marginTop: 18 }}>
-              <p style={{ ...eyebrow, marginBottom: 8 }}>QR</p>
+            <div className="mt-4">
+              <Eyebrow className="mb-2 block">QR</Eyebrow>
               <QrBlock url={selected.trackedUrl} label={selected.label} />
             </div>
 
-            <div style={{ marginTop: 20 }}>
-              <p style={{ ...eyebrow, marginBottom: 8 }}>URLs</p>
+            <div className="mt-5">
+              <Eyebrow className="mb-2 block">URLs</Eyebrow>
               {selected.trackedUrl ? (
-                <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                  <span style={{ flex: 1, fontFamily: "var(--font-mono)", fontSize: 12, overflowWrap: "anywhere", wordBreak: "normal", lineHeight: 1.5 }}>{selected.trackedUrl}</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="flex-1 break-words font-mono text-[12px] leading-[1.5] [overflow-wrap:anywhere]">
+                    {selected.trackedUrl}
+                  </span>
                   <CopyButton text={selected.trackedUrl} />
                 </div>
               ) : (
-                <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: 0 }}>
+                <p className="m-0 font-sans text-ops-label text-content-subtle">
                   Tracked URL unknown — recover it from the physical asset.
                 </p>
               )}
               {selected.shortLink && (
-                <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: MUTED, margin: "6px 0 0" }}>
-                  short: {selected.shortLink}
-                </p>
+                <p className="m-0 mt-1.5 font-mono text-[12px] text-content-muted">short: {selected.shortLink}</p>
               )}
               {selected.destination && selected.destination !== selected.trackedUrl && (
-                <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: MUTED, margin: "6px 0 0", overflowWrap: "anywhere", wordBreak: "normal" }}>
+                <p className="m-0 mt-1.5 font-mono text-[12px] text-content-muted [overflow-wrap:anywhere]">
                   lands: {selected.destination}
                 </p>
               )}
-              {/* CHECK, don't assume. This line used to claim "outside the nine
-                  channels, so its leads land as direct" for EVERY row carrying
-                  a raw utm_source — including exp, whose source is
-                  `partnership`, which is one of the nine. The row's own
-                  channel field said partnership and the qualified list showed
-                  partnership-touch leads, so the screen contradicted itself
-                  and the data. deriveChannel() is the authority; ask it. */}
+              {/* CHECK, don't assume — deriveChannel() is the authority on
+                  whether a raw utm_source lands inside the nine. */}
               {selected.rawUtmSource &&
                 (deriveChannel(selected.rawUtmSource) === "direct" &&
                 selected.rawUtmSource.trim().toLowerCase() !== "direct" ? (
-                  <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: "6px 0 0" }}>
-                    carries utm_source={selected.rawUtmSource} — outside the nine channels,
-                    so its leads land as direct.
+                  <p className="m-0 mt-1.5 font-sans text-ops-label text-content-subtle">
+                    carries utm_source={selected.rawUtmSource} — outside the nine channels, so its
+                    leads land as direct.
                   </p>
                 ) : (
-                  <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: "6px 0 0" }}>
+                  <p className="m-0 mt-1.5 font-sans text-ops-label text-content-subtle">
                     carries utm_source={selected.rawUtmSource} → {deriveChannel(selected.rawUtmSource)}
                   </p>
                 ))}
             </div>
 
-            <div style={{ marginTop: 20 }}>
-              <p style={{ ...eyebrow, marginBottom: 8 }}>Clicks</p>
-              <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-small)", color: MUTED, margin: 0, lineHeight: 1.6 }}>
+            <div className="mt-5">
+              <Eyebrow className="mb-2 block">Clicks</Eyebrow>
+              <p className="m-0 font-sans text-ops-body leading-[1.6] text-content-muted">
                 30-day clicks: {DASH} — no click source exists for these redirects yet.
                 {selected.lifetimeHits != null &&
                   ` Lifetime: ${selected.lifetimeHits.toLocaleString("en-US")} hits as of the ${seedExportedAt} export.`}
               </p>
             </div>
 
-            <div style={{ marginTop: 20 }}>
-              <p style={{ ...eyebrow, marginBottom: 8 }}>
-                Qualified — last {leadWindow} leads
-              </p>
+            <div className="mt-5">
+              <Eyebrow className="mb-2 block">Qualified — last {leadWindow} leads</Eyebrow>
               {!leadJoinAvailable ? (
-                <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: 0 }}>
+                <p className="m-0 font-sans text-ops-label text-content-subtle">
                   Lead store unavailable — the campaign join is off.
                 </p>
               ) : !selected.campaign ? (
-                <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: 0, lineHeight: 1.6 }}>
-                  No campaign tag on this link — its leads cannot be joined back to it.
-                  That is exactly what the registry exists to fix.
+                <p className="m-0 font-sans text-ops-label leading-[1.6] text-content-subtle">
+                  No campaign tag on this link — its leads cannot be joined back to it. That is
+                  exactly what the registry exists to fix.
                 </p>
               ) : selLeads.length === 0 ? (
-                <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: 0 }}>
-                  No estimate requests carrying “{selected.campaign}” in the window.
+                <p className="m-0 font-sans text-ops-label text-content-subtle">
+                  No estimate requests carrying &ldquo;{selected.campaign}&rdquo; in the window.
                 </p>
               ) : (
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <Table>
                   <thead>
                     <tr>
-                      <th style={th}>Date</th>
-                      <th style={th}>Lead</th>
-                      <th style={th}>Entry</th>
-                      <th style={th}>Touch</th>
+                      <Th>Date</Th>
+                      <Th>Lead</Th>
+                      <Th>Entry</Th>
+                      <Th>Touch</Th>
                     </tr>
                   </thead>
                   <tbody>
                     {selLeads.map((l, i) => (
-                      <tr key={i}>
-                        <td style={{ ...td, whiteSpace: "nowrap", fontSize: 12 }}>{l.date}</td>
-                        <td style={{ ...td, fontSize: 12 }}>{l.name}</td>
-                        <td style={{ ...td, fontFamily: "var(--font-mono)", fontSize: 11.5 }}>{l.entryPoint ?? DASH}</td>
-                        <td style={{ ...td, fontSize: 12 }}>
+                      <Tr key={i}>
+                        <Td className="whitespace-nowrap text-[12px]">{l.date}</Td>
+                        <Td className="text-[12px]">{l.name}</Td>
+                        <Td muted={!l.entryPoint} className="font-mono text-[11.5px]">
+                          {l.entryPoint ?? DASH}
+                        </Td>
+                        <Td className="text-[12px]">
                           {l.channel ?? DASH}
                           {l.firstTouchChannel && l.firstTouchChannel !== l.channel
                             ? ` (first: ${l.firstTouchChannel})`
                             : ""}
-                        </td>
-                      </tr>
+                        </Td>
+                      </Tr>
                     ))}
                   </tbody>
-                </table>
+                </Table>
               )}
             </div>
 
             {selected.notes && (
-              <div style={{ marginTop: 20 }}>
-                <p style={{ ...eyebrow, marginBottom: 8 }}>Notes</p>
-                <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-small)", color: "var(--color-text)", margin: 0, lineHeight: 1.6 }}>
-                  {selected.notes}
-                </p>
+              <div className="mt-5">
+                <Eyebrow className="mb-2 block">Notes</Eyebrow>
+                <p className="m-0 font-sans text-ops-body leading-[1.6] text-content">{selected.notes}</p>
               </div>
             )}
+          </>
+        )}
+      </Drawer>
 
-            <div style={{ marginTop: 24, borderTop: "1px solid var(--color-border)", paddingTop: 14 }}>
-              {selected.origin === "registry" ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBuilder({
-                      initial: {
-                        id: selected.id,
-                        label: selected.label,
-                        type: selected.type,
-                        owner: selected.owner,
-                        channel: selected.channel,
-                        medium: selected.medium,
-                        campaign: selected.campaign,
-                        market: selected.market,
-                        destination: selected.destination,
-                        shortLink: selected.shortLink,
-                        status: selected.status,
-                        notes: selected.notes ?? "",
-                      },
-                      printed: selected.status === "printed",
-                    });
-                    setSelectedId(null);
-                  }}
-                  style={{
-                    cursor: "pointer",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: "var(--radius-pill)",
-                    background: "transparent",
-                    color: "var(--color-text)",
-                    fontFamily: "var(--font-family-sans)",
-                    fontSize: 12.5,
-                    fontWeight: 700,
-                    padding: "7px 16px",
-                  }}
-                >
-                  Edit row
-                </button>
-              ) : (
-                <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: 0, lineHeight: 1.6 }}>
-                  Seed row — imported inventory. Corrections happen in git
-                  (config/linkRegistry.ts or the import script), where they are reviewable.
-                </p>
-              )}
-            </div>
-          </aside>
-        </>
+      {/* ── builder drawer ── */}
+      {builder && (
+        <BuilderDrawer
+          initial={builder.initial}
+          existingPrinted={builder.printed}
+          rows={rows}
+          onClose={() => setBuilder(null)}
+          onSaved={() => {
+            setBuilder(null);
+            toast("success", "Link saved.");
+            router.refresh();
+          }}
+        />
       )}
     </>
   );
