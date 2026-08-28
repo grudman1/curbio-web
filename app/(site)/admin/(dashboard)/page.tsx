@@ -10,6 +10,7 @@ import {
 import { QUALIFIED_TARGET_PER_MARKET_PER_MONTH } from "@/config/marketingHub";
 import { paceRead, paceSentence } from "@/app/(site)/marketing/(hub)/pacing";
 import { readRecentLeads, recentCrmFailures } from "@/lib/adminLeads";
+import { computeUndocumentedCampaigns } from "@/lib/campaignOrphans";
 import { PageHeader } from "../_ui/AppShell";
 import { PaceRail, type PaceRow } from "../_ui/PaceRail";
 import { Chip, DASH, Eyebrow, Panel, StatusDot } from "../_ui/primitives";
@@ -93,6 +94,7 @@ export default async function TodayScreen({
   const leadRows = leads.configured && !leads.error ? leads.rows : [];
   const failures = recentCrmFailures(leadRows);
   const storeUnreadable = leads.configured && leads.error ? leads.error : null;
+  const { orphans: campaignOrphans } = await computeUndocumentedCampaigns(SCAN);
 
   // Unattributed share — the number the attribution plan exists to shrink.
   const directQualified = Object.entries(agg.cells).reduce(
@@ -139,6 +141,13 @@ export default async function TodayScreen({
       tone: "warn",
       text: `${Math.round(unattributed * 100)}% of qualified leads have no known channel`,
       href: "/admin/attribution",
+    });
+  }
+  if (campaignOrphans.length > 0) {
+    attention.push({
+      tone: "warn",
+      text: `${campaignOrphans.length} campaign tag${campaignOrphans.length === 1 ? "" : "s"} producing leads but undocumented`,
+      href: "/admin/site/links",
     });
   }
   if (underHalf.length === 0 && behind.length > 0) {

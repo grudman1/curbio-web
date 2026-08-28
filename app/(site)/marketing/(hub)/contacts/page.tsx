@@ -12,10 +12,17 @@ export const metadata: Metadata = {
 
 const surface = HUB_SURFACE_BY_SLUG.contacts;
 
-export default function ContactsPage() {
+// Split from the route's default export because a Next.js page component's
+// props are typed against PageProps (params/searchParams) — it can't also
+// take a custom prop. ContactsScreen is the reusable piece: Email's Database
+// tab (app/(site)/admin/(dashboard)/channels/email/database/page.tsx) imports
+// it directly with a headingOverride (see HubPageHeader's titleOverride);
+// this route's default export below calls it with none, so /marketing/
+// contacts is unaffected and still reads "Contacts".
+export function ContactsScreen({ headingOverride }: { headingOverride?: string } = {}) {
   return (
     <>
-      <HubPageHeader surface={surface} right={<DefinitionsInfo align="right" />} />
+      <HubPageHeader surface={surface} titleOverride={headingOverride} right={<DefinitionsInfo align="right" />} />
 
       {/* ── status mix — unwired, so every value is an em-dash ── */}
       <div className="mb-ops-gap grid grid-cols-2 gap-ops-gap lg:grid-cols-5">
@@ -54,4 +61,8 @@ export default function ContactsPage() {
       <NeedsBlock surface={surface} />
     </>
   );
+}
+
+export default function ContactsPage() {
+  return <ContactsScreen />;
 }

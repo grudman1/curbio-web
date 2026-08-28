@@ -209,6 +209,27 @@ export async function middleware(req: NextRequest) {
     return res;
   }
 
+  // 1d. Control Room nav redesign (2026-08): four bookmarked /admin paths
+  //     moved. Must run before the /admin gate below, same reason as 1b/1c —
+  //     these paths match its prefix.
+  //       /admin/attribution/links    → /admin/site/links       (Site owns it now)
+  //       /admin/attribution/forms    → /admin/site/forms        (ditto)
+  //       /admin/attribution/contacts → /admin/channels/email/database (it's email database data)
+  //       /admin/executive            → /admin                  (folded into Home)
+  //       /admin/funnel               → /admin/performance       (renamed, same screen)
+  const ADMIN_NAV_REDIRECTS: Record<string, string> = {
+    "/admin/attribution/links": "/admin/site/links",
+    "/admin/attribution/forms": "/admin/site/forms",
+    "/admin/attribution/contacts": "/admin/channels/email/database",
+    "/admin/executive": "/admin",
+    "/admin/funnel": "/admin/performance",
+  };
+  if (ADMIN_NAV_REDIRECTS[pathname]) {
+    const url = req.nextUrl.clone();
+    url.pathname = ADMIN_NAV_REDIRECTS[pathname];
+    return NextResponse.redirect(url, 301);
+  }
+
   // 2. /admin and /marketing gate — one session, one password, one place to
   //    revoke. /marketing is the Marketing Hub; it authenticates exactly like
   //    /admin and sends the signed-out to the same login.

@@ -6,23 +6,33 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ADMIN_NAV, ATTRIBUTION_TABS, PARTNERSHIP_TABS } from "@/config/adminNav";
+import { ADMIN_NAV, EMAIL_TABS, PARTNERSHIP_TABS } from "@/config/adminNav";
 import { Icon } from "./Icon";
 
 type Entry = { href: string; label: string; group: string; keywords: string };
 
 function entries(): Entry[] {
   const out: Entry[] = [];
-  for (const group of ADMIN_NAV) {
-    for (const item of group.items) {
-      out.push({ href: item.href, label: item.label, group: group.title, keywords: item.label.toLowerCase() });
+  for (const item of ADMIN_NAV) {
+    const subs = item.subItems ?? [];
+    if (subs.length === 0) {
+      out.push({ href: item.href, label: item.label, group: item.label, keywords: item.label.toLowerCase() });
+      continue;
+    }
+    for (const sub of subs) {
+      out.push({
+        href: sub.href,
+        label: `${item.label} · ${sub.label}`,
+        group: item.label,
+        keywords: `${item.label.toLowerCase()} ${sub.label.toLowerCase()}`,
+      });
     }
   }
   for (const t of PARTNERSHIP_TABS.slice(1)) {
     out.push({ href: t.href, label: `Partnerships · ${t.label}`, group: "Channels", keywords: `partnerships ${t.label.toLowerCase()}` });
   }
-  for (const t of ATTRIBUTION_TABS.slice(1)) {
-    out.push({ href: t.href, label: `Attribution · ${t.label}`, group: "Analyze", keywords: `attribution ${t.label.toLowerCase()}` });
+  for (const t of EMAIL_TABS.slice(1)) {
+    out.push({ href: t.href, label: `Email · ${t.label}`, group: "Channels", keywords: `email ${t.label.toLowerCase()}` });
   }
   return out;
 }

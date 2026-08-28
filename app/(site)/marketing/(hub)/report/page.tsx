@@ -11,6 +11,7 @@ import {
   SNAPSHOT_MONTHS,
 } from "@/config/appLeadsSnapshot";
 import { REPORT_METRICS, type ReportMetricKey } from "@/config/marketingHub";
+import { Button } from "@/app/(site)/admin/_ui/Button";
 import { monthsFor, parseAttribution, parseTimeframe, timeframeLabel } from "../timeframe";
 import { HubPageHeader, NeedsBlock } from "../hubUi";
 import { ReportGrid } from "./ReportGrid";
@@ -76,7 +77,19 @@ export default async function ReportPage({
 
   return (
     <>
-      <HubPageHeader surface={surface} />
+      <HubPageHeader
+        surface={surface}
+        right={
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled
+            title="Present mode — locks the range to the selected month, larger type, no nav chrome. Not wired yet."
+          >
+            Present
+          </Button>
+        }
+      />
       <ReportGrid
         markets={markets}
         hsms={hsms}
