@@ -11,6 +11,7 @@ import { Field, FieldError, Input, Select } from "@/app/(site)/admin/_ui/Field";
 import { InfoPopover } from "@/app/(site)/admin/_ui/InfoPopover";
 import { Badge, DASH, Eyebrow, Meta, Panel } from "@/app/(site)/admin/_ui/primitives";
 import { useToast } from "@/app/(site)/admin/_ui/Toast";
+import { UndocumentedCampaignsBanner } from "../hubUi";
 import { CHANNEL_FUNNEL_ORDER, CHANNEL_LABELS } from "@/config/marketingHub";
 import { MARKETS } from "@/config/markets";
 import {
@@ -409,19 +410,7 @@ export function LinksTable({
       )}
 
       {/* ── orphans: the wild vs the registry ── */}
-      {orphans.length > 0 && (
-        <div className="mb-ops-gap rounded-lg border border-tone-warn bg-pill-warn-bg px-4 py-3">
-          <p className="m-0 font-sans text-ops-body font-bold text-content">
-            {orphans.length} campaign tag{orphans.length > 1 ? "s are" : " is"} producing leads but{" "}
-            {orphans.length > 1 ? "aren't" : "isn't"} documented here
-          </p>
-          <p className="m-0 mt-1 font-sans text-ops-label leading-[1.6] text-content-muted">
-            {orphans.map((o) => `${o.campaign} (${o.count})`).join(" · ")} — computed against the
-            last {leadWindow} leads at page load. Document each one so its performance has
-            somewhere to live.
-          </p>
-        </div>
-      )}
+      <UndocumentedCampaignsBanner orphans={orphans} leadWindow={leadWindow} />
 
       {/* ── filters ── */}
       <div className="mb-3 flex flex-wrap items-center gap-2">

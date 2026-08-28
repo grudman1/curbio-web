@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { HUB_SURFACE_BY_SLUG } from "@/config/marketingHub";
 import { SNAPSHOT_MONTHS } from "@/config/appLeadsSnapshot";
+import { computeUndocumentedCampaigns } from "@/lib/campaignOrphans";
+import { SCAN } from "@/app/(site)/admin/(dashboard)/ui";
 import { monthsFor, parseTimeframe, timeframeLabel } from "../timeframe";
 import { AttributionHealthPanel } from "../AttributionHealth";
-import { HubPageHeader, NeedsBlock } from "../hubUi";
+import { HubPageHeader, NeedsBlock, UndocumentedCampaignsBanner } from "../hubUi";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Attribution health — the page behind the honest panel. Same number, plus
@@ -27,10 +29,12 @@ export default async function AttributionPage({
   const tf = parseTimeframe(sp.t, SNAPSHOT_MONTHS);
   const months = monthsFor(tf, SNAPSHOT_MONTHS);
   const tfLabel = timeframeLabel(tf, SNAPSHOT_MONTHS);
+  const { orphans } = await computeUndocumentedCampaigns(SCAN);
 
   return (
     <>
       <HubPageHeader surface={surface} />
+      <UndocumentedCampaignsBanner orphans={orphans} leadWindow={SCAN} />
       <AttributionHealthPanel months={months} tfLabel={tfLabel} detailed />
       <NeedsBlock surface={surface} />
     </>

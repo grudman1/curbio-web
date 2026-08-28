@@ -3,8 +3,8 @@ import { CHANNEL_PLAN, CHANNEL_PLAN_BY_SLUG } from "@/config/channelPlan";
 import { EventLogPanel } from "@/app/(site)/marketing/(hub)/events/EventLogPanel";
 import { ChannelScreen } from "../channelScreen";
 
-// One route, every Magnificent Seven channel except Partnerships, which has
-// its own static route because it carries tabs.
+// One route, every Magnificent Seven channel except Partnerships and Email,
+// which have their own static routes because they carry tabs.
 //
 // A channel with a WORKING SURFACE renders it under the brief. Events is the
 // one that has one today (the event log) — opsActionUtils already revalidates
@@ -12,7 +12,9 @@ import { ChannelScreen } from "../channelScreen";
 // for. Everything else is brief-only until its surface exists.
 
 export function generateStaticParams() {
-  return CHANNEL_PLAN.filter((c) => c.slug !== "partnerships").map((c) => ({ slug: c.slug }));
+  return CHANNEL_PLAN.filter((c) => c.slug !== "partnerships" && c.slug !== "email").map((c) => ({
+    slug: c.slug,
+  }));
 }
 
 export async function generateMetadata({

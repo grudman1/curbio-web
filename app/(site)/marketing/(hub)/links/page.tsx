@@ -3,6 +3,7 @@ import { HUB_SURFACE_BY_SLUG } from "@/config/marketingHub";
 import { LINK_SEED_EXPORTED_AT, SEED_LINKS } from "@/config/linkRegistry";
 import { readRegistryLinks } from "@/lib/marketingLinksStore";
 import { readRecentLeads, maskName } from "@/lib/adminLeads";
+import { computeUndocumentedCampaigns } from "@/lib/campaignOrphans";
 import { SCAN } from "@/app/(site)/admin/(dashboard)/ui";
 import { HubPageHeader, NeedsBlock } from "../hubUi";
 import { LinksTable, type LeadLite } from "./LinksTable";
@@ -55,11 +56,11 @@ export default async function LinksPage() {
   }
 
   // ── orphans: campaign tags in the wild with no registry row ──────────────
-  const documented = new Set(rows.map((r) => r.campaign).filter(Boolean));
-  const orphans = Object.entries(campaignLeads)
-    .filter(([campaign]) => !documented.has(campaign))
-    .map(([campaign, list]) => ({ campaign, count: list.length }))
-    .sort((a, b) => b.count - a.count);
+  // Shared with Attribution → Health and Home (lib/campaignOrphans.ts) — same
+  // computation, same "documented" set, three surfaces. readRecentLeads is
+  // cache()'d per request, so this costs nothing extra alongside the richer
+  // per-campaign join above.
+  const { orphans } = await computeUndocumentedCampaigns(SCAN);
 
   return (
     <>

@@ -11,6 +11,13 @@ import { DEFINITIONS_LINE, type HubSurface, type WiringStatus } from "@/config/m
 
 export { DASH };
 
+// Both pieces render inside /admin now (Forms detail, Attribution → Health),
+// not just inside a whole-page hub re-export — their canonical home moved to
+// the admin design system so admin's own imports don't reach into this tree.
+// Re-exported here so nothing in marketing/(hub)/* has to change its import.
+export { EmptyLog } from "@/app/(site)/admin/_ui/EmptyLog";
+export { UndocumentedCampaignsBanner } from "@/app/(site)/admin/_ui/UndocumentedCampaignsBanner";
+
 // CSS colour strings for the legacy /marketing chrome's SVG charts and dots.
 // New surfaces use the tone classes (tone.ts); these exist so the legacy
 // screens keep compiling against one vocabulary.
@@ -37,16 +44,30 @@ export function StatusChip({ status }: { status: WiringStatus }) {
 }
 
 /** Page header: sans title, wiring pill, target. The purpose line lives
- *  behind the ⓘ — context, not a number. */
-export function HubPageHeader({ surface, right }: { surface: HubSurface; right?: React.ReactNode }) {
+ *  behind the ⓘ — context, not a number.
+ *
+ *  `titleOverride` exists for a surface embedded somewhere its own label
+ *  doesn't fit — e.g. Contacts rendered as Email's Database tab — without
+ *  renaming the surface itself, which /marketing still calls by its own
+ *  name. Status, target and purpose stay the surface's own; only the
+ *  headline changes. */
+export function HubPageHeader({
+  surface,
+  right,
+  titleOverride,
+}: {
+  surface: HubSurface;
+  right?: React.ReactNode;
+  titleOverride?: string;
+}) {
   return (
     <PageHeader
-      title={surface.label}
+      title={titleOverride ?? surface.label}
       right={
         <>
           <StatusChip status={surface.status} />
           {surface.target && <Meta>Target: {surface.target}</Meta>}
-          <InfoPopover label={`About ${surface.label}`} align="right">
+          <InfoPopover label={`About ${titleOverride ?? surface.label}`} align="right">
             <p className="m-0">{surface.purpose}</p>
           </InfoPopover>
           {right}
@@ -151,24 +172,3 @@ export function DashTable({
   );
 }
 
-/** An empty log: real columns, one honest line about where rows come from. */
-export function EmptyLog({ columns, fedBy }: { columns: string[]; fedBy: string }) {
-  return (
-    <Table>
-      <thead>
-        <tr>
-          {columns.map((c) => (
-            <Th key={c}>{c}</Th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <Td muted className="border-b-0" colSpan={columns.length}>
-            No rows yet — this table fills from {fedBy}.
-          </Td>
-        </tr>
-      </tbody>
-    </Table>
-  );
-}

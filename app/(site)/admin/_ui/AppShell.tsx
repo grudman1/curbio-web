@@ -1,8 +1,18 @@
-import { Sidebar } from "./Sidebar";
+import { ADMIN_NAV } from "@/config/adminNav";
+import { Sidebar, type SidebarUser } from "./Sidebar";
 import { AttributionToggle, Timeframe } from "./HeaderControls";
 import { CommandPalette } from "./CommandPalette";
 import { ToastProvider } from "./Toast";
 import { PaletteHint } from "./PaletteHint";
+
+// No separate display name exists anywhere in the session (lib/adminAuth.ts's
+// AdminUser is just email + role) — the sidebar's user chip shows the email
+// itself rather than inventing a first name that isn't there.
+function sidebarUserFrom(user: { email: string; role: string } | null): SidebarUser {
+  const email = user?.email ?? "";
+  const local = email.split("@")[0] || "?";
+  return { initials: local.slice(0, 2).toUpperCase(), name: email || "Signed in", role: user?.role ?? "" };
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ONE shell. Sidebar + header + content, one implementation, every screen.
@@ -31,7 +41,7 @@ export function AppShell({
   return (
     <ToastProvider>
       <div className="flex min-h-screen flex-col bg-app-bg font-sans text-content md:flex-row">
-        <Sidebar leadCount={leadCount} />
+        <Sidebar items={ADMIN_NAV} user={sidebarUserFrom(user)} leadCount={leadCount} />
 
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-header flex h-ops-header flex-none items-center gap-3 border-b border-app-border bg-app-card px-4 md:px-6">

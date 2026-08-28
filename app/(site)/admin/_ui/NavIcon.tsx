@@ -24,6 +24,9 @@ const PATHS: Record<string, React.ReactNode> = {
   partners: (<><circle cx="5.5" cy="5.5" r="2" /><circle cx="10.5" cy="5.5" r="2" /><path d="M2 13.2c0-2.3 1.6-3.6 3.5-3.6 1.3 0 2.4.6 3 1.6M9.6 9.8c.3-.1.6-.2.9-.2 1.9 0 3.5 1.3 3.5 3.6" /></>),
   outreach: (<><path d="M14 2 2 6.8l4.7 2.5L9.2 14 14 2Z" /><path d="M6.7 9.3 14 2" /></>),
   events: (<><rect x="2.5" y="3.5" width="11" height="10" rx="1" /><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3" /></>),
+  // Nav-redesign top-level group icons (2026-08 Control Room rail).
+  site: <path d="M8 1.6 13.8 5v6L8 14.4 2.2 11V5Z" />,
+  analytics: (<><path d="M2.3 12.5 6.4 8.2l2.4 2.4 4.9-5.3" /><path d="M10.4 4.9h3.3v3.3" /></>),
 };
 
 export function NavIcon({ name }: { name: string }) {
