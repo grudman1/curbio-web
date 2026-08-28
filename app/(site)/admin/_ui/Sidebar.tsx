@@ -336,47 +336,27 @@ export function Sidebar({
           })}
         </div>
 
-        <div className="flex-none border-t border-app-border pt-1.5">
+        <div className="flex-none border-t border-app-border px-2.5 py-2">
           <Link
             href={withQuery("/admin/settings")}
             onClick={closeMobile}
-            title="Settings"
             aria-label="Settings"
             aria-current={pathname === "/admin/settings" ? "page" : undefined}
-            className={`mx-2.5 flex h-9 items-center rounded-md text-nav3-muted-text transition-colors duration-fast ease-out hover:bg-app-well hover:text-nav3-hover-text aria-[current=page]:text-nav3-hover-text ${
-              railCollapsed ? "justify-center px-0" : "w-9 justify-center"
+            className={`flex h-9 items-center rounded-md text-nav3-muted-text transition-colors duration-fast ease-out hover:bg-app-well hover:text-nav3-hover-text aria-[current=page]:text-nav3-hover-text ${
+              railCollapsed ? "justify-center" : "justify-center"
             }`}
           >
-            <NavIcon name="gear" size={18} />
+            <NavIcon name="settings" size={16} />
           </Link>
 
-          <button
-            type="button"
-            title={`${user.name} · ${user.role}`}
-            className={`flex w-full items-center gap-2 py-2 text-left transition-colors duration-fast ease-out hover:bg-app-well ${
-              railCollapsed ? "justify-center px-0" : "px-2.5"
-            }`}
-          >
-            <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-navy font-sans text-[11px] font-bold text-white">
-              {user.initials}
-            </span>
-            {!railCollapsed && (
-              <span className="min-w-0 flex-1 truncate font-sans text-[12px] text-nav3-muted-text">{user.name}</span>
-            )}
-          </button>
-
-          {/* Drag the nav's own right edge to resize (200–320px) — this is a
-              subtle affordance, not a prominent arrow button. Collapsing to
-              the 48px icon rail is a separate, discrete action. */}
-          <button
-            type="button"
-            onClick={toggleRail}
-            aria-pressed={railCollapsed}
-            title={railCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="hidden h-5 w-full flex-none items-center justify-center border-t border-app-border text-content-subtle opacity-60 transition-opacity duration-fast ease-out hover:opacity-100 md:flex"
-          >
-            <Icon name={railCollapsed ? "chevron-right" : "chevron-left"} size={10} />
-          </button>
+          {!railCollapsed && (
+            <div className="mt-2 flex items-center gap-2">
+              <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-navy font-sans text-[11px] font-bold text-white">
+                {user.initials}
+              </span>
+              <span className="min-w-0 flex-1 truncate font-sans text-[12px] font-medium text-nav3-hover-text">{user.name}</span>
+            </div>
+          )}
         </div>
       </nav>
 
