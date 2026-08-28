@@ -15,8 +15,10 @@ import { BROKERAGE_LOGOS } from "@/lib/partners";
 // together. Dropping the strip shrank it back, and the subtrahend went with
 // it.
 //
-// Placeholders still live elsewhere: AwardsStrip carries five
-// ([Award] ×2, [rating], [count], [press]).
+// The awards strip that used to carry the remaining placeholders ([Award] ×2,
+// [rating], [count], [press]) was deleted with the listing-operations rebuild
+// — a strip of brackets is worse than no strip. `git show` it when real
+// credentials exist. Its .c-strip CSS is left in site.css for that day.
 //
 // Logos: each declared once in CSS custom properties (see .c-logo) — never
 // repeated <img> tags; the duplicate loop track is aria-hidden.

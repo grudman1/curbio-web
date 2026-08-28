@@ -1,94 +1,51 @@
 import Image from "next/image";
 
-// How it works — animated section title over three steps.
+// The three jobs — one section headline over three steps.
 //
-// ── The rotating headline ────────────────────────────────────────────────────
-// Navy "Curbio helps you" + an amber phrase that cycles vertically, modeled on
-// Opendoor's hero. Deliberately CSS-only, no JS:
+// ── Why the headline stopped rotating ───────────────────────────────────────
+// This slot used to carry a CSS-only vertical rotator ("Curbio helps you
+// win the listing / prep the house / list on time / …"), modeled on
+// Opendoor's hero. It is gone as of the listing-operations rebuild, and the
+// reason is positioning, not taste: a rotator spends the reader's attention
+// on SIX claims of equal weight, and this page now has exactly one argument
+// to make in this slot — that the pitch is pay-at-close concierge, and that
+// it wins listings. The three steps below carry the rest.
 //
-//   • phrase 1 ("win the listing") is the FIRST PAINTED FRAME by construction —
-//     it's the first node in the track and the animation starts at translateY(0).
-//     A slow load, a JS failure, or reduced-motion all land on the strongest
-//     phrase rather than a blank box or a mid-cycle one.
-//   • the loop is seamless because phrase 1 is CLONED at the end of the track
-//     (data-loop-clone). The animation runs to the clone and resets to 0 —
-//     identical pixels, so the reset is invisible.
+// The machinery it needed is retired with it: @keyframes c-rot-cycle stepped
+// by 1/(phrases+1) and had to be rewritten by hand every time a phrase was
+// added, and the sr-only twin existed only so a screen reader heard one
+// sentence instead of six fragments. A plain <h2> needs neither. The .c-rot-*
+// CSS stays in site.css unused — it is the A/B arm if anyone wants the
+// rotator measured rather than argued about.
 //
-// The amber full stop after each phrase is part of the visible track only —
-// SPOKEN below already ends in one, so a screen reader does not hear five.
-//
-// ── Accessibility ───────────────────────────────────────────────────────────
-// A screen reader gets ONE complete sentence from the sr-only span; the
-// animated track is aria-hidden, so the rotating fragments are never announced
-// as five disconnected phrases. Under prefers-reduced-motion the animation is
-// off entirely and only phrase 1 shows (see site.css).
-
-// Order matters twice over. "win the listing" must stay FIRST — it is the
-// first painted frame by construction, so a slow load or reduced-motion lands
-// on the strongest phrase. And "pay at close" is deliberately not adjacent to
-// "close with confidence": back to back, the two "close"s read as a stutter.
-//
-// The COUNT matters too: @keyframes c-rot-cycle steps by 1/(phrases+1) and
-// has one stop per item. Adding or removing a phrase means rewriting it — see
-// the note above the keyframes in site.css.
-const PHRASES = [
-  "win the listing",
-  "prep the house",
-  "list on time",
-  "pay at close",
-  "impress the seller",
-  "close with confidence",
-];
-
-// The sentence a screen reader actually hears. Kept adjacent to PHRASES so the
-// two cannot drift apart.
-const SPOKEN = `Curbio helps you ${PHRASES.slice(0, -1).join(", ")}, and ${
-  PHRASES[PHRASES.length - 1]
-}.`;
+// STEP COPY is deliberately about the DIVISION OF LABOUR, not about why
+// prepping a listing is a good idea. Agents already know the second thing.
 
 const STEPS = [
   {
     num: "01",
     title: "You win the listing",
-    line: "Your edge in the listing presentation: a licensed GC, market-ready prep, pay at close.",
+    line: "Walk into the presentation with a plan, a price, a date, and pay-at-close. Discount brokers can't match it.",
     src: "/home/how/01-win-the-listing.jpg",
     alt: "An agent showing sellers a Curbio plan on a tablet in their kitchen",
   },
   {
     num: "02",
-    title: "We do the work",
-    line: "One project manager, crews moving at the pace of real estate — track every step in the app.",
-    // Frame at 0:25 of the Aaron Glines PM Spotlight cut (1080p, 19 Mbps).
-    // Replaces the still that shipped in #33: same shot, but that still was
-    // 2560x1387 and MEASURED 32% softer through the card's crop-and-resize —
-    // more pixels, less real detail, i.e. an upscale of lower-res source.
-    //
-    // RE-EXTRACTED Aug 7 (Gavin: "still blurry") — 1.82x sharper measured
-    // through the real delivery pipeline, same frame. Two causes, neither of
-    // them the frame's resolution:
-    //
-    //   1. ASPECT. The card is 4:3 and the frame was 16:9, so object-fit
-    //      cover had to scale the bitmap to 494 CSS px to fill a 371px box.
-    //      At dpr 2 that needs 988px, but `sizes="30vw"` describes the
-    //      ELEMENT (371px), so next/image served 828 — a 19% UPSCALE of an
-    //      already-soft still. Cropping to 4:3 (1440x1080) at extraction
-    //      makes the served 828 an over-supply instead. Worth 1.21x alone.
-    //   2. It is a video frame — shallow depth of field, subject mid-motion.
-    //      A light unsharp (0.75) recovers what the codec smeared: 1.82x
-    //      total. Checked at display size for halos at 0.6/0.75/0.9.
-    //
-    // Do NOT swap this for a "sharper" frame without watching the clip: 25.0s
-    // sits in a soft valley (measured 119 vs 307 at 23.7s), but 23.7s is a
-    // DIFFERENT shot — there is a cut at ~24.8s — and the sharpest frames
-    // inside this shot (28.4-29.0s) have an out-of-focus foreground mass
-    // covering half the frame. 25.0s is the best usable frame of this shot.
+    title: "We run the project",
+    line: "One named local manager owns trades, schedule, and quality. You never chase a painter again.",
+    // Frame at 0:25 of the Aaron Glines PM Spotlight cut (1080p, 19 Mbps),
+    // re-extracted Aug 7 at 4:3 with a light unsharp — 1.82x sharper measured
+    // through the real delivery pipeline. Do NOT swap this for a "sharper"
+    // frame without watching the clip: 25.0s is the best usable frame of this
+    // shot (there is a cut at ~24.8s, and this shot's sharpest frames have an
+    // out-of-focus foreground mass covering half the frame).
     src: "/home/how/02-we-do-the-work.jpg",
     alt: "Curbio crews replacing a window on a home exterior",
   },
   {
     num: "03",
     title: "Seller pays at close",
-    line: "Nothing upfront; the project settles as one line when the home sells.",
+    line: "Zero upfront, no liens, no title clouds. Your commission is never touched.",
     src: "/home/how/03-pay-at-close.jpg",
     alt: "Sellers holding a SOLD sign with their agent in the kitchen",
   },
@@ -98,28 +55,8 @@ export function HowItWorks() {
   return (
     <section className="c-sect c-sect--tight-top" id="how-it-works">
       <div className="c-container">
-        <h2 className="c-h2 c-rot-h2">
-          <span className="c-sr-only">{SPOKEN}</span>
-          <span className="c-rot" aria-hidden="true">
-            <span className="c-rot-static">Curbio helps you</span>{" "}
-            <span className="c-rot-mask">
-              <span className="c-rot-track">
-                {PHRASES.map((p) => (
-                  <span key={p} className="c-rot-item">
-                    {p}
-                    <span className="c-rot-dot">.</span>
-                  </span>
-                ))}
-                {/* Clone of phrase 1 — the animation ends here and snaps back
-                    to the real phrase 1, which is pixel-identical. The dot has
-                    to be cloned too or the reset would visibly drop it. */}
-                <span className="c-rot-item" data-loop-clone="true">
-                  {PHRASES[0]}
-                  <span className="c-rot-dot">.</span>
-                </span>
-              </span>
-            </span>
-          </span>
+        <h2 className="c-h2" style={{ maxWidth: "16em" }}>
+          Pitch pay-at-close concierge to win the listing.
         </h2>
 
         <div className="c-how-grid">

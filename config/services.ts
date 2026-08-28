@@ -3,7 +3,10 @@
 //
 // The homepage services marquee (components/home/HomeResults.tsx) and the
 // /services index both render this array. Order matters: it is the marquee's
-// display order, unchanged from the approved design.
+// display order, and it is an ARGUMENT — cleaning, paint and staging lead
+// because they are what "fast cosmetic prep" means, and the trades that read
+// as renovation (roofing, HVAC) come last so the list can never be skimmed as
+// a remodelling menu.
 //
 // Each service has an ANCHOR on /services (`/services#kitchen-updates`), not
 // its own route yet. When per-service pages arrive at /services/[slug], the
@@ -41,12 +44,40 @@ export type Service = {
 
 export const SERVICES: Service[] = [
   {
+    slug: "deep-cleaning-haul-away",
+    name: "Deep cleaning & haul-away",
+    category: "Listing prep",
+    description:
+      "Junk removal and a top-to-bottom clean — the last step before the photographer walks in.",
+    photo: "/home/results/deep-cleaning-haul-away.jpg",
+  },
+  {
     slug: "interior-exterior-painting",
     name: "Interior & exterior painting",
     category: "Refresh & update",
     description:
       "Whole-home repaints in listing-ready neutrals — the highest-return line on most scopes.",
     photo: "/home/results/interior-exterior-painting.jpg",
+  },
+  {
+    slug: "staging",
+    name: "Staging",
+    category: "Listing prep",
+    description:
+      "Professionally styled and photo-ready, coordinated with the rest of the scope so nothing waits on anything.",
+    photo: "/home/results/staging.jpg",
+  },
+  {
+    slug: "photography-ready-finish",
+    name: "Photography-ready finish",
+    category: "Listing prep",
+    description:
+      "The last pass before the shoot: styling touch-ups, bulbs matched, cords hidden, every room shot-ready.",
+    // TODO(asset): no photography-ready-finish photo exists under
+    // public/home/results/ — this reuses the staging card's image so the
+    // marquee has no gap. Swap it the day the real category shot lands; the
+    // slug and copy are final.
+    photo: "/home/results/staging.jpg",
   },
   {
     slug: "flooring",
@@ -103,22 +134,6 @@ export const SERVICES: Service[] = [
     description:
       "System repairs and replacements handled by licensed trades, closed out with documentation.",
     photo: "/home/results/hvac-plumbing.jpg",
-  },
-  {
-    slug: "staging",
-    name: "Staging",
-    category: "Listing prep",
-    description:
-      "Professionally styled and photo-ready, coordinated with the rest of the scope so nothing waits on anything.",
-    photo: "/home/results/staging.jpg",
-  },
-  {
-    slug: "deep-cleaning-haul-away",
-    name: "Deep cleaning & haul-away",
-    category: "Listing prep",
-    description:
-      "Junk removal and a top-to-bottom clean — the last step before the photographer walks in.",
-    photo: "/home/results/deep-cleaning-haul-away.jpg",
   },
 ];
 

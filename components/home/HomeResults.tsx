@@ -1,15 +1,19 @@
 import { SERVICES } from "@/config/services";
 import { ServicesMarquee } from "./ServicesMarquee";
 
-// "Results worth funding" — the scrolling services list. Cut in v2, restored
-// in #37, and given its real ten services + photography on Aug 7 (Gavin).
+// "Fast cosmetic prep" — the scrolling services list.
 //
-// The ten services now live in config/services.ts — one source of truth for
+// The headline is a BOUNDARY, not a menu: what this section has to establish
+// is that Curbio does not gut houses, because the objection it answers is
+// "prep will blow my listing window." The eleven cards are the evidence that
+// the boundary still covers everything a listing needs.
+//
+// The services now live in config/services.ts — one source of truth for
 // this marquee and the /services index. Card photos come from the config's
 // photo paths as inline background-image (the per-index .cr-t0…t9 CSS classes
 // were retired with the move; same URLs, same render). The track renders
 // TWICE for the seamless loop; the second copy is aria-hidden, so a screen
-// reader hears the ten services once, not twenty.
+// reader hears the list once, not twice.
 //
 // LABEL ONLY on the card — one line of text over the photo. The service
 // descriptions live in config/services.ts and render on /services, not here.
@@ -43,11 +47,14 @@ export function HomeResults() {
   return (
     <section id="results" className="c-sect">
       <div className="c-container">
-        <p className="c-eyebrow">Results worth funding</p>
-        <h2 className="c-h2" style={{ maxWidth: "15em" }}>
-          From a bathroom remodel to staging, we do all the work that moves the
-          price.
+        <p className="c-eyebrow">Fast, focused, proven</p>
+        <h2 className="c-h2" style={{ maxWidth: "16em" }}>
+          Fast cosmetic prep. No flips, no gut jobs, no blown listing windows.
         </h2>
+        <p className="c-lede" style={{ maxWidth: "60ch" }}>
+          Just the fast, high-ROI updates that data shows actually sell homes &mdash; done in
+          weeks, not months.
+        </p>
       </div>
       <ServicesMarquee>
         <CardRow />

@@ -34,6 +34,16 @@ import { MobileNav } from "./MobileNav";
 
 type Tone = "scrolled" | "dark";
 
+// Routes that render their OWN opening statement and must start at the bar.
+// The announce strip is a utility line for interior pages; on the homepage it
+// pushes the hero down and says, in 13px grey, the thing the hero says in a
+// 76px serif and the pay-at-close section proves in full. One page, one lead.
+//
+// NOTE: the strip is unchanged everywhere else. Removing it site-wide is a
+// separate call — it is the only pay-at-closing message on /services and
+// /brokers.
+const NO_ANNOUNCE = new Set(["/", "/home-preview"]);
+
 const PHONE_DISPLAY = "(844) 944-2629";
 const PHONE_TEL = "+18449442629";
 
@@ -79,6 +89,7 @@ export function SiteHeader() {
         Skip to content
       </a>
 
+      {!NO_ANNOUNCE.has(pathname) && (
       <div className="ch-announce">
         <b>Pay at closing</b> — your seller pays nothing until the home sells.
         {/* Points at Notable's application, not our own /how-it-works page:
@@ -93,6 +104,7 @@ export function SiteHeader() {
           <u>How it works →</u>
         </a>
       </div>
+      )}
 
       <div className="ch-bar">
         <div className="ch-scrim" aria-hidden />

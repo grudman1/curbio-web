@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 // "By address, not by adjective" — one featured sold listing bleeding to the
 // right page edge, then a staggered gallery of four more. All photos are real
@@ -35,12 +36,24 @@ const GALLERY = [
   },
 ];
 
-export function OurWork() {
+/**
+ * The gallery. Both flags exist for /our-work, which supplies its own <h1>
+ * and must not link to itself — the homepage renders it with the defaults.
+ */
+export function OurWork({
+  heading = true,
+  allProjectsLink = true,
+}: {
+  heading?: boolean;
+  allProjectsLink?: boolean;
+} = {}) {
   return (
     <section className="c-sect--work-gallery">
-      <div className="c-container">
-        <h2 className="c-h2 c-work-h2">By address, not by adjective.</h2>
-      </div>
+      {heading && (
+        <div className="c-container">
+          <h2 className="c-h2 c-work-h2">By address, not by adjective.</h2>
+        </div>
+      )}
       <div className="c-work-feature">
         <div className="c-work-featcopy">
           <h3 className="c-work-addr">8250 Buckspark</h3>
@@ -81,11 +94,15 @@ export function OurWork() {
           </figure>
         ))}
       </div>
-      <div className="c-container c-work-all">
-        <span className="c-ulink" style={{ fontSize: 16, fontWeight: 600 }}>
-          All projects →
-        </span>
-      </div>
+      {allProjectsLink && (
+        <div className="c-container c-work-all">
+          {/* A real link as of the listing-operations rebuild — /our-work
+              exists now (it was an inert span while the route was planned). */}
+          <Link className="c-ulink" style={{ fontSize: 16, fontWeight: 600 }} href="/our-work">
+            All projects →
+          </Link>
+        </div>
+      )}
     </section>
   );
 }

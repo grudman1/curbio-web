@@ -133,12 +133,16 @@ function implementedPages(): RegistryEntry[] {
     derivedFrom: "app/(site)/(chrome)/home-preview → app/(site)/(chrome)/page.tsx",
     note: "building at /home-preview — replaces the placeholder at / on sign-off",
   });
-  // The four marketing pages (Aug 2026), built on the promoted homepage design
+  // The marketing pages (Aug 2026), built on the promoted homepage design
   // language. `stub` until Gavin flips them: built and rendering with real
-  // copy, but each still carries NEEDS FACT markers.
+  // copy, but each still carries NEEDS FACT markers. /our-work joined them
+  // with the listing-operations homepage rebuild — it exists so the
+  // homepage's "All projects →" is not a dead link, and it is the thinnest
+  // of the five.
   const MARKETING_PAGES: { path: string; title: string }[] = [
     { path: "/how-it-works", title: "How It Works" },
     { path: "/services", title: "Services" },
+    { path: "/our-work", title: "Our Work" },
     { path: "/brokers", title: "For Brokerages" },
     { path: "/contact", title: "Contact" },
   ];

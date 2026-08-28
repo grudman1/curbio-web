@@ -1856,3 +1856,192 @@
   .c-numbers { grid-template-columns: 1fr 1fr; row-gap: 34px; }
   .c-numbers > li:nth-child(odd) { border-left: 0; padding-left: 0; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LISTING-OPERATIONS HOMEPAGE REBUILD
+   Hero form step two · concierge comparison · capacity calculator ·
+   dismissible mobile CTA. Everything below extends the existing c- families
+   and reuses the cl2-* field styles rather than minting a second input look.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── hero: the live two-step field ──────────────────────────────────────────
+   Step one is the pill that was always there (.c-hero-search). Step two
+   appears BELOW it, on its own card, because the pill is bottom-aligned over
+   a photo and growing it in place would push the headline into the fixed
+   header on short phones — the exact failure the .c-hero notes above warn
+   about. A card also gives the three fields a legible ground of their own
+   instead of relying on the scrim. */
+.c-hero-err {
+  margin: 10px 2px 0; font-size: 13.5px; font-weight: 600; color: #fff;
+  text-shadow: 0 1px 3px rgba(4,14,32,0.68);
+}
+.c-hero-step2 {
+  margin-top: 14px; padding: 18px; border-radius: var(--radius-lg);
+  background: rgba(255,255,255,0.94);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  box-shadow: var(--elevation-overlay);
+  /* Matches .c-hero-form's own cap so the card lines up with the pill. */
+  max-width: 640px;
+}
+.c-hero-step2-h {
+  margin: 0 0 12px; font-size: 14px; font-weight: 700;
+  color: var(--color-text); letter-spacing: -0.005em;
+}
+.c-hero-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.c-hero-fields > .cl2-field:nth-child(3),
+.c-hero-fields > .cl2-field:nth-child(4) { grid-column: 1 / -1; }
+/* .c-cta is a bare atom — background, radius, weight, and nothing else. Every
+   consumer sets its own padding and size (see .c-closer-cta), so these must
+   too or they render as text with a coloured background and no button. */
+.c-hero-submit {
+  margin-top: 14px; width: 100%; text-align: center;
+  padding: 15px 28px; font-size: 15.5px;
+}
+.c-hero-fine {
+  margin: 12px 0 0; font-size: 11.5px; line-height: 1.5;
+  color: var(--color-text-subtle);
+}
+.c-hero-fine a { color: inherit; }
+/* Success replaces the whole form. White on the scrim, not a card: there is
+   nothing left to interact with, so it reads as hero copy. */
+.c-hero-done { max-width: 640px; margin-top: 32px; }
+.c-hero-done-h {
+  margin: 0; font-family: var(--font-family-serif); font-size: 26px;
+  font-weight: 600; color: #fff; text-shadow: 0 2px 12px rgba(4,14,32,0.45);
+}
+.c-hero-done-p {
+  margin: 8px 0 0; font-size: 16px; color: rgba(255,255,255,0.92);
+  text-shadow: 0 1px 3px rgba(4,14,32,0.68);
+}
+@media (max-width: 640px) {
+  .c-hero-fields { grid-template-columns: 1fr; }
+  /* The rebuilt subhead is three lines where the old one was two. The hero is
+     bottom-aligned and viewport-capped, so every extra line pushes the block
+     up toward the fixed header — capping the measure is what keeps the review
+     line clear of it at 375x667. */
+  .c-hero-sub { font-size: 16.5px; max-width: 34ch; }
+}
+
+/* ── section 4: "Not all concierge programs do the work." ──────────────────
+   A three-column <ul>. The Curbio column is elevated with an amber top rule
+   and a raised surface — the one place on the page a card is allowed to
+   claim primacy, because the two columns before it are the setup. */
+.c-cmp-grid {
+  list-style: none; margin: 34px 0 0; padding: 0;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px; align-items: stretch;
+}
+.c-cmp-card {
+  padding: 30px 28px 32px; border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border); background: var(--color-surface);
+  border-top: 3px solid var(--color-border);
+}
+.c-cmp-card--ours {
+  background: var(--color-surface-raised);
+  border-top-color: var(--color-accent);
+  box-shadow: var(--elevation-accent, 0 12px 32px rgba(11,30,62,0.10));
+}
+.c-cmp-title {
+  margin: 0 0 12px; font-family: var(--font-family-serif);
+  font-size: 21px; font-weight: 600; letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+.c-cmp-line { margin: 0; font-size: 16px; line-height: 1.6; color: var(--color-text-muted); }
+.c-cmp-card--ours .c-cmp-line { color: var(--color-text); }
+/* The page's only "what we are not" line. Serif and centred so it reads as a
+   statement rather than a fourth column. */
+.c-cmp-close {
+  margin: 34px auto 0; max-width: 30em; text-align: center;
+  font-family: var(--font-family-serif); font-size: clamp(20px, 2.3vw, 26px);
+  line-height: 1.35; letter-spacing: var(--tracking-tight); color: var(--color-text);
+}
+@media (max-width: 900px) {
+  .c-cmp-grid { grid-template-columns: 1fr; gap: 14px; }
+}
+
+/* ── section 5: the capacity calculator ────────────────────────────────────
+   Two columns: the three sliders left, the answer right. The RIGHT column
+   reserves its height (min-height) so nothing below moves when a figure
+   gains a digit or the email gate opens — the brief's no-CLS requirement is
+   a layout property here, not a timing one. */
+.c-calc {
+  margin-top: 34px; display: grid; grid-template-columns: 1fr 1fr;
+  gap: 28px; align-items: start;
+}
+.c-calc-inputs {
+  padding: 28px; border-radius: var(--radius-lg);
+  background: var(--color-surface-raised); border: 1px solid var(--color-border);
+  display: grid; gap: 26px;
+}
+.c-calc-field { display: block; }
+.c-calc-label {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  font-size: 14px; font-weight: 600; color: var(--color-text-muted); margin-bottom: 10px;
+}
+.c-calc-value {
+  font-family: var(--font-family-serif); font-size: 20px; font-weight: 600;
+  color: var(--color-text); font-variant-numeric: tabular-nums;
+  /* Never break "$550,000" or "15 hrs" across two lines — the longest label
+     ("Hours you spend managing prep per listing") already wraps at 375px, and
+     a wrapped VALUE beside a wrapped label reads as four unrelated lines. */
+  white-space: nowrap; flex: none;
+}
+.c-calc-range { width: 100%; accent-color: var(--color-accent); cursor: pointer; height: 24px; }
+.c-calc-range:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
+
+.c-calc-out {
+  padding: 30px 30px 26px; border-radius: var(--radius-lg);
+  background: var(--color-surface-inverse); color: #fff;
+  /* Reserved: three lines of answer + the CTA row, at their tallest. */
+  min-height: 340px;
+  display: flex; flex-direction: column;
+}
+.c-calc-line {
+  margin: 0 0 16px; font-family: var(--font-family-serif);
+  font-size: clamp(19px, 2.1vw, 23px); line-height: 1.4;
+  letter-spacing: var(--tracking-tight); color: rgba(255,255,255,0.92);
+}
+.c-calc-line b { color: var(--color-accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+.c-calc-gate { margin-top: auto; padding-top: 14px; }
+.c-calc-gate .c-cta { padding: 15px 28px; font-size: 15.5px; }
+.c-calc-form .c-cta { width: 100%; text-align: center; }
+.c-calc-form { display: grid; gap: 10px; }
+.c-calc-form .cl2-input { background: rgba(255,255,255,0.96); }
+.c-calc-done { margin: 0; font-size: 16px; font-weight: 600; color: var(--color-accent); }
+.c-calc-fine { margin: 18px 0 0; font-size: 12.5px; color: var(--color-text-subtle); }
+@media (max-width: 900px) {
+  .c-calc { grid-template-columns: 1fr; }
+  /* Reserved height comes off on one column: the panel is now the last thing
+     on screen rather than a neighbour, so there is nothing below it to shift. */
+  .c-calc-out { min-height: 0; }
+}
+
+/* ── manager names became links (MarketsManagers) ─────────────────────────── */
+a.c-mkt-hsm-name { color: inherit; text-decoration: none; }
+a.c-mkt-hsm-name:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ── the dismissible mobile CTA ────────────────────────────────────────────
+   <880px per the brief, which is a wider net than .c-stickycta's 760 — this
+   page's hero form is the destination, and the tablet width where the hero
+   has already scrolled away is exactly where a shortcut back to it earns its
+   place. The two never both appear: .c-stickycta is not mounted here. */
+.c-mstick {
+  position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 90;
+  display: none; gap: 8px; align-items: center;
+  opacity: 0; transform: translateY(12px); pointer-events: none;
+  transition: opacity var(--duration-base) var(--easing-out),
+              transform var(--duration-base) var(--easing-out);
+}
+.c-mstick.is-shown { opacity: 1; transform: none; pointer-events: auto; }
+.c-mstick-cta {
+  flex: 1; display: flex; justify-content: center; padding: 15px 24px;
+  box-shadow: var(--elevation-overlay);
+}
+.c-mstick-x {
+  flex: none; width: 46px; height: 46px; border-radius: 50%;
+  border: 1px solid var(--color-border); background: var(--color-surface-raised);
+  color: var(--color-text-muted); cursor: pointer;
+  display: grid; place-items: center; box-shadow: var(--elevation-overlay);
+}
+.c-mstick-x svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2; fill: none; }
+@media (max-width: 879px) { .c-mstick { display: flex; } }

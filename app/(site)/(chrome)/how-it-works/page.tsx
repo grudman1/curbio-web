@@ -10,6 +10,8 @@ import { ScopePicker } from "@/components/sections/ScopePicker";
 import { BeforeAfterSlider } from "@/components/sections/BeforeAfterSlider";
 import { Faq, type FaqItem } from "@/components/sections/Faq";
 import { StickyCta } from "@/components/sections/StickyCta";
+import { StatBand } from "@/components/sections/StatBand";
+import { MARKETS } from "@/config/markets";
 import { DealTimeline } from "@/components/home/DealTimeline";
 import { QualifyCard } from "@/components/home/QualifyCard";
 
@@ -168,6 +170,16 @@ const FAQS: FaqItem[] = [
   },
 ];
 
+// The three staging figures. NEEDS FACT: the sourcing footnote is still a
+// placeholder — these numbers may not ship as claims until the sources are
+// supplied. They travelled here from the homepage; the marker travelled with
+// them rather than being quietly dropped en route.
+const BUYER_STATS = [
+  { value: 94, suffix: "%", label: <>of buyers want move-in ready<sup>1</sup></> },
+  { value: 25, prefix: "~", suffix: "%", label: <>more for a staged home<sup>1</sup></> },
+  { value: 73, prefix: "~", suffix: "%", label: <>less time on market<sup>1</sup></> },
+];
+
 export default function HowItWorksPage() {
   return (
     <>
@@ -221,6 +233,24 @@ export default function HowItWorksPage() {
           caption="6906 Deer Run Lane. Drag the handle, or use the arrow keys."
         />
       </Section>
+
+      {/* WHAT BUYERS REWARD — relocated here from the homepage with the
+          listing-operations rebuild. These are seller-facing why-prep numbers:
+          they argue that prepped homes sell better, which is the question THIS
+          page answers and the one the homepage deliberately no longer asks
+          (agents already know it; what they weigh is why Curbio). Sits under
+          the before/after slider, where the drag has just shown the change the
+          figures are about. */}
+      <StatBand
+        id="buyer-stats"
+        label="What buyers reward"
+        stats={BUYER_STATS}
+        footnote={
+          <>
+            <sup>1</sup> Sources being supplied separately.
+          </>
+        }
+      />
 
       {/* The real deal record — verified against the signed contract. */}
       <div id="one-real-deal">
@@ -278,7 +308,10 @@ export default function HowItWorksPage() {
           </li>
           <li>
             <p className="c-numbers-n">
-              <CountUp value={7} /> markets
+              {/* Derived, not typed: this said 7 while config/markets.ts
+                  already carried 8, and every other market surface on the
+                  site reads from that list. */}
+              <CountUp value={MARKETS.length} /> markets
             </p>
             <p className="c-numbers-l">Each with its own manager</p>
           </li>

@@ -21,7 +21,8 @@ const CARDS = [
   {
     eyebrow: "For brokerages",
     title: "I'm a brokerage or team",
-    line: "A program your whole office can sell with.",
+    line:
+      "White-label or co-brand a concierge program for your whole office — without carrying the capital risk.",
     quote:
       "“Curbio in the listing presentation wins us the appointment.”",
     attr: "Marcus Adeyemi · Managing broker, Keller Williams",

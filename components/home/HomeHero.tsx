@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { HeroLeadForm } from "./HeroLeadForm";
 
 // Hero — CONTROL variant: the v1 full-bleed photo hero, restored (Gavin,
 // Aug 6). One primary action: the field. No second button, no outline CTA
@@ -28,9 +29,10 @@ import Image from "next/image";
 // hero from a pretty house into the actual pitch. No before shot for this
 // address exists on disk today.
 //
-// STUB: field is inert; /api/resolve wiring is a separate step, and its
-// backend still only parses ZIPs — see the note in lib/resolveMarket.ts
-// callers before wiring.
+// The field is LIVE as of the listing-operations rebuild — HeroLeadForm.tsx
+// carries the two-step flow, the /api/resolve call and the /api/lead post.
+// This file stays a server component so the photo (the LCP element) is not
+// gated behind hydration; only the form is a client island.
 const HERO_IMAGE = {
   src: "/home/hero/305-johnsberg-exterior.jpg",
   alt: "305 Johnsberg Lane — brick colonial after Curbio's pre-listing exterior refresh",
@@ -74,27 +76,20 @@ export function HomeHero() {
           href="https://www.featuredcustomers.com/vendor/curbio"
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Rated 4.8 out of 5 stars from 1,776 Featured Customers (opens in a new tab)"
+          aria-label="Rated 4.8 out of 5 stars from 1,776 reviews (opens in a new tab)"
         >
           <span className="c-hero-stars" aria-hidden="true">
             &#9733;&#9733;&#9733;&#9733;&#9733;
           </span>
-          <span aria-hidden="true">4.8/5 stars from 1,776 Featured Customers</span>
+          <span aria-hidden="true">4.8/5 stars from 1,776 reviews</span>
         </a>
-        <h1>Win more listings. Get them market-ready.</h1>
+        <h1>Stop managing contractors. Start winning listings.</h1>
         <p className="c-hero-sub">
-          We do the repairs and updates that get homes sold — your seller pays nothing until
-          closing.
+          Curbio is the listing operations team for top agents and brokerages. We manage the
+          entire prep — cleaning, paint, staging, photos — with one local manager accountable
+          for your MLS date. Sellers pay at closing, with no liens and nothing upfront.
         </p>
-        <div className="c-hero-form">
-          <label className="c-hero-formlabel" htmlFor="c-zip">
-            Enter your ZIP, market, or address to reach your local manager
-          </label>
-          <div className="c-hero-search">
-            <input id="c-zip" type="text" placeholder="ZIP, market, or address" autoComplete="off" />
-            <button type="button">Get free estimate</button>
-          </div>
-        </div>
+        <HeroLeadForm />
       </div>
     </section>
   );

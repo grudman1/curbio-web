@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { MARKETS } from "@/config/markets";
+import Link from "next/link";
+import { MARKETS, marketPath } from "@/config/markets";
 
 // "Eight markets. A manager in each." — market list plus the Home Services
 // Managers, BOTH derived from config/markets.ts.
@@ -34,16 +35,29 @@ const MARKET_ROWS = MARKETS.map((m) => ({
 
 // One card per unique HSM, in first-appearance order, listing the markets they
 // cover. Same derivation the marketing hub's outreach page uses.
+//
+// `slug` is the manager's FIRST market — the destination for the name link.
+// Most of these people cover several markets and there is no per-manager page
+// to send them to, so the link goes where a reader clicking a name actually
+// wants to land: a real market page with that manager on it. First rather
+// than "primary" because MARKETS carries no primacy field and inventing one
+// to serve a link would be the tail wagging the market list.
 const HSMS = (() => {
-  const byName = new Map<string, { src: string | null; areas: string[] }>();
+  const byName = new Map<string, { src: string | null; slug: string; areas: string[] }>();
   for (const m of MARKETS) {
     const existing = byName.get(m.hsm.name);
     if (existing) existing.areas.push(withoutState(m.name, m.state));
-    else byName.set(m.hsm.name, { src: m.hsm.photo, areas: [withoutState(m.name, m.state)] });
+    else
+      byName.set(m.hsm.name, {
+        src: m.hsm.photo,
+        slug: m.slug,
+        areas: [withoutState(m.name, m.state)],
+      });
   }
-  return [...byName.entries()].map(([name, { src, areas }]) => ({
+  return [...byName.entries()].map(([name, { src, slug, areas }]) => ({
     name,
     src,
+    slug,
     area: areas.join(" · "),
   }));
 })();
@@ -80,7 +94,9 @@ export function MarketsManagers() {
                   />
                 )}
                 <figcaption>
-                  <span className="c-mkt-hsm-name">{h.name}</span>
+                  <Link className="c-mkt-hsm-name" href={marketPath(h.slug)}>
+                    {h.name}
+                  </Link>
                   <span className="c-mkt-hsm-area">{h.area}</span>
                 </figcaption>
               </figure>

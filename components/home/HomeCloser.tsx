@@ -1,10 +1,18 @@
 import Image from "next/image";
 
 // The closer — full-bleed sold-listing photo behind the final CTA.
-// STUB: the CTA is an inert span, exactly as in the approved design file;
-// wiring it to the lead flow is a separate step.
+//
+// The CTA is an anchor to the hero's own form (#get-estimate), NOT a second
+// lead form: there is exactly one hero field on this page and sending the
+// reader back to it means one form to instrument, one to maintain, and one
+// set of attribution behaviour. It is a plain in-page href, so it works
+// before hydration and lands correctly with JS off.
 
-export function HomeCloser() {
+export function HomeCloser({
+  /** Where the CTA goes. Defaults to the homepage's own hero form; pages
+   *  without one (e.g. /our-work) pass a real route. */
+  href = "#get-estimate",
+}: { href?: string } = {}) {
   return (
     <section data-dark="true" className="c-closer">
       <Image
@@ -21,7 +29,9 @@ export function HomeCloser() {
           <br />
           handled.
         </h2>
-        <span className="c-cta c-closer-cta">Get a free estimate</span>
+        <a className="c-cta c-closer-cta" href={href}>
+          Get a free estimate
+        </a>
         <p className="c-closer-fine">Two minutes · no cost · seller pays at closing</p>
       </div>
     </section>

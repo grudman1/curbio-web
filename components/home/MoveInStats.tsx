@@ -1,11 +1,18 @@
-// "Make the updates buyers are looking for" — the agent compilation video.
-// Stays adjacent to the deal section: the video is a five-agent compilation,
-// so it can't be split across the router cards.
+// The agent compilation video — now a caption-only block sitting directly
+// under the capacity calculator.
 //
-// The three staging stats that used to sit under this caption are their own
-// section now (components/sections/StatBand, mounted next on the homepage) —
-// under the clip they read as a footnote to it rather than as the argument
-// they are. Their sourcing footnote went with them.
+// WHAT WENT AND WHY. This used to be a full section headed "Make the updates
+// buyers are looking for," with the lede "Selling costs money either way."
+// Both are gone: that is a WHY-PREP argument aimed at a seller, and this page
+// argues why CURBIO to an agent who already preps their listings. The clip
+// itself survives because it is agents in their own words, which is proof
+// rather than argument — so it keeps only its caption and follows the
+// calculator, where "what changed once the house stopped being the problem"
+// is the answer to the number the calculator just put on screen.
+//
+// The three staging figures that used to sit under the caption moved to
+// /how-it-works (components/sections/StatBand) — seller-facing evidence
+// belongs on the seller-facing page.
 //
 // Video: re-encoded from the 1080p master (Skeptical_New-Branding.mp4) —
 // logo cards stripped head and tail, 2 Mbps H.264 + WebM, both under 8MB.
@@ -19,14 +26,8 @@ const CAPTIONS_READY = false; // flip when public/home/testimonial/agents-on-cur
 
 export function MoveInStats() {
   return (
-    <section id="movein" className="c-sect">
+    <section id="agents-on-curbio" className="c-sect c-sect--tight-top">
       <div className="c-container">
-        <h2 className="c-h2" style={{ marginBottom: 20, maxWidth: "15em" }}>
-          Make the updates buyers are looking for.
-        </h2>
-        <p className="c-lede">
-          Selling costs money either way. Curbio puts that spend where buyers can see it.
-        </p>
         <div className="cs-video">
           <video
             controls
