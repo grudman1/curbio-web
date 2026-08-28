@@ -2,27 +2,24 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { SUBTLE } from "@/app/(site)/admin/(dashboard)/ui";
+import { Button } from "@/app/(site)/admin/_ui/Button";
+import { ActionsTd, IconButton, Table, Td, Th, Toolbar, Tr } from "@/app/(site)/admin/_ui/DataTable";
+import { Drawer, DrawerGrid } from "@/app/(site)/admin/_ui/Drawer";
+import { Field, FieldError, Input, Select } from "@/app/(site)/admin/_ui/Field";
+import { InlineNumberCell } from "@/app/(site)/admin/_ui/InlineCell";
 import { LoggedTag } from "@/app/(site)/admin/_ui/Logged";
+import { DASH } from "@/app/(site)/admin/_ui/primitives";
+import { useToast } from "@/app/(site)/admin/_ui/Toast";
 import { EVENT_FORMATS } from "@/config/marketingHub";
 import { MARKETS } from "@/config/markets";
 import { costPerAttendee, type OpsEvent } from "@/lib/opsEvents";
-import { DASH, td, tdDash, th } from "../hubUi";
-import {
-  ArchivedList,
-  OpsError,
-  OpsFormCard,
-  OpsFormGrid,
-  OpsSaveButton,
-  opsField,
-  opsFieldLabel,
-  opsLinkButton,
-} from "../opsUi";
+import { ArchivedNote } from "../ArchivedNote";
 import { archiveEventAction, saveEventAction, type SaveEventInput } from "./actions";
 
-// The event log, editable. invited → registered → attended → leads is the
-// screen's own funnel; cost per attendee is DERIVED and never stored, so it
-// can never drift from its inputs.
+// The event log. The four funnel counts edit inline in the table; the record
+// itself (name, format, date, campaign code, cost) opens in the drawer. Cost
+// per attendee is DERIVED and never stored, so it can never drift from its
+// inputs.
 
 type FormState = {
   id?: string;
@@ -73,6 +70,14 @@ function formFor(e: OpsEvent): FormState {
 
 const usd = (n: number) => `$${n.toFixed(2)}`;
 
+type CountField = "invited" | "registered" | "attended" | "leads";
+const COUNT_COLUMNS: { field: CountField; label: string }[] = [
+  { field: "invited", label: "Invited" },
+  { field: "registered", label: "Registered" },
+  { field: "attended", label: "Attended" },
+  { field: "leads", label: "Leads" },
+];
+
 export function EventLog({
   events,
   archived,
@@ -83,25 +88,34 @@ export function EventLog({
   isOwner: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [form, setForm] = useState<FormState | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function save() {
+  async function saveDrawer() {
     if (!form || saving) return;
     setSaving(true);
     setError(null);
     const result = await saveEventAction(form as SaveEventInput);
     setSaving(false);
     if (!result.ok) return setError(result.error);
+    toast("success", `Saved ${form.name.trim() || "event"}.`);
     setForm(null);
     router.refresh();
   }
 
-  async function setArchived(id: string, value: boolean) {
-    setError(null);
+  async function saveCount(e: OpsEvent, field: CountField, next: number | null) {
+    const result = await saveEventAction({ ...formFor(e), [field]: next === null ? "" : String(next) });
+    if (!result.ok) return result;
+    router.refresh();
+    return { ok: true as const };
+  }
+
+  async function setArchived(id: string, value: boolean, name: string) {
     const result = await archiveEventAction(id, value);
-    if (!result.ok) return setError(result.error);
+    if (!result.ok) return toast("error", result.error);
+    toast("success", value ? `Archived ${name}.` : `Restored ${name}.`);
     setForm(null);
     router.refresh();
   }
@@ -111,153 +125,162 @@ export function EventLog({
 
   return (
     <>
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
+      {isOwner && (
+        <Toolbar>
+          <Button variant="primary" size="sm" onClick={() => { setError(null); setForm(emptyForm()); }}>
+            Add event
+          </Button>
+        </Toolbar>
+      )}
+
+      <Table wide>
+        <thead>
+          <tr>
+            <Th>Event</Th>
+            <Th>Format</Th>
+            <Th>Market</Th>
+            <Th>Date</Th>
+            <Th>Campaign code</Th>
+            {/* Every count in these four columns is typed in, so the marker
+                belongs on the column, not repeated in all four cells of
+                every row — same rule, a quarter of the noise. */}
+            {COUNT_COLUMNS.map((c) => (
+              <Th key={c.field} align="right">
+                <span className="inline-flex items-center gap-1">
+                  {c.label} <LoggedTag />
+                </span>
+              </Th>
+            ))}
+            <Th align="right">Cost per attendee</Th>
+            {isOwner && <Th aria-label="Actions" />}
+          </tr>
+        </thead>
+        <tbody>
+          {events.length === 0 && (
             <tr>
-              <th style={th}>Event</th>
-              <th style={th}>Format</th>
-              <th style={th}>Market</th>
-              <th style={th}>Date</th>
-              <th style={th}>Campaign code</th>
-              {/* Every count in these four columns is typed in, so the marker
-                  belongs on the column, not repeated in all four cells of
-                  every row — same rule, a quarter of the noise. */}
-              {["Invited", "Registered", "Attended", "Leads"].map((label) => (
-                <th key={label} style={{ ...th, textAlign: "right" }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                    {label} <LoggedTag />
-                  </span>
-                </th>
-              ))}
-              <th style={{ ...th, textAlign: "right" }}>Cost per attendee</th>
-              {isOwner && <th style={th} aria-label="actions" />}
+              <Td muted colSpan={isOwner ? 11 : 10}>
+                No events logged yet.
+                {isOwner ? " Add the next one — the campaign code is what stops its leads landing as direct." : ""}
+              </Td>
             </tr>
-          </thead>
-          <tbody>
-            {events.length === 0 && (
-              <tr>
-                <td style={{ ...tdDash }} colSpan={isOwner ? 11 : 10}>
-                  No events logged yet.{isOwner ? " Add the next one — the campaign code is what stops its leads landing as direct." : ""}
-                </td>
-              </tr>
+          )}
+          {events.map((e) => {
+            const cpa = costPerAttendee(e);
+            return (
+              <Tr key={e.id}>
+                <Td className="font-semibold">{e.name}</Td>
+                <Td>{e.format.replace("_", " ")}</Td>
+                <Td muted={!e.market}>{e.market || DASH}</Td>
+                <Td>{e.date}</Td>
+                <Td muted={!e.campaignCode} className={e.campaignCode ? "font-mono text-ops-label" : ""}>
+                  {e.campaignCode || DASH}
+                </Td>
+                {COUNT_COLUMNS.map((c) => (
+                  <Td key={c.field} align="right" className="min-w-[86px]">
+                    <InlineNumberCell
+                      label={`${c.label} — ${e.name}`}
+                      value={e[c.field]}
+                      disabled={!isOwner}
+                      onSave={(next) => saveCount(e, c.field, next)}
+                    />
+                  </Td>
+                ))}
+                <Td align="right" muted={cpa === null}>
+                  {cpa === null ? DASH : usd(cpa)}
+                </Td>
+                {isOwner && (
+                  <ActionsTd>
+                    <IconButton icon="edit" label={`Edit ${e.name}`} onClick={() => { setError(null); setForm(formFor(e)); }} />
+                    <IconButton icon="archive" label={`Archive ${e.name}`} onClick={() => setArchived(e.id, true, e.name)} />
+                  </ActionsTd>
+                )}
+              </Tr>
+            );
+          })}
+        </tbody>
+      </Table>
+
+      <ArchivedNote
+        records={archived}
+        label={(e) => `${e.name} (${e.date})`}
+        isOwner={isOwner}
+        onRestore={(id) => {
+          const e = archived.find((a) => a.id === id);
+          void setArchived(id, false, e?.name ?? "event");
+        }}
+      />
+
+      <Drawer
+        open={form !== null}
+        onClose={() => setForm(null)}
+        title={form?.id ? `Edit ${form.name || "event"}` : "Add event"}
+        footer={
+          <>
+            <Button variant="primary" disabled={saving} onClick={saveDrawer}>
+              {saving ? "Saving…" : form?.id ? "Save changes" : "Add event"}
+            </Button>
+            <Button variant="ghost" onClick={() => setForm(null)}>
+              Cancel
+            </Button>
+            {form?.id && (
+              <Button variant="danger" className="ml-auto" onClick={() => setArchived(form.id!, true, form.name)}>
+                Archive
+              </Button>
             )}
-            {events.map((e) => {
-              const cpa = costPerAttendee(e);
-              return (
-                <tr key={e.id}>
-                  <td style={{ ...td, fontWeight: 600 }}>{e.name}</td>
-                  <td style={td}>{e.format.replace("_", " ")}</td>
-                  <td style={e.market ? td : tdDash}>{e.market || DASH}</td>
-                  <td style={td}>{e.date}</td>
-                  <td style={e.campaignCode ? { ...td, fontFamily: "var(--font-family-mono, monospace)" } : tdDash}>
-                    {e.campaignCode || DASH}
-                  </td>
-                  {[e.invited, e.registered, e.attended, e.leads].map((v, i) => (
-                    <td key={i} style={{ ...(v === null ? tdDash : td), textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
-                      {v === null ? DASH : v}
-                    </td>
+          </>
+        }
+      >
+        {form && (
+          <>
+            <DrawerGrid>
+              <Field label="Name" className="col-span-2">
+                <Input value={form.name} onChange={set("name")} />
+              </Field>
+              <Field label="Format">
+                <Select value={form.format} onChange={set("format")}>
+                  {EVENT_FORMATS.map((f) => (
+                    <option key={f} value={f}>
+                      {f.replace("_", " ")}
+                    </option>
                   ))}
-                  <td style={{ ...(cpa === null ? tdDash : td), textAlign: "right" }}>{cpa === null ? DASH : usd(cpa)}</td>
-                  {isOwner && (
-                    <td style={{ ...td, textAlign: "right" }}>
-                      <button type="button" style={opsLinkButton} onClick={() => { setError(null); setForm(formFor(e)); }}>
-                        edit
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {isOwner && !form && (
-        <div style={{ marginTop: 16 }}>
-          <button type="button" style={opsLinkButton} onClick={() => { setError(null); setForm(emptyForm()); }}>
-            + Add event
-          </button>
-        </div>
-      )}
-
-      {isOwner && form && (
-        <OpsFormCard>
-          <OpsFormGrid>
-            <label>
-              <span style={opsFieldLabel}>Name</span>
-              <input style={opsField} value={form.name} onChange={set("name")} />
-            </label>
-            <label>
-              <span style={opsFieldLabel}>Format</span>
-              <select style={opsField} value={form.format} onChange={set("format")}>
-                {EVENT_FORMATS.map((f) => (
-                  <option key={f} value={f}>
-                    {f.replace("_", " ")}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span style={opsFieldLabel}>Market</span>
-              <select style={opsField} value={form.market} onChange={set("market")}>
-                <option value="">— not market-specific —</option>
-                {MARKETS.map((m) => (
-                  <option key={m.slug} value={m.slug}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span style={opsFieldLabel}>Date</span>
-              <input style={opsField} type="date" value={form.date} onChange={set("date")} />
-            </label>
-            <label>
-              <span style={opsFieldLabel}>Campaign code</span>
-              <input style={opsField} value={form.campaignCode} onChange={set("campaignCode")} placeholder="e.g. breakfast-atl-sep" />
-            </label>
-            <label>
-              <span style={opsFieldLabel}>Cost (USD)</span>
-              <input style={opsField} type="number" min={0} step="0.01" value={form.costUsd} onChange={set("costUsd")} />
-            </label>
-            <label>
-              <span style={opsFieldLabel}>Invited (logged)</span>
-              <input style={opsField} type="number" min={0} step={1} value={form.invited} onChange={set("invited")} />
-            </label>
-            <label>
-              <span style={opsFieldLabel}>Registered (logged)</span>
-              <input style={opsField} type="number" min={0} step={1} value={form.registered} onChange={set("registered")} />
-            </label>
-            <label>
-              <span style={opsFieldLabel}>Attended (logged)</span>
-              <input style={opsField} type="number" min={0} step={1} value={form.attended} onChange={set("attended")} />
-            </label>
-            <label>
-              <span style={opsFieldLabel}>Leads (logged)</span>
-              <input style={opsField} type="number" min={0} step={1} value={form.leads} onChange={set("leads")} />
-            </label>
-          </OpsFormGrid>
-
-          <OpsError>{error}</OpsError>
-
-          <div style={{ display: "flex", gap: 16, alignItems: "center", marginTop: 14 }}>
-            <OpsSaveButton saving={saving} label={form.id ? "Save changes" : "Add event"} onClick={save} />
-            <button type="button" style={opsLinkButton} onClick={() => setForm(null)}>
-              cancel
-            </button>
-            {form.id && (
-              <button type="button" style={{ ...opsLinkButton, color: SUBTLE, marginLeft: "auto" }} onClick={() => setArchived(form.id!, true)}>
-                archive
-              </button>
-            )}
-          </div>
-        </OpsFormCard>
-      )}
-
-      {!form && error && <OpsError>{error}</OpsError>}
-
-      <ArchivedList records={archived} label={(e) => `${e.name} (${e.date})`} isOwner={isOwner} onRestore={(id) => setArchived(id, false)} />
+                </Select>
+              </Field>
+              <Field label="Market">
+                <Select value={form.market} onChange={set("market")}>
+                  <option value="">— not market-specific —</option>
+                  {MARKETS.map((m) => (
+                    <option key={m.slug} value={m.slug}>
+                      {m.name}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Date">
+                <Input type="date" value={form.date} onChange={set("date")} />
+              </Field>
+              <Field label="Cost (USD)">
+                <Input type="number" min={0} step="0.01" value={form.costUsd} onChange={set("costUsd")} />
+              </Field>
+              <Field label="Campaign code" className="col-span-2">
+                <Input value={form.campaignCode} onChange={set("campaignCode")} placeholder="e.g. breakfast-atl-sep" />
+              </Field>
+              <Field label="Invited (logged)">
+                <Input type="number" min={0} step={1} value={form.invited} onChange={set("invited")} />
+              </Field>
+              <Field label="Registered (logged)">
+                <Input type="number" min={0} step={1} value={form.registered} onChange={set("registered")} />
+              </Field>
+              <Field label="Attended (logged)">
+                <Input type="number" min={0} step={1} value={form.attended} onChange={set("attended")} />
+              </Field>
+              <Field label="Leads (logged)">
+                <Input type="number" min={0} step={1} value={form.leads} onChange={set("leads")} />
+              </Field>
+            </DrawerGrid>
+            <FieldError>{error}</FieldError>
+          </>
+        )}
+      </Drawer>
     </>
   );
 }

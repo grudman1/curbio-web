@@ -83,6 +83,29 @@ const config: Config = {
           "warn-text": "var(--tone-warn-text)",
         },
 
+        // ── app surface (/admin product shell — DESIGN-APP.md) ──
+        app: {
+          bg: "var(--app-bg)",
+          card: "var(--app-card)",
+          well: "var(--app-well)",
+          border: "var(--app-border)",
+          "border-strong": "var(--app-border-strong)",
+          scrim: "var(--app-scrim)",
+          "nav-active": "var(--app-nav-active)",
+        },
+        pill: {
+          "good-bg": "var(--pill-good-bg)",
+          "good-fg": "var(--pill-good-fg)",
+          "warn-bg": "var(--pill-warn-bg)",
+          "warn-fg": "var(--pill-warn-fg)",
+          "bad-bg": "var(--pill-bad-bg)",
+          "bad-fg": "var(--pill-bad-fg)",
+          "info-bg": "var(--pill-info-bg)",
+          "info-fg": "var(--pill-info-fg)",
+          "neutral-bg": "var(--pill-neutral-bg)",
+          "neutral-fg": "var(--pill-neutral-fg)",
+        },
+
         // ── primitives (legacy; see header) ──
         navy: {
           DEFAULT: "var(--navy)",
@@ -142,6 +165,7 @@ const config: Config = {
         "ops-table": ["var(--ops-table)", { lineHeight: "1.35" }],
         "ops-label": ["var(--ops-label)", { lineHeight: "1.3" }],
         "ops-micro": ["var(--ops-micro)", { lineHeight: "1.2", letterSpacing: "0.1em" }],
+        "ops-card-title": ["var(--ops-card-title)", { lineHeight: "1.3", letterSpacing: "-0.005em" }],
       },
       fontWeight: {
         regular: "var(--weight-regular)",
@@ -171,6 +195,7 @@ const config: Config = {
         "ops-gap": "var(--ops-gap)",
         "ops-tile": "var(--ops-tile-h)",
         "ops-sidebar": "var(--ops-sidebar-w)",
+        "ops-sidebar-collapsed": "var(--ops-sidebar-collapsed-w)",
         "ops-nav-item": "var(--ops-nav-item-h)",
         "ops-header": "var(--ops-header-h)",
       },
@@ -186,6 +211,9 @@ const config: Config = {
         card: "var(--elevation-card)",
         overlay: "var(--elevation-overlay)",
         accent: "var(--elevation-accent)",
+        "app-card": "var(--elevation-app-card)",
+        "app-pop": "var(--elevation-app-pop)",
+        "app-drawer": "var(--elevation-app-drawer)",
       },
       maxWidth: { container: "var(--container-max)" },
       transitionTimingFunction: {

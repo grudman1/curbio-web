@@ -191,4 +191,42 @@
      text — it is a dot, or a chip whose TEXT is this darker step on a
      tinted fill. */
   --tone-warn-text: var(--color-accent-active);
+
+  /* ── App surface (/admin only) — see DESIGN-APP.md ─────────────────────
+     The product shell: cool light-neutral ground, white cards, soft cool
+     borders. Distinct from the marketing site's warm stone/cloud family on
+     purpose — the app is a tool, not a brochure. Values are var()s onto the
+     app primitives in globals.css. */
+  --app-bg: var(--slate-25); /* page ground */
+  --app-card: var(--white); /* cards, panels, inputs */
+  --app-well: var(--slate-50); /* hover fills, inset strips, table head */
+  --app-border: var(--slate-100); /* card + row hairlines */
+  --app-border-strong: var(--slate-200); /* inputs, segmented controls */
+  --app-nav-active: var(--navy-08); /* sidebar active fill — brand tint, one step lighter than brand-subtle */
+
+  /* Tinted status-pill pairs (Pipedrive-style muted badges). fg on bg is AA
+     at 11px bold for all four. `unknown` keeps no fill by rule — a missing
+     state never gets a colour. */
+  --pill-good-bg: var(--green-50);
+  --pill-good-fg: var(--green-700);
+  --pill-warn-bg: var(--amber-10);
+  --pill-warn-fg: var(--amber-120);
+  --pill-bad-bg: var(--red-50);
+  --pill-bad-fg: var(--red-700);
+  --pill-info-bg: var(--blue-50);
+  --pill-info-fg: var(--blue-700);
+  --pill-neutral-bg: var(--slate-50);
+  --pill-neutral-fg: var(--fg-muted);
+
+  --app-scrim: var(--scrim); /* drawer/palette backdrop */
+  --elevation-app-card: var(--shadow-app-card);
+  --elevation-app-pop: var(--shadow-app-pop);
+  --elevation-app-drawer: var(--shadow-app-drawer);
+
+  /* Type additions for the product register: card titles are sentence-case
+     sans, not caps and not serif. */
+  --ops-card-title: 14px;
+
+  /* Collapsed icon rail width; expanded is --ops-sidebar-w. */
+  --ops-sidebar-collapsed-w: 60px;
 }

@@ -14,9 +14,10 @@ import {
   SNAPSHOT_LABEL,
 } from "@/config/appLeadsSnapshot";
 import { CHANNEL_COLORS } from "@/lib/channels";
-import { Meta, MUTED, Panel, SUBTLE } from "@/app/(site)/admin/(dashboard)/ui";
+import { Table, Td, Th, Tr } from "@/app/(site)/admin/_ui/DataTable";
+import { Eyebrow, Meta, Panel } from "@/app/(site)/admin/_ui/primitives";
 import { monthShort } from "./timeframe";
-import { DASH, td, th } from "./hubUi";
+import { DASH } from "./hubUi";
 
 /** 6-month line of the unattributed share, 0–100% fixed scale so month-to-
  *  month movement reads against the whole range, not a zoomed drama. */
@@ -32,12 +33,15 @@ function ShareLine({ points }: { points: { ym: string; share: number }[] }) {
   const coords = points.map((p, i) => [padX + i * step, y(p.share)] as const);
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", maxWidth: 420, height: "auto", display: "block" }} role="img"
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      className="block h-auto w-full max-w-[420px]"
+      role="img"
       aria-label={`Unattributed share by month: ${points.map((p) => `${monthShort(p.ym)} ${Math.round(p.share * 100)}%`).join(", ")}`}
     >
       {/* 0% and 100% reference lines */}
-      <line x1={padX} y1={y(0)} x2={W - padX} y2={y(0)} stroke="var(--color-border)" />
-      <line x1={padX} y1={y(1)} x2={W - padX} y2={y(1)} stroke="var(--color-border)" strokeDasharray="2 4" />
+      <line x1={padX} y1={y(0)} x2={W - padX} y2={y(0)} stroke="var(--app-border)" />
+      <line x1={padX} y1={y(1)} x2={W - padX} y2={y(1)} stroke="var(--app-border)" strokeDasharray="2 4" />
       <polyline
         points={coords.map(([px, py]) => `${px.toFixed(1)},${py.toFixed(1)}`).join(" ")}
         fill="none"
@@ -49,10 +53,20 @@ function ShareLine({ points }: { points: { ym: string; share: number }[] }) {
       {coords.map(([px, py], i) => (
         <g key={points[i].ym}>
           <circle cx={px} cy={py} r="2.5" fill={CHANNEL_COLORS.direct} />
-          <text x={px} y={py - 7} textAnchor="middle" style={{ fontFamily: "var(--font-family-sans)", fontSize: 10.5, fontWeight: 700, fill: "var(--color-text-muted)" }}>
+          <text
+            x={px}
+            y={py - 7}
+            textAnchor="middle"
+            style={{ fontFamily: "var(--font-family-sans)", fontSize: 10.5, fontWeight: 700, fill: "var(--fg-muted)" }}
+          >
             {Math.round(points[i].share * 100)}%
           </text>
-          <text x={px} y={H - 6} textAnchor="middle" style={{ fontFamily: "var(--font-family-sans)", fontSize: 10.5, fill: "var(--color-text-subtle)" }}>
+          <text
+            x={px}
+            y={H - 6}
+            textAnchor="middle"
+            style={{ fontFamily: "var(--font-family-sans)", fontSize: 10.5, fill: "var(--fg-subtle)" }}
+          >
             {monthShort(points[i].ym)}
           </text>
         </g>
@@ -99,83 +113,61 @@ export function AttributionHealthPanel({
         </Meta>
       }
     >
-      <div style={{ display: "flex", gap: 36, flexWrap: "wrap", alignItems: "flex-start" }}>
-        <div style={{ flex: "0 1 300px", minWidth: 240 }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-            <span
-              style={{
-                fontFamily: "var(--font-family-serif)",
-                fontVariantNumeric: "tabular-nums",
-                fontSize: 52,
-                fontWeight: 600,
-                lineHeight: 1,
-                color: "var(--color-text)",
-              }}
-            >
+      <div className="flex flex-wrap items-start gap-9">
+        <div className="min-w-[240px] flex-[0_1_300px]">
+          <div className="flex items-baseline gap-2.5">
+            <span className="font-sans text-[46px] font-bold leading-none tabular-nums text-content">
               {share === null ? DASH : `${Math.round(share * 100)}%`}
             </span>
-            <span style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-small)", color: MUTED }}>
+            <span className="font-sans text-ops-body text-content-muted">
               {share === null ? "no Qualified in this timeframe" : `${direct} of ${total} Qualified`}
             </span>
           </div>
-          <p
-            style={{
-              fontFamily: "var(--font-family-sans)",
-              fontSize: "var(--text-small)",
-              color: "var(--color-text)",
-              margin: "12px 0 0",
-              lineHeight: 1.6,
-              maxWidth: 340,
-            }}
-          >
-            <strong>Unattributed.</strong> These leads arrived with no UTM, no first-touch
-            cookie, and no tracked phone number. We do not know what produced them.
+          <p className="m-0 mt-3 max-w-[340px] font-sans text-ops-body leading-[1.6] text-content">
+            <strong>Unattributed.</strong> These leads arrived with no UTM, no first-touch cookie,
+            and no tracked phone number. We do not know what produced them.
           </p>
           {!detailed && (
-            <p style={{ margin: "10px 0 0" }}>
+            <p className="m-0 mt-2.5">
               <Link
                 href="/marketing/attribution"
-                style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", fontWeight: 700, color: "var(--color-text-muted)" }}
+                className="font-sans text-ops-label font-bold text-content-muted hover:text-content"
               >
                 What the app recorded instead →
               </Link>
             </p>
           )}
         </div>
-        <div style={{ flex: "1 1 300px", minWidth: 260, maxWidth: 440 }}>
-          <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-micro)", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: SUBTLE, margin: "0 0 6px" }}>
-            Unattributed share, last {line.length} months
-          </p>
+        <div className="min-w-[260px] max-w-[440px] flex-[1_1_300px]">
+          <Eyebrow className="mb-1.5 block">Unattributed share, last {line.length} months</Eyebrow>
           <ShareLine points={line} />
-          <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: "6px 0 0", lineHeight: 1.5 }}>
-            Shrinking this line is the job. It falls when links carry UTMs, printed
-            assets point at tracked redirects, and phone leads get tracked numbers.
+          <p className="m-0 mt-1.5 font-sans text-ops-label leading-[1.5] text-content-subtle">
+            Shrinking this line is the job. It falls when links carry UTMs, printed assets point at
+            tracked redirects, and phone leads get tracked numbers.
           </p>
         </div>
       </div>
 
       {detailed && (
-        <div style={{ marginTop: "var(--space-5)" }}>
-          <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-micro)", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: SUBTLE, margin: "0 0 8px" }}>
-            What the app recorded for these leads
-          </p>
-          <div style={{ overflowX: "auto", maxWidth: 560 }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div className="mt-5">
+          <Eyebrow className="mb-2 block">What the app recorded for these leads</Eyebrow>
+          <div className="max-w-[600px] overflow-hidden rounded-md border border-app-border">
+            <Table>
               <thead>
                 <tr>
-                  <th style={th}>Raw referral source</th>
-                  <th style={{ ...th, textAlign: "right" }}>Leads</th>
-                  <th style={th}>What would attribute it</th>
+                  <Th>Raw referral source</Th>
+                  <Th align="right">Leads</Th>
+                  <Th>What would attribute it</Th>
                 </tr>
               </thead>
               <tbody>
                 {sources.map((s) => (
-                  <tr key={s.source}>
-                    <td style={{ ...td, fontFamily: "var(--font-mono)", fontSize: 12.5 }}>{s.source}</td>
-                    <td style={{ ...td, textAlign: "right", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
+                  <Tr key={s.source}>
+                    <Td className="font-mono text-[12.5px]">{s.source}</Td>
+                    <Td align="right" className="font-semibold">
                       {s.count}
-                    </td>
-                    <td style={{ ...td, color: MUTED }}>
+                    </Td>
+                    <Td className="text-content-muted">
                       {/^phone/i.test(s.source)
                         ? "a tracked phone number per market / event"
                         : s.source === "(blank)"
@@ -183,23 +175,22 @@ export function AttributionHealthPanel({
                           : /curbio\.com|landing page|lp/i.test(s.source)
                             ? "UTMs on the link that brought them"
                             : "a documented source mapping (see Links registry)"}
-                    </td>
-                  </tr>
+                    </Td>
+                  </Tr>
                 ))}
                 {sources.length === 0 && (
                   <tr>
-                    <td style={{ ...td, color: SUBTLE }} colSpan={3}>
+                    <Td muted colSpan={3}>
                       No unattributed leads in this timeframe.
-                    </td>
+                    </Td>
                   </tr>
                 )}
               </tbody>
-            </table>
+            </Table>
           </div>
-          <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: SUBTLE, margin: "12px 0 0", lineHeight: 1.6 }}>
-            These strings say where the form was, not what brought the visitor — which is
-            why they map to direct instead of a channel (the conservative rule in
-            config/appLeadsSnapshot.ts).
+          <p className="m-0 mt-3 font-sans text-ops-label leading-[1.6] text-content-subtle">
+            These strings say where the form was, not what brought the visitor — which is why they
+            map to direct instead of a channel.
           </p>
         </div>
       )}

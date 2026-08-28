@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Meta, Panel } from "@/app/(site)/admin/(dashboard)/ui";
+import { Meta, Panel } from "@/app/(site)/admin/_ui/primitives";
 import { ownerSession } from "@/lib/adminGuards";
 import { readOpsPartners, type Partner } from "@/lib/opsPartners";
 import { HUB_SURFACE_BY_SLUG, PARTNER_SEED } from "@/config/marketingHub";
@@ -47,14 +47,14 @@ export default async function PartnersPage() {
     <>
       <HubPageHeader surface={surface} />
 
-      <Panel title="Call plan" right={<Meta>sorted by next step date</Meta>}>
+      <Panel flush title="Call plan" right={<Meta>sorted by next step date</Meta>}>
         {!result.configured && (
-          <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-small)", color: "var(--color-text-subtle)", margin: "0 0 12px" }}>
+          <p className="m-0 px-ops-panel pb-3 font-sans text-ops-label text-content-subtle">
             Ops store not configured — showing the seed plan, read-only.
           </p>
         )}
         {result.configured && result.error && (
-          <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-small)", color: "var(--color-state-error)", margin: "0 0 12px" }} role="alert">
+          <p className="m-0 px-ops-panel pb-3 font-sans text-ops-label text-tone-bad" role="alert">
             Store read failed: {result.error}
           </p>
         )}

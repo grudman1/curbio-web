@@ -3,7 +3,6 @@ import Link from "next/link";
 import { MARKETS } from "@/config/markets";
 import {
   CHANNEL_FUNNEL_ORDER,
-  CHANNEL_LABELS,
   HUB_SURFACE_BY_SLUG,
   QUALIFIED_TARGET_PER_MARKET_PER_MONTH,
 } from "@/config/marketingHub";
@@ -16,13 +15,15 @@ import {
   SNAPSHOT_LABEL,
   SNAPSHOT_MONTHS,
 } from "@/config/appLeadsSnapshot";
-import { Meta, MUTED, Panel, SUBTLE } from "@/app/(site)/admin/(dashboard)/ui";
+import { Table, Td, Th, Tr } from "@/app/(site)/admin/_ui/DataTable";
+import { Meta, Panel } from "@/app/(site)/admin/_ui/primitives";
+import { PACE_TONE, TONE_TEXT } from "@/app/(site)/admin/_ui/tone";
 import { ownerSession } from "@/lib/adminGuards";
 import { readOpsNotes, type OpsNote } from "@/lib/opsNotes";
 import { NotesPanel } from "../notes/NotesPanel";
 import { monthsFor, parseAttribution, parseTimeframe, timeframeLabel, timeframeParam } from "../timeframe";
 import { paceRead, paceSentence } from "../pacing";
-import { DASH, DefinitionsNote, HubPageHeader, NeedsBlock, PACE_TONE, td, tdDash, th } from "../hubUi";
+import { DASH, DefinitionsInfo, HubPageHeader, NeedsBlock } from "../hubUi";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Markets — one row per market: trajectory against the target, close rate,
@@ -41,27 +42,14 @@ const surface = HUB_SURFACE_BY_SLUG.markets;
  *  every other chart, no labels (the Report grid is one click away). */
 function MixBar({ shares }: { shares: { channel: string; frac: number }[] }) {
   if (shares.length === 0) {
-    return <span style={{ fontSize: "var(--text-label)", color: "var(--color-text-subtle)" }}>{DASH}</span>;
+    return <span className="font-sans text-ops-label text-content-subtle">{DASH}</span>;
   }
   return (
-    <span
-      aria-hidden
-      style={{
-        display: "inline-flex",
-        width: 110,
-        height: 8,
-        borderRadius: 4,
-        overflow: "hidden",
-        border: "1px solid var(--color-border)",
-      }}
-    >
+    <span aria-hidden className="inline-flex h-2 w-[110px] overflow-hidden rounded-pill border border-app-border">
       {shares.map((s) => (
         <span
           key={s.channel}
-          style={{
-            width: `${s.frac * 100}%`,
-            background: CHANNEL_COLORS[s.channel as keyof typeof CHANNEL_COLORS],
-          }}
+          style={{ width: `${s.frac * 100}%`, background: CHANNEL_COLORS[s.channel as keyof typeof CHANNEL_COLORS] }}
         />
       ))}
     </span>
@@ -130,106 +118,80 @@ export default async function MarketsPage({
 
   return (
     <>
-      <HubPageHeader surface={surface} />
+      <HubPageHeader surface={surface} right={<DefinitionsInfo align="right" />} />
       <Panel
+        flush
         title={`Markets vs ${target || QUALIFIED_TARGET_PER_MARKET_PER_MONTH} Qualified`}
         right={
           <Meta>
-            {tfLabel} · {SNAPSHOT_LABEL} ·{" "}
-            {firstTouch ? "first touch (unavailable)" : "mix = last touch"}
+            {tfLabel} · {SNAPSHOT_LABEL} · {firstTouch ? "first touch (unavailable)" : "mix = last touch"}
           </Meta>
         }
       >
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <th style={th}>Market</th>
-                <th style={{ ...th, textAlign: "right" }}>Qualified</th>
-                <th style={{ ...th, textAlign: "right" }}>Target</th>
-                <th style={th}>Pace</th>
-                <th style={{ ...th, textAlign: "right" }}>Closed</th>
-                <th style={{ ...th, textAlign: "right" }}>Close rate</th>
-                <th style={{ ...th, textAlign: "right" }}>Revenue</th>
-                <th style={th}>Channel mix</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.key}>
-                  <td style={{ ...td, whiteSpace: "nowrap" }}>
-                    <Link
-                      href={`/marketing/report?${linkQuery}`}
-                      style={{ color: "var(--color-text)", fontWeight: 600, textDecoration: "none" }}
-                      title="Open the Report grid"
-                    >
-                      {r.label}
-                    </Link>
-                    {r.sub && (
-                      <div style={{ fontSize: "var(--text-label)", color: SUBTLE, marginTop: 1 }}>{r.sub}</div>
-                    )}
-                  </td>
-                  <td style={{ ...td, textAlign: "right", fontWeight: r.qualified ? 600 : 400, color: r.qualified ? "var(--color-text)" : SUBTLE, fontVariantNumeric: "tabular-nums" }}>
-                    {r.qualified}
-                  </td>
-                  <td style={{ ...td, textAlign: "right", color: MUTED, fontVariantNumeric: "tabular-nums" }}>
-                    {r.key === OTHER_MARKETS_KEY ? DASH : target || DASH}
-                  </td>
-                  <td style={{ ...td, whiteSpace: "nowrap" }}>
-                    {r.pace ? (
-                      <span style={{ fontSize: "var(--text-label)", fontWeight: 700, color: PACE_TONE[r.pace.state] }}>
-                        {paceSentence(r.pace)}
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: "var(--text-label)", color: SUBTLE }}>{DASH}</span>
-                    )}
-                  </td>
-                  <td style={{ ...td, textAlign: "right", color: r.closed ? "var(--color-text)" : SUBTLE, fontVariantNumeric: "tabular-nums" }}>
-                    {r.closed}
-                  </td>
-                  <td style={{ ...td, textAlign: "right", color: MUTED, fontVariantNumeric: "tabular-nums" }}>
-                    {r.qualified ? `${Math.round((r.closed / r.qualified) * 100)}%` : DASH}
-                  </td>
-                  <td style={{ ...td, textAlign: "right", color: r.revenue ? "var(--color-text)" : SUBTLE, fontVariantNumeric: "tabular-nums" }}>
-                    {r.revenue ? `$${Math.round(r.revenue).toLocaleString("en-US")}` : "$0"}
-                  </td>
-                  <td style={firstTouch ? tdDash : td}>
-                    {firstTouch ? DASH : <MixBar shares={r.mix} />}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p style={{ fontSize: "var(--text-label)", color: SUBTLE, margin: "12px 0 0", lineHeight: 1.6 }}>
-          Mix segments use the fixed channel colours ({CHANNEL_LABELS.direct.toLowerCase()} ={" "}
-          grey = unattributed). Market names open the Report grid with this timeframe.
-        </p>
-        <DefinitionsNote />
+        <Table>
+          <thead>
+            <tr>
+              <Th>Market</Th>
+              <Th align="right">Qualified</Th>
+              <Th align="right">Target</Th>
+              <Th>Pace</Th>
+              <Th align="right">Closed</Th>
+              <Th align="right">Close rate</Th>
+              <Th align="right">Revenue</Th>
+              <Th>Channel mix</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <Tr key={r.key}>
+                <Td className="whitespace-nowrap">
+                  <Link
+                    href={`/marketing/report?${linkQuery}`}
+                    title="Open the Funnel grid with this timeframe"
+                    className="font-semibold text-content no-underline hover:underline"
+                  >
+                    {r.label}
+                  </Link>
+                  {r.sub && <div className="mt-px font-sans text-ops-label text-content-subtle">{r.sub}</div>}
+                </Td>
+                <Td align="right" className={r.qualified ? "font-semibold" : ""} muted={!r.qualified}>
+                  {r.qualified}
+                </Td>
+                <Td align="right" muted>
+                  {r.key === OTHER_MARKETS_KEY ? DASH : target || DASH}
+                </Td>
+                <Td className="whitespace-nowrap">
+                  {r.pace ? (
+                    <span className={`font-sans text-ops-label font-bold ${TONE_TEXT[PACE_TONE[r.pace.state]]}`}>
+                      {paceSentence(r.pace)}
+                    </span>
+                  ) : (
+                    <span className="font-sans text-ops-label text-content-subtle">{DASH}</span>
+                  )}
+                </Td>
+                <Td align="right" muted={!r.closed}>
+                  {r.closed}
+                </Td>
+                <Td align="right" muted>
+                  {r.qualified ? `${Math.round((r.closed / r.qualified) * 100)}%` : DASH}
+                </Td>
+                <Td align="right" muted={!r.revenue}>
+                  {r.revenue ? `$${Math.round(r.revenue).toLocaleString("en-US")}` : "$0"}
+                </Td>
+                <Td muted={firstTouch}>{firstTouch ? DASH : <MixBar shares={r.mix} />}</Td>
+              </Tr>
+            ))}
+          </tbody>
+        </Table>
       </Panel>
 
       {/* ── notes per market — claimed context beside the measured numbers ── */}
-      <div style={{ marginTop: "var(--space-4)" }}>
+      <div className="mt-ops-gap">
         <Panel title="Market notes" right={<Meta>logged · author and date on every line</Meta>}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-              gap: "var(--space-4)",
-            }}
-          >
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
             {MARKETS.map((m) => (
               <div key={m.slug}>
-                <div
-                  style={{
-                    fontFamily: "var(--font-family-sans)",
-                    fontSize: "var(--text-small)",
-                    fontWeight: 700,
-                    marginBottom: 6,
-                  }}
-                >
-                  {m.name}
-                </div>
+                <div className="mb-1.5 font-sans text-ops-body font-bold text-content">{m.name}</div>
                 <NotesPanel
                   subjectType="market"
                   subjectId={m.slug}

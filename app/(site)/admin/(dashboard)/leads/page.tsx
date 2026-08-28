@@ -9,7 +9,10 @@ import {
   type PiiVisibility,
   type LeadRow,
 } from "@/lib/adminLeads";
-import { Chip, FAIL, MUTED, Meta, OK, Panel, SCAN, SUBTLE, Stat, WARN } from "../ui";
+import { SCAN } from "../ui";
+import { Badge, InlineStat, Meta, Panel } from "../../_ui/primitives";
+import { Table, Td, Tr } from "../../_ui/DataTable";
+import { PageHeader } from "../../_ui/AppShell";
 import { LeadFeedTable, type FeedRow, type FeedDetailSection } from "./LeadFeedTable";
 import { readRecentWaitlist } from "@/lib/adminWaitlist";
 import { FilterChips } from "../../_ui/FilterChips";
@@ -123,14 +126,6 @@ function formatTime(iso: string | undefined): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
 }
-
-const td: React.CSSProperties = {
-  padding: "8px 16px 8px 0",
-  borderBottom: "1px solid var(--color-border)",
-  fontSize: "var(--text-small)",
-  color: "var(--color-text)",
-  verticalAlign: "baseline",
-};
 
 // ── Feed rows, fully prepared server-side ───────────────────────────────────
 // Everything the store holds for a lead, formatted to strings HERE so the
@@ -291,6 +286,7 @@ export default async function LeadsTab({
 
   return (
     <>
+      <PageHeader title="Leads" subtitle={leadsReadable ? `last ${agg.scanned} scanned` : undefined} />
       <FilterChips
         param="f"
         active={filter}
@@ -303,58 +299,45 @@ export default async function LeadsTab({
 
       {filter !== "waitlist" && (<>
       {/* ── numbers row ── */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-          gap: "var(--space-4)",
-          marginBottom: "var(--space-4)",
-        }}
-      >
+      <div className="mb-ops-gap grid grid-cols-1 gap-ops-gap md:grid-cols-3">
         <Panel
           title="Volume"
           right={<Meta>{leads.configured ? `${leads.total} stored` : "no store"}</Meta>}
         >
-          <div style={{ display: "flex", gap: 32 }}>
-            <Stat label="last 24 h" value={leads.configured ? agg.last24h : "—"} />
-            <Stat label="last 7 d" value={leads.configured ? agg.last7d : "—"} />
-            <Stat label={`scanned (last ${agg.scanned})`} value={leads.configured ? agg.scanned : "—"} />
+          <div className="flex flex-wrap gap-8">
+            <InlineStat label="last 24 h" value={leads.configured ? agg.last24h : null} />
+            <InlineStat label="last 7 d" value={leads.configured ? agg.last7d : null} />
+            <InlineStat label={`scanned (last ${agg.scanned})`} value={leads.configured ? agg.scanned : null} />
           </div>
         </Panel>
         <Panel title="Delivery" right={<Meta>last {agg.scanned} leads</Meta>}>
-          <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
-            <Stat label="delivered" value={agg.delivered} tone={OK} />
+          <div className="flex flex-wrap gap-8">
+            <InlineStat label="delivered" value={agg.delivered} tone="good" />
             {/* REAL failures only. Counting expected non-delivery here made a
                 working system look broken — see expectedNonDelivery(). */}
-            <Stat label="CRM failed" value={agg.failed} tone={agg.failed ? FAIL : undefined} />
-            <Stat label="not delivered (expected)" value={agg.expected} tone={SUBTLE} />
-            <Stat label="pre-observability" value={agg.unknown} tone={SUBTLE} />
+            <InlineStat label="CRM failed" value={agg.failed} tone={agg.failed ? "bad" : undefined} />
+            <InlineStat label="expected non-delivery" value={agg.expected} tone="unknown" />
+            <InlineStat label="pre-observability" value={agg.unknown} tone="unknown" />
           </div>
         </Panel>
         <Panel title="Attribution" right={<Meta>referral source tag</Meta>}>
-          <div style={{ display: "flex", gap: 32 }}>
-            <Stat label="verified" value={agg.verified} tone={OK} />
-            <Stat label="unverified" value={agg.unverified} tone={agg.unverified ? WARN : undefined} />
-            <Stat label="untagged (pre-tag)" value={agg.untagged} tone={SUBTLE} />
+          <div className="flex flex-wrap gap-8">
+            <InlineStat label="verified" value={agg.verified} tone="good" />
+            <InlineStat label="unverified" value={agg.unverified} tone={agg.unverified ? "warn" : undefined} />
+            <InlineStat label="untagged (pre-tag)" value={agg.untagged} tone="unknown" />
           </div>
         </Panel>
       </div>
 
       {/* ── the feed: full-width table, every value shown whole ── */}
-      <div style={{ marginBottom: "var(--space-4)" }}>
-        <Panel title="Lead feed" right={<Meta>newest 25</Meta>}>
+      <div className="mb-ops-gap">
+        <Panel flush title="Lead feed" right={<Meta>newest 25 · click a row for the full record</Meta>}>
           {!leads.configured ? (
-            <p style={{ fontSize: "var(--text-small)", color: MUTED, margin: 0 }}>
+            <p className="m-0 px-ops-panel pb-4 font-sans text-ops-body text-content-muted">
               Upstash not configured in this environment.
             </p>
           ) : (
-            <>
-              <LeadFeedTable rows={feedRows.slice(0, 25).map((r, i) => toFeedRow(r, i, pii))} />
-              <p style={{ fontSize: "var(--text-label)", color: SUBTLE, margin: "12px 0 0" }}>
-                Click a row for the full record — attribution, detection, and delivery.
-                Identities stay masked; the CRM is the contact list.
-              </p>
-            </>
+            <LeadFeedTable rows={feedRows.slice(0, 25).map((r, i) => toFeedRow(r, i, pii))} />
           )}
         </Panel>
       </div>
@@ -373,44 +356,27 @@ export default async function LeadsTab({
 
       {filter !== "waitlist" && (<>
       {/* ── attribution detail ── */}
-      <div style={{ maxWidth: 720 }}>
-        <Panel title="Referral sources arriving" right={<Meta>raw values, last {agg.scanned}</Meta>}>
+      <div className="max-w-[720px]">
+        <Panel flush title="Referral sources arriving" right={<Meta>raw values, kept verbatim · last {agg.scanned}</Meta>}>
           {agg.referralValues.length === 0 ? (
-            <p style={{ fontSize: "var(--text-small)", color: MUTED, margin: 0 }}>
+            <p className="m-0 px-ops-panel pb-4 font-sans text-ops-body text-content-muted">
               No referral source data in range.
             </p>
           ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <Table>
               <tbody>
                 {agg.referralValues.map((r) => (
-                  <tr key={r.value}>
-                    <td style={{ ...td, padding: "8px 16px 8px 0", fontWeight: 600 }}>{r.value}</td>
-                    <td
-                      style={{
-                        ...td,
-                        padding: "8px 16px 8px 0",
-                        textAlign: "right",
-                        color: MUTED,
-                      }}
-                    >
-                      {r.count}
-                    </td>
-                    <td style={{ ...td, padding: "8px 0", textAlign: "right" }}>
-                      {r.known ? (
-                        <Chip text="known" color={OK} />
-                      ) : (
-                        <Chip text="unrecognised" color={WARN} />
-                      )}
-                    </td>
-                  </tr>
+                  <Tr key={r.value}>
+                    <Td className="font-semibold">{r.value}</Td>
+                    <Td align="right" muted>{r.count}</Td>
+                    <Td align="right">
+                      {r.known ? <Badge tone="good">known</Badge> : <Badge tone="warn">unrecognised</Badge>}
+                    </Td>
+                  </Tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
           )}
-          <p style={{ fontSize: "var(--text-label)", color: SUBTLE, margin: "12px 0 0", lineHeight: 1.5 }}>
-            Every value is kept verbatim and tagged, never dropped — this is where the ~40
-            go.curbio.com vanity-redirect values become visible before anything is standardised.
-          </p>
         </Panel>
       </div>
       </>)}

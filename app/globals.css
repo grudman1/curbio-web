@@ -42,6 +42,30 @@
 
   --error: #e24b4a;
 
+  /* ── App primitives (/admin product surface) ────────────────────────────
+     The marketing palette is warm (stone, cloud) and editorial. The admin
+     app is a product UI and reads on a COOLER neutral family — these are the
+     raw values that family adds. Additive: nothing public references them.
+     Consumed only via the app semantic tokens in tokens.css. */
+  --slate-25: #f8f9fb; /* app page bg */
+  --slate-50: #f1f3f7; /* hover fills, wells */
+  --slate-100: #e8eaf0; /* soft borders */
+  --slate-200: #d7dbe4; /* strong borders, input borders */
+
+  --green-700: #2e7d52; /* status text — same green tokens.css already uses */
+  --green-50: #e9f4ee; /* status pill fill */
+  --red-700: #b93532; /* status text (AA on its tint; --error fails small) */
+  --red-50: #fdecec; /* status pill fill */
+  --blue-700: #2f5f9e; /* info text */
+  --blue-50: #eaf1fa; /* info pill fill */
+  /* warn reuses --amber-120 text on --amber-10 fill — already primitives. */
+
+  --scrim: rgba(13, 37, 77, 0.28); /* navy at 28% — overlay backdrops */
+
+  --shadow-app-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.05);
+  --shadow-app-pop: 0 8px 24px -6px rgba(16, 24, 40, 0.14), 0 2px 8px rgba(16, 24, 40, 0.06);
+  --shadow-app-drawer: -12px 0 40px -12px rgba(16, 24, 40, 0.18);
+
   /* --font-serif and --font-sans are NOT declared here — next/font/google
      injects them onto <html> at build time (see app/layout.tsx). --font-mono
      has no loader (it's a system stack, not a webfont), so it's declared as
@@ -67,6 +91,30 @@ html {
   color-scheme: light;
   scroll-behavior: smooth;
   scroll-padding-top: 24px;
+}
+
+/* ── /admin app-shell animations (DESIGN-APP.md). State changes only; every
+      use pairs with motion-safe/motion-reduce. ─────────────────────────── */
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes drawer-in {
+  from { transform: translateX(24px); opacity: 0.6; }
+  to { transform: none; opacity: 1; }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(-3px) scale(0.99); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+/* Inline-cell saved flash — fades a tinted fill back to transparent. */
+@keyframes cell-saved {
+  from { background-color: var(--pill-good-bg); }
+  to { background-color: transparent; }
 }
 
 body {

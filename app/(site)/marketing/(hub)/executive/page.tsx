@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { HUB_SURFACE_BY_SLUG } from "@/config/marketingHub";
 import { SNAPSHOT_MONTHS } from "@/config/appLeadsSnapshot";
 import { readExecNotes } from "@/lib/marketingExecNotes";
-import { Meta } from "@/app/(site)/admin/(dashboard)/ui";
+import { Meta } from "@/app/(site)/admin/_ui/primitives";
 import { monthLabel, parseTimeframe } from "../timeframe";
-import { HubPageHeader, NeedsBlock } from "../hubUi";
+import { DefinitionsInfo, HubPageHeader, NeedsBlock } from "../hubUi";
 import { ExecutiveReview } from "./ExecutiveReview";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -37,34 +37,25 @@ export default async function ExecutivePage({
 
   return (
     <>
-      <HubPageHeader surface={surface} />
+      <HubPageHeader surface={surface} right={<DefinitionsInfo align="right" />} />
       {tf.kind !== "month" && month && (
-        <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-label)", color: "var(--color-text-muted)", margin: "0 0 var(--space-4)" }}>
+        <p className="m-0 mb-4 font-sans text-ops-label text-content-muted">
           The review is monthly — showing {monthLabel(month)}, the latest month with data.
-          Pick a single month in the header to review another.
         </p>
       )}
       {month ? (
         <ExecutiveReview month={month} notes={notes} editable />
       ) : (
-        <p style={{ fontFamily: "var(--font-family-sans)", fontSize: "var(--text-small)", color: "var(--color-text-muted)" }}>
-          No months with data yet.
-        </p>
+        <p className="font-sans text-ops-body text-content-muted">No months with data yet.</p>
       )}
-      <div style={{ marginTop: "var(--space-6)" }}>
-        {shareToken ? (
-          <Meta>
-            Read-only share link: /marketing/executive/{"<token>"} — no sidebar, no
-            password, larger type. Configured via MARKETING_EXEC_SHARE_TOKEN.
-          </Meta>
-        ) : (
-          <Meta>
-            Presentation mode: set MARKETING_EXEC_SHARE_TOKEN to enable the read-only
-            share link (/marketing/executive/{"<token>"}).
-          </Meta>
-        )}
+      <div className="mt-6">
+        <Meta>
+          {shareToken
+            ? "Read-only share link: /marketing/executive/<token> — no sidebar, larger type."
+            : "Set MARKETING_EXEC_SHARE_TOKEN to enable the read-only share link."}
+        </Meta>
       </div>
-      <div style={{ marginTop: "var(--space-5)" }}>
+      <div className="mt-5">
         <NeedsBlock surface={surface} />
       </div>
     </>

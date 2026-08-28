@@ -4,7 +4,7 @@ import { CHANNEL_COLORS } from "@/lib/channels";
 import { Chip } from "./primitives";
 import { Disclosure } from "./Disclosure";
 import { InfoPopover } from "./InfoPopover";
-import { MetricTile } from "./MetricTile";
+import { StatCard } from "./StatCard";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // A channel screen is: title, tier chip, four metric tiles, and a table.
@@ -36,7 +36,7 @@ export function ChannelChips({ plan }: { plan: ChannelPlan }) {
       {plan.targets.map((t) => (
         <span
           key={t.label}
-          className="inline-flex flex-none items-center gap-1.5 whitespace-nowrap rounded-pill border border-edge px-2.5 py-[3px] font-sans text-ops-micro text-content-muted"
+          className="inline-flex flex-none items-center gap-1.5 whitespace-nowrap rounded-pill border border-app-border px-2.5 py-[3px] font-sans text-ops-micro text-content-muted"
         >
           {t.label}
           <span className="font-bold tabular-nums text-content">{t.value}</span>
@@ -46,7 +46,7 @@ export function ChannelChips({ plan }: { plan: ChannelPlan }) {
         <span
           key={c}
           title={`measured as ${CHANNEL_LABELS[c]}`}
-          className="inline-flex flex-none items-center gap-1.5 whitespace-nowrap rounded-pill border border-edge px-2.5 py-[3px] font-sans text-ops-micro font-semibold text-content-muted"
+          className="inline-flex flex-none items-center gap-1.5 whitespace-nowrap rounded-pill border border-app-border px-2.5 py-[3px] font-sans text-ops-micro font-semibold text-content-muted"
         >
           <span
             aria-hidden
@@ -87,7 +87,7 @@ export function ChannelBrief({
       {metrics && metrics.length > 0 && (
         <div className="mb-ops-gap grid grid-cols-2 gap-ops-gap lg:grid-cols-4">
           {metrics.map((m) => (
-            <MetricTile key={m.label} label={m.label} value={m.value} format={m.format} note={m.note} />
+            <StatCard key={m.label} label={m.label} value={m.value} format={m.format} note={m.note} />
           ))}
         </div>
       )}
@@ -95,7 +95,7 @@ export function ChannelBrief({
       {/* The one line that must not hide: how this channel is attributed, when
           it is not attributed like the others. */}
       {plan.basisNote && (
-        <p className="m-0 mb-ops-gap max-w-[80ch] border-l-2 border-tone-unknown pl-3 font-sans text-ops-label leading-[1.5] text-content-subtle">
+        <p className="m-0 mb-ops-gap max-w-[80ch] rounded-md bg-app-well px-3 py-2 font-sans text-ops-label leading-[1.5] text-content-muted">
           {plan.basisNote}
         </p>
       )}

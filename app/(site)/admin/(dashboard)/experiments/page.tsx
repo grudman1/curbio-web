@@ -6,7 +6,7 @@ import { Chip, DASH, Eyebrow, Panel } from "../../_ui/primitives";
 import { Disclosure } from "../../_ui/Disclosure";
 import { EmptyState } from "../../_ui/EmptyState";
 import { InfoPopover } from "../../_ui/InfoPopover";
-import { MetricTile } from "../../_ui/MetricTile";
+import { StatCard } from "../../_ui/StatCard";
 import { parseTimeframe, timeframeLabel } from "../../_ui/timeframe";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -20,7 +20,7 @@ import { parseTimeframe, timeframeLabel } from "../../_ui/timeframe";
 //   not enough data      →  a chip on the split panel
 //   no conversion rate   →  one line + a collapsed "Why this number?"
 //   no significance test →  same disclosure
-//   four serif numbers   →  MetricTiles
+//   four serif numbers   →  StatCards
 //
 // The claims themselves are unchanged and unweakened: no winner, ever. Not
 // "leading", not "up X%". The split is DIRECTIONAL and that is the strongest
@@ -127,14 +127,14 @@ export default async function ExperimentsScreen({
 
       {/* ── the four serif numbers, now tiles ── */}
       <div className="mb-ops-gap grid grid-cols-2 gap-ops-gap lg:grid-cols-4">
-        <MetricTile label="Tagged leads" value={r.tagged} note={`since ${formatDay(r.startedAt)}`} />
-        <MetricTile
+        <StatCard label="Tagged leads" value={r.tagged} note={`since ${formatDay(r.startedAt)}`} />
+        <StatCard
           label="Untagged"
           value={r.untagged}
           note="never folded into control"
           info="Leads carrying no variant — recorded before the experiment started, or submitted from a surface that does not bucket, like the waitlist form. They are counted separately and never folded into control."
         />
-        <MetricTile
+        <StatCard
           label="Scanned"
           value={r.scanned}
           note={`last ${SCAN} of leads:v1`}
@@ -146,7 +146,7 @@ export default async function ExperimentsScreen({
             </>
           }
         />
-        <MetricTile
+        <StatCard
           label="Conversion rate"
           value={null}
           note="no denominator"
@@ -176,7 +176,7 @@ export default async function ExperimentsScreen({
                     {["Variant", "Copy served", "Leads", "Share"].map((h, i) => (
                       <th
                         key={h}
-                        className={`h-ops-row-head border-b border-edge-strong pr-4 align-bottom ${i > 1 ? "text-right" : "text-left"} last:pr-0`}
+                        className={`h-ops-row-head border-b border-app-border-strong pr-4 align-bottom ${i > 1 ? "text-right" : "text-left"} last:pr-0`}
                       >
                         <Eyebrow>{h}</Eyebrow>
                       </th>
@@ -186,19 +186,19 @@ export default async function ExperimentsScreen({
                 <tbody>
                   {r.tallies.map((t) => (
                     <tr key={t.variant} className="h-ops-row">
-                      <td className="border-b border-edge pr-4 font-sans text-ops-table font-bold text-content">
+                      <td className="border-b border-app-border pr-4 font-sans text-ops-table font-bold text-content">
                         {t.variant}
                       </td>
-                      <td className="border-b border-edge pr-4 font-sans text-ops-table text-content-muted">
+                      <td className="border-b border-app-border pr-4 font-sans text-ops-table text-content-muted">
                         {t.copy}
                       </td>
-                      <td className="border-b border-edge pr-4 text-right font-sans text-ops-table tabular-nums text-content">
+                      <td className="border-b border-app-border pr-4 text-right font-sans text-ops-table tabular-nums text-content">
                         {t.leads}
                         {t.leads < r.minPerVariant && (
                           <span className="ml-1.5 font-sans text-ops-micro text-content-subtle">low</span>
                         )}
                       </td>
-                      <td className="border-b border-edge text-right font-sans text-ops-table tabular-nums text-content-muted">
+                      <td className="border-b border-app-border text-right font-sans text-ops-table tabular-nums text-content-muted">
                         {(t.share * 100).toFixed(1)}%
                       </td>
                     </tr>

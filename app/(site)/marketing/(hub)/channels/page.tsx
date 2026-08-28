@@ -9,10 +9,12 @@ import {
   SNAPSHOT_LABEL,
   SNAPSHOT_MONTHS,
 } from "@/config/appLeadsSnapshot";
-import { Meta, MUTED, Panel, SUBTLE } from "@/app/(site)/admin/(dashboard)/ui";
+import { Table, Td, Th, Tr } from "@/app/(site)/admin/_ui/DataTable";
+import { InfoPopover } from "@/app/(site)/admin/_ui/InfoPopover";
+import { Meta, Panel } from "@/app/(site)/admin/_ui/primitives";
 import { monthsFor, parseAttribution, parseTimeframe, timeframeLabel } from "../timeframe";
 import { Sparkline } from "../charts";
-import { DASH, DefinitionsNote, HubPageHeader, NeedsBlock, td, tdDash, th } from "../hubUi";
+import { DASH, DefinitionsInfo, HubPageHeader, NeedsBlock } from "../hubUi";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Channels — one row per channel across all markets: what is producing, what
@@ -61,95 +63,98 @@ export default async function ChannelsPage({
 
   return (
     <>
-      <HubPageHeader surface={surface} />
+      <HubPageHeader surface={surface} right={<DefinitionsInfo align="right" />} />
       <Panel
+        flush
         title="Qualified by channel"
         right={
-          <Meta>
-            {tfLabel} · {SNAPSHOT_LABEL} ·{" "}
-            {firstTouch ? "first touch (unavailable)" : "last touch · direct = unattributed"}
-          </Meta>
+          <span className="inline-flex items-center gap-1.5">
+            <Meta>
+              {tfLabel} · {SNAPSHOT_LABEL} ·{" "}
+              {firstTouch ? "first touch (unavailable)" : "last touch · direct = unattributed"}
+            </Meta>
+            <InfoPopover label="How to read this table" align="right">
+              {firstTouch ? (
+                <p className="m-0">
+                  The app&apos;s first-touch fields are empty (verified against its attribution
+                  export) — first-touch channel numbers render em-dashes until the contact store
+                  exists.
+                </p>
+              ) : (
+                <p className="m-0">
+                  Direct is not a channel win — it is the absence of attribution. Cost per
+                  Qualified needs the spend store. The trend column spans every snapshot month
+                  regardless of the selected timeframe.
+                </p>
+              )}
+            </InfoPopover>
+          </span>
         }
       >
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <th style={th}>Channel</th>
-                <th style={{ ...th, textAlign: "right" }}>Qualified</th>
-                <th style={{ ...th, textAlign: "right" }}>Share</th>
-                <th style={{ ...th, textAlign: "right" }}>Closed</th>
-                <th style={{ ...th, textAlign: "right" }}>Close rate</th>
-                <th style={{ ...th, textAlign: "right" }}>Revenue</th>
-                <th style={{ ...th, textAlign: "right" }}>Cost / Qualified</th>
-                <th style={th}>All months</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => {
-                const zero = r.qualified === 0;
-                return (
-                  <tr key={r.channel}>
-                    <td style={{ ...td, whiteSpace: "nowrap" }}>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontWeight: 600 }}>
-                        <span
-                          aria-hidden
-                          style={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: 2,
-                            background: CHANNEL_COLORS[r.channel],
-                            flex: "none",
-                          }}
-                        />
-                        {CHANNEL_LABELS[r.channel]}
-                      </span>
-                    </td>
-                    {firstTouch ? (
-                      <>
-                        <td style={{ ...tdDash, textAlign: "right" }}>{DASH}</td>
-                        <td style={{ ...tdDash, textAlign: "right" }}>{DASH}</td>
-                        <td style={{ ...tdDash, textAlign: "right" }}>{DASH}</td>
-                        <td style={{ ...tdDash, textAlign: "right" }}>{DASH}</td>
-                        <td style={{ ...tdDash, textAlign: "right" }}>{DASH}</td>
-                      </>
-                    ) : (
-                      <>
-                        <td style={{ ...td, textAlign: "right", fontWeight: zero ? 400 : 600, color: zero ? SUBTLE : "var(--color-text)", fontVariantNumeric: "tabular-nums" }}>
-                          {r.qualified}
-                        </td>
-                        <td style={{ ...td, textAlign: "right", color: MUTED, fontVariantNumeric: "tabular-nums" }}>
-                          {totalQ ? `${Math.round((r.qualified / totalQ) * 100)}%` : DASH}
-                        </td>
-                        <td style={{ ...td, textAlign: "right", color: r.closed ? "var(--color-text)" : SUBTLE, fontVariantNumeric: "tabular-nums" }}>
-                          {r.closed}
-                        </td>
-                        <td style={{ ...td, textAlign: "right", color: MUTED, fontVariantNumeric: "tabular-nums" }}>
-                          {r.qualified ? `${Math.round((r.closed / r.qualified) * 100)}%` : DASH}
-                        </td>
-                        <td style={{ ...td, textAlign: "right", color: r.revenue ? "var(--color-text)" : SUBTLE, fontVariantNumeric: "tabular-nums" }}>
-                          {r.revenue ? `$${Math.round(r.revenue).toLocaleString("en-US")}` : "$0"}
-                        </td>
-                      </>
-                    )}
-                    <td style={{ ...tdDash, textAlign: "right" }} title="needs the spend store">
-                      {DASH}
-                    </td>
-                    <td style={td}>
-                      <Sparkline values={r.trend} width={110} height={20} />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <p style={{ fontSize: "var(--text-label)", color: SUBTLE, margin: "12px 0 0", lineHeight: 1.6 }}>
-          {firstTouch
-            ? "The app's first-touch fields are empty (verified against its attribution export) — first-touch channel numbers render em-dashes until the contact store exists."
-            : "Direct is not a channel win — it is the absence of attribution. Cost per Qualified needs the spend store. The trend column spans every snapshot month regardless of the selected timeframe."}
-        </p>
-        <DefinitionsNote />
+        <Table>
+          <thead>
+            <tr>
+              <Th>Channel</Th>
+              <Th align="right">Qualified</Th>
+              <Th align="right">Share</Th>
+              <Th align="right">Closed</Th>
+              <Th align="right">Close rate</Th>
+              <Th align="right">Revenue</Th>
+              <Th align="right">Cost / Qualified</Th>
+              <Th>All months</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => {
+              const zero = r.qualified === 0;
+              return (
+                <Tr key={r.channel}>
+                  <Td className="whitespace-nowrap">
+                    <span className="inline-flex items-center gap-2 font-semibold">
+                      <span
+                        aria-hidden
+                        className="h-2.5 w-2.5 flex-none rounded-sm"
+                        style={{ background: CHANNEL_COLORS[r.channel] }}
+                      />
+                      {CHANNEL_LABELS[r.channel]}
+                    </span>
+                  </Td>
+                  {firstTouch ? (
+                    <>
+                      <Td align="right" muted>{DASH}</Td>
+                      <Td align="right" muted>{DASH}</Td>
+                      <Td align="right" muted>{DASH}</Td>
+                      <Td align="right" muted>{DASH}</Td>
+                      <Td align="right" muted>{DASH}</Td>
+                    </>
+                  ) : (
+                    <>
+                      <Td align="right" muted={zero} className={zero ? "" : "font-semibold"}>
+                        {r.qualified}
+                      </Td>
+                      <Td align="right" muted>
+                        {totalQ ? `${Math.round((r.qualified / totalQ) * 100)}%` : DASH}
+                      </Td>
+                      <Td align="right" muted={!r.closed}>{r.closed}</Td>
+                      <Td align="right" muted>
+                        {r.qualified ? `${Math.round((r.closed / r.qualified) * 100)}%` : DASH}
+                      </Td>
+                      <Td align="right" muted={!r.revenue}>
+                        {r.revenue ? `$${Math.round(r.revenue).toLocaleString("en-US")}` : "$0"}
+                      </Td>
+                    </>
+                  )}
+                  <Td align="right" muted title="needs the spend store">
+                    {DASH}
+                  </Td>
+                  <Td>
+                    <Sparkline values={r.trend} width={110} height={20} />
+                  </Td>
+                </Tr>
+              );
+            })}
+          </tbody>
+        </Table>
       </Panel>
       <NeedsBlock surface={surface} />
     </>

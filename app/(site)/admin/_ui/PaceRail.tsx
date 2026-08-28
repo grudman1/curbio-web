@@ -1,5 +1,5 @@
 import type { PaceState } from "@/app/(site)/marketing/(hub)/pacing";
-import { DASH, Eyebrow, StatusDot } from "./primitives";
+import { DASH, StatusDot } from "./primitives";
 import { PACE_TONE } from "./tone";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -51,7 +51,7 @@ export function PaceRail({ rows, note }: { rows: PaceRow[]; note?: string }) {
             r.expected !== null && r.target > 0 ? Math.min(r.expected / r.target, 1) : null;
           const tone = r.state ? PACE_TONE[r.state] : "unknown";
           return (
-            <li key={r.key} className="flex h-ops-row items-center gap-2.5 border-b border-edge last:border-b-0">
+            <li key={r.key} className="flex h-ops-row items-center gap-2.5 border-b border-app-border last:border-b-0">
               <StatusDot tone={tone} title={r.state ? STATE_LABEL[r.state] : "no data"} />
               {/* Wide enough for the longest displayName in MARKETS
                   ("Northern Virginia, VA") without truncation — a market you

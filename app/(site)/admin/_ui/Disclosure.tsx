@@ -19,7 +19,7 @@ export function Disclosure({
   children: React.ReactNode;
 }) {
   return (
-    <details className="group border-t border-edge pt-2">
+    <details className="group border-t border-app-border pt-2">
       <summary className="flex cursor-pointer list-none items-center gap-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent [&::-webkit-details-marker]:hidden">
         <span
           aria-hidden

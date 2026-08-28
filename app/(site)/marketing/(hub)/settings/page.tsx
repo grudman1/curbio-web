@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
-import { Meta, Panel } from "@/app/(site)/admin/(dashboard)/ui";
+import { Table, Td, Th, Tr } from "@/app/(site)/admin/_ui/DataTable";
+import { InfoPopover } from "@/app/(site)/admin/_ui/InfoPopover";
+import { Meta, Panel } from "@/app/(site)/admin/_ui/primitives";
 import { HUB_SURFACE_BY_SLUG, SYNC_SURFACES } from "@/config/marketingHub";
 import { SNAPSHOT_AS_OF } from "@/config/appLeadsSnapshot";
 import { ownerSession } from "@/lib/adminGuards";
 import { readOpsSpend, type SpendEntry } from "@/lib/opsSpend";
-import { ConsequenceNote, DASH, HubPageHeader, NeedsBlock, StatusChip, td, tdDash, th } from "../hubUi";
+import { DASH, HubPageHeader, NeedsBlock, StatusChip } from "../hubUi";
 import { SpendEntryPanel } from "./SpendEntry";
 import { UtmBuilder } from "./UtmBuilder";
 
@@ -14,8 +16,6 @@ export const metadata: Metadata = {
 };
 
 const surface = HUB_SURFACE_BY_SLUG.settings;
-
-
 
 export const dynamic = "force-dynamic";
 
@@ -32,27 +32,30 @@ export default async function SettingsPage() {
     <>
       <HubPageHeader surface={surface} />
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
-          gap: "var(--space-4)",
-          marginBottom: "var(--space-4)",
-        }}
-      >
-        {/* ── spend entry — live; the store it waited on now exists ── */}
-        <Panel title="Spend entry" right={<Meta>month × market × channel</Meta>}>
+      <div className="mb-ops-gap grid grid-cols-1 gap-ops-gap xl:grid-cols-2">
+        {/* ── spend — the store CAC and every cost-per number waits on ── */}
+        <Panel
+          flush
+          title="Spend"
+          right={
+            <span className="inline-flex items-center gap-1.5">
+              <Meta>month × market × channel</Meta>
+              <InfoPopover label="Where spend numbers come from" align="right">
+                <p className="m-0">
+                  Spend is typed in from invoices, so it is logged, not measured — and every
+                  cost-per number derived from it inherits that. Without it, CAC and the cost-per
+                  numbers on the Funnel, Outreach and Events screens stay em-dashes.
+                </p>
+              </InfoPopover>
+            </span>
+          }
+        >
           <SpendEntryPanel
             entries={spend}
             archived={spendArchived}
             isOwner={isOwner && spendResult.configured}
             configured={spendResult.configured}
           />
-          <ConsequenceNote>
-            Spend is typed in from invoices, so it is logged, not measured — and every
-            cost-per number derived from it inherits that. Without it, CAC and the
-            cost-per numbers on the Report, Outreach and Events pages stay em-dashes.
-          </ConsequenceNote>
         </Panel>
 
         {/* ── UTM builder — live, needs no data source ── */}
@@ -60,44 +63,50 @@ export default async function SettingsPage() {
       </div>
 
       {/* ── sync / webhook health ── */}
-      <Panel title="Sync & webhook health" right={<Meta>the Hub&apos;s four inputs</Meta>}>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr>
-                <th style={th}>Surface</th>
-                <th style={th}>Carries</th>
-                <th style={th}>Status</th>
-                <th style={{ ...th, textAlign: "right" }}>Last event</th>
-              </tr>
-            </thead>
-            <tbody>
-              {SYNC_SURFACES.map((s) => (
-                <tr key={s.key}>
-                  <td style={{ ...td, fontWeight: 600, whiteSpace: "nowrap" }}>{s.label}</td>
-                  <td style={{ ...td, color: "var(--color-text-muted)" }}>
-                    {s.carries}
-                    {s.note && (
-                      <div style={{ fontSize: "var(--text-label)", color: "var(--color-text-subtle)", marginTop: 3 }}>
-                        {s.note}
-                      </div>
-                    )}
-                  </td>
-                  <td style={td}>
-                    <StatusChip status={s.status} />
-                  </td>
-                  <td style={{ ...tdDash, textAlign: "right" }}>
-                    {s.key === "app_sync" ? `snapshot ${SNAPSHOT_AS_OF}` : DASH}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <ConsequenceNote>
-          A silent Instantly webhook has no symptom beyond this table — positive replies
-          simply stop graduating contacts out of cold.
-        </ConsequenceNote>
+      <Panel
+        flush
+        title="Sync & webhook health"
+        right={
+          <span className="inline-flex items-center gap-1.5">
+            <Meta>the Hub&apos;s four inputs</Meta>
+            <InfoPopover label="Why this table matters" align="right">
+              <p className="m-0">
+                A silent Instantly webhook has no symptom beyond this table — positive replies
+                simply stop graduating contacts out of cold.
+              </p>
+            </InfoPopover>
+          </span>
+        }
+      >
+        <Table>
+          <thead>
+            <tr>
+              <Th>Surface</Th>
+              <Th>Carries</Th>
+              <Th>Status</Th>
+              <Th align="right">Last event</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {SYNC_SURFACES.map((s) => (
+              <Tr key={s.key}>
+                <Td className="whitespace-nowrap font-semibold">{s.label}</Td>
+                <Td className="text-content-muted">
+                  {s.carries}
+                  {s.note && (
+                    <div className="mt-0.5 font-sans text-ops-label text-content-subtle">{s.note}</div>
+                  )}
+                </Td>
+                <Td>
+                  <StatusChip status={s.status} />
+                </Td>
+                <Td align="right" muted>
+                  {s.key === "app_sync" ? `snapshot ${SNAPSHOT_AS_OF}` : DASH}
+                </Td>
+              </Tr>
+            ))}
+          </tbody>
+        </Table>
       </Panel>
 
       <NeedsBlock surface={surface} />

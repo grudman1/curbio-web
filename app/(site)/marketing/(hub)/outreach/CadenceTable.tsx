@@ -2,55 +2,40 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { SUBTLE } from "@/app/(site)/admin/(dashboard)/ui";
-import { LoggedValue } from "@/app/(site)/admin/_ui/Logged";
+import { ActionsTd, IconButton, Table, Td, Th, Tr } from "@/app/(site)/admin/_ui/DataTable";
+import { InlineNumberCell, InlineSelectCell } from "@/app/(site)/admin/_ui/InlineCell";
+import { LoggedTag } from "@/app/(site)/admin/_ui/Logged";
+import { useToast } from "@/app/(site)/admin/_ui/Toast";
+import { Select } from "@/app/(site)/admin/_ui/Field";
 import { OUTREACH_ARMS } from "@/config/marketingHub";
 import type { OutreachEntry } from "@/lib/opsOutreach";
-import { DASH, OutlineBar, td, th } from "../hubUi";
-import {
-  ArchivedList,
-  OpsError,
-  OpsFormCard,
-  OpsFormGrid,
-  OpsSaveButton,
-  opsField,
-  opsFieldLabel,
-  opsLinkButton,
-} from "../opsUi";
+import { OutlineBar } from "../hubUi";
+import { ArchivedNote } from "../ArchivedNote";
 import { archiveOutreachAction, saveOutreachAction, type SaveOutreachInput } from "./actions";
 
-// The cadence table, editable in place. One row per HSM for the selected
-// week; the row shows that week's entry if one exists, dashes if not.
+// The cadence table, editable IN the table: click a number, type, Enter. The
+// first edit on an empty week creates the record (default arm, other counts
+// still null); every later edit updates it.
 //
 // Every number is LOGGED — the A/B this feeds decides which arm books face
 // time, so these must never read as measured events.
 
 export type HsmRow = { name: string; covers: string };
 
-type FormState = {
-  id?: string;
-  hsm: string;
-  weekOf: string;
-  arm: string;
-  mailingsSent: string;
-  callsMade: string;
-  meetingsBooked: string;
-};
+const ARM_OPTIONS = OUTREACH_ARMS.map((a) => ({ key: a.key, label: a.label }));
 
-function formFor(hsm: string, weekOf: string, entry: OutreachEntry | null): FormState {
+type CountField = "mailingsSent" | "callsMade" | "meetingsBooked";
+
+function inputFor(hsm: string, weekOf: string, entry: OutreachEntry | null): SaveOutreachInput {
   return {
     id: entry?.id,
     hsm,
     weekOf,
     arm: entry?.arm ?? OUTREACH_ARMS[0].key,
-    mailingsSent: entry?.mailingsSent === null || entry === null ? "" : String(entry.mailingsSent),
-    callsMade: entry?.callsMade === null || entry === null ? "" : String(entry.callsMade),
-    meetingsBooked: entry?.meetingsBooked === null || entry === null ? "" : String(entry.meetingsBooked),
+    mailingsSent: entry?.mailingsSent == null ? "" : String(entry.mailingsSent),
+    callsMade: entry?.callsMade == null ? "" : String(entry.callsMade),
+    meetingsBooked: entry?.meetingsBooked == null ? "" : String(entry.meetingsBooked),
   };
-}
-
-function armLabel(key: string): string {
-  return OUTREACH_ARMS.find((a) => a.key === key)?.label ?? key;
 }
 
 export function CadenceTable({
@@ -73,177 +58,141 @@ export function CadenceTable({
   isOwner: boolean;
 }) {
   const router = useRouter();
-  const [form, setForm] = useState<FormState | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
   const [week, setWeek] = useState(weekOf);
 
   const byHsm = new Map(entries.filter((e) => e.weekOf === week).map((e) => [e.hsm, e]));
 
-  async function save() {
-    if (!form || saving) return;
-    setSaving(true);
-    setError(null);
-    const result = await saveOutreachAction(form as SaveOutreachInput);
-    setSaving(false);
-    if (!result.ok) return setError(result.error);
-    setForm(null);
+  async function saveField(
+    hsm: string,
+    entry: OutreachEntry | null,
+    patch: Partial<SaveOutreachInput>
+  ): Promise<{ ok: true } | { ok: false; error: string }> {
+    const result = await saveOutreachAction({ ...inputFor(hsm, week, entry), ...patch });
+    if (!result.ok) return result;
+    router.refresh();
+    return { ok: true };
+  }
+
+  const saveCount = (hsm: string, entry: OutreachEntry | null, field: CountField) => async (next: number | null) =>
+    saveField(hsm, entry, { [field]: next === null ? "" : String(next) });
+
+  async function archive(entry: OutreachEntry) {
+    const result = await archiveOutreachAction(entry.id, true);
+    if (!result.ok) return toast("error", result.error);
+    toast("success", `Archived ${entry.hsm} · week of ${entry.weekOf}.`);
     router.refresh();
   }
 
   async function restore(id: string) {
-    setError(null);
     const result = await archiveOutreachAction(id, false);
-    if (!result.ok) return setError(result.error);
+    if (!result.ok) return toast("error", result.error);
+    toast("success", "Entry restored.");
     router.refresh();
   }
 
-  const set = (k: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setForm((f) => (f ? { ...f, [k]: e.target.value } : f));
-
   return (
     <>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <span style={{ ...opsFieldLabel, marginBottom: 0 }}>Week of</span>
-        <select
-          style={{ ...opsField, width: "auto" }}
+      <div className="flex items-center gap-2 px-ops-panel pb-3">
+        <label htmlFor="cadence-week" className="font-sans text-ops-label font-semibold text-content-muted">
+          Week of
+        </label>
+        <Select
+          id="cadence-week"
+          className="!w-auto"
           value={week}
-          onChange={(e) => {
-            setWeek(e.target.value);
-            setForm(null);
-          }}
+          onChange={(e) => setWeek(e.target.value)}
         >
           {weeks.map((w) => (
             <option key={w} value={w}>
               {w}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr>
-              <th style={th}>HSM</th>
-              <th style={th}>Mailings this week</th>
-              <th style={th}>Calls this week</th>
-              <th style={th}>Arm</th>
-              <th style={{ ...th, textAlign: "right" }}>Meetings booked</th>
-              {isOwner && <th style={th} aria-label="actions" />}
-            </tr>
-          </thead>
-          <tbody>
-            {hsms.map((h) => {
-              const e = byHsm.get(h.name) ?? null;
-              return (
-                <tr key={h.name}>
-                  <td style={{ ...td, minWidth: 180 }}>
-                    <div style={{ fontWeight: 600 }}>{h.name}</div>
-                    <div style={{ fontSize: "var(--text-label)", color: SUBTLE, marginTop: 1 }}>{h.covers}</div>
-                  </td>
-                  <td style={td}>
-                    {e && e.mailingsSent !== null ? (
-                      <OutlineBar label={`${e.mailingsSent} of ${mailingsTarget}`} fraction={e.mailingsSent / mailingsTarget} />
-                    ) : (
-                      <OutlineBar label={`${DASH} of ${mailingsTarget}`} />
-                    )}
-                  </td>
-                  <td style={td}>
-                    {e && e.callsMade !== null ? (
-                      <OutlineBar label={`${e.callsMade} of ${callsTarget}`} fraction={e.callsMade / callsTarget} />
-                    ) : (
-                      <OutlineBar label={`${DASH} of ${callsTarget}`} />
-                    )}
-                  </td>
-                  <td style={{ ...td, color: e ? undefined : SUBTLE }}>{e ? armLabel(e.arm) : DASH}</td>
-                  <td style={{ ...td, textAlign: "right", color: e && e.meetingsBooked !== null ? undefined : SUBTLE }}>
-                    {e && e.meetingsBooked !== null ? <LoggedValue value={e.meetingsBooked} /> : DASH}
-                  </td>
-                  {isOwner && (
-                    <td style={{ ...td, textAlign: "right" }}>
-                      <button
-                        type="button"
-                        style={opsLinkButton}
-                        onClick={() => {
-                          setError(null);
-                          setForm(formFor(h.name, week, e));
-                        }}
-                      >
-                        {e ? "edit" : "log"}
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <Table>
+        <thead>
+          <tr>
+            <Th>HSM</Th>
+            <Th>Mailings this week</Th>
+            <Th>Calls this week</Th>
+            <Th>Arm</Th>
+            <Th align="right">Meetings booked</Th>
+            {isOwner && <Th aria-label="Actions" />}
+          </tr>
+        </thead>
+        <tbody>
+          {hsms.map((h) => {
+            const e = byHsm.get(h.name) ?? null;
+            return (
+              <Tr key={h.name}>
+                <Td className="min-w-[180px]">
+                  <div className="font-semibold">{h.name}</div>
+                  <div className="mt-px font-sans text-ops-label text-content-subtle">{h.covers}</div>
+                </Td>
+                <Td className="min-w-[170px]">
+                  <span className="flex items-center gap-2.5">
+                    <OutlineBar
+                      fraction={e?.mailingsSent != null ? e.mailingsSent / mailingsTarget : undefined}
+                    />
+                    <span className="w-[72px]">
+                      <InlineNumberCell
+                        label={`Mailings sent — ${h.name}, week of ${week}`}
+                        value={e?.mailingsSent ?? null}
+                        align="left"
+                        disabled={!isOwner}
+                        onSave={saveCount(h.name, e, "mailingsSent")}
+                        format={(n) => `${n} of ${mailingsTarget}`}
+                      />
+                    </span>
+                  </span>
+                </Td>
+                <Td className="min-w-[170px]">
+                  <span className="flex items-center gap-2.5">
+                    <OutlineBar fraction={e?.callsMade != null ? e.callsMade / callsTarget : undefined} />
+                    <span className="w-[72px]">
+                      <InlineNumberCell
+                        label={`Calls made — ${h.name}, week of ${week}`}
+                        value={e?.callsMade ?? null}
+                        align="left"
+                        disabled={!isOwner}
+                        onSave={saveCount(h.name, e, "callsMade")}
+                        format={(n) => `${n} of ${callsTarget}`}
+                      />
+                    </span>
+                  </span>
+                </Td>
+                <Td className="min-w-[150px]">
+                  <InlineSelectCell
+                    label={`A/B arm — ${h.name}, week of ${week}`}
+                    value={e?.arm ?? null}
+                    options={ARM_OPTIONS}
+                    disabled={!isOwner}
+                    onSave={(next) => saveField(h.name, e, { arm: next })}
+                  />
+                </Td>
+                <Td align="right" className="min-w-[130px]">
+                  <InlineNumberCell
+                    label={`Meetings booked — ${h.name}, week of ${week}`}
+                    value={e?.meetingsBooked ?? null}
+                    disabled={!isOwner}
+                    onSave={saveCount(h.name, e, "meetingsBooked")}
+                    suffix={<LoggedTag />}
+                  />
+                </Td>
+                {isOwner && (
+                  <ActionsTd>
+                    {e && <IconButton icon="archive" label={`Archive ${h.name}'s week`} onClick={() => archive(e)} />}
+                  </ActionsTd>
+                )}
+              </Tr>
+            );
+          })}
+        </tbody>
+      </Table>
 
-      {isOwner && form && (
-        <OpsFormCard>
-          <OpsFormGrid>
-            <label>
-              <span style={opsFieldLabel}>HSM</span>
-              <input style={{ ...opsField, opacity: 0.7 }} value={form.hsm} readOnly />
-            </label>
-            <label>
-              <span style={opsFieldLabel}>Week of</span>
-              <input style={opsField} type="date" value={form.weekOf} onChange={set("weekOf")} />
-            </label>
-            <label>
-              <span style={opsFieldLabel}>Arm</span>
-              <select style={opsField} value={form.arm} onChange={set("arm")}>
-                {OUTREACH_ARMS.map((a) => (
-                  <option key={a.key} value={a.key}>
-                    {a.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span style={opsFieldLabel}>Mailings sent (logged)</span>
-              <input style={opsField} type="number" min={0} step={1} value={form.mailingsSent} onChange={set("mailingsSent")} />
-            </label>
-            <label>
-              <span style={opsFieldLabel}>Calls made (logged)</span>
-              <input style={opsField} type="number" min={0} step={1} value={form.callsMade} onChange={set("callsMade")} />
-            </label>
-            <label>
-              <span style={opsFieldLabel}>Meetings booked (logged)</span>
-              <input style={opsField} type="number" min={0} step={1} value={form.meetingsBooked} onChange={set("meetingsBooked")} />
-            </label>
-          </OpsFormGrid>
-
-          <OpsError>{error}</OpsError>
-
-          <div style={{ display: "flex", gap: 16, alignItems: "center", marginTop: 14 }}>
-            <OpsSaveButton saving={saving} label={form.id ? "Save week" : "Log week"} onClick={save} />
-            <button type="button" style={opsLinkButton} onClick={() => setForm(null)}>
-              cancel
-            </button>
-            {form.id && (
-              <button
-                type="button"
-                style={{ ...opsLinkButton, color: SUBTLE, marginLeft: "auto" }}
-                onClick={async () => {
-                  const result = await archiveOutreachAction(form.id!, true);
-                  if (!result.ok) return setError(result.error);
-                  setForm(null);
-                  router.refresh();
-                }}
-              >
-                archive
-              </button>
-            )}
-          </div>
-        </OpsFormCard>
-      )}
-
-      {!form && error && <OpsError>{error}</OpsError>}
-
-      <ArchivedList
+      <ArchivedNote
         records={archived}
         label={(e) => `${e.hsm} · week of ${e.weekOf}`}
         isOwner={isOwner}

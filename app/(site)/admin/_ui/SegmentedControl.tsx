@@ -1,0 +1,66 @@
+"use client";
+
+// The 2–5-way switch: attribution mode, week pickers, view toggles. One
+// bordered track, filled active segment, arrow keys move the selection.
+
+export function SegmentedControl<K extends string>({
+  value,
+  options,
+  onChange,
+  label,
+  size = "md",
+}: {
+  value: K;
+  options: readonly { key: K; label: string; shortLabel?: string; title?: string }[];
+  onChange: (key: K) => void;
+  /** Accessible group name. */
+  label: string;
+  size?: "sm" | "md";
+}) {
+  const idx = options.findIndex((o) => o.key === value);
+
+  function onKeyDown(e: React.KeyboardEvent) {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    const next = e.key === "ArrowLeft" ? Math.max(0, idx - 1) : Math.min(options.length - 1, idx + 1);
+    if (next !== idx) onChange(options[next].key);
+  }
+
+  return (
+    <div
+      role="group"
+      aria-label={label}
+      onKeyDown={onKeyDown}
+      className="inline-flex flex-none items-center gap-0.5 rounded-md border border-app-border-strong bg-app-well p-0.5"
+    >
+      {options.map((o) => {
+        const active = o.key === value;
+        return (
+          <button
+            key={o.key}
+            type="button"
+            aria-pressed={active}
+            title={o.title}
+            onClick={() => onChange(o.key)}
+            className={`cursor-pointer whitespace-nowrap rounded-[5px] border-0 font-sans font-semibold transition-colors duration-fast ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent ${
+              size === "sm" ? "px-2 py-[3px] text-ops-micro" : "px-2.5 py-[4px] text-ops-label"
+            } ${
+              active
+                ? "bg-app-card text-content shadow-app-card"
+                : "bg-transparent text-content-muted hover:text-content"
+            }`}
+          >
+            {o.shortLabel ? (
+              <>
+                <span className="hidden sm:inline">{o.label}</span>
+                <span className="sm:hidden">{o.shortLabel}</span>
+              </>
+            ) : (
+              o.label
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}

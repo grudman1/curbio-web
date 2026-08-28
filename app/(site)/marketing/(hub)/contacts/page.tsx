@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
-import { Meta, MUTED, Panel, Stat, SUBTLE } from "@/app/(site)/admin/(dashboard)/ui";
+import { InfoPopover } from "@/app/(site)/admin/_ui/InfoPopover";
+import { Meta, Panel } from "@/app/(site)/admin/_ui/primitives";
+import { StatCard } from "@/app/(site)/admin/_ui/StatCard";
 import { COLD_GRADUATION_RULE, CONTACT_STATUSES, HUB_SURFACE_BY_SLUG } from "@/config/marketingHub";
-import { ConsequenceNote, DASH, DefinitionsNote, EmptyLog, HubPageHeader, NeedsBlock } from "../hubUi";
+import { DefinitionsInfo, EmptyLog, HubPageHeader, NeedsBlock } from "../hubUi";
 
 export const metadata: Metadata = {
   title: "Contacts · Marketing — Curbio",
@@ -13,42 +15,40 @@ const surface = HUB_SURFACE_BY_SLUG.contacts;
 export default function ContactsPage() {
   return (
     <>
-      <HubPageHeader surface={surface} />
+      <HubPageHeader surface={surface} right={<DefinitionsInfo align="right" />} />
 
-      {/* ── status mix ── */}
-      <div style={{ marginBottom: "var(--space-4)" }}>
-        <Panel title="Status mix" right={<Meta>all contacts</Meta>}>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "20px 32px" }}>
-            {CONTACT_STATUSES.map((s) => (
-              <Stat key={s} label={s} value={DASH} tone={SUBTLE} />
-            ))}
-          </div>
-          <p
-            style={{
-              fontFamily: "var(--font-family-sans)",
-              fontSize: "var(--text-small)",
-              color: MUTED,
-              margin: "16px 0 0",
-              maxWidth: 720,
-              lineHeight: 1.6,
-            }}
-          >
-            The graduation rule: {COLD_GRADUATION_RULE}
-          </p>
-          <DefinitionsNote />
-        </Panel>
+      {/* ── status mix — unwired, so every value is an em-dash ── */}
+      <div className="mb-ops-gap grid grid-cols-2 gap-ops-gap lg:grid-cols-5">
+        {CONTACT_STATUSES.map((s, i) => (
+          <StatCard
+            key={s}
+            label={s}
+            value={null}
+            info={i === 0 ? <p className="m-0">The graduation rule: {COLD_GRADUATION_RULE}</p> : undefined}
+          />
+        ))}
       </div>
 
       {/* ── the contact table ── */}
-      <Panel title="Contacts" right={<Meta>newest first</Meta>}>
+      <Panel
+        flush
+        title="Contacts"
+        right={
+          <span className="inline-flex items-center gap-1.5">
+            <Meta>newest first</Meta>
+            <InfoPopover label="Why webhook health matters here" align="right">
+              <p className="m-0">
+                A silent Instantly webhook means positive replies stop graduating contacts out of
+                cold — and it has no other symptom.
+              </p>
+            </InfoPopover>
+          </span>
+        }
+      >
         <EmptyLog
           columns={["Contact", "Market", "Status", "Channel", "Last activity", "Owner"]}
           fedBy="the contact store (ActiveCampaign and Instantly imports)"
         />
-        <ConsequenceNote>
-          A silent Instantly webhook means positive replies stop graduating contacts out
-          of cold — and it has no other symptom.
-        </ConsequenceNote>
       </Panel>
 
       <NeedsBlock surface={surface} />

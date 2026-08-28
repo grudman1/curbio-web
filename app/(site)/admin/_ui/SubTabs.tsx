@@ -29,7 +29,7 @@ export function SubTabs({ tabs }: { tabs: SubTab[] }) {
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   return (
-    <nav aria-label="Section" className="-mt-1 mb-ops-gap flex gap-1 border-b border-edge">
+    <nav aria-label="Section" className="-mt-1 mb-ops-gap flex gap-1 border-b border-app-border">
       {tabs.map((t) => {
         const active = t.href === activeHref;
         return (

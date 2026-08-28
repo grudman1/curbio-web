@@ -27,7 +27,7 @@ import { PAGE_STATUS_TONE } from "./tone";
  *  width — no dead bands. At a ~300px card that is a ~1500×940 desktop view. */
 function Frame({ src, title }: { src: string; title: string }) {
   return (
-    <div className="relative w-full overflow-hidden rounded-t-lg bg-surface-raised [aspect-ratio:16/10]">
+    <div className="relative w-full overflow-hidden rounded-t-lg bg-app-card [aspect-ratio:16/10]">
       <iframe
         src={src}
         title={`Preview of ${title}`}
@@ -117,11 +117,11 @@ export function PageCard({
   const href = src ?? entry.path;
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-lg border border-edge bg-surface-raised transition-colors duration-base ease-out focus-within:border-content hover:border-content">
+    <article className="group relative flex flex-col overflow-hidden rounded-lg border border-app-border bg-app-card transition-colors duration-base ease-out focus-within:border-content hover:border-content">
       {src ? (
         <Frame src={src} title={entry.title} />
       ) : (
-        <div className="flex w-full items-center justify-center rounded-t-lg border-b border-dashed border-edge bg-surface [aspect-ratio:16/10]">
+        <div className="flex w-full items-center justify-center rounded-t-lg border-b border-dashed border-app-border bg-surface [aspect-ratio:16/10]">
           <span className="font-sans text-ops-label text-content-subtle">no preview</span>
         </div>
       )}
@@ -149,7 +149,7 @@ export function PageCard({
         </div>
 
         {/* the strip — views · leads · CVR */}
-        <div className="mt-auto flex items-end gap-3 border-t border-edge pt-2.5">
+        <div className="mt-auto flex items-end gap-3 border-t border-app-border pt-2.5">
           <Figure
             label="Views"
             value={views === null ? DASH : views.toLocaleString("en-US")}

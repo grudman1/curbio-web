@@ -1,21 +1,22 @@
-import { DASH, Eyebrow } from "./primitives";
+import { DASH } from "./primitives";
 import { Sparkline, type SparkPoint } from "./Sparkline";
 import { InfoPopover } from "./InfoPopover";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// One number, its label, and optionally how it moved.
+// The KPI card — one number, its label, and optionally how it moved. The row
+// of these at the top of a screen is the screen's headline.
 //
 // THE RULE THIS ENFORCES: `value === null` renders DASH, not 0. The two are
 // different facts — "nobody converted" and "we cannot see conversions" — and
 // a dashboard that renders them identically is lying by omission. The type
 // makes this unavoidable: `value` is `number | null`, so a caller with no data
-// cannot accidentally pass a falsy zero and get a plausible-looking tile.
+// cannot accidentally pass a falsy zero and get a plausible-looking card.
 //
-// A tile with no value renders no delta and no sparkline either. A trend
+// A card with no value renders no delta and no sparkline either. A trend
 // attached to a number we do not have is decoration.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function MetricTile({
+export function StatCard({
   label,
   value,
   format = (n) => n.toLocaleString("en-US"),
@@ -35,7 +36,7 @@ export function MetricTile({
   delta?: number | null;
   points?: readonly SparkPoint[];
   bucket?: "day" | "week" | "month";
-  /** Longer explanation. Goes behind the ⓘ, never into the tile body. */
+  /** Longer explanation. Goes behind the ⓘ, never into the card body. */
   info?: React.ReactNode;
   /** At most one short line — provenance or window. */
   note?: string;
@@ -44,9 +45,9 @@ export function MetricTile({
   const deltaKnown = known && delta !== null && delta !== undefined && Number.isFinite(delta);
 
   return (
-    <div className="flex min-h-ops-tile flex-col justify-between rounded-lg border border-edge bg-surface-raised p-3.5">
+    <div className="flex min-h-ops-tile flex-col justify-between rounded-lg border border-app-border bg-app-card p-3.5 shadow-app-card">
       <div className="flex items-center gap-1.5">
-        <Eyebrow>{label}</Eyebrow>
+        <span className="truncate font-sans text-ops-label font-semibold text-content-muted">{label}</span>
         {info && <InfoPopover label={`About ${label}`}>{info}</InfoPopover>}
         {deltaKnown && (
           <span
