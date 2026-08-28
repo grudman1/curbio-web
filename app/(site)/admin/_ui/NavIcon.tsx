@@ -19,6 +19,9 @@ const PATHS: Record<string, React.ReactNode> = {
   organic: (<><path d="M8 14V7.2" /><path d="M8 7.2c0-2.6 2-4.7 5.2-4.9.2 3.2-1.9 5.4-5.2 4.9Z" /><path d="M8 9.6C8 7.7 6.4 6.1 3.8 6c-.2 2.5 1.5 4.2 4.2 3.6Z" /></>),
   content: (<><path d="M3.5 2.5h6.2L12.5 5.3v8.2h-9z" /><path d="M9.5 2.5v3h3M6 8h4M6 10.5h4" /></>),
   settings: (<><path d="M2.5 5h11M2.5 11h11" /><circle cx="6.2" cy="5" r="1.7" /><circle cx="10.2" cy="11" r="1.7" /></>),
+  // Sidebar v3 footer glyph — a real gear, not the settings sliders above
+  // (2026-08 redesign amendment: "standard gear icon, not sliders").
+  gear: (<><circle cx="8" cy="8" r="2.1" /><path d="M8 2.3v1.6M8 12.1v1.6M13.7 8h-1.6M3.9 8H2.3M11.9 4.1l-1.1 1.1M5.2 9.7l-1.1 1.1M11.9 11.9l-1.1-1.1M5.2 6.3l-1.1-1.1" /></>),
   contacts: (<><circle cx="8" cy="5.2" r="2.5" /><path d="M3.2 13.5C3.2 10.9 5.3 9.6 8 9.6s4.8 1.3 4.8 3.9" /></>),
   forms: (<><rect x="3.5" y="2" width="9" height="12" rx="1" /><path d="M6 5.5h4M6 8h4M6 10.5h2.5" /></>),
   partners: (<><circle cx="5.5" cy="5.5" r="2" /><circle cx="10.5" cy="5.5" r="2" /><path d="M2 13.2c0-2.3 1.6-3.6 3.5-3.6 1.3 0 2.4.6 3 1.6M9.6 9.8c.3-.1.6-.2.9-.2 1.9 0 3.5 1.3 3.5 3.6" /></>),
@@ -29,10 +32,10 @@ const PATHS: Record<string, React.ReactNode> = {
   analytics: (<><path d="M2.3 12.5 6.4 8.2l2.4 2.4 4.9-5.3" /><path d="M10.4 4.9h3.3v3.3" /></>),
 };
 
-export function NavIcon({ name }: { name: string }) {
+export function NavIcon({ name, size = 16 }: { name: string; size?: number }) {
   return (
     <svg
-      width="16" height="16" viewBox="0 0 16 16" fill="none"
+      width={size} height={size} viewBox="0 0 16 16" fill="none"
       stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"
       aria-hidden
     >

@@ -1,0 +1,47 @@
+/* Dashboard v2 — the Home redesign's token layer.
+ *
+ * Scoped under .ui2, NOT :root — the rest of /admin keeps DESIGN-APP.md's
+ * slate/Libre-Franklin system untouched. Apply the `.ui2` class (plus the
+ * Inter font's `.variable` className) to a screen's root element to opt
+ * that subtree into this palette. See tailwind.config.ts's `ui2` colour /
+ * fontSize / fontFamily entries, which all point at these variables.
+ *
+ * Values are literal here on purpose (not re-derived from the v1 slate
+ * primitives in globals.css) — this is a deliberately cooler-neutral,
+ * higher-contrast palette than the v1 navy-tinted greys, matching the
+ * Stripe/Linear reference the redesign brief named. Phase 4 decides whether
+ * the two systems merge; until then they coexist without colliding.
+ */
+
+.ui2 {
+  --ui2-bg: #f7f8fa;
+  --ui2-card: #ffffff;
+  --ui2-text: #111827;
+  --ui2-text-muted: #6b7280;
+  --ui2-border: #e5e7eb;
+  --ui2-divider: #f3f4f6;
+  --ui2-well: #f9fafb;
+
+  /* Interactive / active-nav accent — the brand navy, not a new hue. */
+  --ui2-accent: var(--navy);
+  --ui2-accent-ring: var(--navy-30);
+
+  /* Deltas + status ONLY (DeltaChip, HealthDot). Never decorative. */
+  --ui2-green: #059669;
+  --ui2-red: #dc2626;
+  /* Dot / bar fill (non-text; WCAG 1.4.11 3:1 is enough). */
+  --ui2-amber: #d97706;
+  /* Text-safe amber — same AA-on-white value the v1 tone scale already
+     solved for (--amber-120) — reused so a warning numeral is legible. */
+  --ui2-amber-text: var(--amber-120);
+
+  --ui2-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --ui2-radius-card: 12px;
+
+  --ui2-text-eyebrow: 11px; /* table headers, uppercase, tracking-wide */
+  --ui2-text-caption: 12px; /* labels, captions */
+  --ui2-text-body: 14px; /* the workhorse */
+  --ui2-text-section: 16px; /* section / card titles */
+  --ui2-text-title: 22px; /* page title */
+  --ui2-text-metric: 28px; /* StatCard value */
+}

@@ -218,6 +218,15 @@
   --pill-neutral-bg: var(--slate-50);
   --pill-neutral-fg: var(--fg-muted);
 
+  /* ── Sidebar v3 (2026-08 accordion redesign) ──────────────────────────
+     Open-section fill, its chevron and the border on that navy surface all
+     reuse --navy / --navy-15 / --amber directly (already exact matches for
+     Curbio's brand spec — see the redesign amendment). These two are the
+     only colours that aren't already in the token set: a neutral child-row
+     text and a light active-child pill, both literal per that same spec. */
+  --nav3-child-text: #4b5563;
+  --nav3-child-active-bg: #eef1f6;
+
   --app-scrim: var(--scrim); /* drawer/palette backdrop */
   --elevation-app-card: var(--shadow-app-card);
   --elevation-app-pop: var(--shadow-app-pop);
