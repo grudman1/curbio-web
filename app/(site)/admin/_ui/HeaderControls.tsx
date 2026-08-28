@@ -103,11 +103,11 @@ export function Timeframe({ months }: { months: string[] }) {
         aria-expanded={open}
         aria-haspopup="true"
         onClick={() => setOpen(!open)}
-        className="inline-flex h-[30px] cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md border border-app-border-strong bg-app-card px-2.5 font-sans text-ops-label font-semibold text-content transition-colors duration-fast ease-out hover:bg-app-well focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+        className="inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md border border-nav3-border bg-app-card px-2.5 py-2 font-sans text-[13px] font-medium text-nav3-hover-text transition-colors duration-fast ease-out hover:bg-app-well focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
       >
-        <Icon name="calendar" size={13} className="text-content-subtle" />
+        <Icon name="calendar" size={13} className="text-nav3-gray-400" />
         {timeframeLabel(tf, months)}
-        <Icon name="chevron-down" size={11} className="text-content-subtle" />
+        <Icon name="chevron-down" size={11} className="text-nav3-gray-400" />
       </button>
 
       {open && (
