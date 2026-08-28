@@ -2,33 +2,51 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { NavIcon } from "./NavIcon";
 import { Icon } from "./Icon";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// THE sidebar — v3 (2026-08 accordion redesign, supersedes the v2 hover
-// accordion below it in git history).
+// THE sidebar — v4 (2026-08 single-open accordion + drag-resize redesign).
 //
 // EXPAND ON CLICK, NEVER HOVER. A parent row with children is a pure
 // disclosure toggle — it does not navigate itself, only its children do.
-// Multiple sections can be open at once; which ones is persisted to
-// localStorage, independent of which route is current, so it survives
-// navigation exactly the way a user left it. The one thing that overrides
-// that memory: whichever section CONTAINS the active route is always forced
-// open (on first load and on every navigation, including ⌘K), without ever
-// closing a section the user opened themselves.
 //
-// Collapsed (48px) mode is unchanged in kind: an icon rail with a flyout
-// standing in for the accordion, but the flyout now opens on click too, not
-// hover, so both rail states use the same interaction model.
+// ONE SECTION OPEN AT A TIME (reversed from v3, which allowed several).
+// Clicking a section's header opens it and closes whichever other section was
+// open; clicking the open one again closes it. Which single section is open
+// persists to localStorage. The one thing that overrides that memory: the
+// section CONTAINING the active route is forced open on every load and every
+// navigation (URL or ⌘K) — closing whatever else was open, on purpose, since
+// there is only ever one slot now.
+//
+// THE COLLAPSED ICON-RAIL MODE IS GONE. Its toggle button was already pulled
+// in #94 ("no collapse toggle — drag-to-resize the right edge is [the only
+// mechanism]"), leaving `railCollapsed` reachable only by a stale localStorage
+// value from before that cut — this redesign finishes the job and removes the
+// dead state, the flyout popover, and every icon-only render branch with it.
+// Width now varies continuously between MIN_WIDTH and MAX_WIDTH by dragging
+// the handle on the right edge (full height, not just the old CSS `resize`
+// corner grip) — there is no second, discontinuous "collapsed" state to fall
+// into.
+//
+// SETTINGS is a normal row in `items` now (config/adminNav.ts), rendered by
+// the same childless-row branch as Home — it is no longer hardcoded here.
+// The account chip and sign-out control moved to the header (AppShell.tsx):
+// neither is navigation, and the sidebar's own bottom is empty as a result
+// (the CookieYes badge is free to sit there without a footer to collide with).
 //
 // NOTHING HERE LINKS OUT. Every item is an internal route rendering inside
 // this shell; there are no external hrefs, no target="_blank", no ↗ glyphs.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const COLLAPSE_KEY = "admin.sidebar.v2.collapsed";
-const OPEN_KEY = "admin.sidebar.v3.open";
+const OPEN_KEY = "admin.sidebar.v4.open";
+const WIDTH_KEY = "admin.sidebar.v4.width";
+const DEFAULT_WIDTH = 220;
+const MIN_WIDTH = 200;
+const MAX_WIDTH = 400;
+
+const clampWidth = (w: number) => Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, w));
 
 export type NavSubItem = { label: string; href: string; badge?: number };
 
@@ -41,8 +59,6 @@ export type NavTopItem = {
   href: string;
   subItems?: NavSubItem[];
 };
-
-export type SidebarUser = { initials: string; name: string; role: string };
 
 /** Longest-prefix match: a child route matching makes its PARENT the active
  *  section — checked only via subItems when they exist, so a parent row
@@ -71,124 +87,110 @@ function deriveActive(
   return { topKey, subLabel };
 }
 
-function loadOpenKeys(): Set<string> {
+function loadOpenKey(): string | null {
   try {
-    const raw = localStorage.getItem(OPEN_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? new Set(arr.filter((x): x is string => typeof x === "string")) : new Set();
+    return localStorage.getItem(OPEN_KEY);
   } catch {
-    return new Set();
+    return null;
   }
 }
-function saveOpenKeys(keys: Set<string>) {
+function saveOpenKey(key: string | null) {
   try {
-    localStorage.setItem(OPEN_KEY, JSON.stringify([...keys]));
+    if (key) localStorage.setItem(OPEN_KEY, key);
+    else localStorage.removeItem(OPEN_KEY);
   } catch {}
 }
 
 export function Sidebar({
   items,
-  user,
   leadCount,
   brandBadge = "OPS",
-  signOut,
 }: {
   items: NavTopItem[];
-  user: SidebarUser;
   /** Live count merged onto whichever sub-item is /admin/leads. */
   leadCount?: number;
   brandBadge?: string;
-  signOut?: () => Promise<void>;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [railCollapsed, setRailCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [openKeys, setOpenKeys] = useState<Set<string>>(() => new Set());
-  const [flyoutKey, setFlyoutKey] = useState<string | null>(null);
-  const [flyoutTop, setFlyoutTop] = useState<number | null>(null);
-  const rowRefs = useRef<Record<string, HTMLElement | null>>({});
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  const [width, setWidth] = useState(DEFAULT_WIDTH);
+  const [resizing, setResizing] = useState(false);
   const navRef = useRef<HTMLElement>(null);
+  const widthRef = useRef(width);
 
   useEffect(() => {
+    setOpenKey(loadOpenKey());
     try {
-      if (localStorage.getItem(COLLAPSE_KEY) === "1") setRailCollapsed(true);
+      const raw = localStorage.getItem(WIDTH_KEY);
+      const n = raw ? Number(raw) : NaN;
+      if (Number.isFinite(n)) {
+        const w = clampWidth(n);
+        setWidth(w);
+        widthRef.current = w;
+      }
     } catch {}
-    setOpenKeys(loadOpenKeys());
   }, []);
 
   const { topKey, subLabel } = useMemo(() => deriveActive(items, pathname), [items, pathname]);
 
-  // The active section is always open — on first load and on every URL or
-  // ⌘K navigation — but this only ever ADDS a key, never removes one, so a
-  // section the user opened by hand stays open when they navigate elsewhere.
+  // The active section is always the (only) open one — on first load and on
+  // every URL or ⌘K navigation. Single-slot by construction, so opening it
+  // closes whatever else was open; that reversal from the old multi-open
+  // behavior is the point of this redesign, not a side effect of it.
   useEffect(() => {
     if (!topKey) return;
-    setOpenKeys((prev) => {
-      if (prev.has(topKey)) return prev;
-      const next = new Set(prev).add(topKey);
-      saveOpenKeys(next);
-      return next;
-    });
+    setOpenKey(topKey);
+    saveOpenKey(topKey);
   }, [topKey]);
 
-  // Collapsed-rail flyout: click-outside and Escape close it, same as any
-  // other click-triggered overlay in the app.
-  useEffect(() => {
-    if (!flyoutKey) return;
-    function onDocClick(e: MouseEvent) {
-      if (!navRef.current?.contains(e.target as Node)) setFlyoutKey(null);
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setFlyoutKey(null);
-    }
-    document.addEventListener("mousedown", onDocClick);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onDocClick);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [flyoutKey]);
-
   function toggleSection(key: string) {
-    setOpenKeys((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      saveOpenKeys(next);
+    setOpenKey((prev) => {
+      const next = prev === key ? null : key;
+      saveOpenKey(next);
       return next;
     });
   }
 
-  function toggleRail() {
-    setFlyoutKey(null);
-    setRailCollapsed((c) => {
-      try {
-        localStorage.setItem(COLLAPSE_KEY, c ? "0" : "1");
-      } catch {}
-      return !c;
-    });
-  }
+  // Drag-resize — the full-height handle, not the old CSS `resize` corner
+  // grip. Width tracks the pointer directly (no animation to fight); MIN/MAX
+  // are enforced in JS on every move, not just visually via CSS, so a very
+  // fast drag can never overshoot before the next frame clamps it.
+  const onHandlePointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = navRef.current?.getBoundingClientRect().width ?? widthRef.current;
+    const prevCursor = document.body.style.cursor;
+    const prevSelect = document.body.style.userSelect;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    setResizing(true);
 
-  function clickRow(key: string) {
-    if (railCollapsed) {
-      setFlyoutKey((k) => {
-        const next = k === key ? null : key;
-        if (next) setFlyoutTop(rowRefs.current[key]?.getBoundingClientRect().top ?? null);
-        return next;
-      });
-    } else {
-      toggleSection(key);
+    function onMove(ev: PointerEvent) {
+      const next = clampWidth(startWidth + (ev.clientX - startX));
+      widthRef.current = next;
+      setWidth(next);
     }
-  }
+    function onUp() {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      document.body.style.cursor = prevCursor;
+      document.body.style.userSelect = prevSelect;
+      setResizing(false);
+      try {
+        localStorage.setItem(WIDTH_KEY, String(widthRef.current));
+      } catch {}
+    }
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp, { once: true });
+  }, []);
 
   const qs = searchParams.toString();
   const withQuery = (href: string) => (qs ? `${href}?${qs}` : href);
   const closeMobile = () => setMobileOpen(false);
 
   const activeLabel = items.find((i) => i.key === topKey)?.label ?? "Menu";
-  const flyoutItem = railCollapsed && flyoutKey ? items.find((i) => i.key === flyoutKey) : undefined;
-  const iconSize = railCollapsed ? 22 : 20;
 
   return (
     <>
@@ -216,27 +218,35 @@ export function Sidebar({
         ref={navRef}
         id="admin-nav"
         aria-label="Control Room"
-        style={railCollapsed ? undefined : { width: 220, minWidth: 200, maxWidth: 320 }}
-        className={`${mobileOpen ? "flex" : "hidden"} w-full flex-none flex-col border-r border-app-border bg-app-card md:sticky md:top-0 md:flex md:h-screen md:self-start group ${
-          railCollapsed ? "md:w-[48px] transition-[width] duration-fast ease-out" : "md:resize-x md:overflow-auto"
+        style={{ width, minWidth: MIN_WIDTH, maxWidth: MAX_WIDTH }}
+        className={`${mobileOpen ? "flex" : "hidden"} relative w-full flex-none flex-col border-r border-app-border bg-app-card md:sticky md:top-0 md:flex md:h-screen md:self-start ${
+          resizing ? "" : "transition-[width] duration-fast ease-out"
         }`}
       >
-        {!railCollapsed && (
-          <div className="pointer-events-none absolute right-0 top-0 h-full w-1 cursor-col-resize bg-transparent group-hover:bg-app-border transition-colors duration-fast group-hover:opacity-100 opacity-0" />
-        )}
-        <div className={`hidden h-ops-header flex-none items-center gap-1.5 md:flex ${railCollapsed ? "justify-center px-0" : "px-2.5"}`}>
-          {railCollapsed ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src="/logo/curbio-icon.png" alt="Curbio" width={20} height={20} className="h-5 w-auto" />
-          ) : (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo/curbio-navy.svg" alt="Curbio" width={84} height={22} className="h-[19px] w-auto flex-none" />
-              <span className="flex-none rounded-sm bg-pill-neutral-bg px-2 py-[3px] font-sans text-[13px] font-bold leading-none tracking-[.06em] text-pill-neutral-fg">
-                {brandBadge}
-              </span>
-            </>
-          )}
+        {/* Full-height drag handle — replaces the old CSS `resize: horizontal`,
+            which only offered a grab point in the bottom-right corner. The 4px
+            hit target is wider than the 1px line it shows on hover/drag, so
+            the handle is easy to find without being visually loud at rest. */}
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize sidebar"
+          onPointerDown={onHandlePointerDown}
+          className="group absolute inset-y-0 right-0 z-10 hidden w-1 cursor-col-resize touch-none select-none md:block"
+        >
+          <div
+            className={`mx-auto h-full w-px transition-colors duration-fast ${
+              resizing ? "bg-navy" : "bg-transparent group-hover:bg-navy"
+            }`}
+          />
+        </div>
+
+        <div className="hidden h-ops-header flex-none items-center gap-1.5 px-2.5 md:flex">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo/curbio-navy.svg" alt="Curbio" width={84} height={22} className="h-[19px] w-auto flex-none" />
+          <span className="flex-none rounded-sm bg-pill-neutral-bg px-2 py-[3px] font-sans text-[13px] font-bold leading-none tracking-[.06em] text-pill-neutral-fg">
+            {brandBadge}
+          </span>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pt-1">
@@ -244,50 +254,41 @@ export function Sidebar({
             const hasSub = !!item.subItems?.length;
             const isActiveTop = item.key === topKey;
 
-            // Home, or any childless top-level row: a real link. It never
-            // gets a chevron or a count — there's nothing under it to disclose.
+            // Home, Settings, or any other childless top-level row: a real
+            // link. It never gets a chevron or a count — there's nothing
+            // under it to disclose.
             if (!hasSub) {
               return (
                 <Link
                   key={item.key}
                   href={withQuery(item.href)}
                   onClick={closeMobile}
-                  title={railCollapsed ? item.label : undefined}
                   aria-current={isActiveTop ? "page" : undefined}
-                  className={`mx-2.5 mb-0.5 flex h-11 items-center gap-2.5 rounded-full font-sans text-ops-body no-underline transition-colors duration-fast ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent ${
-                    railCollapsed ? "justify-center px-0" : "px-3"
-                  } ${
+                  className={`mx-2.5 mb-0.5 flex h-11 items-center gap-2.5 rounded-full px-3 font-sans text-ops-body no-underline transition-colors duration-fast ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent ${
                     isActiveTop
                       ? "bg-app-well font-bold text-content"
                       : "font-semibold text-content-muted hover:bg-app-well hover:text-content"
                   }`}
                 >
                   <span className="inline-flex flex-none">
-                    <NavIcon name={item.icon} size={iconSize} />
+                    <NavIcon name={item.icon} size={20} />
                   </span>
-                  {!railCollapsed && <span className="min-w-0 flex-1 truncate">{item.label}</span>}
+                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
                 </Link>
               );
             }
 
-            // A section: click toggles it open/closed (or its flyout, when
-            // the rail is collapsed). It never navigates on its own.
-            const isOpen = !railCollapsed && openKeys.has(item.key);
+            // A section: click toggles it open/closed. It never navigates on
+            // its own, and opening it closes whichever other section was open
+            // (single-slot `openKey`).
+            const isOpen = openKey === item.key;
             return (
-              <div
-                key={item.key}
-                ref={(el) => {
-                  rowRefs.current[item.key] = el;
-                }}
-              >
+              <div key={item.key}>
                 <button
                   type="button"
-                  onClick={() => clickRow(item.key)}
-                  title={railCollapsed ? item.label : undefined}
-                  aria-expanded={railCollapsed ? flyoutKey === item.key : isOpen}
-                  className={`mx-2.5 mb-0.5 flex h-11 w-[calc(100%-20px)] cursor-pointer items-center gap-2.5 rounded-full border-0 text-left font-sans text-ops-body transition-colors duration-fast ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent ${
-                    railCollapsed ? "justify-center bg-transparent px-0" : "px-3"
-                  } ${
+                  onClick={() => toggleSection(item.key)}
+                  aria-expanded={isOpen}
+                  className={`mx-2.5 mb-0.5 flex h-11 w-[calc(100%-20px)] cursor-pointer items-center gap-2.5 rounded-full border-0 px-3 text-left font-sans text-ops-body transition-colors duration-fast ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent ${
                     isOpen
                       ? "bg-navy font-bold text-white"
                       : isActiveTop
@@ -296,112 +297,45 @@ export function Sidebar({
                   }`}
                 >
                   <span className="inline-flex flex-none">
-                    <NavIcon name={item.icon} size={iconSize} />
+                    <NavIcon name={item.icon} size={20} />
                   </span>
-                  {!railCollapsed && (
-                    <>
-                      <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                      {isOpen ? (
-                        <Icon name="chevron-down" size={13} className="flex-none text-amber" />
-                      ) : (
-                        <span className="flex flex-none items-center gap-1.5">
-                          <span className="font-sans text-ops-label font-medium tabular-nums text-nav3-gray-400">
-                            {item.subItems!.length}
-                          </span>
-                          <Icon name="chevron-right" size={13} className="text-nav3-gray-400" />
-                        </span>
-                      )}
-                    </>
+                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                  {isOpen ? (
+                    <Icon name="chevron-down" size={13} className="flex-none text-amber" />
+                  ) : (
+                    <Icon name="chevron-right" size={13} className="flex-none text-nav3-gray-400" />
                   )}
                 </button>
 
-                {!railCollapsed && (
-                  <div
-                    className="grid overflow-hidden transition-[grid-template-rows] duration-fast ease-out"
-                    style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
-                  >
-                    <div className="min-h-0">
-                      <div className="ml-6 border-l border-app-border">
-                        {item.subItems!.map((sub) => (
-                          <SubLink
-                            key={sub.label}
-                            sub={sub}
-                            active={isActiveTop && sub.label === subLabel}
-                            badge={sub.href === "/admin/leads" ? leadCount ?? sub.badge : sub.badge}
-                            href={withQuery(sub.href)}
-                            onClick={closeMobile}
-                          />
-                        ))}
-                      </div>
+                <div
+                  className="grid overflow-hidden transition-[grid-template-rows] duration-fast ease-out"
+                  style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
+                >
+                  <div className="min-h-0">
+                    <div className="ml-6 border-l border-app-border">
+                      {item.subItems!.map((sub) => (
+                        <SubLink
+                          key={sub.label}
+                          sub={sub}
+                          active={isActiveTop && sub.label === subLabel}
+                          badge={sub.href === "/admin/leads" ? leadCount ?? sub.badge : sub.badge}
+                          href={withQuery(sub.href)}
+                          onClick={closeMobile}
+                        />
+                      ))}
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             );
           })}
         </div>
 
-        <div className="flex-none border-t border-app-border px-2.5 py-2">
-          <Link
-            href={withQuery("/admin/settings")}
-            onClick={closeMobile}
-            aria-label="Settings"
-            aria-current={pathname === "/admin/settings" ? "page" : undefined}
-            className={`flex h-9 items-center rounded-md text-nav3-muted-text transition-colors duration-fast ease-out hover:bg-app-well hover:text-nav3-hover-text aria-[current=page]:text-nav3-hover-text ${
-              railCollapsed ? "justify-center" : "justify-center"
-            }`}
-          >
-            <NavIcon name="settings" size={16} />
-          </Link>
-
-          {!railCollapsed && (
-            <>
-              <div className="mt-2 flex items-center gap-2">
-                <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-navy font-sans text-[11px] font-bold text-white">
-                  {user.initials}
-                </span>
-                <span className="min-w-0 flex-1 truncate font-sans text-[12px] font-medium text-nav3-hover-text">{user.name}</span>
-              </div>
-              {signOut && (
-                <form action={signOut} className="mt-2">
-                  <button
-                    type="submit"
-                    className="w-full cursor-pointer border-0 bg-transparent p-0 text-left font-sans text-[11px] text-nav3-muted-text transition-colors duration-fast ease-out hover:text-nav3-hover-text hover:underline"
-                  >
-                    Sign out
-                  </button>
-                </form>
-              )}
-            </>
-          )}
-        </div>
+        {/* Bottom is deliberately empty — Settings is a row above like any
+            other, and the account chip + sign-out live in the header now.
+            The CookieYes badge is free to sit here without a footer to
+            collide with. */}
       </nav>
-
-      {/* Collapsed-rail flyout — click-triggered, click-outside/Escape to
-          close (see the effect above). Fixed, not absolute: the items list
-          scrolls with overflow-hidden on the x-axis, so anything meant to
-          escape that column has to escape the DOM position entirely. */}
-      {flyoutItem && flyoutTop !== null && (
-        <div
-          className="fixed z-50 w-[190px] overflow-hidden rounded-lg border border-app-border bg-app-card py-1 shadow-app-pop motion-safe:animate-[pop-in_120ms_var(--easing-out)] motion-reduce:animate-none"
-          style={{ top: flyoutTop, left: 48 }}
-        >
-          <p className="m-0 truncate px-3 pb-1.5 pt-1 font-sans text-ops-label font-bold text-content-subtle">
-            {flyoutItem.label}
-          </p>
-          {flyoutItem.subItems!.map((sub) => (
-            <SubLink
-              key={sub.label}
-              sub={sub}
-              active={topKey === flyoutItem.key && sub.label === subLabel}
-              badge={sub.href === "/admin/leads" ? leadCount ?? sub.badge : sub.badge}
-              href={withQuery(sub.href)}
-              onClick={closeMobile}
-              variant="flyout"
-            />
-          ))}
-        </div>
-      )}
     </>
   );
 }
@@ -412,25 +346,19 @@ function SubLink({
   active,
   badge,
   onClick,
-  variant = "list",
 }: {
   sub: NavSubItem;
   href: string;
   active: boolean;
   badge?: number;
   onClick?: () => void;
-  /** "list": inside the bordered accordion (40px indent). "flyout": inside
-   *  the collapsed-rail popover, which has no hairline of its own. */
-  variant?: "list" | "flyout";
 }) {
   return (
     <Link
       href={href}
       onClick={onClick}
       aria-current={active ? "page" : undefined}
-      className={`mx-2 flex h-[38px] items-center gap-2 rounded-lg text-[14px] no-underline transition-colors duration-fast ease-out ${
-        variant === "list" ? "pl-4" : "pl-3"
-      } pr-3 ${
+      className={`mx-2 flex h-[38px] items-center gap-2 rounded-lg pl-4 pr-3 text-[14px] no-underline transition-colors duration-fast ease-out ${
         active
           ? "bg-nav3-child-active-bg font-semibold text-content"
           : "font-medium text-nav3-child-text hover:bg-app-well hover:text-nav3-hover-text"

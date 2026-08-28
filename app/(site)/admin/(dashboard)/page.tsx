@@ -21,6 +21,8 @@ import { TrendChart, type TrendMonth } from "@/app/(site)/marketing/(hub)/TrendC
 import { readRecentLeads, recentCrmFailures } from "@/lib/adminLeads";
 import { computeUndocumentedCampaigns } from "@/lib/campaignOrphans";
 import { monthsFor, monthShort, parseTimeframe } from "../_ui/timeframe";
+import { currentAdminUser } from "../_ui/session";
+import { firstNameFrom } from "../_ui/userDisplay";
 import { AskHero } from "./AskHero";
 import {
   Card,
@@ -118,6 +120,11 @@ export default async function TodayScreen({
   const sp = await searchParams;
   const tf = parseTimeframe(sp.t, SNAPSHOT_MONTHS, "month");
   const months = monthsFor(tf, SNAPSHOT_MONTHS);
+
+  // cache()d in session.ts — the layout already reads this in the same
+  // request, so this is a shared Redis hit, not a second one.
+  const me = await currentAdminUser();
+  const firstName = firstNameFrom(me?.email ?? "");
 
   const agg = aggregateSnapshot(new Set(months));
   const perMarketTarget = QUALIFIED_TARGET_PER_MARKET_PER_MONTH * (months.length || 1);
@@ -237,7 +244,7 @@ export default async function TodayScreen({
     <div className={`ui2 ${inter.variable} font-ui2`}>
       <PageHeader title="Home" freshness={`Data through ${formatFreshness(SNAPSHOT_AS_OF)}`} />
 
-      <AskHero configured={Boolean(process.env.ANTHROPIC_API_KEY)} />
+      <AskHero configured={Boolean(process.env.ANTHROPIC_API_KEY)} firstName={firstName} />
 
       <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
@@ -269,21 +276,17 @@ export default async function TodayScreen({
       </div>
 
       <div className="mt-4">
-        <Link
-          href="/admin/performance"
-          className="block rounded-ui2-card no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui2-accent"
+        <Card
+          title="Qualified by month"
+          headerHref="/admin/performance"
+          right={
+            <span className="font-ui2 text-ui2-caption text-ui2-gray-400">
+              12 months · stacked by channel · Performance ›
+            </span>
+          }
         >
-          <Card
-            title="Qualified by month"
-            right={
-              <span className="font-ui2 text-ui2-caption text-ui2-gray-400">
-                12 months · stacked by channel · Performance ›
-              </span>
-            }
-          >
-            <TrendChart months={trendMonths} />
-          </Card>
-        </Link>
+          <TrendChart months={trendMonths} />
+        </Card>
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
