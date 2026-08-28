@@ -7,22 +7,26 @@ import {
   SNAPSHOT_DEALS,
   aggregateSnapshot,
   channelForDeal,
+  qualifiedByMonthChannel,
 } from "@/config/appLeadsSnapshot";
-import { QUALIFIED_TARGET_PER_MARKET_PER_MONTH } from "@/config/marketingHub";
+import {
+  CHANNEL_FUNNEL_ORDER,
+  CHANNEL_LABELS,
+  QUALIFIED_TARGET_PER_MARKET_PER_MONTH,
+} from "@/config/marketingHub";
+import { CHANNEL_PLAN } from "@/config/channelPlan";
+import type { Channel } from "@/lib/channels";
 import { paceRead } from "@/app/(site)/marketing/(hub)/pacing";
+import { TrendChart, type TrendMonth } from "@/app/(site)/marketing/(hub)/TrendChart";
 import { readRecentLeads, recentCrmFailures } from "@/lib/adminLeads";
 import { computeUndocumentedCampaigns } from "@/lib/campaignOrphans";
 import { monthsFor, monthShort, parseTimeframe } from "../_ui/timeframe";
+import { AskHero } from "./AskHero";
 import {
   Card,
   StatCard,
-  Table,
-  Th,
-  Tr,
-  Td,
   EmptyState,
   PageHeader,
-  ProgressBar,
   HealthDot,
   formatFreshness,
   inter,
@@ -31,11 +35,17 @@ import {
 import "../_ui/v2/tokens.css";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HOME — Phase 2 of the dashboard redesign (design-system brief, 2026-08-28).
-// Rebuilt on the v2 primitives (../_ui/v2); every other /admin screen is
-// untouched and still runs on the v1 system (DESIGN-APP.md). F-pattern:
-// four StatCards → Pace by Market → Needs attention. No page-card grid, no
-// prose — an explanation is a tooltip or it doesn't exist on this screen.
+// HOME — a briefing with an assistant on top, not a second analytics page.
+//
+// Analytics answers "why". Home answers "what changed, and what's broken".
+// Nothing here may duplicate Performance, Markets or Attribution: the pace-by-
+// market table lives on Markets, the full channel grid on Performance, the
+// first-touch/last-touch control on Performance and Attribution only (gated in
+// _ui/HeaderControls.tsx — it is an analysis control, not a global one).
+//
+// Top to bottom, ActiveCampaign's model: Ask hero → four StatCards → trend →
+// channel movers → one health block. Every scattered "partially wired" badge
+// on this screen collapses into that last block.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {
@@ -47,21 +57,51 @@ export const dynamic = "force-dynamic";
 
 const SCAN = 200;
 
+/** Snapshot older than this many days stops being "current" and says so. */
+const STALE_AFTER_DAYS = 10;
+
+type MonthCut = { total: number; direct: number; byChannel: Partial<Record<Channel, number>> };
+
 /** Deals in `month`, on or before `throughDay` of that month — i.e. the same
- *  calendar cutoff SNAPSHOT_AS_OF uses for the current month, applied to the
- *  prior one. Every row in SNAPSHOT_DEALS is Qualified by definition, so a
- *  plain count is the Qualified figure; `direct` is the same "no known
- *  channel" cut the unattributed-share stat uses. */
-function qualifiedThrough(month: string, throughDay: number): { total: number; direct: number } {
+ *  calendar cutoff SNAPSHOT_AS_OF uses for the current month, applied to any
+ *  month. Every row in SNAPSHOT_DEALS is Qualified by definition, so a plain
+ *  count is the Qualified figure; `direct` is the same "no known channel" cut
+ *  the unattributed-share stat uses. Comparing month-to-month through the same
+ *  day-of-month is the only honest comparison while the current month is
+ *  still partial. */
+function qualifiedThrough(month: string, throughDay: number): MonthCut {
   let total = 0;
   let direct = 0;
+  const byChannel: Partial<Record<Channel, number>> = {};
   for (const deal of SNAPSHOT_DEALS) {
     if (deal.month !== month) continue;
     if (Number(deal.date.slice(8, 10)) > throughDay) continue;
     total++;
-    if (channelForDeal(deal) === "direct") direct++;
+    const channel = channelForDeal(deal);
+    byChannel[channel] = (byChannel[channel] ?? 0) + 1;
+    if (channel === "direct") direct++;
   }
-  return { total, direct };
+  return { total, direct, byChannel };
+}
+
+/** Measured channel → the Magnificent Seven screen that owns it. `direct` and
+ *  `referral` belong to no planning channel (config/channelPlan.ts), so their
+ *  rows point at Attribution instead of inventing a page. */
+const CHANNEL_HREF: Partial<Record<Channel, string>> = Object.fromEntries(
+  CHANNEL_PLAN.flatMap((plan) => plan.channels.map((c) => [c, `/admin/channels/${plan.slug}`]))
+);
+
+function channelHref(channel: Channel): string {
+  return CHANNEL_HREF[channel] ?? "/admin/attribution";
+}
+
+/** Whole days between two "YYYY-MM-DD" dates, UTC-safe (Date.parse of a bare
+ *  ISO date is UTC midnight on both sides, so the difference is exact). */
+function daysBetween(fromIso: string, toIso: string): number | null {
+  const a = Date.parse(fromIso);
+  const b = Date.parse(toIso);
+  if (Number.isNaN(a) || Number.isNaN(b)) return null;
+  return Math.round((b - a) / 86_400_000);
 }
 
 const PACE_HEALTH: Record<"on" | "behind" | "risk", Health> = {
@@ -82,23 +122,11 @@ export default async function TodayScreen({
   const agg = aggregateSnapshot(new Set(months));
   const perMarketTarget = QUALIFIED_TARGET_PER_MARKET_PER_MONTH * (months.length || 1);
 
-  const rows = MARKETS.map((m) => {
-    const qualified = months.reduce(
-      (sum, ym) => sum + (agg.qualifiedByMarketMonth[`${m.slug}|${ym}`] ?? 0),
-      0
-    );
-    const read = paceRead(qualified, months, SNAPSHOT_AS_OF, QUALIFIED_TARGET_PER_MARKET_PER_MONTH);
-    return {
-      key: m.slug,
-      label: m.displayName,
-      qualified,
-      target: perMarketTarget,
-      expected: read?.expected ?? null,
-      state: read?.state ?? null,
-    };
-  });
-
-  const companyQualified = rows.reduce((s, r) => s + (r.qualified ?? 0), 0);
+  const companyQualified = MARKETS.reduce(
+    (sum, m) =>
+      sum + months.reduce((s, ym) => s + (agg.qualifiedByMarketMonth[`${m.slug}|${ym}`] ?? 0), 0),
+    0
+  );
   const companyTarget = perMarketTarget * MARKETS.length;
   const companyRead = paceRead(
     companyQualified,
@@ -107,10 +135,7 @@ export default async function TodayScreen({
     QUALIFIED_TARGET_PER_MARKET_PER_MONTH * MARKETS.length
   );
 
-  const underHalf = rows.filter((r) => r.state === "risk");
-  const behind = rows.filter((r) => r.state === "behind");
-  const onPace = rows.filter((r) => r.state === "on");
-
+  // ── the health block's four facts ─────────────────────────────────────────
   const leads = await readRecentLeads(SCAN);
   const leadRows = leads.configured && !leads.error ? leads.rows : [];
   const failures = recentCrmFailures(leadRows);
@@ -123,180 +148,217 @@ export default async function TodayScreen({
   );
   const unattributed = companyQualified > 0 ? directQualified / companyQualified : null;
 
-  // ── "vs same point last month" — same static snapshot, one month back,
-  // cut at the same day-of-month SNAPSHOT_AS_OF uses. Null (renders as the
-  // grey dash) whenever the current view isn't a single month, or there's no
-  // earlier month with data to compare against.
-  const asOfDay = Number(SNAPSHOT_AS_OF.slice(8, 10));
-  const monthIdx = tf.kind === "month" ? SNAPSHOT_MONTHS.indexOf(tf.ym) : -1;
-  const priorMonth = monthIdx > 0 ? SNAPSHOT_MONTHS[monthIdx - 1] : null;
-  const prior = priorMonth ? qualifiedThrough(priorMonth, asOfDay) : null;
-  const priorLabel = priorMonth ? `vs ${monthShort(priorMonth)}` : "vs last month";
+  const snapshotAgeDays = daysBetween(SNAPSHOT_AS_OF, new Date().toISOString().slice(0, 10));
 
-  const qualifiedDelta = prior && prior.total > 0 ? (companyQualified - prior.total) / prior.total : null;
-  const priorUnattributed = prior && prior.total > 0 ? prior.direct / prior.total : null;
-  const unattributedDelta =
-    unattributed !== null && priorUnattributed !== null && priorUnattributed > 0
-      ? (unattributed - priorUnattributed) / priorUnattributed
-      : null;
-
-  const attention: { health: Health; text: string; href: string }[] = [];
-  if (storeUnreadable) {
-    attention.push({ health: "bad", text: `Lead store unreadable — ${storeUnreadable}`, href: "/admin/leads" });
-  }
-  if (failures.length) {
-    attention.push({
-      health: "bad",
-      text: `${failures.length} CRM delivery failure${failures.length === 1 ? "" : "s"} in the last 24 h`,
-      href: "/admin/leads",
-    });
-  }
-  if (underHalf.length === 1) {
-    attention.push({
-      health: "bad",
-      text: `${underHalf[0].label} is under half pace — ${underHalf[0].qualified}/${underHalf[0].target}`,
-      href: "/admin/markets",
-    });
-  } else if (underHalf.length > 1) {
-    attention.push({
-      health: "bad",
-      text: `${underHalf.length} of ${MARKETS.length} markets are under half pace`,
-      href: "/admin/markets",
-    });
-  }
-  if (unattributed !== null && unattributed >= 0.5) {
-    attention.push({
-      health: "warn",
-      text: `${Math.round(unattributed * 100)}% of qualified leads have no known channel`,
-      href: "/admin/attribution",
-    });
-  }
-  if (campaignOrphans.length > 0) {
-    attention.push({
-      health: "warn",
-      text: `${campaignOrphans.length} campaign tag${campaignOrphans.length === 1 ? "" : "s"} producing leads but undocumented`,
-      href: "/admin/site/links",
-    });
-  }
-  if (underHalf.length === 0 && behind.length > 0) {
-    attention.push({
-      health: "warn",
-      text: `${behind.length} market${behind.length === 1 ? " is" : "s are"} behind pace`,
-      href: "/admin/markets",
-    });
-  }
-
-  const paceSorted = [...rows].sort((a, b) => {
-    const order: Record<"risk" | "behind" | "on", number> = { risk: 0, behind: 1, on: 2 };
-    if (a.state === null && b.state === null) return a.label.localeCompare(b.label);
-    if (a.state === null) return 1;
-    if (b.state === null) return -1;
-    return order[a.state] - order[b.state] || a.label.localeCompare(b.label);
+  // ── trend: every snapshot month (up to 12), stacked by channel ────────────
+  const byMonthChannel = qualifiedByMonthChannel();
+  const trendMonths: TrendMonth[] = SNAPSHOT_MONTHS.slice(-12).map((ym) => {
+    const byChannel = byMonthChannel[ym] ?? {};
+    return {
+      ym,
+      byChannel,
+      total: Object.values(byChannel).reduce((s, v) => s + (v ?? 0), 0),
+    };
   });
 
-  const marketsOnPaceHealth: Health = onPace.length === 0 ? "bad" : onPace.length === MARKETS.length ? "good" : "warn";
-  const deliveryHealth: Health = storeUnreadable ? "unknown" : failures.length > 0 ? "bad" : "good";
-  const unattributedHealth: Health = unattributed === null ? "unknown" : unattributed >= 0.5 ? "warn" : "good";
+  // ── channel movers: biggest month-over-month change, same day-of-month cut
+  // on both sides so a partial current month isn't compared to a full prior
+  // one. Only the top four by absolute change — the full grid is Performance's.
+  const asOfDay = Number(SNAPSHOT_AS_OF.slice(8, 10));
+  const latestMonth = months[months.length - 1] ?? null;
+  const latestIdx = latestMonth ? SNAPSHOT_MONTHS.indexOf(latestMonth) : -1;
+  const priorMonth = latestIdx > 0 ? SNAPSHOT_MONTHS[latestIdx - 1] : null;
+  const latestCut = latestMonth ? qualifiedThrough(latestMonth, asOfDay) : null;
+  const priorCut = priorMonth ? qualifiedThrough(priorMonth, asOfDay) : null;
+
+  const movers =
+    latestCut && priorCut
+      ? CHANNEL_FUNNEL_ORDER.map((c) => ({
+          channel: c as Channel,
+          delta: (latestCut.byChannel[c] ?? 0) - (priorCut.byChannel[c] ?? 0),
+          now: latestCut.byChannel[c] ?? 0,
+        }))
+          .filter((r) => r.delta !== 0)
+          .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+          .slice(0, 4)
+      : [];
+  const priorLabel = priorMonth ? monthShort(priorMonth) : null;
+
   const qualifiedHealth: Health = companyRead ? PACE_HEALTH[companyRead.state] : "unknown";
+  const unattributedHealth: Health = unattributed === null ? "unknown" : unattributed >= 0.5 ? "warn" : "good";
+  const deliveryHealth: Health = storeUnreadable ? "unknown" : failures.length > 0 ? "bad" : "good";
+  const orphanHealth: Health = campaignOrphans.length > 0 ? "warn" : "good";
+  const freshnessHealth: Health =
+    snapshotAgeDays === null ? "unknown" : snapshotAgeDays > STALE_AFTER_DAYS ? "warn" : "good";
+
+  const health: { key: string; dot: Health; text: string; href: string }[] = [
+    {
+      key: "unattributed",
+      dot: unattributedHealth,
+      text:
+        unattributed === null
+          ? "Unattributed share — no qualified leads in this timeframe"
+          : `${Math.round(unattributed * 100)}% of qualified leads have no known channel`,
+      href: "/admin/attribution",
+    },
+    {
+      key: "orphans",
+      dot: orphanHealth,
+      text:
+        campaignOrphans.length === 0
+          ? "Every campaign tag producing leads is documented"
+          : `${campaignOrphans.length} campaign tag${campaignOrphans.length === 1 ? "" : "s"} producing leads but undocumented`,
+      href: "/admin/site/links",
+    },
+    {
+      key: "delivery",
+      dot: deliveryHealth,
+      text: storeUnreadable
+        ? `Lead store unreadable — ${storeUnreadable}`
+        : failures.length === 0
+          ? `No CRM delivery failures in the last 24 h — last ${SCAN} scanned`
+          : `${failures.length} CRM delivery failure${failures.length === 1 ? "" : "s"} in the last 24 h`,
+      href: "/admin/leads",
+    },
+    {
+      key: "freshness",
+      dot: freshnessHealth,
+      text:
+        snapshotAgeDays === null
+          ? `App snapshot date unreadable — ${SNAPSHOT_AS_OF}`
+          : snapshotAgeDays > STALE_AFTER_DAYS
+            ? `App snapshot is ${snapshotAgeDays} days old — data through ${formatFreshness(SNAPSHOT_AS_OF)}`
+            : `App snapshot current — data through ${formatFreshness(SNAPSHOT_AS_OF)}`,
+      href: "/admin/settings",
+    },
+  ];
 
   return (
     <div className={`ui2 ${inter.variable} font-ui2`}>
       <PageHeader title="Home" freshness={`Data through ${formatFreshness(SNAPSHOT_AS_OF)}`} />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <AskHero configured={Boolean(process.env.ANTHROPIC_API_KEY)} />
+
+      <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
           label="Qualified leads"
           value={companyQualified.toLocaleString("en-US")}
           valueSuffix={`/ ${companyTarget.toLocaleString("en-US")}`}
           health={qualifiedHealth}
-          delta={{ value: qualifiedDelta, label: priorLabel }}
+          note={
+            companyRead
+              ? `expected ${companyRead.expected.toLocaleString("en-US")} by ${formatFreshness(SNAPSHOT_AS_OF)}`
+              : "no pace read for this timeframe"
+          }
         />
         <StatCard
-          label="Unattributed share"
-          value={unattributed === null ? "—" : `${Math.round(unattributed * 100)}%`}
-          health={unattributedHealth}
-          delta={{ value: unattributedDelta, label: priorLabel, goodDirection: "down" }}
+          label="Close rate"
+          value="—"
+          statusDot={{ tooltip: "Not wired — needs closed-won outcomes from the CRM." }}
         />
         <StatCard
-          label="Delivery failures · 24h"
-          value={storeUnreadable ? "—" : failures.length}
-          health={deliveryHealth}
-          note={storeUnreadable ? "store unreadable" : `of last ${SCAN} scanned`}
+          label="Revenue"
+          value="—"
+          statusDot={{ tooltip: "Not wired — needs booked revenue from the CRM." }}
         />
         <StatCard
-          label="Markets on pace"
-          value={onPace.length}
-          valueSuffix={`/${MARKETS.length}`}
-          health={marketsOnPaceHealth}
+          label="Blended CAC"
+          value="—"
+          statusDot={{ tooltip: "Not wired — needs the spend store." }}
         />
       </div>
 
       <div className="mt-4">
-        <Card title="Pace by market" flush>
-          <Table>
-            <thead>
-              <tr>
-                <Th>Market</Th>
-                <Th>Pace</Th>
-                <Th align="right">Qualified</Th>
-              </tr>
-            </thead>
-            <tbody>
-              {paceSorted.map((r) => {
-                const health: Health = r.state ? PACE_HEALTH[r.state] : "unknown";
-                const pct = r.qualified !== null && r.target > 0 ? r.qualified / r.target : null;
-                const expectedPct = r.expected !== null && r.target > 0 ? r.expected / r.target : null;
-                return (
-                  <Tr key={r.key}>
-                    <Td weight="medium">
-                      <Link href="/admin/markets" className="flex items-center gap-2 text-ui2-text no-underline hover:text-ui2-accent">
-                        <HealthDot health={health} />
-                        <span>{r.label}</span>
-                      </Link>
-                    </Td>
-                    <Td className="w-64">
-                      <ProgressBar value={pct} expected={expectedPct} health={health} />
-                    </Td>
-                    <Td align="right" weight="semibold">
-                      {r.qualified === null ? "—" : r.qualified}
-                      <span className="font-normal text-ui2-text-muted">/{r.target}</span>
-                    </Td>
-                  </Tr>
-                );
-              })}
-            </tbody>
-          </Table>
-        </Card>
+        <Link
+          href="/admin/performance"
+          className="block rounded-ui2-card no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui2-accent"
+        >
+          <Card
+            title="Qualified by month"
+            right={
+              <span className="font-ui2 text-ui2-caption text-ui2-gray-400">
+                12 months · stacked by channel · Performance ›
+              </span>
+            }
+          >
+            <TrendChart months={trendMonths} />
+          </Card>
+        </Link>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <Card
-          title="Needs attention"
-          titleClassName="text-[14px]"
+          title="Channel movers"
           right={
-            <span className="inline-flex min-w-[20px] items-center justify-center rounded-full bg-ui2-divider px-1.5 py-0.5 font-ui2 text-[11px] font-semibold tabular-nums text-ui2-text">
-              {attention.length}
+            <span className="font-ui2 text-ui2-caption text-ui2-gray-400">
+              {priorLabel ? `vs ${priorLabel}, same day of month` : "no prior month"}
             </span>
           }
         >
-          {attention.length === 0 ? (
-            <EmptyState headline="Nothing is under half pace, no delivery failures in 24 hours, and attribution is holding." />
+          {movers.length === 0 ? (
+            <EmptyState
+              icon="spark"
+              headline={
+                priorLabel
+                  ? `No channel moved between ${priorLabel} and this month.`
+                  : "No earlier month to compare this one against yet."
+              }
+            />
           ) : (
             <ul className="m-0 list-none p-0">
-              {attention.slice(0, 5).map((a) => (
-                <li key={a.text} className="border-b border-ui2-divider last:border-b-0">
+              {movers.map((m) => (
+                <li key={m.channel} className="border-b border-ui2-divider last:border-b-0">
                   <Link
-                    href={a.href}
-                    className="flex min-h-[44px] items-center gap-2.5 px-4 font-ui2 text-ui2-body text-ui2-text no-underline hover:text-ui2-accent"
+                    href={channelHref(m.channel)}
+                    className="flex min-h-[44px] items-center gap-2.5 font-ui2 text-ui2-body text-ui2-text no-underline hover:text-ui2-accent"
                   >
-                    <HealthDot health={a.health} />
-                    <span className="min-w-0 flex-1 truncate">{a.text}</span>
-                    <span aria-hidden className="flex-none text-ui2-gray-300">›</span>
+                    <span className="min-w-0 flex-1 truncate font-medium">
+                      {CHANNEL_LABELS[m.channel]}
+                    </span>
+                    <span
+                      className={`flex-none font-ui2 text-ui2-body font-semibold tabular-nums ${
+                        // Same rule DeltaChip encodes: the sign is always
+                        // literal, only the colour knows which direction is
+                        // good news. More `direct` is MORE unattributed — a
+                        // rise there is not a win and must not read green.
+                        m.delta > 0 === (m.channel !== "direct")
+                          ? "text-ui2-green"
+                          : "text-ui2-red"
+                      }`}
+                    >
+                      {m.delta > 0 ? "+" : "−"}
+                      {Math.abs(m.delta)}
+                    </span>
+                    <span className="flex-none font-ui2 text-ui2-caption tabular-nums text-ui2-gray-400">
+                      vs {priorLabel}
+                    </span>
+                    <span aria-hidden className="flex-none text-ui2-gray-300">
+                      ›
+                    </span>
                   </Link>
                 </li>
               ))}
             </ul>
           )}
+        </Card>
+
+        <Card title="Health">
+          <ul className="m-0 list-none p-0">
+            {health.map((h) => (
+              <li key={h.key} className="border-b border-ui2-divider last:border-b-0">
+                <Link
+                  href={h.href}
+                  className="flex min-h-[44px] items-center gap-2.5 font-ui2 text-ui2-body text-ui2-text no-underline hover:text-ui2-accent"
+                >
+                  <HealthDot health={h.dot} />
+                  <span className="min-w-0 flex-1 truncate">{h.text}</span>
+                  <span aria-hidden className="flex-none text-ui2-gray-300">
+                    ›
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </Card>
       </div>
     </div>
