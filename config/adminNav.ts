@@ -1,8 +1,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // THE admin IA. Five top-level sections, no group labels — Pipedrive/
 // Instantly/Linear register, not a map of what we happened to build in what
-// order. Sidebar is app/(site)/admin/_ui/Sidebar.tsx; Settings lives there as
-// a hardcoded icon-only row (it never varies, so it isn't data here).
+// order. Sidebar is app/(site)/admin/_ui/Sidebar.tsx.
+//
+// Settings is a normal row here now (2026-08 sidebar redesign), not a
+// hardcoded icon-only footer item — it renders exactly like Home, at the
+// bottom of the list, because it's genuinely a screen like any other, not
+// chrome. The sign-out control and account identity moved to the header
+// instead (AppShell.tsx) — they aren't navigation.
 //
 // GRAIN is declared per leaf route and is not cosmetic: it decides which
 // timeframe options the header offers and whether a request has to be
@@ -77,6 +82,7 @@ export const ADMIN_NAV: NavTopItem[] = [
       { href: "/admin/attribution", label: "Attribution", grain: "month" },
     ],
   },
+  { key: "settings", href: "/admin/settings", label: "Settings", icon: "gear", grain: "day" },
 ];
 
 // ── In-page tabs — not sidebar items ─────────────────────────────────────────

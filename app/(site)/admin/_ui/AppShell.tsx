@@ -1,23 +1,30 @@
 import { ADMIN_NAV } from "@/config/adminNav";
-import { Sidebar, type SidebarUser } from "./Sidebar";
+import { Sidebar } from "./Sidebar";
 import { AttributionToggle, Timeframe } from "./HeaderControls";
 import { CommandPalette } from "./CommandPalette";
 import { ToastProvider } from "./Toast";
 
 // No separate display name exists anywhere in the session (lib/adminAuth.ts's
-// AdminUser is just email + role) — the sidebar's user chip shows the email
-// itself rather than inventing a first name that isn't there.
-function sidebarUserFrom(user: { email: string; role: string } | null): SidebarUser {
+// AdminUser is just email + role) — the header's account chip shows the email
+// itself rather than inventing a first name that isn't there. (Home's own
+// greeting derives a first name from the same email — see userDisplay.ts —
+// but that's copy for a headline, not an identity claim the way this chip is.)
+function accountChipFrom(user: { email: string; role: string } | null) {
   const email = user?.email ?? "";
   const local = email.split("@")[0] || "?";
-  return { initials: local.slice(0, 2).toUpperCase(), name: email || "Signed in", role: user?.role ?? "" };
+  return { initials: local.slice(0, 2).toUpperCase(), name: email || "Signed in" };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ONE shell. Sidebar + header + content, one implementation, every screen.
 //
 // The header holds only what governs EVERY screen: timeframe, attribution
-// mode, ⌘K, and who is signed in. Nothing page-specific lives up here.
+// mode, ⌘K, and — as of the 2026-08 sidebar redesign — who is signed in and
+// the sign-out control. Both moved here from the sidebar's bottom rail: they
+// aren't navigation, and having the email render in two places (sidebar
+// footer AND nowhere else, previously) was one location too many the moment
+// there were two candidate locations at all. Nothing page-specific lives up
+// here.
 //
 // The shell also mounts the app-wide client furniture: ToastProvider (every
 // write's feedback) and the command palette.
@@ -37,10 +44,12 @@ export function AppShell({
   leadCount?: number;
   signOut: () => Promise<void>;
 }) {
+  const account = accountChipFrom(user);
+
   return (
     <ToastProvider>
       <div className="flex min-h-screen flex-col bg-app-bg font-sans text-content md:flex-row">
-        <Sidebar items={ADMIN_NAV} user={sidebarUserFrom(user)} leadCount={leadCount} signOut={signOut} />
+        <Sidebar items={ADMIN_NAV} leadCount={leadCount} />
 
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-header flex h-ops-header flex-none items-center gap-3 border-b border-app-border bg-app-card px-4 md:px-6">
@@ -57,6 +66,25 @@ export function AppShell({
               </span>
             </div>
 
+            {/* Account identity + sign-out — one location, top right (moved
+                from the sidebar's bottom rail). A form, not a client button:
+                signOut is a server action, and nothing here needs state. */}
+            <div className="ml-auto flex flex-none items-center gap-2.5 pl-2">
+              <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-navy font-sans text-[11px] font-bold text-white">
+                {account.initials}
+              </span>
+              <span className="hidden max-w-[180px] truncate font-sans text-[12px] font-medium text-content-muted sm:inline">
+                {account.name}
+              </span>
+              <form action={signOut}>
+                <button
+                  type="submit"
+                  className="cursor-pointer whitespace-nowrap rounded-md border-0 bg-transparent px-1 py-1 font-sans text-[12px] font-semibold text-content-muted transition-colors duration-fast ease-out hover:text-content hover:underline"
+                >
+                  Sign out
+                </button>
+              </form>
+            </div>
           </header>
 
           <main className="min-w-0 flex-1 px-4 pb-24 pt-5 md:px-6">
