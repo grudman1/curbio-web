@@ -29,9 +29,9 @@ export function StatCard({
   note?: string;
 }) {
   return (
-    <div className="flex min-h-[104px] flex-col justify-between rounded-ui2-card border border-ui2-border bg-ui2-card p-4 shadow-ui2-card">
+    <div className="flex min-h-[110px] flex-col justify-between rounded-ui2-card border border-ui2-border bg-ui2-card p-6 shadow-ui2-card">
       <div className="flex items-center gap-1.5">
-        <span className="truncate font-ui2 text-ui2-caption font-medium text-ui2-text-muted">{label}</span>
+        <span className="truncate font-ui2 text-[11px] font-medium tracking-[.04em] text-ui2-gray-400">{label}</span>
         {(health || statusDot) && (
           <span className="ml-auto flex-none">
             {statusDot ? <WiringDot tooltip={statusDot.tooltip} /> : <HealthDot health={health as Health} />}
@@ -41,7 +41,7 @@ export function StatCard({
 
       <div className="mt-2 flex items-end justify-between gap-2">
         <div className="flex items-baseline gap-1.5">
-          <span className="font-ui2 text-ui2-metric font-semibold tabular-nums text-ui2-text">{value}</span>
+          <span className="font-ui2 text-ui2-metric font-extrabold tabular-nums text-ui2-text">{value}</span>
           {valueSuffix && (
             <span className="font-ui2 text-ui2-body tabular-nums text-ui2-text-muted">{valueSuffix}</span>
           )}
@@ -50,11 +50,11 @@ export function StatCard({
       </div>
 
       {(delta || note) && (
-        <div className="mt-1.5">
+        <div className="mt-2.5">
           {delta ? (
             <DeltaChip value={delta.value} label={delta.label} goodDirection={delta.goodDirection} />
           ) : (
-            <p className="m-0 font-ui2 text-ui2-caption text-ui2-text-muted">{note}</p>
+            <p className="m-0 font-ui2 text-[12px] text-ui2-gray-400">{note}</p>
           )}
         </div>
       )}

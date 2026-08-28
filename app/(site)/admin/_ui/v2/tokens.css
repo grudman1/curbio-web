@@ -21,6 +21,10 @@
   --ui2-border: #e5e7eb;
   --ui2-divider: #f3f4f6;
   --ui2-well: #f9fafb;
+  /* Secondary mutes — one step lighter than --ui2-text-muted, for labels,
+     counts and ticks that should recede further than body-muted text. */
+  --ui2-gray-400: #9ca3af;
+  --ui2-gray-300: #d1d5db;
 
   /* Interactive / active-nav accent — the brand navy, not a new hue. */
   --ui2-accent: var(--navy);
@@ -29,11 +33,17 @@
   /* Deltas + status ONLY (DeltaChip, HealthDot). Never decorative. */
   --ui2-green: #059669;
   --ui2-red: #dc2626;
-  /* Dot / bar fill (non-text; WCAG 1.4.11 3:1 is enough). */
-  --ui2-amber: #d97706;
+  /* Brand amber (matches --amber exactly) — corrected from an earlier
+     placeholder value; dots/bars/fills all read this one variable. */
+  --ui2-amber: #cd8629;
   /* Text-safe amber — same AA-on-white value the v1 tone scale already
      solved for (--amber-120) — reused so a warning numeral is legible. */
   --ui2-amber-text: var(--amber-120);
+  /* Delta-chip pill fills — 10% tints of --ui2-green/--ui2-red, literal
+     since Tailwind's opacity modifier isn't reliable against a CSS-var
+     theme colour here. */
+  --ui2-green-10: rgba(5, 150, 105, 0.1);
+  --ui2-red-10: rgba(220, 38, 38, 0.1);
 
   --ui2-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.05);
   --ui2-radius-card: 12px;
@@ -42,6 +52,6 @@
   --ui2-text-caption: 12px; /* labels, captions */
   --ui2-text-body: 14px; /* the workhorse */
   --ui2-text-section: 16px; /* section / card titles */
-  --ui2-text-title: 22px; /* page title */
-  --ui2-text-metric: 28px; /* StatCard value */
+  --ui2-text-title: 24px; /* page title */
+  --ui2-text-metric: 32px; /* StatCard value */
 }

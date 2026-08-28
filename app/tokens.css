@@ -218,14 +218,20 @@
   --pill-neutral-bg: var(--slate-50);
   --pill-neutral-fg: var(--fg-muted);
 
-  /* ── Sidebar v3 (2026-08 accordion redesign) ──────────────────────────
+  /* ── Sidebar/topbar v3 (2026-08 accordion redesign + polish pass) ──────
      Open-section fill, its chevron and the border on that navy surface all
      reuse --navy / --navy-15 / --amber directly (already exact matches for
-     Curbio's brand spec — see the redesign amendment). These two are the
-     only colours that aren't already in the token set: a neutral child-row
-     text and a light active-child pill, both literal per that same spec. */
+     Curbio's brand spec). The rest are the Stripe/Linear-neutral greys the
+     redesign uses for chrome outside the .ui2 scope (sidebar, topbar) —
+     same values as their `ui2-*` counterparts, just reachable where .ui2
+     isn't applied. */
   --nav3-child-text: #4b5563;
   --nav3-child-active-bg: #eef1f6;
+  --nav3-border: #e5e7eb;
+  --nav3-muted-text: #6b7280;
+  --nav3-gray-400: #9ca3af;
+  --nav3-gray-300: #d1d5db;
+  --nav3-hover-text: #111827;
 
   --app-scrim: var(--scrim); /* drawer/palette backdrop */
   --elevation-app-card: var(--shadow-app-card);

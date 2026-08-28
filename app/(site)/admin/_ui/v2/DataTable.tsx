@@ -25,7 +25,7 @@ export function Th({
 }) {
   return (
     <th
-      className={`whitespace-nowrap border-b border-ui2-border px-3 py-2 font-ui2 text-ui2-eyebrow font-semibold uppercase text-ui2-text-muted first:pl-5 last:pr-5 ${
+      className={`whitespace-nowrap border-b border-ui2-border px-3 py-2 font-ui2 text-ui2-eyebrow font-semibold uppercase tracking-[.08em] text-ui2-gray-400 first:pl-5 last:pr-5 ${
         align === "right" ? "text-right" : "text-left"
       } ${className}`}
     >
@@ -48,23 +48,27 @@ export function Tr({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <tr className={`transition-colors duration-150 ease-out hover:bg-ui2-well ${className}`}>{children}</tr>;
+  return <tr className={`h-12 transition-colors duration-[120ms] ease-out hover:bg-ui2-well ${className}`}>{children}</tr>;
 }
+
+const TD_WEIGHT = { normal: "font-normal", medium: "font-medium", semibold: "font-semibold" } as const;
 
 export function Td({
   children,
   align = "left",
   muted = false,
+  weight = "normal",
   className = "",
 }: {
   children?: React.ReactNode;
   align?: "left" | "right";
   muted?: boolean;
+  weight?: keyof typeof TD_WEIGHT;
   className?: string;
 }) {
   return (
     <td
-      className={`border-b border-ui2-divider px-3 py-2.5 align-middle first:pl-5 last:pr-5 ${
+      className={`border-b border-ui2-divider px-3 align-middle first:pl-5 last:pr-5 ${TD_WEIGHT[weight]} ${
         align === "right" ? "text-right tabular-nums" : "text-left"
       } ${muted ? "text-ui2-text-muted" : "text-ui2-text"} ${className}`}
     >

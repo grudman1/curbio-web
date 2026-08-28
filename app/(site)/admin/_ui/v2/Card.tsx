@@ -4,12 +4,16 @@
 
 export function Card({
   title,
+  titleClassName = "",
   right,
   children,
   className = "",
   flush = false,
 }: {
   title?: string;
+  /** Override the default 16px/600 title size for a screen that wants this
+   *  card's heading to read at a different weight in the hierarchy. */
+  titleClassName?: string;
   right?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
@@ -24,7 +28,7 @@ export function Card({
       {(title || right) && (
         <div className={`flex items-center justify-between gap-3 ${flush ? "px-5 pt-5 pb-3" : "mb-3"}`}>
           {title ? (
-            <h2 className="m-0 font-ui2 text-ui2-section font-semibold text-ui2-text">{title}</h2>
+            <h2 className={`m-0 font-ui2 font-semibold text-ui2-text ${titleClassName || "text-ui2-section"}`}>{title}</h2>
           ) : (
             <span />
           )}

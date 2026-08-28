@@ -39,7 +39,7 @@ import "../_ui/v2/tokens.css";
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {
-  title: "Today · Ops — Curbio",
+  title: "Home · Ops — Curbio",
   robots: { index: false, follow: false },
 };
 
@@ -201,7 +201,7 @@ export default async function TodayScreen({
 
   return (
     <div className={`ui2 ${inter.variable} font-ui2`}>
-      <PageHeader title="Today" freshness={`Data through ${formatFreshness(SNAPSHOT_AS_OF)}`} />
+      <PageHeader title="Home" freshness={`Data through ${formatFreshness(SNAPSHOT_AS_OF)}`} />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
@@ -248,7 +248,7 @@ export default async function TodayScreen({
                 const expectedPct = r.expected !== null && r.target > 0 ? r.expected / r.target : null;
                 return (
                   <Tr key={r.key}>
-                    <Td>
+                    <Td weight="medium">
                       <Link href="/admin/markets" className="flex items-center gap-2 text-ui2-text no-underline hover:text-ui2-accent">
                         <HealthDot health={health} />
                         <span>{r.label}</span>
@@ -257,9 +257,9 @@ export default async function TodayScreen({
                     <Td className="w-64">
                       <ProgressBar value={pct} expected={expectedPct} health={health} />
                     </Td>
-                    <Td align="right">
+                    <Td align="right" weight="semibold">
                       {r.qualified === null ? "—" : r.qualified}
-                      <span className="text-ui2-text-muted">/{r.target}</span>
+                      <span className="font-normal text-ui2-text-muted">/{r.target}</span>
                     </Td>
                   </Tr>
                 );
@@ -272,7 +272,12 @@ export default async function TodayScreen({
       <div className="mt-4">
         <Card
           title="Needs attention"
-          right={<span className="font-ui2 text-ui2-caption tabular-nums text-ui2-text-muted">{attention.length}</span>}
+          titleClassName="text-[14px]"
+          right={
+            <span className="inline-flex min-w-[20px] items-center justify-center rounded-full bg-ui2-divider px-1.5 py-0.5 font-ui2 text-[11px] font-semibold tabular-nums text-ui2-text">
+              {attention.length}
+            </span>
+          }
         >
           {attention.length === 0 ? (
             <EmptyState headline="Nothing is under half pace, no delivery failures in 24 hours, and attribution is holding." />
@@ -282,11 +287,11 @@ export default async function TodayScreen({
                 <li key={a.text} className="border-b border-ui2-divider last:border-b-0">
                   <Link
                     href={a.href}
-                    className="flex h-10 items-center gap-2.5 font-ui2 text-ui2-body text-ui2-text no-underline hover:text-ui2-accent"
+                    className="flex min-h-[44px] items-center gap-2.5 px-4 font-ui2 text-ui2-body text-ui2-text no-underline hover:text-ui2-accent"
                   >
                     <HealthDot health={a.health} />
                     <span className="min-w-0 flex-1 truncate">{a.text}</span>
-                    <span aria-hidden className="flex-none text-ui2-text-muted">›</span>
+                    <span aria-hidden className="flex-none text-ui2-gray-300">›</span>
                   </Link>
                 </li>
               ))}

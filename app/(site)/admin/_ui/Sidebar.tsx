@@ -214,8 +214,9 @@ export function Sidebar({
         ref={navRef}
         id="admin-nav"
         aria-label="Control Room"
-        className={`${mobileOpen ? "flex" : "hidden"} w-full flex-none flex-col border-r border-app-border bg-app-card transition-[width] duration-fast ease-out md:sticky md:top-0 md:flex md:h-screen md:self-start ${
-          railCollapsed ? "md:w-[48px]" : "md:w-[220px]"
+        style={railCollapsed ? undefined : { width: 220, minWidth: 200, maxWidth: 320 }}
+        className={`${mobileOpen ? "flex" : "hidden"} w-full flex-none flex-col border-r border-app-border bg-app-card md:sticky md:top-0 md:flex md:h-screen md:self-start ${
+          railCollapsed ? "md:w-[48px] transition-[width] duration-fast ease-out" : "md:resize-x md:overflow-auto"
         }`}
       >
         <div className={`hidden h-ops-header flex-none items-center gap-1.5 md:flex ${railCollapsed ? "justify-center px-0" : "px-2.5"}`}>
@@ -226,7 +227,7 @@ export function Sidebar({
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/logo/curbio-navy.svg" alt="Curbio" width={84} height={22} className="h-[19px] w-auto flex-none" />
-              <span className="flex-none rounded-sm bg-pill-neutral-bg px-1 font-sans text-[9px] font-bold leading-[14px] tracking-wide text-pill-neutral-fg">
+              <span className="flex-none rounded-sm bg-pill-neutral-bg px-2 py-[3px] font-sans text-[13px] font-bold leading-none tracking-[.06em] text-pill-neutral-fg">
                 {brandBadge}
               </span>
             </>
@@ -299,10 +300,10 @@ export function Sidebar({
                         <Icon name="chevron-down" size={13} className="flex-none text-amber" />
                       ) : (
                         <span className="flex flex-none items-center gap-1.5">
-                          <span className="font-sans text-ops-label tabular-nums text-content-subtle">
+                          <span className="font-sans text-ops-label font-medium tabular-nums text-nav3-gray-400">
                             {item.subItems!.length}
                           </span>
-                          <Icon name="chevron-right" size={13} className="text-content-subtle" />
+                          <Icon name="chevron-right" size={13} className="text-nav3-gray-400" />
                         </span>
                       )}
                     </>
@@ -342,7 +343,7 @@ export function Sidebar({
             title="Settings"
             aria-label="Settings"
             aria-current={pathname === "/admin/settings" ? "page" : undefined}
-            className={`mx-2.5 flex h-9 items-center rounded-md text-content-muted transition-colors duration-fast ease-out hover:bg-app-well hover:text-content aria-[current=page]:text-content ${
+            className={`mx-2.5 flex h-9 items-center rounded-md text-nav3-muted-text transition-colors duration-fast ease-out hover:bg-app-well hover:text-nav3-hover-text aria-[current=page]:text-nav3-hover-text ${
               railCollapsed ? "justify-center px-0" : "w-9 justify-center"
             }`}
           >
@@ -356,25 +357,25 @@ export function Sidebar({
               railCollapsed ? "justify-center px-0" : "px-2.5"
             }`}
           >
-            <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-brand-subtle font-sans text-[10px] font-bold text-brand">
+            <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-navy font-sans text-[11px] font-bold text-white">
               {user.initials}
             </span>
             {!railCollapsed && (
-              <span className="min-w-0 flex-1">
-                <span className="block truncate font-sans text-ops-label font-semibold text-content">{user.name}</span>
-                <span className="block truncate font-sans text-[10px] text-content-subtle">{user.role}</span>
-              </span>
+              <span className="min-w-0 flex-1 truncate font-sans text-[12px] text-nav3-muted-text">{user.name}</span>
             )}
           </button>
 
+          {/* Drag the nav's own right edge to resize (200–320px) — this is a
+              subtle affordance, not a prominent arrow button. Collapsing to
+              the 48px icon rail is a separate, discrete action. */}
           <button
             type="button"
             onClick={toggleRail}
             aria-pressed={railCollapsed}
             title={railCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="hidden h-6 w-full flex-none items-center justify-center border-t border-app-border text-content-subtle transition-colors duration-fast ease-out hover:bg-app-well hover:text-content md:flex"
+            className="hidden h-5 w-full flex-none items-center justify-center border-t border-app-border text-content-subtle opacity-60 transition-opacity duration-fast ease-out hover:opacity-100 md:flex"
           >
-            <Icon name={railCollapsed ? "chevron-right" : "chevron-left"} size={12} />
+            <Icon name={railCollapsed ? "chevron-right" : "chevron-left"} size={10} />
           </button>
         </div>
       </nav>
@@ -430,12 +431,12 @@ function SubLink({
       href={href}
       onClick={onClick}
       aria-current={active ? "page" : undefined}
-      className={`mx-2 flex h-10 items-center gap-2 rounded-full text-[15px] no-underline transition-colors duration-fast ease-out ${
+      className={`mx-2 flex h-[38px] items-center gap-2 rounded-lg text-[14px] no-underline transition-colors duration-fast ease-out ${
         variant === "list" ? "pl-4" : "pl-3"
       } pr-3 ${
         active
           ? "bg-nav3-child-active-bg font-semibold text-content"
-          : "font-medium text-nav3-child-text hover:bg-app-well"
+          : "font-medium text-nav3-child-text hover:bg-app-well hover:text-nav3-hover-text"
       }`}
     >
       <span className="min-w-0 flex-1 truncate">{sub.label}</span>

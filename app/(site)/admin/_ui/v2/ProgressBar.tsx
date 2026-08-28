@@ -38,7 +38,7 @@ export function ProgressBar({
         <span
           aria-hidden
           title="Expected by now"
-          className="absolute inset-y-0 w-px bg-ui2-text/40"
+          className="absolute inset-y-0 w-px bg-ui2-gray-400"
           style={{ left: `${expectedPct * 100}%` }}
         />
       )}

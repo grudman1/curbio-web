@@ -60,14 +60,14 @@ export function AppShell({
 
             <div className="ml-auto flex flex-none items-center gap-2.5">
               <PaletteHint />
-              <span className="hidden whitespace-nowrap font-sans text-ops-label text-content-subtle lg:inline">
+              <span className="hidden whitespace-nowrap font-sans text-[12px] text-nav3-muted-text lg:inline">
                 {user?.email}
-                {user?.role === "owner" && <span className="text-content-subtle"> · owner</span>}
+                {user?.role === "owner" && <span className="text-[11px] text-nav3-gray-400"> · owner</span>}
               </span>
               <form action={signOut} className="flex-none">
                 <button
                   type="submit"
-                  className="cursor-pointer whitespace-nowrap rounded-md border border-app-border-strong bg-app-card px-3 py-[5px] font-sans text-ops-label font-semibold text-content-muted transition-colors duration-fast ease-out hover:bg-app-well hover:text-content focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                  className="cursor-pointer whitespace-nowrap border-0 bg-transparent p-0 font-sans text-[12px] font-medium text-nav3-muted-text underline-offset-2 transition-colors duration-fast ease-out hover:text-nav3-hover-text hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                 >
                   Sign out
                 </button>

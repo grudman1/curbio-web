@@ -98,6 +98,11 @@ const config: Config = {
         nav3: {
           "child-text": "var(--nav3-child-text)",
           "child-active-bg": "var(--nav3-child-active-bg)",
+          border: "var(--nav3-border)",
+          "muted-text": "var(--nav3-muted-text)",
+          "gray-400": "var(--nav3-gray-400)",
+          "gray-300": "var(--nav3-gray-300)",
+          "hover-text": "var(--nav3-hover-text)",
         },
         pill: {
           "good-bg": "var(--pill-good-bg)",
@@ -125,10 +130,14 @@ const config: Config = {
           border: "var(--ui2-border)",
           divider: "var(--ui2-divider)",
           well: "var(--ui2-well)",
+          "gray-400": "var(--ui2-gray-400)",
+          "gray-300": "var(--ui2-gray-300)",
           accent: "var(--ui2-accent)",
           "accent-ring": "var(--ui2-accent-ring)",
           green: "var(--ui2-green)",
+          "green-10": "var(--ui2-green-10)",
           red: "var(--ui2-red)",
+          "red-10": "var(--ui2-red-10)",
           amber: "var(--ui2-amber)",
           "amber-text": "var(--ui2-amber-text)",
         },
@@ -198,7 +207,9 @@ const config: Config = {
         "ops-card-title": ["var(--ops-card-title)", { lineHeight: "1.3", letterSpacing: "-0.005em" }],
 
         // ── dashboard v2 (Home) — see app/(site)/admin/_ui/v2/tokens.css ──
-        "ui2-eyebrow": ["var(--ui2-text-eyebrow)", { lineHeight: "1.3", letterSpacing: "0.06em" }],
+        // No baked-in letterSpacing — it differs per use (StatCard label
+        // .04em, table header .08em); callers add tracking-[...] themselves.
+        "ui2-eyebrow": ["var(--ui2-text-eyebrow)", { lineHeight: "1.3" }],
         "ui2-caption": ["var(--ui2-text-caption)", { lineHeight: "1.35" }],
         "ui2-body": ["var(--ui2-text-body)", { lineHeight: "1.45" }],
         "ui2-section": ["var(--ui2-text-section)", { lineHeight: "1.3" }],
