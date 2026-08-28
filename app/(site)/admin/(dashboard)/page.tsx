@@ -3,39 +3,39 @@ import Link from "next/link";
 import { MARKETS } from "@/config/markets";
 import {
   SNAPSHOT_AS_OF,
-  SNAPSHOT_LABEL,
   SNAPSHOT_MONTHS,
+  SNAPSHOT_DEALS,
   aggregateSnapshot,
+  channelForDeal,
 } from "@/config/appLeadsSnapshot";
 import { QUALIFIED_TARGET_PER_MARKET_PER_MONTH } from "@/config/marketingHub";
-import { paceRead, paceSentence } from "@/app/(site)/marketing/(hub)/pacing";
+import { paceRead } from "@/app/(site)/marketing/(hub)/pacing";
 import { readRecentLeads, recentCrmFailures } from "@/lib/adminLeads";
 import { computeUndocumentedCampaigns } from "@/lib/campaignOrphans";
-import { PageHeader } from "../_ui/AppShell";
-import { PaceRail, type PaceRow } from "../_ui/PaceRail";
-import { Chip, DASH, Eyebrow, Panel, StatusDot } from "../_ui/primitives";
-import { InfoPopover } from "../_ui/InfoPopover";
-import { EmptyState } from "../_ui/EmptyState";
-import { monthsFor, parseTimeframe, timeframeLabel } from "../_ui/timeframe";
+import { monthsFor, monthShort, parseTimeframe } from "../_ui/timeframe";
+import {
+  Card,
+  StatCard,
+  Table,
+  Th,
+  Tr,
+  Td,
+  EmptyState,
+  PageHeader,
+  ProgressBar,
+  HealthDot,
+  formatFreshness,
+  inter,
+  type Health,
+} from "../_ui/v2";
+import "../_ui/v2/tokens.css";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TODAY — the executive snapshot. One question: are we OK?
-//
-// Written for someone with thirty seconds who is not going to click anything.
-// That constraint decides everything on this screen:
-//
-//   • ONE hero number, and it is the one the strategy names — qualified leads
-//     against 50 × markets × months. Not views, not form-fills. The doc is
-//     explicit: "Volume that doesn't meet that bar is not progress."
-//   • The pace rail, worst market first.
-//   • What needs attention — and nothing that does not.
-//
-// NO PAGE CARDS. Those were here because Today was built from the Pages screen;
-// they answer "what does the site look like", which is a different question
-// asked by a different person on a different screen.
-//
-// Month-grain: the only qualified-lead source today is the monthly app
-// snapshot. A day timeframe coerces, and says so.
+// HOME — Phase 2 of the dashboard redesign (design-system brief, 2026-08-28).
+// Rebuilt on the v2 primitives (../_ui/v2); every other /admin screen is
+// untouched and still runs on the v1 system (DESIGN-APP.md). F-pattern:
+// four StatCards → Pace by Market → Needs attention. No page-card grid, no
+// prose — an explanation is a tooltip or it doesn't exist on this screen.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {
@@ -47,6 +47,29 @@ export const dynamic = "force-dynamic";
 
 const SCAN = 200;
 
+/** Deals in `month`, on or before `throughDay` of that month — i.e. the same
+ *  calendar cutoff SNAPSHOT_AS_OF uses for the current month, applied to the
+ *  prior one. Every row in SNAPSHOT_DEALS is Qualified by definition, so a
+ *  plain count is the Qualified figure; `direct` is the same "no known
+ *  channel" cut the unattributed-share stat uses. */
+function qualifiedThrough(month: string, throughDay: number): { total: number; direct: number } {
+  let total = 0;
+  let direct = 0;
+  for (const deal of SNAPSHOT_DEALS) {
+    if (deal.month !== month) continue;
+    if (Number(deal.date.slice(8, 10)) > throughDay) continue;
+    total++;
+    if (channelForDeal(deal) === "direct") direct++;
+  }
+  return { total, direct };
+}
+
+const PACE_HEALTH: Record<"on" | "behind" | "risk", Health> = {
+  on: "good",
+  behind: "warn",
+  risk: "bad",
+};
+
 export default async function TodayScreen({
   searchParams,
 }: {
@@ -55,13 +78,11 @@ export default async function TodayScreen({
   const sp = await searchParams;
   const tf = parseTimeframe(sp.t, SNAPSHOT_MONTHS, "month");
   const months = monthsFor(tf, SNAPSHOT_MONTHS);
-  const label = timeframeLabel(tf, SNAPSHOT_MONTHS);
 
   const agg = aggregateSnapshot(new Set(months));
   const perMarketTarget = QUALIFIED_TARGET_PER_MARKET_PER_MONTH * (months.length || 1);
 
-  // Per-market qualified, derived from MARKETS. Nothing assumes a count.
-  const rows: PaceRow[] = MARKETS.map((m) => {
+  const rows = MARKETS.map((m) => {
     const qualified = months.reduce(
       (sum, ym) => sum + (agg.qualifiedByMarketMonth[`${m.slug}|${ym}`] ?? 0),
       0
@@ -86,9 +107,9 @@ export default async function TodayScreen({
     QUALIFIED_TARGET_PER_MARKET_PER_MONTH * MARKETS.length
   );
 
-  // ── what needs attention ──
   const underHalf = rows.filter((r) => r.state === "risk");
   const behind = rows.filter((r) => r.state === "behind");
+  const onPace = rows.filter((r) => r.state === "on");
 
   const leads = await readRecentLeads(SCAN);
   const leadRows = leads.configured && !leads.error ? leads.rows : [];
@@ -96,218 +117,183 @@ export default async function TodayScreen({
   const storeUnreadable = leads.configured && leads.error ? leads.error : null;
   const { orphans: campaignOrphans } = await computeUndocumentedCampaigns(SCAN);
 
-  // Unattributed share — the number the attribution plan exists to shrink.
   const directQualified = Object.entries(agg.cells).reduce(
     (sum, [key, cell]) => (key.split("|")[1] === "direct" ? sum + cell.qualified : sum),
     0
   );
   const unattributed = companyQualified > 0 ? directQualified / companyQualified : null;
 
-  // ATTENTION IS DEDUPED AGAINST THE REST OF THE SCREEN. The pace rail beside
-  // this already shows every market's state at a glance, so listing seven
-  // "under half pace" rows restates the column next to it — on a screen built
-  // for thirty seconds, saying a thing twice costs more than saying it once.
-  //
-  // So per-market pace collapses to ONE roll-up row, and this list carries
-  // what nothing else on the screen shows: store health, delivery, and
-  // attribution.
-  const attention: { tone: "bad" | "warn"; text: string; href: string }[] = [];
+  // ── "vs same point last month" — same static snapshot, one month back,
+  // cut at the same day-of-month SNAPSHOT_AS_OF uses. Null (renders as the
+  // grey dash) whenever the current view isn't a single month, or there's no
+  // earlier month with data to compare against.
+  const asOfDay = Number(SNAPSHOT_AS_OF.slice(8, 10));
+  const monthIdx = tf.kind === "month" ? SNAPSHOT_MONTHS.indexOf(tf.ym) : -1;
+  const priorMonth = monthIdx > 0 ? SNAPSHOT_MONTHS[monthIdx - 1] : null;
+  const prior = priorMonth ? qualifiedThrough(priorMonth, asOfDay) : null;
+  const priorLabel = priorMonth ? `vs ${monthShort(priorMonth)}` : "vs last month";
 
+  const qualifiedDelta = prior && prior.total > 0 ? (companyQualified - prior.total) / prior.total : null;
+  const priorUnattributed = prior && prior.total > 0 ? prior.direct / prior.total : null;
+  const unattributedDelta =
+    unattributed !== null && priorUnattributed !== null && priorUnattributed > 0
+      ? (unattributed - priorUnattributed) / priorUnattributed
+      : null;
+
+  const attention: { health: Health; text: string; href: string }[] = [];
   if (storeUnreadable) {
-    attention.push({ tone: "bad", text: `Lead store unreadable — ${storeUnreadable}`, href: "/admin/leads" });
+    attention.push({ health: "bad", text: `Lead store unreadable — ${storeUnreadable}`, href: "/admin/leads" });
   }
   if (failures.length) {
     attention.push({
-      tone: "bad",
+      health: "bad",
       text: `${failures.length} CRM delivery failure${failures.length === 1 ? "" : "s"} in the last 24 h`,
       href: "/admin/leads",
     });
   }
   if (underHalf.length === 1) {
     attention.push({
-      tone: "bad",
+      health: "bad",
       text: `${underHalf[0].label} is under half pace — ${underHalf[0].qualified}/${underHalf[0].target}`,
       href: "/admin/markets",
     });
   } else if (underHalf.length > 1) {
     attention.push({
-      tone: "bad",
+      health: "bad",
       text: `${underHalf.length} of ${MARKETS.length} markets are under half pace`,
       href: "/admin/markets",
     });
   }
   if (unattributed !== null && unattributed >= 0.5) {
     attention.push({
-      tone: "warn",
+      health: "warn",
       text: `${Math.round(unattributed * 100)}% of qualified leads have no known channel`,
       href: "/admin/attribution",
     });
   }
   if (campaignOrphans.length > 0) {
     attention.push({
-      tone: "warn",
+      health: "warn",
       text: `${campaignOrphans.length} campaign tag${campaignOrphans.length === 1 ? "" : "s"} producing leads but undocumented`,
       href: "/admin/site/links",
     });
   }
   if (underHalf.length === 0 && behind.length > 0) {
-    // Only worth a row when nothing is in actual trouble — otherwise "behind"
-    // is a distraction from "under half".
     attention.push({
-      tone: "warn",
+      health: "warn",
       text: `${behind.length} market${behind.length === 1 ? " is" : "s are"} behind pace`,
       href: "/admin/markets",
     });
   }
 
+  const paceSorted = [...rows].sort((a, b) => {
+    const order: Record<"risk" | "behind" | "on", number> = { risk: 0, behind: 1, on: 2 };
+    if (a.state === null && b.state === null) return a.label.localeCompare(b.label);
+    if (a.state === null) return 1;
+    if (b.state === null) return -1;
+    return order[a.state] - order[b.state] || a.label.localeCompare(b.label);
+  });
+
+  const marketsOnPaceHealth: Health = onPace.length === 0 ? "bad" : onPace.length === MARKETS.length ? "good" : "warn";
+  const deliveryHealth: Health = storeUnreadable ? "unknown" : failures.length > 0 ? "bad" : "good";
+  const unattributedHealth: Health = unattributed === null ? "unknown" : unattributed >= 0.5 ? "warn" : "good";
+  const qualifiedHealth: Health = companyRead ? PACE_HEALTH[companyRead.state] : "unknown";
+
   return (
-    <>
-      <PageHeader
-        title="Today"
-        subtitle={
-          <span className="inline-flex flex-wrap items-center gap-1.5">
-            <span>Are we OK · {label}</span>
-            <Chip tone="unknown">{SNAPSHOT_LABEL}</Chip>
-          </span>
-        }
-      />
+    <div className={`ui2 ${inter.variable} font-ui2`}>
+      <PageHeader title="Today" freshness={`Data through ${formatFreshness(SNAPSHOT_AS_OF)}`} />
 
-      <div className="grid grid-cols-1 gap-ops-gap lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
-        <div className="flex flex-col gap-ops-gap">
-          {/* ── THE number. ── */}
-          <section className="rounded-lg border border-app-border bg-app-card p-ops-panel shadow-app-card">
-            <div className="flex items-center gap-1.5">
-              <Eyebrow>Qualified leads · {label}</Eyebrow>
-              <InfoPopover label="What qualified means">
-                A valid, in-market estimate request the average HSM — not just the best one — can
-                work. The target is 50 per market per month. Volume that doesn&apos;t meet that bar
-                is not progress.
-              </InfoPopover>
-            </div>
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard
+          label="Qualified leads"
+          value={companyQualified.toLocaleString("en-US")}
+          valueSuffix={`/ ${companyTarget.toLocaleString("en-US")}`}
+          health={qualifiedHealth}
+          delta={{ value: qualifiedDelta, label: priorLabel }}
+        />
+        <StatCard
+          label="Unattributed share"
+          value={unattributed === null ? "—" : `${Math.round(unattributed * 100)}%`}
+          health={unattributedHealth}
+          delta={{ value: unattributedDelta, label: priorLabel, goodDirection: "down" }}
+        />
+        <StatCard
+          label="Delivery failures · 24h"
+          value={storeUnreadable ? "—" : failures.length}
+          health={deliveryHealth}
+          note={storeUnreadable ? "store unreadable" : `of last ${SCAN} scanned`}
+        />
+        <StatCard
+          label="Markets on pace"
+          value={onPace.length}
+          valueSuffix={`/${MARKETS.length}`}
+          health={marketsOnPaceHealth}
+        />
+      </div>
 
-            <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="font-sans text-ops-hero font-bold tabular-nums text-content">
-                {companyQualified.toLocaleString("en-US")}
-              </span>
-              <span className="font-sans text-ops-body tabular-nums text-content-subtle">
-                / {companyTarget.toLocaleString("en-US")}
-              </span>
-              {companyRead && (
-                <span
-                  className={`font-sans text-ops-body font-bold ${
-                    companyRead.delta >= 0 ? "text-tone-good" : companyRead.state === "risk" ? "text-tone-bad" : "text-tone-warn-text"
-                  }`}
-                >
-                  {paceSentence(companyRead)}
-                </span>
-              )}
-            </div>
+      <div className="mt-4">
+        <Card title="Pace by market" flush>
+          <Table>
+            <thead>
+              <tr>
+                <Th>Market</Th>
+                <Th>Pace</Th>
+                <Th align="right">Qualified</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {paceSorted.map((r) => {
+                const health: Health = r.state ? PACE_HEALTH[r.state] : "unknown";
+                const pct = r.qualified !== null && r.target > 0 ? r.qualified / r.target : null;
+                const expectedPct = r.expected !== null && r.target > 0 ? r.expected / r.target : null;
+                return (
+                  <Tr key={r.key}>
+                    <Td>
+                      <Link href="/admin/markets" className="flex items-center gap-2 text-ui2-text no-underline hover:text-ui2-accent">
+                        <HealthDot health={health} />
+                        <span>{r.label}</span>
+                      </Link>
+                    </Td>
+                    <Td className="w-64">
+                      <ProgressBar value={pct} expected={expectedPct} health={health} />
+                    </Td>
+                    <Td align="right">
+                      {r.qualified === null ? "—" : r.qualified}
+                      <span className="text-ui2-text-muted">/{r.target}</span>
+                    </Td>
+                  </Tr>
+                );
+              })}
+            </tbody>
+          </Table>
+        </Card>
+      </div>
 
-            <p className="m-0 mt-1.5 font-sans text-ops-label text-content-subtle">
-              {MARKETS.length} markets × {QUALIFIED_TARGET_PER_MARKET_PER_MONTH}
-              {months.length > 1 ? ` × ${months.length} months` : ""}
-              {companyRead ? ` · expected ${companyRead.expected.toLocaleString("en-US")} ${companyRead.coverage}` : ""}
-            </p>
-          </section>
-
-          {/* ── what needs attention ── */}
-          <Panel
-            title="Needs attention"
-            right={
-              <span className="font-sans text-ops-label tabular-nums text-content-subtle">
-                {attention.length}
-              </span>
-            }
-          >
-            {attention.length === 0 ? (
-              <EmptyState headline="Nothing is under half pace, no delivery failures in 24 hours, and attribution is holding." />
-            ) : (
-              <ul className="m-0 list-none p-0">
-                {attention.map((a) => (
-                  <li key={a.text} className="border-b border-app-border last:border-b-0">
-                    <Link
-                      href={a.href}
-                      className="flex h-ops-row items-center gap-2.5 font-sans text-ops-table text-content no-underline hover:text-content-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent"
-                    >
-                      <StatusDot tone={a.tone} />
-                      <span className="min-w-0 flex-1 truncate">{a.text}</span>
-                      <span aria-hidden className="flex-none text-content-subtle">›</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
-        </div>
-
-        {/* ── the pace rail ── */}
-        <Panel
-          title="Pace by market"
-          right={
-            <span className="inline-flex items-center gap-1.5">
-              <InfoPopover label="How pace is computed" align="right">
-                Expected-to-date scales by how much of the timeframe actually has data — day 14 of
-                31 expects 45% of the month&apos;s target, not 100%. Comparing day-14 data against a
-                full-month expectation would manufacture a deficit.
-              </InfoPopover>
-              <span className="font-sans text-ops-label tabular-nums text-content-subtle">
-                {MARKETS.length}
-              </span>
-            </span>
-          }
+      <div className="mt-4">
+        <Card
+          title="Needs attention"
+          right={<span className="font-ui2 text-ui2-caption tabular-nums text-ui2-text-muted">{attention.length}</span>}
         >
-          <PaceRail rows={rows} note="the hairline is where we should be by now" />
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            {([["good", "On pace"], ["warn", "Behind"], ["bad", "Under half"], ["unknown", "No data"]] as const).map(
-              ([tone, text]) => (
-                <span key={text} className="inline-flex items-center gap-1.5">
-                  <StatusDot tone={tone} />
-                  <span className="font-sans text-ops-micro text-content-subtle">{text}</span>
-                </span>
-              )
-            )}
-          </div>
-        </Panel>
+          {attention.length === 0 ? (
+            <EmptyState headline="Nothing is under half pace, no delivery failures in 24 hours, and attribution is holding." />
+          ) : (
+            <ul className="m-0 list-none p-0">
+              {attention.slice(0, 5).map((a) => (
+                <li key={a.text} className="border-b border-ui2-divider last:border-b-0">
+                  <Link
+                    href={a.href}
+                    className="flex h-10 items-center gap-2.5 font-ui2 text-ui2-body text-ui2-text no-underline hover:text-ui2-accent"
+                  >
+                    <HealthDot health={a.health} />
+                    <span className="min-w-0 flex-1 truncate">{a.text}</span>
+                    <span aria-hidden className="flex-none text-ui2-text-muted">›</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
       </div>
-
-      {/* Unattributed share — stated even when healthy, because it only ever
-          improves if someone is looking at it. */}
-      <div className="mt-ops-gap grid grid-cols-1 gap-ops-gap sm:grid-cols-3">
-        <Panel title="Unattributed share">
-          <div className="flex items-baseline gap-2">
-            <span
-              className={`font-sans text-ops-metric font-semibold tabular-nums ${
-                unattributed === null ? "text-content-subtle" : unattributed >= 0.5 ? "text-tone-warn-text" : "text-content"
-              }`}
-            >
-              {unattributed === null ? DASH : `${Math.round(unattributed * 100)}%`}
-            </span>
-            <span className="font-sans text-ops-label text-content-subtle">of qualified</span>
-          </div>
-        </Panel>
-        <Panel title="Delivery failures · 24 h">
-          <div className="flex items-baseline gap-2">
-            <span
-              className={`font-sans text-ops-metric font-semibold tabular-nums ${
-                storeUnreadable ? "text-content-subtle" : failures.length ? "text-tone-bad" : "text-content"
-              }`}
-            >
-              {storeUnreadable ? DASH : failures.length}
-            </span>
-            <span className="font-sans text-ops-label text-content-subtle">
-              {storeUnreadable ? "store unreadable" : `of last ${SCAN} scanned`}
-            </span>
-          </div>
-        </Panel>
-        <Panel title="Markets on pace">
-          <div className="flex items-baseline gap-2">
-            <span className="font-sans text-ops-metric font-semibold tabular-nums text-content">
-              {rows.filter((r) => r.state === "on").length}
-              <span className="text-content-subtle">/{MARKETS.length}</span>
-            </span>
-          </div>
-        </Panel>
-      </div>
-    </>
+    </div>
   );
 }

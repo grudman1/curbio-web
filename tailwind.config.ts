@@ -93,6 +93,12 @@ const config: Config = {
           scrim: "var(--app-scrim)",
           "nav-active": "var(--app-nav-active)",
         },
+        // ── sidebar v3 (2026-08 accordion redesign) — the two colours not
+        // already in `app`/`navy`/`amber` above; see tokens.css.
+        nav3: {
+          "child-text": "var(--nav3-child-text)",
+          "child-active-bg": "var(--nav3-child-active-bg)",
+        },
         pill: {
           "good-bg": "var(--pill-good-bg)",
           "good-fg": "var(--pill-good-fg)",
@@ -104,6 +110,27 @@ const config: Config = {
           "info-fg": "var(--pill-info-fg)",
           "neutral-bg": "var(--pill-neutral-bg)",
           "neutral-fg": "var(--pill-neutral-fg)",
+        },
+
+        // ── dashboard v2 (Home redesign, scoped under .ui2 — see
+        // app/(site)/admin/_ui/v2/tokens.css). Additive only: nothing in the
+        // app-wide `app`/`tone`/`pill` namespaces above changes, so no other
+        // /admin screen is affected by these existing. Phase 4 of the
+        // redesign is what reconciles the two systems. ──
+        ui2: {
+          bg: "var(--ui2-bg)",
+          card: "var(--ui2-card)",
+          text: "var(--ui2-text)",
+          "text-muted": "var(--ui2-text-muted)",
+          border: "var(--ui2-border)",
+          divider: "var(--ui2-divider)",
+          well: "var(--ui2-well)",
+          accent: "var(--ui2-accent)",
+          "accent-ring": "var(--ui2-accent-ring)",
+          green: "var(--ui2-green)",
+          red: "var(--ui2-red)",
+          amber: "var(--ui2-amber)",
+          "amber-text": "var(--ui2-amber-text)",
         },
 
         // ── primitives (legacy; see header) ──
@@ -141,6 +168,9 @@ const config: Config = {
         // rule this could alter. Points at the primitive for consistency
         // with the pattern above, not out of necessity.
         mono: ["var(--font-mono)", "monospace"],
+        // Self-hosted Inter (app/(site)/admin/_ui/v2/font.ts), Home only —
+        // fallback is system-ui per the redesign brief, no serif/mono ever.
+        ui2: ["var(--ui2-font)", "system-ui", "sans-serif"],
       },
       fontSize: {
         hero: ["var(--text-hero)", { lineHeight: "var(--leading-tight)", letterSpacing: "var(--tracking-tight)" }],
@@ -166,6 +196,14 @@ const config: Config = {
         "ops-label": ["var(--ops-label)", { lineHeight: "1.3" }],
         "ops-micro": ["var(--ops-micro)", { lineHeight: "1.2", letterSpacing: "0.1em" }],
         "ops-card-title": ["var(--ops-card-title)", { lineHeight: "1.3", letterSpacing: "-0.005em" }],
+
+        // ── dashboard v2 (Home) — see app/(site)/admin/_ui/v2/tokens.css ──
+        "ui2-eyebrow": ["var(--ui2-text-eyebrow)", { lineHeight: "1.3", letterSpacing: "0.06em" }],
+        "ui2-caption": ["var(--ui2-text-caption)", { lineHeight: "1.35" }],
+        "ui2-body": ["var(--ui2-text-body)", { lineHeight: "1.45" }],
+        "ui2-section": ["var(--ui2-text-section)", { lineHeight: "1.3" }],
+        "ui2-title": ["var(--ui2-text-title)", { lineHeight: "1.2", letterSpacing: "-0.01em" }],
+        "ui2-metric": ["var(--ui2-text-metric)", { lineHeight: "1.1", letterSpacing: "-0.01em" }],
       },
       fontWeight: {
         regular: "var(--weight-regular)",
@@ -205,6 +243,7 @@ const config: Config = {
         lg: "var(--radius-lg)",
         xl: "var(--radius-xl)",
         pill: "var(--radius-pill)",
+        "ui2-card": "var(--ui2-radius-card)",
       },
       boxShadow: {
         raised: "var(--elevation-raised)",
@@ -213,6 +252,7 @@ const config: Config = {
         accent: "var(--elevation-accent)",
         "app-card": "var(--elevation-app-card)",
         "app-pop": "var(--elevation-app-pop)",
+        "ui2-card": "var(--ui2-shadow-card)",
         "app-drawer": "var(--elevation-app-drawer)",
       },
       maxWidth: { container: "var(--container-max)" },
