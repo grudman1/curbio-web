@@ -91,12 +91,14 @@ export function Sidebar({
   user,
   leadCount,
   brandBadge = "OPS",
+  signOut,
 }: {
   items: NavTopItem[];
   user: SidebarUser;
   /** Live count merged onto whichever sub-item is /admin/leads. */
   leadCount?: number;
   brandBadge?: string;
+  signOut?: () => Promise<void>;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -215,10 +217,13 @@ export function Sidebar({
         id="admin-nav"
         aria-label="Control Room"
         style={railCollapsed ? undefined : { width: 220, minWidth: 200, maxWidth: 320 }}
-        className={`${mobileOpen ? "flex" : "hidden"} w-full flex-none flex-col border-r border-app-border bg-app-card md:sticky md:top-0 md:flex md:h-screen md:self-start ${
+        className={`${mobileOpen ? "flex" : "hidden"} w-full flex-none flex-col border-r border-app-border bg-app-card md:sticky md:top-0 md:flex md:h-screen md:self-start group ${
           railCollapsed ? "md:w-[48px] transition-[width] duration-fast ease-out" : "md:resize-x md:overflow-auto"
         }`}
       >
+        {!railCollapsed && (
+          <div className="pointer-events-none absolute right-0 top-0 h-full w-1 cursor-col-resize bg-transparent group-hover:bg-app-border transition-colors duration-fast group-hover:opacity-100 opacity-0" />
+        )}
         <div className={`hidden h-ops-header flex-none items-center gap-1.5 md:flex ${railCollapsed ? "justify-center px-0" : "px-2.5"}`}>
           {railCollapsed ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -350,12 +355,24 @@ export function Sidebar({
           </Link>
 
           {!railCollapsed && (
-            <div className="mt-2 flex items-center gap-2">
-              <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-navy font-sans text-[11px] font-bold text-white">
-                {user.initials}
-              </span>
-              <span className="min-w-0 flex-1 truncate font-sans text-[12px] font-medium text-nav3-hover-text">{user.name}</span>
-            </div>
+            <>
+              <div className="mt-2 flex items-center gap-2">
+                <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-navy font-sans text-[11px] font-bold text-white">
+                  {user.initials}
+                </span>
+                <span className="min-w-0 flex-1 truncate font-sans text-[12px] font-medium text-nav3-hover-text">{user.name}</span>
+              </div>
+              {signOut && (
+                <form action={signOut} className="mt-2">
+                  <button
+                    type="submit"
+                    className="w-full cursor-pointer border-0 bg-transparent p-0 text-left font-sans text-[11px] text-nav3-muted-text transition-colors duration-fast ease-out hover:text-nav3-hover-text hover:underline"
+                  >
+                    Sign out
+                  </button>
+                </form>
+              )}
+            </>
           )}
         </div>
       </nav>

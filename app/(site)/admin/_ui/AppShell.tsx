@@ -40,7 +40,7 @@ export function AppShell({
   return (
     <ToastProvider>
       <div className="flex min-h-screen flex-col bg-app-bg font-sans text-content md:flex-row">
-        <Sidebar items={ADMIN_NAV} user={sidebarUserFrom(user)} leadCount={leadCount} />
+        <Sidebar items={ADMIN_NAV} user={sidebarUserFrom(user)} leadCount={leadCount} signOut={signOut} />
 
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-header flex h-ops-header flex-none items-center gap-3 border-b border-app-border bg-app-card px-4 md:px-6">
