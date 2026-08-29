@@ -30,15 +30,21 @@ export function HealthDot({ health, title }: { health: Health; title?: string })
   );
 }
 
-/** Small grey dot for "not wired" — top-right of a StatCard, tooltip-only.
- *  Replaces the old dashed pill / ⓘ / "N things needed" pattern (Phase 4
- *  removes those app-wide; this is the one surface that ever needs it). */
+/** "Not wired" — top-right of a StatCard, tooltip-only. HOLLOW AND DASHED,
+ *  matching the `unknown` health dot above and for the same reason: an absent
+ *  number must not read as a measured one. A filled grey dot did read as
+ *  measured-and-neutral, which is a different claim.
+ *
+ *  The tooltip carries what the metric needs. That sentence used to be
+ *  printed on the card ("needs the spend store"); it is backlog, not
+ *  reporting, so it moved behind the hover. */
 export function WiringDot({ tooltip }: { tooltip: string }) {
   return (
     <span
       title={tooltip}
       aria-label={tooltip}
-      className="inline-block h-2 w-2 flex-none rounded-full bg-ui2-gray-300"
+      role="img"
+      className="inline-block h-2 w-2 flex-none rounded-full border border-dashed border-ui2-gray-400 bg-transparent"
     />
   );
 }

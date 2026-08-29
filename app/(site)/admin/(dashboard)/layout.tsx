@@ -6,6 +6,7 @@ import { logout } from "../login/actions";
 import { approveUserAction, denyUserAction } from "../actions";
 import { AlertBanner, type AlertEntry } from "./AlertBanner";
 import { AppShell } from "../_ui/AppShell";
+import { opsFontVars } from "../_ui/v2/fonts";
 import { currentAdminUser } from "../_ui/session";
 import { Panel } from "../_ui/primitives";
 import { SCAN } from "./ui";
@@ -92,23 +93,34 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const isOwner = me?.role === "owner";
 
   return (
-    <AppShell
-      months={SNAPSHOT_MONTHS}
-      user={me}
-      leadCount={rows.length || undefined}
-      signOut={logout}
-    >
-      <AlertBanner entries={alerts} storeError={storeError} />
+    // The two brand faces are declared and applied HERE, on /admin's own
+    // layout — not the root layout, which the marketing site shares, and not
+    // by threading a prop through AppShell, which marketing imports
+    // PageHeader from (app/(site)/marketing/(hub)/hubUi.tsx). A wrapper this
+    // layout owns outright is the only place that is provably admin-only.
+    //
+    // The variables these define (--ui2-font-serif / --ui2-font-sans) are
+    // admin's own names; the site's global --font-serif / --font-sans stay
+    // exactly as app/layout.tsx sets them. See ../_ui/v2/fonts.ts.
+    <div className={opsFontVars}>
+      <AppShell
+        months={SNAPSHOT_MONTHS}
+        user={me}
+        leadCount={rows.length || undefined}
+        signOut={logout}
+      >
+        <AlertBanner entries={alerts} storeError={storeError} />
 
-      {/* Owner-only DISPLAY; the real gate is requireOwnerSession() on every
-          mutation, which re-derives role rather than trusting this. */}
-      {isOwner && pending.length > 0 && (
-        <div className="mb-ops-gap">
-          <PendingRequestsPanel pending={pending} />
-        </div>
-      )}
+        {/* Owner-only DISPLAY; the real gate is requireOwnerSession() on every
+            mutation, which re-derives role rather than trusting this. */}
+        {isOwner && pending.length > 0 && (
+          <div className="mb-ops-gap">
+            <PendingRequestsPanel pending={pending} />
+          </div>
+        )}
 
-      {children}
-    </AppShell>
+        {children}
+      </AppShell>
+    </div>
   );
 }

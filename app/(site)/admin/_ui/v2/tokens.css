@@ -1,57 +1,173 @@
-/* Dashboard v2 — the Home redesign's token layer.
+/* Dashboard v2 — Home's token layer, now sitting ON the 2026 design system.
  *
  * Scoped under .ui2, NOT :root — the rest of /admin keeps DESIGN-APP.md's
- * slate/Libre-Franklin system untouched. Apply the `.ui2` class (plus the
- * Inter font's `.variable` className) to a screen's root element to opt
- * that subtree into this palette. See tailwind.config.ts's `ui2` colour /
- * fontSize / fontFamily entries, which all point at these variables.
+ * slate system untouched. Apply the `.ui2` class to a screen's root element
+ * to opt that subtree in. See tailwind.config.ts's `ui2` colour / fontSize /
+ * fontFamily entries, which all point at these variables.
  *
- * Values are literal here on purpose (not re-derived from the v1 slate
- * primitives in globals.css) — this is a deliberately cooler-neutral,
- * higher-contrast palette than the v1 navy-tinted greys, matching the
- * Stripe/Linear reference the redesign brief named. Phase 4 decides whether
- * the two systems merge; until then they coexist without colliding.
+ * ── What changed, and why it is now derived rather than literal ─────────────
+ * This file used to carry a hand-picked cool-grey palette (#111827 text,
+ * #e5e7eb borders, a separate Inter face) chosen from a Stripe/Linear
+ * reference. The design system landed with its own brand primitives — and
+ * app/globals.css already ships them at exactly the values the system
+ * specifies (--navy #0d254d, --amber #cd8629, --teal #176c67, --stone,
+ * --sage, --fg-muted #4a5a75, --ease-out, --dur-*). So the brand half of this
+ * file is now var() references onto those primitives rather than duplicated
+ * hex: a rebrand is a primitive swap, and this file cannot drift from it.
+ *
+ * ── What is deliberately NOT derived ────────────────────────────────────────
+ * The NEUTRAL UI greys (--ui2-border, --ui2-divider, --ui2-well, the gray
+ * steps) stay literal and stay COOL. The design system's neutral is --stone
+ * (#dfdcda), a warm paper tone built for photo mats and print rules on a
+ * marketing page. On a dense data screen a warm hairline against white reads
+ * as a smudge, and a table of 8 rows becomes visibly beige. These greys are
+ * still tokens — nothing in a component hardcodes them — they are just the
+ * app surface's neutral ramp rather than the brand's. DESIGN-APP.md already
+ * draws that same line for the v1 system.
+ *
+ * ── Type ───────────────────────────────────────────────────────────────────
+ * Headings are Lora, body/labels/numerals are Libre Franklin — both the
+ * self-hosted variable files declared in ./fonts.ts and applied on the /admin
+ * layout. They arrive as `--ui2-font-serif` / `--ui2-font-sans`, which are
+ * ADMIN'S OWN NAMES: the marketing site's global `--font-serif` /
+ * `--font-sans` are left exactly as app/layout.tsx sets them, neither
+ * redefined nor shadowed here.
+ *
+ * `--ui2-font` is the name tailwind.config.ts's pre-existing `font-ui2`
+ * family already points at, so it is aliased onto the sans face rather than
+ * the config being touched.
  */
 
 .ui2 {
+  /* ── Type ─────────────────────────────────────────────────────────────── */
+  --ui2-font: var(--ui2-font-sans);
+
+  /* ── Surfaces ─────────────────────────────────────────────────────────── */
+  /* #f7f8fa, not the system's --cloud-white (#f7f7f7): a hair cooler, which
+     is what the approved Home mockup fades its hero into. Kept as a token so
+     the hero gradient's terminal colour and the page ground are provably the
+     same value. */
   --ui2-bg: #f7f8fa;
-  --ui2-card: #ffffff;
-  --ui2-text: #111827;
-  --ui2-text-muted: #6b7280;
+  --ui2-card: var(--white);
+  --ui2-well: #f9fafb;
+
+  /* ── Ink ──────────────────────────────────────────────────────────────── */
+  /* Navy, not black — the system's default text colour. */
+  --ui2-text: var(--navy);
+  --ui2-text-muted: var(--fg-muted);
+  --ui2-gray-400: #98a2b3;
+  --ui2-gray-300: #d0d5dd;
+
+  /* ── Neutral ramp (cool, app-surface — see header) ────────────────────── */
   --ui2-border: #e5e7eb;
   --ui2-divider: #f3f4f6;
-  --ui2-well: #f9fafb;
-  /* Secondary mutes — one step lighter than --ui2-text-muted, for labels,
-     counts and ticks that should recede further than body-muted text. */
-  --ui2-gray-400: #9ca3af;
-  --ui2-gray-300: #d1d5db;
 
-  /* Interactive / active-nav accent — the brand navy, not a new hue. */
+  /* ── Brand ────────────────────────────────────────────────────────────── */
   --ui2-accent: var(--navy);
-  --ui2-accent-ring: var(--navy-30);
-
-  /* Deltas + status ONLY (DeltaChip, HealthDot). Never decorative. */
-  --ui2-green: #059669;
-  --ui2-red: #dc2626;
-  /* Brand amber (matches --amber exactly) — corrected from an earlier
-     placeholder value; dots/bars/fills all read this one variable. */
-  --ui2-amber: #cd8629;
-  /* Text-safe amber — same AA-on-white value the v1 tone scale already
-     solved for (--amber-120) — reused so a warning numeral is legible. */
+  --ui2-accent-hover: var(--navy-95);
+  --ui2-accent-ring: rgba(13, 37, 77, 0.08);
+  --ui2-amber: var(--amber);
+  --ui2-amber-hover: var(--amber-110);
+  /* Text-safe amber — AA on white, which --amber itself is not. */
   --ui2-amber-text: var(--amber-120);
-  /* Delta-chip pill fills — 10% tints of --ui2-green/--ui2-red, literal
-     since Tailwind's opacity modifier isn't reliable against a CSS-var
-     theme colour here. */
-  --ui2-green-10: rgba(5, 150, 105, 0.1);
-  --ui2-red-10: rgba(220, 38, 38, 0.1);
+  --ui2-teal: var(--teal);
 
-  --ui2-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --ui2-radius-card: 12px;
+  /* ── Status: deltas and health ONLY. Never decorative. ────────────────── */
+  --ui2-green: #067647;
+  --ui2-red: #b42318;
+  --ui2-green-10: rgba(6, 118, 71, 0.1);
+  --ui2-red-10: rgba(180, 35, 24, 0.1);
 
-  --ui2-text-eyebrow: 11px; /* table headers, uppercase, tracking-wide */
-  --ui2-text-caption: 12px; /* labels, captions */
-  --ui2-text-body: 14px; /* the workhorse */
-  --ui2-text-section: 16px; /* section / card titles */
-  --ui2-text-title: 24px; /* page title */
-  --ui2-text-metric: 32px; /* StatCard value */
+  /* ── Attribution palette — the stacked chart, channel swatches, dots ──── */
+  /* Built from brand primitives wherever one exists; the rest are distinct
+     hues chosen for categorical separation, not brand expression. */
+  --ui2-ch-partnership: var(--navy);
+  --ui2-ch-email: var(--teal);
+  --ui2-ch-organic: #3b7bc4;
+  --ui2-ch-events: #6b4e86;
+  --ui2-ch-paid-search: var(--amber);
+  --ui2-ch-paid-social: #b0894f;
+  --ui2-ch-creator: #8aa6c4;
+  --ui2-ch-content: #7a8f3d;
+  --ui2-ch-referral: #5b7d8f;
+  /* Unattributed. Grey because it is the ABSENCE of a channel — it must
+     never read as a channel win. */
+  --ui2-ch-direct: #d7dbe2;
+
+  /* ── Hero atmosphere ──────────────────────────────────────────────────── */
+  --ui2-hero-navy: rgba(13, 37, 77, 0.44);
+  --ui2-hero-teal: rgba(23, 108, 103, 0.36);
+  --ui2-hero-amber: rgba(205, 134, 41, 0.28);
+
+  /* ── Radii — the system's scale ───────────────────────────────────────── */
+  --ui2-radius-sm: var(--radius-sm);
+  --ui2-radius-md: var(--radius-md);
+  --ui2-radius-input: 10px;
+  --ui2-radius-card: var(--radius-lg);
+  --ui2-radius-panel: 14px;
+  --ui2-radius-pill: var(--radius-pill);
+
+  /* ── Shadows — the system's restrained editorial set ──────────────────── */
+  --ui2-shadow-card: 0 1px 2px rgba(13, 37, 77, 0.06), 0 1px 1px rgba(13, 37, 77, 0.04);
+  --ui2-shadow-ask: 0 2px 10px -4px rgba(13, 37, 77, 0.18);
+  --ui2-shadow-ask-focus: 0 0 0 4px var(--ui2-accent-ring), 0 16px 34px -20px rgba(13, 37, 77, 0.6);
+  --ui2-shadow-send: 0 6px 14px -6px rgba(13, 37, 77, 0.7);
+
+  /* ── Motion — the system's easing + durations ─────────────────────────── */
+  --ui2-ease: var(--easing-out);
+  --ui2-dur-fast: var(--duration-fast);
+  --ui2-dur-base: var(--duration-base);
+  /* Hero drift loops. Three different primes so the three blobs never
+     re-synchronise into a visible pulse. */
+  --ui2-drift-a: 30s;
+  --ui2-drift-b: 38s;
+  --ui2-drift-c: 46s;
+
+  /* ── Type scale ───────────────────────────────────────────────────────── */
+  --ui2-text-micro: 11px;
+  --ui2-text-eyebrow: 11px;
+  --ui2-text-caption: 12px;
+  --ui2-text-body: 13px;
+  --ui2-text-row: 14px;
+  --ui2-text-section: 16px;
+  --ui2-text-ask: 15.5px;
+  --ui2-text-metric: 28px;
+  --ui2-text-pace: 42px;
+  --ui2-text-greeting: 40px;
+}
+
+/* ── Hero atmosphere: three blurred radials on long, unequal loops ────────
+   Keyframes are global (they are referenced from .ui2 descendants but
+   @keyframes cannot be scoped by a class). Prefixed so they cannot collide
+   with the marketing site's animation names. */
+@keyframes ui2-drift-a {
+  0%   { transform: translate3d(-6%, -4%, 0) scale(1.05); }
+  50%  { transform: translate3d(8%, 5%, 0) scale(1.18); }
+  100% { transform: translate3d(-6%, -4%, 0) scale(1.05); }
+}
+@keyframes ui2-drift-b {
+  0%   { transform: translate3d(5%, 6%, 0) scale(1.14); }
+  50%  { transform: translate3d(-7%, -5%, 0) scale(1.02); }
+  100% { transform: translate3d(5%, 6%, 0) scale(1.14); }
+}
+@keyframes ui2-drift-c {
+  0%   { transform: translate3d(0, 3%, 0) scale(1); opacity: 0.55; }
+  50%  { transform: translate3d(-5%, -6%, 0) scale(1.2); opacity: 0.8; }
+  100% { transform: translate3d(0, 3%, 0) scale(1); opacity: 0.55; }
+}
+
+.ui2-drift {
+  animation-duration: var(--ui2-drift-a);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+.ui2-drift-a { animation-name: ui2-drift-a; animation-duration: var(--ui2-drift-a); }
+.ui2-drift-b { animation-name: ui2-drift-b; animation-duration: var(--ui2-drift-b); }
+.ui2-drift-c { animation-name: ui2-drift-c; animation-duration: var(--ui2-drift-c); }
+
+/* The whole point of the hero wash is that it is barely-perceptible motion.
+   For anyone who has asked for less of it, it stops — the gradients stay,
+   which is what carries the design; only the drift goes. */
+@media (prefers-reduced-motion: reduce) {
+  .ui2-drift { animation: none !important; }
 }
