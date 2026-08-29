@@ -11,8 +11,12 @@ import {
   aggregateSnapshot,
   directShareByMonth,
   directSourceBreakdown,
+  isInferred,
   SNAPSHOT_LABEL,
+  type AttributionFilter,
 } from "@/config/appLeadsSnapshot";
+import { BACKFILL_MAPPING_VERSION } from "@/config/referral-backfill";
+import { mergedSnapshotDeals } from "@/lib/leadStore";
 import { CHANNEL_COLORS } from "@/lib/channels";
 import { Table, Td, Th, Tr } from "@/app/(site)/admin/_ui/DataTable";
 import { Eyebrow, Meta, Panel } from "@/app/(site)/admin/_ui/primitives";
@@ -75,19 +79,34 @@ function ShareLine({ points }: { points: { ym: string; share: number }[] }) {
   );
 }
 
-export function AttributionHealthPanel({
+const FILTERS: { key: AttributionFilter; label: string }[] = [
+  { key: "measured", label: "Measured" },
+  { key: "inferred", label: "Inferred" },
+  { key: "all", label: "All" },
+];
+
+export async function AttributionHealthPanel({
   months,
   tfLabel,
   detailed = false,
+  filter = "all",
+  tParam,
 }: {
   /** The header timeframe's months. */
   months: string[];
   tfLabel: string;
   /** True on the Attribution health page: adds the raw-source breakdown. */
   detailed?: boolean;
+  /** Provenance filter (detailed page): measured rows, inferred rows, or all. */
+  filter?: AttributionFilter;
+  /** The current ?t= value, so filter links preserve the timeframe. */
+  tParam?: string;
 }) {
   const monthSet = new Set(months);
-  const agg = aggregateSnapshot(monthSet);
+  // The merged store: import + post-snapshot live leads — the same read Home,
+  // the Email page and Performance make, so the surfaces agree.
+  const deals = await mergedSnapshotDeals();
+  const agg = aggregateSnapshot(monthSet, filter, deals);
 
   // Every cell belongs to exactly one market × channel; sum once.
   let direct = 0;
@@ -98,11 +117,27 @@ export function AttributionHealthPanel({
   }
   const share = total > 0 ? direct / total : null;
 
-  const line = directShareByMonth()
+  // Both honesty numbers, always: the share counting backfill-inferred
+  // channels as attributed, and the share among rows with MEASURED signal
+  // only. Provenance counts for the marker line come straight off the deals.
+  let allDirect = 0, allTotal = 0, measuredDirect = 0, measuredTotal = 0, inferredAttributed = 0;
+  for (const deal of deals) {
+    if (!monthSet.has(deal.month)) continue;
+    allTotal++;
+    if (deal.channel === "direct") allDirect++;
+    if (!isInferred(deal)) {
+      measuredTotal++;
+      if (deal.channel === "direct") measuredDirect++;
+    } else if (deal.channel !== "direct") {
+      inferredAttributed++;
+    }
+  }
+
+  const line = directShareByMonth(filter, deals)
     .slice(-6)
     .map(({ ym, direct: d, total: t }) => ({ ym, share: t ? d / t : 0 }));
 
-  const sources = detailed ? directSourceBreakdown(monthSet) : [];
+  const sources = detailed ? directSourceBreakdown(monthSet, filter, deals) : [];
 
   return (
     <Panel
@@ -113,6 +148,28 @@ export function AttributionHealthPanel({
         </Meta>
       }
     >
+      {detailed && (
+        <div className="mb-4 flex flex-wrap items-center gap-1.5">
+          {FILTERS.map((f) => (
+            <Link
+              key={f.key}
+              href={`?${new URLSearchParams({ ...(tParam ? { t: tParam } : {}), f: f.key })}`}
+              className={
+                "rounded-full border px-3 py-1 font-sans text-ops-label font-bold " +
+                (filter === f.key
+                  ? "border-app-border bg-app-surface-2 text-content"
+                  : "border-transparent text-content-muted hover:text-content")
+              }
+            >
+              {f.label}
+            </Link>
+          ))}
+          <span className="ml-1 font-sans text-ops-label text-content-subtle">
+            measured = real UTM signal · inferred = referral-source backfill (spec §8, mapping v
+            {BACKFILL_MAPPING_VERSION})
+          </span>
+        </div>
+      )}
       <div className="flex flex-wrap items-start gap-9">
         <div className="min-w-[240px] flex-[0_1_300px]">
           <div className="flex items-baseline gap-2.5">
@@ -126,6 +183,18 @@ export function AttributionHealthPanel({
           <p className="m-0 mt-3 max-w-[340px] font-sans text-ops-body leading-[1.6] text-content">
             <strong>Unattributed.</strong> These leads arrived with no UTM, no first-touch cookie,
             and no tracked phone number. We do not know what produced them.
+          </p>
+          <p className="m-0 mt-2 max-w-[340px] font-sans text-ops-label leading-[1.6] text-content-subtle">
+            Counting backfill-inferred channels as attributed:{" "}
+            <strong className="tabular-nums">
+              {allTotal ? `${Math.round((allDirect / allTotal) * 100)}%` : DASH}
+            </strong>{" "}
+            unattributed ({allDirect} of {allTotal}). Measured signal only:{" "}
+            <strong className="tabular-nums">
+              {measuredTotal ? `${Math.round((measuredDirect / measuredTotal) * 100)}%` : DASH}
+            </strong>{" "}
+            ({measuredDirect} of {measuredTotal}). {inferredAttributed} attributed rows are
+            inferred, not tracked.
           </p>
           {!detailed && (
             <p className="m-0 mt-2.5">
@@ -168,13 +237,18 @@ export function AttributionHealthPanel({
                       {s.count}
                     </Td>
                     <Td className="text-content-muted">
+                      {/* Sources the spec-§8 backfill resolved (landing page, partner
+                          labels, Inbound Email) no longer appear here — what remains
+                          direct is honestly unattributable today. */}
                       {/^phone/i.test(s.source)
-                        ? "a tracked phone number per market / event"
+                        ? "a tracked phone number per market / event (spec §5b — not built)"
                         : s.source === "(blank)"
                           ? "a form that records its source"
-                          : /curbio\.com|landing page|lp/i.test(s.source)
-                            ? "UTMs on the link that brought them"
-                            : "a documented source mapping (see Links registry)"}
+                          : /^other$/i.test(s.source)
+                            ? "triage queue — kill OTHER as a resting state (spec §8)"
+                            : /curbio\.com|lp$/i.test(s.source)
+                              ? "dark traffic (spec §9) — UTMs on the links that brought them"
+                              : "a documented source mapping (see Links registry)"}
                     </Td>
                   </Tr>
                 ))}
@@ -190,7 +264,9 @@ export function AttributionHealthPanel({
           </div>
           <p className="m-0 mt-3 font-sans text-ops-label leading-[1.6] text-content-subtle">
             These strings say where the form was, not what brought the visitor — which is why they
-            map to direct instead of a channel.
+            stay direct instead of being minted into a channel. Sources with a known meaning
+            (landing page, partner labels, Inbound Email) are already resolved by the spec-§8
+            backfill mapping and no longer appear here.
           </p>
         </div>
       )}

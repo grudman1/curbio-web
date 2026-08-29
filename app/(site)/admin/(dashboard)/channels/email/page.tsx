@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ChannelScreen } from "../channelScreen";
+import { EmailListHealth } from "./ListHealth";
 
 export const metadata: Metadata = {
   title: "Email · Ops — Curbio",
@@ -13,5 +14,9 @@ export default async function Page({
 }: {
   searchParams: Promise<{ t?: string; a?: string }>;
 }) {
-  return <ChannelScreen slug="email" searchParams={searchParams} />;
+  return (
+    <ChannelScreen slug="email" searchParams={searchParams}>
+      <EmailListHealth />
+    </ChannelScreen>
+  );
 }

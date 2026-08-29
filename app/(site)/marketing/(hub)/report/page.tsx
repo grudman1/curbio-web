@@ -11,13 +11,14 @@ import {
   SNAPSHOT_MONTHS,
 } from "@/config/appLeadsSnapshot";
 import { REPORT_METRICS, type ReportMetricKey } from "@/config/marketingHub";
+import { mergedSnapshotDeals } from "@/lib/leadStore";
 import { Button } from "@/app/(site)/admin/_ui/Button";
 import { monthsFor, parseAttribution, parseTimeframe, timeframeLabel } from "../timeframe";
 import { HubPageHeader, NeedsBlock } from "../hubUi";
 import { ReportGrid } from "./ReportGrid";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Report — rows (markets or HSMs) × the nine channels in funnel order, one
+// Report — rows (markets or HSMs) × the ten channels in funnel order, one
 // metric at a time. The header's timeframe and attribution mode govern this
 // page: the grid aggregates over exactly the selected months, and shows the
 // per-month target bar ONLY when a single month is selected — never a YTD
@@ -62,16 +63,18 @@ export default async function ReportPage({
     sub: covers.join(" · "),
   }));
 
-  // Interim Qualified data: the PII-stripped app snapshot, aggregated over
-  // the selected timeframe's months only. App markets without landing pages
-  // (SEA, SD) aggregate under one labeled row rather than pretending to be
-  // markets.
-  const agg = aggregateSnapshot(new Set(months));
+  // Qualified data: the merged store (channel-backfilled import + post-
+  // snapshot live leads), aggregated over the selected timeframe's months
+  // only — the same read Home, Attribution and the Email page make. Closed
+  // markets (SD) aggregate under one labeled row rather than pretending to
+  // be markets.
+  const deals = await mergedSnapshotDeals();
+  const agg = aggregateSnapshot(new Set(months), "all", deals);
   if (agg.marketKeys.includes(OTHER_MARKETS_KEY)) {
     markets.push({
       key: OTHER_MARKETS_KEY,
       label: OTHER_MARKETS_LABEL,
-      sub: "app markets without landing pages",
+      sub: "closed markets (San Diego) and app markets without landing pages",
     });
   }
 
@@ -99,7 +102,7 @@ export default async function ReportPage({
         tfLabel={timeframeLabel(tf, SNAPSHOT_MONTHS)}
         barMonth={tf.kind === "month" ? tf.ym : null}
         initialMetric={initialMetric}
-        sourceBreakdowns={cellSourceBreakdowns(new Set(months))}
+        sourceBreakdowns={cellSourceBreakdowns(new Set(months), deals)}
         stale={Date.now() - Date.parse(`${SNAPSHOT_AS_OF}T00:00:00Z`) > 7 * 86_400_000}
       />
       <NeedsBlock surface={surface} />

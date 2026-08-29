@@ -1,0 +1,196 @@
+{
+  "snapshotDate": "2026-08-29",
+  "mappingVersion": "1.0.0",
+  "rowsImported": 852,
+  "join": {
+    "attributionRows": 852,
+    "leadsRows": 852,
+    "leadsJoined": 852,
+    "attrRowsWithoutLeadsRow": [],
+    "leadKeyDuplicates": [],
+    "salesRows": 128,
+    "salesProjects": 57,
+    "salesChangeOrders": 71,
+    "salesUnjoinable": [
+      {
+        "project": "Trust / Maziarz - 10208 Olney St El Monte, 91731",
+        "type": "Seller",
+        "reason": "no deal for this agent at this created date (minute or day)"
+      },
+      {
+        "project": "Archer / Jones - 43355 LaBelle Place, Ashburn VA 20147, 20190",
+        "type": "Seller",
+        "reason": "no deal for this agent at this created date (minute or day)"
+      },
+      {
+        "project": "Enyi / Brown - 15831 John Diskin Cir. Woodbridge VA",
+        "type": "Seller",
+        "reason": "no deal for this agent at this created date (minute or day)"
+      },
+      {
+        "project": "Payne / Bailey-Harper - 12698 Greenhall Drive, 22192",
+        "type": "Seller",
+        "reason": "no deal for this agent at this created date (minute or day)"
+      },
+      {
+        "project": "Hrolenok / Semler - 5216 Stoney Branch Ct, Centreville, VA, 20120",
+        "type": "Seller",
+        "reason": "no deal for this agent at this created date (minute or day)"
+      },
+      {
+        "project": "Pinilla/Flores Change Order #3",
+        "type": "Change order",
+        "reason": "no agent email on the change order"
+      },
+      {
+        "project": "Dixon/Badru Change Order #3",
+        "type": "Change order",
+        "reason": "agent has no matched won project"
+      },
+      {
+        "project": "Change Order",
+        "type": "Change order",
+        "reason": "agent has no matched won project"
+      },
+      {
+        "project": "Items added to scope of work",
+        "type": "Change order",
+        "reason": "agent has no matched won project"
+      },
+      {
+        "project": "Duvall / Marshall Change Order #1",
+        "type": "Change order",
+        "reason": "agent has no matched won project"
+      },
+      {
+        "project": "Hrolenok / Semler Change Order #1",
+        "type": "Change order",
+        "reason": "agent has no matched won project"
+      },
+      {
+        "project": "West CO#01",
+        "type": "Change order",
+        "reason": "no agent email on the change order"
+      },
+      {
+        "project": "Hrolenok / Semler Change Order #2",
+        "type": "Change order",
+        "reason": "agent has no matched won project"
+      },
+      {
+        "project": "West CO #02",
+        "type": "Change order",
+        "reason": "no agent email on the change order"
+      },
+      {
+        "project": "Change Order",
+        "type": "Change order",
+        "reason": "no agent email on the change order"
+      },
+      {
+        "project": "Additional Landscaping",
+        "type": "Change order",
+        "reason": "agent has no matched won project"
+      },
+      {
+        "project": "Duvall / Marshall Change Order #2",
+        "type": "Change order",
+        "reason": "agent has no matched won project"
+      },
+      {
+        "project": "Change Order",
+        "type": "Change order",
+        "reason": "no agent email on the change order"
+      }
+    ],
+    "wonDealsWithRevenue": 52
+  },
+  "attribution": {
+    "measured": 58,
+    "inferred": 757,
+    "inferredByDate": 37,
+    "channelBefore": {
+      "(none)": 796,
+      "email": 46,
+      "partnership": 7,
+      "direct": 3
+    },
+    "channelAfter": {
+      "direct": 642,
+      "partnership": 123,
+      "email": 87
+    },
+    "utmWhitespaceTrimmed": 7,
+    "unknownMarketCodes": []
+  },
+  "correlation": {
+    "logicalCampaigns": 385,
+    "collapsedDuplicateSends": 198,
+    "emailLeadsEligible": 39,
+    "matched": 37,
+    "ambiguous": 15,
+    "preSendDataLeads": 0,
+    "topCampaigns": [
+      [
+        "lonewolf",
+        45
+      ],
+      [
+        "Long&FosterLift",
+        32
+      ],
+      [
+        "KWOfferings",
+        26
+      ],
+      [
+        "Exp",
+        12
+      ],
+      [
+        "personal",
+        9
+      ],
+      [
+        "easytip-jul",
+        7
+      ],
+      [
+        "exp-partner-landingpage",
+        7
+      ],
+      [
+        "honestly-jul",
+        6
+      ],
+      [
+        "price-jul",
+        5
+      ],
+      [
+        "phototax-aug",
+        5
+      ],
+      [
+        "july4th-jul",
+        4
+      ],
+      [
+        "3changes-aug",
+        4
+      ],
+      [
+        "simpleask-aug",
+        4
+      ],
+      [
+        "agent-won",
+        3
+      ],
+      [
+        "quick-tip",
+        3
+      ]
+    ]
+  }
+}

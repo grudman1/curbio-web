@@ -10,10 +10,11 @@ import type { Channel } from "@/lib/channels";
 // a class assembled at runtime, and a hand-maintained safelist of ten literal
 // class names is a second place to forget a channel.
 //
-// The mapping is EXHAUSTIVE over lib/channels.ts's closed nine — the Record
-// type makes adding a tenth channel a build error here, which is the point.
+// The mapping is EXHAUSTIVE over lib/channels.ts's closed ten — the Record
+// type makes adding an eleventh channel a build error here, which is the point.
 export const CHANNEL_INK: Record<Channel, string> = {
   partnership: "var(--ops-ch-partnership)",
+  event: "var(--ops-ch-event)",
   email: "var(--ops-ch-email)",
   organic: "var(--ops-ch-organic)",
   paid_search: "var(--ops-ch-paid-search)",

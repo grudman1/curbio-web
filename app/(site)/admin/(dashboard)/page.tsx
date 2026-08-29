@@ -4,7 +4,6 @@ import { MARKETS } from "@/config/markets";
 import {
   SNAPSHOT_AS_OF,
   SNAPSHOT_MONTHS,
-  SNAPSHOT_DEALS,
   aggregateSnapshot,
   channelForDeal,
   funnelOrdinal,
@@ -19,6 +18,7 @@ import {
 } from "@/config/marketingHub";
 import { CHANNEL_PLAN } from "@/config/channelPlan";
 import { readRecentLeads, recentCrmFailures } from "@/lib/adminLeads";
+import { mergedSnapshotDeals } from "@/lib/leadStore";
 import { computeUndocumentedCampaigns } from "@/lib/campaignOrphans";
 import type { Channel } from "@/lib/channels";
 import { paceRead } from "@/app/(site)/marketing/(hub)/pacing";
@@ -75,12 +75,15 @@ import {
 // cut. Every string below is either a label, a measured number, or a title
 // that stands on its own.
 //
-// ── Everything here is measured ────────────────────────────────────────────
-// Every figure comes from config/appLeadsSnapshot (the app export) through
-// the same aggregation the Markets, Channels and Report screens use. Nothing
-// is a placeholder. Where a metric has no source — Blended CAC needs the
-// spend store, which does not exist yet — the card shows a hollow status dot
-// and an em-dash, never an invented number and never a caption about it.
+// ── Everything here is real data, none of it invented ──────────────────────
+// Every figure comes from the merged lead store (the channel-backfilled app
+// import plus post-snapshot live leads) through the same aggregation the
+// Markets, Channels and Report screens use. Historical channels before
+// 2026-08-29 are partly INFERRED via the spec-§8 referral-source mapping —
+// the Attribution page carries the measured/inferred split. Where a metric
+// has no source — Blended CAC needs the spend store, which does not exist
+// yet — the card shows a hollow status dot and an em-dash, never an invented
+// number and never a caption about it.
 //
 // ── Two comparisons, and why they are different ────────────────────────────
 // PACE compares against the target, prorated to the snapshot's as-of day
@@ -122,11 +125,15 @@ type MonthCut = {
  *
  *  Every row in the snapshot is Qualified by definition, so a count IS the
  *  Qualified figure. */
-function cutWindow(monthSet: readonly string[], throughDay: number): MonthCut {
+function cutWindow(
+  monthSet: readonly string[],
+  throughDay: number,
+  deals: SnapshotDeal[]
+): MonthCut {
   const out: MonthCut = { total: 0, byChannel: {}, byMarket: {}, meetings: {}, proposals: {} };
   const last = monthSet[monthSet.length - 1];
   const inWindow = new Set(monthSet);
-  for (const deal of SNAPSHOT_DEALS) {
+  for (const deal of deals) {
     if (!inWindow.has(deal.month)) continue;
     if (deal.month === last && Number(deal.date.slice(8, 10)) > throughDay) continue;
     const ch = channelForDeal(deal);
@@ -152,9 +159,12 @@ function priorWindow(monthSet: readonly string[]): string[] {
 }
 
 /** Qualified per month across the whole snapshot, for KPI sparklines. */
-function monthlySeries(pick: (deals: SnapshotDeal[]) => number): SparkPoint[] {
+function monthlySeries(
+  pick: (deals: SnapshotDeal[]) => number,
+  deals: SnapshotDeal[]
+): SparkPoint[] {
   const byMonth = new Map<string, SnapshotDeal[]>();
-  for (const d of SNAPSHOT_DEALS) {
+  for (const d of deals) {
     const list = byMonth.get(d.month) ?? [];
     list.push(d);
     byMonth.set(d.month, list);
@@ -196,7 +206,10 @@ export default async function HomeScreen({
   const me = await currentAdminUser();
   const firstName = firstNameFrom(me?.email ?? "");
 
-  const agg = aggregateSnapshot(new Set(months));
+  // The merged store: channel-backfilled import + post-snapshot live leads —
+  // the same read Attribution, the Email page and Performance make.
+  const deals = await mergedSnapshotDeals();
+  const agg = aggregateSnapshot(new Set(months), "all", deals);
   const asOfDay = Number(SNAPSHOT_AS_OF.slice(8, 10));
 
   // ── company pace over the selected window ────────────────────────────────
@@ -218,8 +231,8 @@ export default async function HomeScreen({
   const isPartial = latestMonth === SNAPSHOT_AS_OF.slice(0, 7);
   const cutDay = isPartial ? asOfDay : 31;
   const priorMonths = priorWindow(months);
-  const latest = months.length ? cutWindow(months, cutDay) : null;
-  const prior = priorMonths.length ? cutWindow(priorMonths, cutDay) : null;
+  const latest = months.length ? cutWindow(months, cutDay, deals) : null;
+  const prior = priorMonths.length ? cutWindow(priorMonths, cutDay, deals) : null;
   const priorLabel = priorMonths.length
     ? priorMonths.length === 1
       ? monthShort(priorMonths[0])
@@ -231,19 +244,21 @@ export default async function HomeScreen({
   const revenue = Object.values(agg.cells).reduce((s, c) => s + c.revenue, 0);
   const closeRate = qualified > 0 ? closed / qualified : null;
 
-  const qualifiedSpark = monthlySeries((d) => d.length);
-  const closeRateSpark = monthlySeries((d) =>
-    d.length ? d.filter(isClosed).length / d.length : 0
+  const qualifiedSpark = monthlySeries((d) => d.length, deals);
+  const closeRateSpark = monthlySeries(
+    (d) => (d.length ? d.filter(isClosed).length / d.length : 0),
+    deals
   );
-  const revenueSpark = monthlySeries((d) =>
-    d.filter(isClosed).reduce((s, x) => s + (x.value ?? 0), 0)
+  const revenueSpark = monthlySeries(
+    (d) => d.filter(isClosed).reduce((s, x) => s + (x.revenue ?? x.value ?? 0), 0),
+    deals
   );
 
   // Prior-window comparisons for the KPI deltas, cut identically.
   const priorSet = new Set(priorMonths);
   const priorLast = priorMonths[priorMonths.length - 1];
   const priorClosed = priorMonths.length
-    ? SNAPSHOT_DEALS.filter(
+    ? deals.filter(
         (d) =>
           priorSet.has(d.month) &&
           !(d.month === priorLast && Number(d.date.slice(8, 10)) > cutDay) &&
@@ -252,7 +267,7 @@ export default async function HomeScreen({
     : null;
   const priorQualified = prior?.total ?? null;
   const monthSet = new Set(months);
-  const latestClosed = SNAPSHOT_DEALS.filter(
+  const latestClosed = deals.filter(
     (d) =>
       monthSet.has(d.month) &&
       !(d.month === latestMonth && Number(d.date.slice(8, 10)) > cutDay) &&
@@ -273,7 +288,7 @@ export default async function HomeScreen({
   // selection sits in the trend rather than hiding the rest of it.
   const inWindow = new Set(months);
   const trendMonths: TrendMonth[] = SNAPSHOT_MONTHS.slice(-12).map((ym) => {
-    const cut = cutWindow([ym], 31);
+    const cut = cutWindow([ym], 31, deals);
     return {
       ym,
       label: monthShort(ym),
