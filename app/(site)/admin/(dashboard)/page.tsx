@@ -223,7 +223,25 @@ export default async function HomeScreen({
   );
   const companyTargetPerMonth = QUALIFIED_TARGET_PER_MARKET_PER_MONTH * MARKETS.length;
   const target = companyTargetPerMonth * (months.length || 1);
-  const pace = paceRead(qualified, months, SNAPSHOT_AS_OF, companyTargetPerMonth);
+
+  // ── ONE expectation, and the parts add up to the whole ────────────────────
+  // The market rows and this card are both paceRead(), but each rounded its
+  // own result: 400 × 29/31 → 374 for the company, 50 × 29/31 → 47 per market,
+  // and 8 × 47 = 376. Two roundings, so the rows visibly failed to sum to the
+  // total. Since the company target IS the per-market target × the market
+  // count, the company EXPECTATION is defined the same way: round once, per
+  // market, then multiply. Nothing else may compute an expectation.
+  const expectedPerMarket =
+    paceRead(0, months, SNAPSHOT_AS_OF, QUALIFIED_TARGET_PER_MARKET_PER_MONTH)?.expected ?? 0;
+  const companyExpected = expectedPerMarket * MARKETS.length;
+  const paceBase = paceRead(qualified, months, SNAPSHOT_AS_OF, companyTargetPerMonth);
+  // state and coverage come from paceRead unchanged — only the expectation is
+  // re-derived, so the thresholds stay defined in exactly one place.
+  const pace = paceBase && {
+    ...paceBase,
+    expected: companyExpected,
+    delta: qualified - companyExpected,
+  };
 
   // ── the selected window, and the equivalent window before it ────────────
   // EVERY panel below reads these. Nothing computes from "the newest month"
@@ -441,15 +459,17 @@ export default async function HomeScreen({
   // Prorated across EVERY month in the window — a three-month window expects
   // roughly three months of leads per market, not one. This read "23 expected
   // each" under a "Last 3 months" title, which was the same window bug as the
-  // channel table's.
-  const expectedPerMarket =
-    paceRead(0, months, SNAPSHOT_AS_OF, QUALIFIED_TARGET_PER_MARKET_PER_MONTH)?.expected ?? 0;
+  // channel table's. `expectedPerMarket` is computed once, up with the company
+  // pace, so these rows and that card cannot disagree.
   const marketRows: ProgressRow[] = MARKETS.map((m) => {
     const got = latest?.byMarket[m.slug] ?? 0;
     return {
       key: m.slug,
       name: MARKET_NAME.get(m.slug) ?? m.slug,
-      sub: `${got} of ${expectedPerMarket}`,
+      // "4 of 47" read as though 47 were the target; the target is 50. A bare
+      // fraction states the ratio without naming either quantity, and the
+      // panel's own header carries what the denominator is.
+      sub: `${got} / ${expectedPerMarket}`,
       ratio: expectedPerMarket > 0 ? got / expectedPerMarket : 0,
       figure: expectedPerMarket > 0 ? `${Math.round((got / expectedPerMarket) * 100)}%` : "—",
       href: "/admin/markets",
@@ -468,12 +488,25 @@ export default async function HomeScreen({
   if (worst && expectedPerMarket > 0) {
     const short = Math.round(expectedPerMarket - expectedPerMarket * worst.ratio);
     if (short > 0) {
+      // The chip must measure the quantity the title names — the PACE GAP.
+      // It used to carry the change in that market's qualified count, so a row
+      // reading "43 behind pace" wore a green +3: two different quantities,
+      // and the colour was answering the wrong one. The gap's growth is what
+      // matters here, and a growing gap is bad, so goodDirection is "down".
+      const priorExpectedPerMarket = priorMonths.length
+        ? (paceRead(0, priorMonths, SNAPSHOT_AS_OF, QUALIFIED_TARGET_PER_MARKET_PER_MONTH)
+            ?.expected ?? 0)
+        : 0;
+      const priorShort =
+        prior && priorExpectedPerMarket > 0
+          ? Math.max(0, Math.round(priorExpectedPerMarket - (prior.byMarket[worst.key] ?? 0)))
+          : null;
       callouts.push({
         key: `market-${worst.key}`,
         severity: worst.ratio < 0.5 ? "error" : "warning",
         title: `${worst.name} is ${short} behind pace, the widest market gap`,
-        delta: prior ? (latest?.byMarket[worst.key] ?? 0) - (prior.byMarket[worst.key] ?? 0) : null,
-        goodDirection: "up",
+        delta: priorShort === null ? null : short - priorShort,
+        goodDirection: "down",
         href: "/admin/markets",
         linkLabel: "Markets",
         atStake: short,
@@ -554,7 +587,10 @@ export default async function HomeScreen({
         <OpsMetric
           label="Qualified leads"
           value={qualified.toLocaleString("en-US")}
-          suffix={`/ ${target.toLocaleString("en-US")}`}
+          // No "/ 400" here. The Pace card owns the target and shows it against
+          // expected-to-date, which is the reading that means something; a bare
+          // "122 / 400" invited comparison against the full-year target on a
+          // partial month and duplicated the gauge.
           sparkline={<Sparkline points={qualifiedSpark} tone="var(--ops-accent)" />}
           badge={
             priorLabel ? (

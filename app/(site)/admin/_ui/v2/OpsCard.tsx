@@ -109,13 +109,19 @@ export function OpsMetric({
         )}
       </div>
 
-      <div className="mt-3 flex items-end justify-between gap-3">
-        <div className="flex min-w-0 items-baseline gap-1.5">
+      <div className="mt-3 flex items-end justify-between gap-4">
+        {/* The suffix stays on the value's line while it fits, and drops to a
+            line of its own when it does not, instead of running under the
+            sparkline. It used to be `nowrap` on the reasoning that a unit
+            wrapping beneath its own number reads as a second datum — true, but
+            it assumed a short value and a short unit ("$14K", "1 won"). With
+            "$127K" and "5 projects" the line overran the chart by 16px at
+            1440, which is worse than a wrap. Nothing moves in the cards that
+            still fit. */}
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
           <span className={`ops-metric-value${unwired ? " ops-metric-value--empty" : ""}`}>
             {value}
           </span>
-          {/* nowrap: the suffix is a unit, and a unit that wraps under its own
-              number reads as a second line of data rather than as part of it. */}
           {suffix && <span className="ops-metric-suffix whitespace-nowrap">{suffix}</span>}
         </div>
         {/* flex-none: if anything has to give, it is not the chart's scale. */}
