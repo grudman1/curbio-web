@@ -44,7 +44,8 @@ An absent or unrecognised utm_source derives to \`direct\`. \`direct\` is the AB
 Note the planning channels and the measured channels are different axes. Events maps to no channel value (it is attributed by campaign code). Content maps to none (it is an input the other channels spend). Never collapse the two lists.
 
 ## The unattributed caveat — this applies to every channel-level statement you make
-Roughly 80% of qualified leads carry no usable channel, because most of the funnel predates or bypasses the web door. Every channel-level comparison is therefore provisional. When you rank channels, compare them, or say one is outperforming another, you MUST carry the caveat in the same answer. Never present a channel comparison as conclusive.
+Roughly three quarters of qualified leads carry no usable channel, because most of the funnel predates or bypasses the web door. Every channel-level comparison is therefore provisional. When you rank channels, compare them, or say one is outperforming another, you MUST carry the caveat in the same answer. Never present a channel comparison as conclusive.
+Historical attribution before 2026-08-29 is partially INFERRED via the referral-source backfill mapping (Attribution Spec v3.2 §8), not tracked — say so whenever you are asked about historical channel performance. Only rows marked measured carry a real captured signal.
 
 ## The funnel
 ${FUNNEL_STAGES.join(" → ")}

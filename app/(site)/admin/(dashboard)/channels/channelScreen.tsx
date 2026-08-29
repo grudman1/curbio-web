@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { CHANNEL_PLAN_BY_SLUG } from "@/config/channelPlan";
 import { SNAPSHOT_MONTHS, aggregateSnapshot } from "@/config/appLeadsSnapshot";
+import { mergedSnapshotDeals } from "@/lib/leadStore";
 import { QUALIFIED_TARGET_PER_MARKET_PER_MONTH } from "@/config/marketingHub";
 import { MARKETS } from "@/config/markets";
 import { PageHeader } from "../../_ui/AppShell";
@@ -33,7 +34,9 @@ export async function ChannelScreen({
   // gets null, not zero — that distinction is the whole point.
   let qualified: number | null = null;
   if (plan.channels.length > 0 && months.length > 0) {
-    const agg = aggregateSnapshot(new Set(months));
+    // The merged store (import + post-snapshot live leads) — the same read
+    // Home, Attribution and Performance make, so the surfaces agree.
+    const agg = aggregateSnapshot(new Set(months), "all", await mergedSnapshotDeals());
     const covered = new Set<string>(plan.channels);
     qualified = Object.entries(agg.cells).reduce(
       (sum, [key, cell]) => (covered.has(key.split("|")[1]) ? sum + cell.qualified : sum),

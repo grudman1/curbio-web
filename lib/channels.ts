@@ -1,6 +1,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Channel taxonomy — the single source of truth for lead attribution channels.
-// From the Curbio Attribution System spec: a CLOSED nine-value list. Both the
+// From the Curbio Attribution System spec (v3.2): a CLOSED TEN-value list —
+// `event` added ahead of the October event push (webinars, conference booths,
+// open houses are a funded motion under the spend test). `mail` is documented
+// as next-in-line, added only when the direct-mail motion launches. Both the
 // client (FormCard / WaitlistPage / analytics) and the lead route import from
 // here — the list must never be defined twice again.
 //
@@ -20,6 +23,7 @@ export const VALID_CHANNELS = [
   "organic",
   "referral",
   "direct",
+  "event",
 ] as const;
 
 export type Channel = (typeof VALID_CHANNELS)[number];
@@ -43,6 +47,7 @@ export const CHANNEL_COLORS: Record<Channel, string> = {
   paid_social: "#c4785e", // terracotta
   organic: "#7a8f3d", // olive
   referral: "#5b7d8f", // slate
+  event: "#a08a3c", // ochre
   direct: "#9aa3ad", // grey — no known channel
 };
 

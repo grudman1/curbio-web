@@ -29,13 +29,17 @@ export default async function AttributionPage({
   const tf = parseTimeframe(sp.t, SNAPSHOT_MONTHS);
   const months = monthsFor(tf, SNAPSHOT_MONTHS);
   const tfLabel = timeframeLabel(tf, SNAPSHOT_MONTHS);
+  // Provenance filter: measured (real UTM signal) / inferred (spec-§8
+  // backfill) / all. Anything unrecognised falls to "all".
+  const f = sp.f === "measured" || sp.f === "inferred" ? sp.f : "all";
+  const tParam = typeof sp.t === "string" ? sp.t : undefined;
   const { orphans } = await computeUndocumentedCampaigns(SCAN);
 
   return (
     <>
       <HubPageHeader surface={surface} />
       <UndocumentedCampaignsBanner orphans={orphans} leadWindow={SCAN} />
-      <AttributionHealthPanel months={months} tfLabel={tfLabel} detailed />
+      <AttributionHealthPanel months={months} tfLabel={tfLabel} detailed filter={f} tParam={tParam} />
       <NeedsBlock surface={surface} />
     </>
   );

@@ -130,6 +130,9 @@
   --ops-ch-creator: #8aa6c4;
   --ops-ch-events: #6b4e86;
   --ops-ch-referral: #5b7d8f;
+  /* `event` — the tenth channel (spec v3.2). Distinct from --ops-ch-events,
+     which predates it and colours hsm_field. */
+  --ops-ch-event: #a08a3c;
   /* Grey, because it is the ABSENCE of attribution — it must never read as
      a channel that is winning. */
   --ops-ch-direct: var(--ops-gray-300);
