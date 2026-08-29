@@ -86,19 +86,22 @@ export function ChannelsTable({
   }
 
   return (
-    <section className="overflow-hidden rounded-ui2-card border border-ui2-border bg-ui2-card shadow-ui2-card">
-      <div className="flex items-baseline justify-between gap-3 px-5 pb-2.5 pt-3.5">
-        <h2 className="m-0 font-ui2 text-ui2-section font-bold text-ui2-text">{title}</h2>
-        <span className="font-ui2 text-ui2-caption tabular-nums text-ui2-gray-400">{meta}</span>
+    <section className="ops-card overflow-hidden">
+      <div className="ops-card-head">
+        <h2 className="ops-card-title">{title}</h2>
+        <span className="ops-card-meta">{meta}</span>
       </div>
 
       {rows.length === 0 ? (
-        <p className="m-0 border-t border-ui2-divider px-5 py-6 text-center font-ui2 text-[length:var(--ui2-text-row)] text-ui2-text-muted">
+        <p
+          className="ops-muted m-0 border-t px-5 py-8 text-center text-[14px]"
+          style={{ borderColor: "var(--ops-divider)" }}
+        >
           No leads carried a known channel in this window.
         </p>
       ) : (
         <>
-          <div className={`${GRID} px-5 pb-2`}>
+          <div className={`${GRID} px-5 pb-2`} style={{ borderColor: "var(--ops-divider)" }}>
             {COLUMNS.map((c) => (
               <button
                 key={c.key}
@@ -115,9 +118,10 @@ export function ChannelsTable({
                     ? `${c.label}, sorted ${dir === -1 ? "descending" : "ascending"}. Activate to reverse.`
                     : `Sort by ${c.label}`
                 }
-                className={`cursor-pointer border-0 bg-transparent p-0 font-ui2 text-ui2-eyebrow font-extrabold uppercase tracking-[0.08em] transition-colors duration-fast ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui2-accent ${
+                className={`ops-th cursor-pointer border-0 bg-transparent p-0 transition-colors duration-fast ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
                   c.align === "right" ? "text-right" : "text-left"
-                } ${sort === c.key ? "text-ui2-text" : "text-ui2-gray-400 hover:text-ui2-text-muted"}`}
+                }`}
+                style={{ color: sort === c.key ? "var(--ops-text)" : undefined }}
               >
                 {c.label}
                 {sort === c.key && <span aria-hidden>{dir === -1 ? " ↓" : " ↑"}</span>}
@@ -137,32 +141,29 @@ export function ChannelsTable({
                   router.push(r.href);
                 }
               }}
-              className={`${GRID} cursor-pointer border-t border-ui2-divider px-5 py-2.5 font-ui2 text-ui2-body transition-colors duration-fast ease-out hover:bg-ui2-well focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ui2-accent`}
+              className={`${GRID} ops-tbody-row ops-tbody-row--link border-t px-5 py-3 text-[14px] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px]`}
+              style={{ borderColor: "var(--ops-divider)" }}
             >
-              <span className="flex min-w-0 items-center gap-2.5 font-semibold text-ui2-text">
-                <span
-                  className="h-[9px] w-[9px] flex-none rounded-[var(--ui2-radius-sm)]"
-                  style={{ background: CHANNEL_INK[r.channel] }}
-                  aria-hidden
-                />
+              <span className="flex min-w-0 items-center gap-2.5 font-semibold" style={{ color: "var(--ops-text)" }}>
+                <span className="ops-swatch" style={{ background: CHANNEL_INK[r.channel] }} aria-hidden />
                 <span className="truncate">{r.label}</span>
               </span>
-              <span className="text-right font-bold tabular-nums text-ui2-text">{r.qualified}</span>
+              <span className="ops-num font-semibold" style={{ color: "var(--ops-text)" }}>{r.qualified}</span>
               <span
-                className={`text-right font-bold tabular-nums ${
-                  r.delta === null
-                    ? "text-ui2-gray-400"
-                    : r.delta > 0
-                      ? "text-ui2-green"
-                      : r.delta < 0
-                        ? "text-ui2-red"
-                        : "text-ui2-gray-400"
-                }`}
+                className="ops-num font-semibold"
+                style={{
+                  color:
+                    r.delta === null || r.delta === 0
+                      ? "var(--ops-text-subtle)"
+                      : r.delta > 0
+                        ? "var(--ops-success-700)"
+                        : "var(--ops-error-700)",
+                }}
               >
                 {r.delta === null ? "—" : `${r.delta > 0 ? "+" : r.delta < 0 ? "−" : ""}${Math.abs(r.delta)}`}
               </span>
-              <span className="text-right tabular-nums text-ui2-text-muted">{r.meetings}</span>
-              <span className="text-right tabular-nums text-ui2-text-muted">{r.proposals}</span>
+              <span className="ops-num ops-muted">{r.meetings}</span>
+              <span className="ops-num ops-muted">{r.proposals}</span>
             </div>
           ))}
         </>

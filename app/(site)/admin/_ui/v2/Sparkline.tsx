@@ -40,13 +40,13 @@ export function Sparkline({
       <path
         d={d}
         fill="none"
-        stroke="var(--ui2-text-muted)"
+        stroke="var(--ops-gray-400)"
         strokeWidth="1.25"
         strokeLinejoin="round"
         strokeLinecap="round"
         vectorEffect="non-scaling-stroke"
       />
-      <circle cx={coords[coords.length - 1][0]} cy={coords[coords.length - 1][1]} r="1.75" fill="var(--ui2-text)" />
+      <circle cx={coords[coords.length - 1][0]} cy={coords[coords.length - 1][1]} r="1.75" fill="var(--ops-text)" />
     </svg>
   );
 }

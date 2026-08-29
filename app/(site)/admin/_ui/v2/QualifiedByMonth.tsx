@@ -15,8 +15,12 @@ import { CHANNEL_INK } from "./channelViz";
 // reading an instruction.
 //
 // The legend carries the channel names. That is the whole explanation budget
-// for this chart — a caption saying which band is which would be repeating
-// the legend in prose.
+// for this chart — a caption saying which band is which would be repeating the
+// legend in prose.
+//
+// Restyled onto the ops design system: swatches, muted tones and the divider
+// beside the breakdown panel all come from tokens.css rather than from
+// utilities defined for this one screen.
 
 export type TrendMonth = {
   ym: string;
@@ -56,7 +60,10 @@ export function QualifiedByMonth({
   return (
     <div className="mt-3.5 flex items-start gap-6">
       <div className="min-w-0 flex-1">
-        <div className="flex items-end gap-2.5 border-b border-ui2-border" style={{ height: CHART_H }}>
+        <div
+          className="flex items-end gap-2.5 border-b"
+          style={{ height: CHART_H, borderColor: "var(--ops-border)" }}
+        >
           {months.map((m, i) => {
             const isActive = i === (focus > last ? last : focus);
             return (
@@ -68,14 +75,14 @@ export function QualifiedByMonth({
                 onClick={() => setFocus(i)}
                 aria-label={`${m.label}: ${m.total} qualified`}
                 aria-pressed={isActive}
-                className="flex h-full flex-1 cursor-pointer flex-col justify-end border-0 bg-transparent p-0 transition-opacity duration-fast ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ui2-accent"
+                className="flex h-full flex-1 cursor-pointer flex-col justify-end border-0 bg-transparent p-0 transition-opacity duration-fast ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                 style={{ opacity: isActive ? 1 : 0.62 }}
               >
-                <span className="pb-1 text-center font-ui2 text-ui2-eyebrow font-bold tabular-nums text-ui2-text-muted">
+                <span className="ops-tnum ops-muted pb-1 text-center text-[12px] font-semibold leading-[18px]">
                   {m.total}
                 </span>
                 <span
-                  className="flex flex-col-reverse overflow-hidden rounded-t-ui2-sm"
+                  className="flex flex-col-reverse overflow-hidden rounded-t-[4px]"
                   style={{ height: `${(m.total / max) * 100}%` }}
                 >
                   {channels.map(({ channel }) => {
@@ -101,11 +108,14 @@ export function QualifiedByMonth({
           {months.map((m, i) => (
             <div
               key={m.ym}
-              className={`flex-1 text-center font-ui2 text-ui2-eyebrow tabular-nums ${
-                i === (focus > last ? last : focus)
-                  ? "font-bold text-ui2-text"
-                  : "text-ui2-gray-400"
-              }`}
+              className="ops-tnum flex-1 text-center text-[12px] leading-[18px]"
+              style={{
+                fontWeight: i === (focus > last ? last : focus) ? 600 : 400,
+                color:
+                  i === (focus > last ? last : focus)
+                    ? "var(--ops-text)"
+                    : "var(--ops-text-subtle)",
+              }}
             >
               {m.label}
             </div>
@@ -116,7 +126,7 @@ export function QualifiedByMonth({
           {channels.map(({ channel, label }) => (
             <li
               key={channel}
-              className="inline-flex items-center gap-1.5 font-ui2 text-[11.5px] font-semibold text-ui2-text-muted"
+              className="ops-muted inline-flex items-center gap-1.5 text-[12px] font-medium"
             >
               <Swatch channel={channel} />
               {label}
@@ -125,20 +135,23 @@ export function QualifiedByMonth({
         </ul>
       </div>
 
-      <div className="w-[200px] flex-none border-l border-ui2-divider pl-5">
-        <div className="font-ui2 text-ui2-eyebrow font-extrabold uppercase tracking-[0.1em] text-ui2-gray-400">
-          {active.breakdownTitle}
-        </div>
+      <div
+        className="w-[200px] flex-none border-l pl-5"
+        style={{ borderColor: "var(--ops-divider)" }}
+      >
+        <div className="ops-eyebrow">{active.breakdownTitle}</div>
         <ul className="m-0 mt-1 list-none p-0" aria-live="polite">
           {channels
             .map(({ channel, label }) => ({ channel, label, v: active.byChannel[channel] ?? 0 }))
             .filter((r) => r.v > 0)
             .sort((a, b) => b.v - a.v)
             .map(({ channel, label, v }) => (
-              <li key={channel} className="flex items-center gap-2 py-[5px] font-ui2 text-[12.5px]">
+              <li key={channel} className="flex items-center gap-2 py-1.5 text-[13px]">
                 <Swatch channel={channel} />
-                <span className="min-w-0 flex-1 truncate text-ui2-text-muted">{label}</span>
-                <span className="font-bold tabular-nums text-ui2-text">{v}</span>
+                <span className="ops-muted min-w-0 flex-1 truncate">{label}</span>
+                <span className="ops-tnum font-semibold" style={{ color: "var(--ops-text)" }}>
+                  {v}
+                </span>
               </li>
             ))}
         </ul>
@@ -150,7 +163,7 @@ export function QualifiedByMonth({
 function Swatch({ channel }: { channel: Channel }) {
   return (
     <span
-      className="h-[9px] w-[9px] flex-none rounded-[var(--ui2-radius-sm)]"
+      className="ops-swatch"
       style={{ background: CHANNEL_INK[channel] }}
       aria-hidden
     />

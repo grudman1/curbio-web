@@ -31,30 +31,38 @@ import { currentAdminUser } from "../_ui/session";
 import { firstNameFrom } from "../_ui/userDisplay";
 import { AskHero } from "./AskHero";
 import {
-  Blockers,
-  Card,
   ChannelsTable,
-  PacingStrip,
+  OpsCard,
+  OpsDelta,
+  OpsMetric,
+  PaceGauge,
+  ProgressRows,
   QualifiedByMonth,
-  StatCard,
+  RangeTabs,
+  Sparkline,
   channelLabel,
   formatFreshness,
-  type Blocker,
   type ChannelLegend,
   type ChannelRow,
-  type Health,
+  type ProgressRow,
   type SparkPoint,
   type TrendMonth,
 } from "../_ui/v2";
-import "../_ui/v2/tokens.css";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HOME — the approved 2026 redesign.
+// HOME — on the ops design system (_ui/v2/tokens.css).
 //
-// Six sections, top to bottom: the ask hero, the pacing strip, what's in the
-// way, the KPI row, qualified-by-month, and the channel table. Analytics
-// answers "why"; Home answers "where are we, and what is costing us the
-// most".
+// A dashboard grid rather than a stack of full-width bands: ask hero, then a
+// KPI row, then a 12-column body that pairs the pace gauge with the market
+// breakdown and the chart with its channel table. Analytics answers "why";
+// Home answers "where are we, and what is costing us the most".
+//
+// ── What replaced what ─────────────────────────────────────────────────────
+// The flat pacing bar became a PaceGauge — same three measured numbers
+// (actual, expected-by-now, target), read as an arc against a threshold.
+// "What's in the way" became ProgressRows over every market: a ranked list of
+// three blockers was three sentences where eight bars are the whole picture,
+// and the bars need no titles to write.
 //
 // ── The prose rule ─────────────────────────────────────────────────────────
 // NO EXPLANATORY COPY ANYWHERE ON THIS SCREEN. No caption telling the reader
@@ -141,13 +149,17 @@ const CHANNEL_HREF: Partial<Record<Channel, string>> = Object.fromEntries(
   CHANNEL_PLAN.flatMap((plan) => plan.channels.map((c) => [c, `/admin/channels/${plan.slug}`]))
 );
 
-const PACE_HEALTH: Record<"on" | "behind" | "risk", Health> = {
-  on: "good",
-  behind: "warn",
-  risk: "bad",
-};
-
 const MARKET_NAME = new Map(MARKETS.map((m) => [m.slug, m.displayName]));
+
+/** Ranges the chart card offers. These are timeframe kinds parseTimeframe
+ *  already understands, so the card control and the header control are one
+ *  piece of state (`?t=`) rather than two that can disagree. Month-grain only
+ *  — the snapshot is a monthly export and cannot answer a 7-day question. */
+const RANGE_OPTIONS = [
+  { value: "3m", label: "3 months" },
+  { value: "12m", label: "12 months" },
+  { value: "ytd", label: "Year to date" },
+];
 
 export default async function HomeScreen({
   searchParams,
@@ -158,6 +170,9 @@ export default async function HomeScreen({
   const tf = parseTimeframe(sp.t, SNAPSHOT_MONTHS, "month");
   const months = monthsFor(tf, SNAPSHOT_MONTHS);
   const attribution = parseAttribution(sp.a);
+  // Which range pill reads as selected. Falls back to the month default when the
+  // URL carries a specific month rather than one of the named ranges.
+  const rangeValue = RANGE_OPTIONS.some((o) => o.value === sp.t) ? (sp.t as string) : "";
 
   // cache()d in session.ts — the layout reads this in the same request, so
   // this is a shared Redis hit rather than a second one.
@@ -256,101 +271,46 @@ export default async function HomeScreen({
 
   const attributedTotal = channelRows.reduce((s, r) => s + r.qualified, 0);
 
-  // ── "What's in the way": ranked by leads at stake ───────────────────────
-  const blockers: (Blocker & { atStake: number })[] = [];
-
-  if (latest && latest.total > 0) {
-    const unattributed = latest.byChannel.direct ?? 0;
-    if (unattributed > 0) {
-      const share = unattributed / latest.total;
-      const priorShare = prior && prior.total > 0 ? (prior.byChannel.direct ?? 0) / prior.total : null;
-      blockers.push({
-        key: "unattributed",
-        title: `${unattributed} of ${latest.total} qualified leads have no known channel`,
-        delta: priorShare === null ? null : Math.round((share - priorShare) * 100),
-        deltaUnit: "pts",
-        goodDirection: "down",
-        href: "/admin/attribution",
-        linkLabel: "Attribution",
-        atStake: unattributed,
-      });
-    }
-  }
-
-  // Per-market shortfall against the same prorated expectation the company
-  // total uses, so the parts and the whole are measured the same way.
-  if (latestMonth) {
-    const expectedPerMarket =
-      paceRead(0, [latestMonth], SNAPSHOT_AS_OF, QUALIFIED_TARGET_PER_MARKET_PER_MONTH)?.expected ?? 0;
-    const shortfalls = MARKETS.map((m) => {
-      const got = latest?.byMarket[m.slug] ?? 0;
-      return {
-        slug: m.slug,
-        name: MARKET_NAME.get(m.slug) ?? m.slug,
-        got,
-        short: expectedPerMarket - got,
-        delta: prior ? got - (prior.byMarket[m.slug] ?? 0) : null,
-      };
-    })
-      .filter((r) => r.short > 0)
-      .sort((a, b) => b.short - a.short)
-      .slice(0, 2);
-
-    for (const s of shortfalls) {
-      blockers.push({
-        key: `market-${s.slug}`,
-        title: `${s.name} is ${s.short} behind pace`,
-        delta: s.delta,
-        goodDirection: "up",
-        href: `/admin/markets`,
-        linkLabel: "Markets",
-        atStake: s.short,
-      });
-    }
-  }
-
-  // Largest attributed-channel decline.
-  if (latest && prior) {
-    const drops = attributedChannels
-      .map((c) => ({ c, drop: (prior.byChannel[c] ?? 0) - (latest.byChannel[c] ?? 0) }))
-      .filter((r) => r.drop > 0)
-      .sort((a, b) => b.drop - a.drop);
-    const worst = drops[0];
-    if (worst) {
-      blockers.push({
-        key: `channel-${worst.c}`,
-        title: `${CHANNEL_LABELS[worst.c]} is down ${worst.drop} qualified, the largest attributed drop`,
-        delta: -worst.drop,
-        goodDirection: "up",
-        href: CHANNEL_HREF[worst.c] ?? "/admin/attribution",
-        linkLabel: CHANNEL_LABELS[worst.c],
-        atStake: worst.drop,
-      });
-    }
-  }
-
-  const rankedBlockers = blockers.sort((a, b) => b.atStake - a.atStake).slice(0, 3);
+  // ── markets against pace ────────────────────────────────────────────────
+  // Every market, not a top-three: the shape of the set is the finding, and
+  // eight bars carry it without a sentence. Measured against the same
+  // prorated expectation the company total uses, so the parts and the whole
+  // are computed identically.
+  const expectedPerMarket = latestMonth
+    ? (paceRead(0, [latestMonth], SNAPSHOT_AS_OF, QUALIFIED_TARGET_PER_MARKET_PER_MONTH)?.expected ?? 0)
+    : 0;
+  const marketRows: ProgressRow[] = MARKETS.map((m) => {
+    const got = latest?.byMarket[m.slug] ?? 0;
+    return {
+      key: m.slug,
+      name: MARKET_NAME.get(m.slug) ?? m.slug,
+      sub: `${got} of ${expectedPerMarket}`,
+      ratio: expectedPerMarket > 0 ? got / expectedPerMarket : 0,
+      figure: expectedPerMarket > 0 ? `${Math.round((got / expectedPerMarket) * 100)}%` : "—",
+      href: "/admin/markets",
+      tone: "accent" as const,
+    };
+  }).sort((a, b) => b.ratio - a.ratio);
 
   // ── hero context ─────────────────────────────────────────────────────────
   const windowLabel = timeframeLabel(tf, SNAPSHOT_MONTHS);
   const scopeLabel = `Scope: ${windowLabel} · All markets`;
   const attributionLabel = attribution === "first" ? "First touch" : "Last touch";
 
-  const worstMarket = rankedBlockers.find((b) => b.key.startsWith("market-"));
+  const worstMarket = marketRows[marketRows.length - 1];
   const suggestions = [
-    worstMarket
-      ? { label: `Why is ${worstMarket.title.split(" is ")[0]} behind?`, ink: "var(--ui2-red)" }
-      : { label: "Which market is furthest behind?", ink: "var(--ui2-red)" },
-    { label: "How much of this window is unattributed?", ink: "var(--ui2-ch-direct)" },
-    { label: "Which channel moved most?", ink: "var(--ui2-amber)" },
-    { label: "Draft the Monday pacing note", ink: "var(--ui2-accent)" },
+    {
+      label: worstMarket ? `Why is ${worstMarket.name} behind?` : "Which market is furthest behind?",
+      ink: "var(--ops-error-500)",
+    },
+    { label: "How much of this window is unattributed?", ink: "var(--ops-ch-direct)" },
+    { label: "Which channel moved most?", ink: "var(--ops-accent)" },
+    { label: "Draft the Monday pacing note", ink: "var(--ops-brand)" },
   ];
 
-  const cutNote = isPartial ? `${monthShort(SNAPSHOT_AS_OF.slice(0, 7))} 1–${asOfDay}` : windowLabel;
-  const priorNote = priorLabel ? `${priorLabel} 1–${isPartial ? asOfDay : 31}` : null;
 
   return (
-    <div className="ui2 font-ui2">
+    <>
       <AskHero
         configured={Boolean(process.env.ANTHROPIC_API_KEY)}
         firstName={firstName}
@@ -359,85 +319,109 @@ export default async function HomeScreen({
         suggestions={suggestions}
       />
 
-      <div className="flex flex-col gap-4">
-        {pace && (
-          <PacingStrip
-            label={`Qualified · ${windowLabel} · through ${formatFreshness(SNAPSHOT_AS_OF)}`}
-            value={qualified}
-            target={target}
-            expected={pace.expected}
-            delta={pace.delta}
-          />
-        )}
-
-        <Blockers
-          items={rankedBlockers}
-          meta={
-            priorNote
-              ? `ranked by leads at stake · ${cutNote} vs ${priorNote}`
-              : `ranked by leads at stake · ${cutNote}`
+      {/* KPI row. Four equal tiles — the one thing on this screen that is a
+          simple repeating unit, so it stays a simple repeating grid. */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
+        <OpsMetric
+          label="Qualified leads"
+          value={qualified.toLocaleString("en-US")}
+          suffix={`/ ${target.toLocaleString("en-US")}`}
+          sparkline={<Sparkline points={qualifiedSpark} />}
+          badge={
+            priorLabel ? (
+              <OpsDelta
+                value={qualifiedDelta === null ? null : Math.round(qualifiedDelta * 100)}
+                suffix="%"
+                label={`vs ${priorLabel}`}
+              />
+            ) : undefined
           }
         />
-
-        <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
-          <StatCard
-            label="Qualified leads"
-            value={qualified.toLocaleString("en-US")}
-            valueSuffix={`/ ${target.toLocaleString("en-US")}`}
-            health={pace ? PACE_HEALTH[pace.state] : "unknown"}
-            sparkline={qualifiedSpark}
-            delta={
-              priorLabel
-                ? { value: qualifiedDelta, label: `vs ${priorLabel}`, goodDirection: "up" }
-                : undefined
-            }
-          />
-          <StatCard
-            label="Close rate"
-            value={closeRate === null ? DASH : `${(closeRate * 100).toFixed(1)}%`}
-            health={closeRate === null ? "unknown" : "good"}
-            sparkline={closeRateSpark}
-            delta={
-              priorLabel
-                ? { value: closeRateDelta, label: `vs ${priorLabel}`, goodDirection: "up" }
-                : undefined
-            }
-          />
-          <StatCard
-            label="Booked revenue"
-            value={revenue > 0 ? usdCompact(revenue) : DASH}
-            valueSuffix={closed > 0 ? `${closed} won` : undefined}
-            health={revenue > 0 ? "good" : "unknown"}
-            sparkline={revenueSpark}
-          />
-          <StatCard
-            label="Blended CAC"
-            value={DASH}
-            statusDot={{ tooltip: "Not wired — needs the spend store." }}
-          />
-        </div>
-
-        <Card
-          title="Qualified by month"
-          headerHref="/admin/performance"
-          right={
-            <span className="font-ui2 text-ui2-caption text-ui2-gray-400">
-              {trendMonths.length} months · Performance ›
-            </span>
+        <OpsMetric
+          label="Close rate"
+          value={closeRate === null ? DASH : `${(closeRate * 100).toFixed(1)}%`}
+          sparkline={<Sparkline points={closeRateSpark} />}
+          badge={
+            priorLabel ? (
+              <OpsDelta
+                value={closeRateDelta === null ? null : Math.round(closeRateDelta * 1000) / 10}
+                suffix=" pts"
+                label={`vs ${priorLabel}`}
+              />
+            ) : undefined
           }
-        >
-          <QualifiedByMonth months={trendMonths} channels={chartLegend} />
-        </Card>
-
-        <ChannelsTable
-          title={`Channels, ${windowLabel}`}
-          deltaLabel={priorLabel ? `vs ${priorLabel}` : "vs prior"}
-          meta={
-            latest ? `${attributedTotal} attributed of ${latest.total} qualified` : ""
-          }
-          rows={channelRows}
+        />
+        <OpsMetric
+          label="Booked revenue"
+          value={revenue > 0 ? usdCompact(revenue) : DASH}
+          suffix={closed > 0 ? `${closed} won` : undefined}
+          sparkline={<Sparkline points={revenueSpark} />}
+        />
+        <OpsMetric
+          label="Blended CAC"
+          value={DASH}
+          unwired={{ tooltip: "Not wired — needs the spend store." }}
         />
       </div>
-    </div>
+
+      {/* The body grid. Asymmetric spans on purpose: the gauge is a single
+          figure and needs less width than the eight market bars beside it. */}
+      <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6">
+        {pace && (
+          <div className="col-span-12 xl:col-span-5">
+            <OpsCard
+              title="Pace"
+              meta={`through ${formatFreshness(SNAPSHOT_AS_OF)}`}
+              ruled
+            >
+              <PaceGauge
+                value={qualified}
+                target={target}
+                expected={pace.expected}
+                footer={[
+                  { label: "Qualified", value: qualified.toLocaleString("en-US") },
+                  { label: "Expected", value: pace.expected.toLocaleString("en-US") },
+                  {
+                    label: "Target",
+                    value: target.toLocaleString("en-US"),
+                    tone: "muted",
+                  },
+                ]}
+              />
+            </OpsCard>
+          </div>
+        )}
+
+        <div className={pace ? "col-span-12 xl:col-span-7" : "col-span-12"}>
+          <OpsCard
+            title="Markets against pace"
+            meta={`${windowLabel} · ${expectedPerMarket} expected each`}
+            headerHref="/admin/markets"
+            ruled
+          >
+            <ProgressRows rows={marketRows} />
+          </OpsCard>
+        </div>
+
+        <div className="col-span-12">
+          <OpsCard
+            title="Qualified by month"
+            control={<RangeTabs options={RANGE_OPTIONS} current={rangeValue} />}
+            ruled
+          >
+            <QualifiedByMonth months={trendMonths} channels={chartLegend} />
+          </OpsCard>
+        </div>
+
+        <div className="col-span-12">
+          <ChannelsTable
+            title={`Channels, ${windowLabel}`}
+            deltaLabel={priorLabel ? `vs ${priorLabel}` : "vs prior"}
+            meta={latest ? `${attributedTotal} attributed of ${latest.total} qualified` : ""}
+            rows={channelRows}
+          />
+        </div>
+      </div>
+    </>
   );
 }

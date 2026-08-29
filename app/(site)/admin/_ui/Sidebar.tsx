@@ -7,7 +7,19 @@ import { NavIcon } from "./NavIcon";
 import { Icon } from "./Icon";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// THE sidebar — v4 (2026-08 single-open accordion + drag-resize redesign).
+// THE sidebar — v5 (restyled onto the ops design system; _ui/v2/tokens.css).
+//
+// BEHAVIOUR IS UNCHANGED from v4 — single-open accordion, drag-resize, the
+// same localStorage keys. Only the skin moved: `.ops-nav-item` /
+// `.ops-nav-sub`, a "MENU" section label, and an active state that is a TINTED
+// pill rather than a solid navy fill. The solid fill made the sidebar the
+// loudest object on a screen whose job is the data.
+//
+// The classes come from the shared ops stylesheet, not from anything defined
+// here, so Leads/Markets/Performance inherit the same nav treatment when they
+// migrate.
+//
+// ── v4 notes, still true ────────────────────────────────────────────────────
 //
 // EXPAND ON CLICK, NEVER HOVER. A parent row with children is a pure
 // disclosure toggle — it does not navigate itself, only its children do.
@@ -195,7 +207,10 @@ export function Sidebar({
   return (
     <>
       {/* Mobile: sticky top bar + drawer toggle, hidden ≥md where the rail is always visible. */}
-      <div className="sticky top-0 z-40 flex items-center gap-2.5 border-b border-app-border bg-app-card px-4 py-2.5 md:hidden">
+      <div
+        className="sticky top-0 z-40 flex items-center gap-2.5 border-b px-4 py-2.5 md:hidden"
+        style={{ borderColor: "var(--ops-border)", background: "var(--ops-surface)" }}
+      >
         <Link href={withQuery("/admin")} onClick={closeMobile} className="flex flex-none items-center" aria-label="Curbio Ops — Home">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo/curbio-navy.svg" alt="Curbio" width={100} height={26} className="h-[22px] w-auto" />
@@ -205,7 +220,7 @@ export function Sidebar({
           aria-expanded={mobileOpen}
           aria-controls="admin-nav"
           onClick={() => setMobileOpen((v) => !v)}
-          className="ml-auto flex cursor-pointer items-center gap-2 rounded-md border border-app-border-strong bg-app-card px-2.5 py-1.5 font-sans text-ops-label font-bold text-content"
+          className="ops-btn ml-auto"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden>
             <path d="M1.5 3h11M1.5 7h11M1.5 11h11" />
@@ -218,8 +233,14 @@ export function Sidebar({
         ref={navRef}
         id="admin-nav"
         aria-label="Control Room"
-        style={{ width, minWidth: MIN_WIDTH, maxWidth: MAX_WIDTH }}
-        className={`${mobileOpen ? "flex" : "hidden"} relative w-full flex-none flex-col border-r border-app-border bg-app-card md:sticky md:top-0 md:flex md:h-screen md:self-start ${
+        style={{
+          width,
+          minWidth: MIN_WIDTH,
+          maxWidth: MAX_WIDTH,
+          borderColor: "var(--ops-border)",
+          background: "var(--ops-surface)",
+        }}
+        className={`${mobileOpen ? "flex" : "hidden"} relative w-full flex-none flex-col border-r md:sticky md:top-0 md:flex md:h-screen md:self-start ${
           resizing ? "" : "transition-[width] duration-fast ease-out"
         }`}
       >
@@ -235,21 +256,25 @@ export function Sidebar({
           className="group absolute inset-y-0 right-0 z-10 hidden w-1 cursor-col-resize touch-none select-none md:block"
         >
           <div
-            className={`mx-auto h-full w-px transition-colors duration-fast ${
-              resizing ? "bg-navy" : "bg-transparent group-hover:bg-navy"
-            }`}
+            className="mx-auto h-full w-px transition-colors duration-fast"
+            style={{ background: resizing ? "var(--ops-brand)" : undefined }}
+            data-resizing={resizing || undefined}
           />
         </div>
 
-        <div className="hidden h-ops-header flex-none items-center gap-1.5 px-2.5 md:flex">
+        <div className="hidden flex-none items-center gap-2 px-5 py-6 md:flex">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo/curbio-navy.svg" alt="Curbio" width={84} height={22} className="h-[19px] w-auto flex-none" />
-          <span className="flex-none rounded-sm bg-pill-neutral-bg px-2 py-[3px] font-sans text-[13px] font-bold leading-none tracking-[.06em] text-pill-neutral-fg">
+          <img src="/logo/curbio-navy.svg" alt="Curbio" width={84} height={22} className="h-[20px] w-auto flex-none" />
+          <span
+            className="flex-none rounded px-1.5 py-[2px] text-[10px] font-extrabold leading-none tracking-[.12em]"
+            style={{ color: "var(--ops-accent-text)", border: "1px solid var(--ops-accent-50)", background: "var(--ops-accent-50)" }}
+          >
             {brandBadge}
           </span>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden pt-1">
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 pb-4">
+          <p className="ops-nav-section">Menu</p>
           {items.map((item) => {
             const hasSub = !!item.subItems?.length;
             const isActiveTop = item.key === topKey;
@@ -264,11 +289,7 @@ export function Sidebar({
                   href={withQuery(item.href)}
                   onClick={closeMobile}
                   aria-current={isActiveTop ? "page" : undefined}
-                  className={`mx-2.5 mb-0.5 flex h-11 items-center gap-2.5 rounded-full px-3 font-sans text-ops-body no-underline transition-colors duration-fast ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent ${
-                    isActiveTop
-                      ? "bg-app-well font-bold text-content"
-                      : "font-semibold text-content-muted hover:bg-app-well hover:text-content"
-                  }`}
+                  className={`ops-nav-item mb-0.5 ${isActiveTop ? "ops-nav-item--active" : ""}`}
                 >
                   <span className="inline-flex flex-none">
                     <NavIcon name={item.icon} size={20} />
@@ -288,23 +309,19 @@ export function Sidebar({
                   type="button"
                   onClick={() => toggleSection(item.key)}
                   aria-expanded={isOpen}
-                  className={`mx-2.5 mb-0.5 flex h-11 w-[calc(100%-20px)] cursor-pointer items-center gap-2.5 rounded-full border-0 px-3 text-left font-sans text-ops-body transition-colors duration-fast ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent ${
-                    isOpen
-                      ? "bg-navy font-bold text-white"
-                      : isActiveTop
-                        ? "bg-app-well font-bold text-content"
-                        : "bg-transparent font-semibold text-content-muted hover:bg-app-well hover:text-content"
+                  className={`ops-nav-item mb-0.5 ${
+                    isOpen || isActiveTop ? "ops-nav-item--active" : ""
                   }`}
                 >
                   <span className="inline-flex flex-none">
                     <NavIcon name={item.icon} size={20} />
                   </span>
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                  {isOpen ? (
-                    <Icon name="chevron-down" size={13} className="flex-none text-amber" />
-                  ) : (
-                    <Icon name="chevron-right" size={13} className="flex-none text-nav3-gray-400" />
-                  )}
+                  <Icon
+                    name={isOpen ? "chevron-down" : "chevron-right"}
+                    size={13}
+                    className="flex-none opacity-60"
+                  />
                 </button>
 
                 <div
@@ -312,7 +329,7 @@ export function Sidebar({
                   style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
                 >
                   <div className="min-h-0">
-                    <div className="ml-6 border-l border-app-border">
+                    <div className="ml-4 mt-1 space-y-0.5 border-l pl-3" style={{ borderColor: "var(--ops-divider)" }}>
                       {item.subItems!.map((sub) => (
                         <SubLink
                           key={sub.label}
@@ -358,17 +375,11 @@ function SubLink({
       href={href}
       onClick={onClick}
       aria-current={active ? "page" : undefined}
-      className={`mx-2 flex h-[38px] items-center gap-2 rounded-lg pl-4 pr-3 text-[14px] no-underline transition-colors duration-fast ease-out ${
-        active
-          ? "bg-nav3-child-active-bg font-semibold text-content"
-          : "font-medium text-nav3-child-text hover:bg-app-well hover:text-nav3-hover-text"
-      }`}
+      className={`ops-nav-sub ${active ? "ops-nav-sub--active" : ""}`}
     >
       <span className="min-w-0 flex-1 truncate">{sub.label}</span>
       {badge !== undefined && (
-        <span className="flex-none rounded-pill bg-pill-neutral-bg px-1.5 py-[1px] font-sans text-ops-micro font-bold tabular-nums text-pill-neutral-fg">
-          {badge}
-        </span>
+        <span className="ops-badge ops-badge--neutral flex-none">{badge}</span>
       )}
     </Link>
   );

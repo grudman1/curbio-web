@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from "react";
 // own three colours — drifting on 30s/38s/46s loops. The periods are
 // deliberately coprime-ish so the three never resynchronise into a visible
 // pulse; the blur radius is large enough that no individual blob edge is ever
-// resolvable. A linear fade to the page ground (--ui2-bg) across the bottom
+// resolvable. A linear fade to the page ground (--ops-bg) across the bottom
 // third dissolves the section into the cards below it rather than ending on
 // a hard edge.
 //
@@ -78,26 +78,26 @@ export function AskHero({
           decoration, and it sits under interactive content. */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
         <div
-          className="ui2-drift ui2-drift-a absolute left-[-16%] top-[-46%] h-[150%] w-[80%] rounded-[var(--ui2-radius-pill)]"
+          className="ops-drift ops-drift-a absolute left-[-16%] top-[-46%] h-[150%] w-[80%] rounded-full"
           style={{
             background:
-              "radial-gradient(closest-side, var(--ui2-hero-navy), rgba(13,37,77,0) 74%)",
+              "radial-gradient(closest-side, rgba(13,37,77,.40), rgba(13,37,77,0) 74%)",
             filter: "blur(60px)",
           }}
         />
         <div
-          className="ui2-drift ui2-drift-b absolute right-[-18%] top-[-52%] h-[155%] w-[84%] rounded-[var(--ui2-radius-pill)]"
+          className="ops-drift ops-drift-b absolute right-[-18%] top-[-52%] h-[155%] w-[84%] rounded-full"
           style={{
             background:
-              "radial-gradient(closest-side, var(--ui2-hero-teal), rgba(23,108,103,0) 74%)",
+              "radial-gradient(closest-side, rgba(23,108,103,.32), rgba(23,108,103,0) 74%)",
             filter: "blur(66px)",
           }}
         />
         <div
-          className="ui2-drift ui2-drift-c absolute left-[22%] top-[-40%] h-[130%] w-[62%] rounded-[var(--ui2-radius-pill)]"
+          className="ops-drift ops-drift-c absolute left-[22%] top-[-40%] h-[130%] w-[62%] rounded-full"
           style={{
             background:
-              "radial-gradient(closest-side, var(--ui2-hero-amber), rgba(205,134,41,0) 72%)",
+              "radial-gradient(closest-side, rgba(205,134,41,.24), rgba(205,134,41,0) 72%)",
             filter: "blur(64px)",
           }}
         />
@@ -107,22 +107,23 @@ export function AskHero({
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--ui2-bg) 35%, transparent) 62%, var(--ui2-bg) 96%)",
+              "linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--ops-bg) 35%, transparent) 62%, var(--ops-bg) 96%)",
           }}
         />
       </div>
 
-      <div className="relative px-6 pb-16 pt-[76px]">
-        <h2 className="m-0 text-center font-[family-name:var(--ui2-font-serif)] text-[length:var(--ui2-text-greeting)] leading-[1.12] tracking-[-0.02em] font-semibold text-ui2-text">
+      <div className="relative px-6 pb-14 pt-16">
+        <h1 className="ops-display m-0 text-center" style={{ fontSize: 40, lineHeight: 1.12 }}>
           {greeting}
-        </h2>
+        </h1>
 
         <div
-          className={`relative mx-auto mt-7 max-w-[780px] rounded-[var(--ui2-radius-panel)] bg-ui2-card transition-shadow duration-base ease-out ${
+          className="ops-card relative mx-auto mt-7 max-w-[780px] transition-shadow duration-base ease-out"
+          style={
             focused
-              ? "border border-ui2-gray-300 shadow-[var(--ui2-shadow-ask-focus)]"
-              : "border border-ui2-border shadow-[var(--ui2-shadow-ask)]"
-          }`}
+              ? { borderColor: "var(--ops-brand)", boxShadow: "var(--ops-ring)" }
+              : { boxShadow: "var(--ops-shadow-xs)" }
+          }
         >
           <textarea
             ref={inputRef}
@@ -134,21 +135,29 @@ export function AskHero({
             disabled={!configured}
             placeholder={configured ? "Ask about pacing, channels, markets, attribution…" : ""}
             aria-label="Ask a question about the dashboard"
-            className="block min-h-[84px] w-full resize-none border-0 bg-transparent px-[18px] pb-2 pt-4 font-ui2 text-[length:var(--ui2-text-ask)] leading-[1.55] text-ui2-text outline-none placeholder:text-ui2-text-muted disabled:cursor-not-allowed"
+            className="block min-h-[84px] w-full resize-none border-0 bg-transparent px-[18px] pb-2 pt-4 text-[15px] leading-relaxed outline-none disabled:cursor-not-allowed"
+            style={{ color: "var(--ops-text)" }}
           />
 
           <div className="flex items-center gap-2 pb-3 pl-4 pr-3 pt-2">
             <ScopeChip>{scopeLabel}</ScopeChip>
             <ScopeChip>{attributionLabel}</ScopeChip>
             <div className="flex-1" />
-            <span className="font-ui2 text-ui2-caption text-ui2-gray-400" aria-hidden>
+            <span className="ops-subtle text-[12px]" aria-hidden>
               ⏎ to ask
             </span>
             <button
               type="button"
               disabled={!configured || value.trim() === ""}
               aria-label="Ask"
-              className="inline-flex h-[34px] w-[34px] flex-none cursor-pointer items-center justify-center rounded-[var(--ui2-radius-input)] border-0 bg-ui2-accent text-white shadow-[var(--ui2-shadow-send)] transition-colors duration-fast ease-out hover:bg-[var(--ui2-amber)] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-ui2-accent"
+              className="inline-flex h-[34px] w-[34px] flex-none cursor-pointer items-center justify-center rounded-[8px] border-0 text-white transition-colors duration-fast ease-out disabled:cursor-not-allowed disabled:opacity-30"
+              style={{ background: "var(--ops-brand)" }}
+              onMouseEnter={(e) => {
+                if (!e.currentTarget.disabled) e.currentTarget.style.background = "var(--ops-accent)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "var(--ops-brand)";
+              }}
             >
               <svg
                 width="15"
@@ -177,10 +186,10 @@ export function AskHero({
               type="button"
               onClick={() => fill(s.label)}
               disabled={!configured}
-              className="inline-flex h-8 cursor-pointer items-center gap-2 rounded-[var(--ui2-radius-pill)] border border-ui2-border bg-ui2-card px-[13px] font-ui2 text-ui2-caption text-ui2-text-muted transition-colors duration-fast ease-out hover:border-ui2-amber hover:text-ui2-text disabled:cursor-not-allowed"
+              className="ops-btn h-8 gap-2 rounded-[var(--ops-r-pill)] px-3 text-[13px] disabled:cursor-not-allowed"
             >
               <span
-                className="h-[5px] w-[5px] flex-none rounded-[var(--ui2-radius-pill)]"
+                className="h-[5px] w-[5px] flex-none rounded-full"
                 style={{ background: s.ink }}
                 aria-hidden
               />
@@ -195,7 +204,10 @@ export function AskHero({
 
 function ScopeChip({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex h-7 items-center rounded-[var(--ui2-radius-pill)] border border-ui2-border bg-ui2-card px-2.5 font-ui2 text-ui2-caption text-ui2-text-muted">
+    <span
+      className="ops-muted inline-flex h-7 items-center rounded-full border px-2.5 text-[12px]"
+      style={{ borderColor: "var(--ops-border)", background: "var(--ops-surface)" }}
+    >
       {children}
     </span>
   );
