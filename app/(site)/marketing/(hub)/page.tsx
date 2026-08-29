@@ -20,7 +20,7 @@ import { paceRead, paceSentence, type PaceRead } from "./pacing";
 import { PaceArc, Sparkline, TargetBar } from "./charts";
 import { TrendChart, type TrendMonth } from "./TrendChart";
 import { FunnelStrip, type FunnelStage } from "./FunnelStrip";
-import { AttributionHealthPanel } from "./AttributionHealth";
+import { AttributionHealthPanel } from "@/app/(site)/admin/(dashboard)/attribution/AttributionHealth";
 import { AlertsPanel, collectAlerts } from "./alerts";
 import { monthLabel } from "./timeframe";
 import { DASH, HubPageHeader, NeedsBlock, PACE_TONE } from "./hubUi";

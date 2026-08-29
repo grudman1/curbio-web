@@ -725,6 +725,13 @@
   color: var(--ops-text-subtle);
 }
 
+/* Column separation. .ops-td/.ops-th carry vertical padding only, which is
+   right for the grid-based Channels table but collides in a real <table>: the
+   gap goes BETWEEN columns, so the first column stays flush left and the last
+   stays flush right and the row still spans the card. */
+.ops-table th + th,
+.ops-table td + td { padding-left: 20px; }
+
 /* ═══ Sortable column header ═══════════════════════════════════════════════
    A header that sorts is a button, so it is keyboard-reachable. The arrow is
    the whole affordance — no "click to sort" caption anywhere. */
