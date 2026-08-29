@@ -1,0 +1,747 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="Website Design Brief" subtitle="Brand system translated to web frontend" -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Curbio — Website Design Brief</title>
+<link rel="stylesheet" href="colors_and_type.css">
+<style>
+  /* ============ Page shell ============ */
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;scroll-padding-top:84px}
+  body{margin:0;background:var(--cloud-white);color:var(--navy)}
+  img{max-width:100%}
+
+  .page{max-width:1180px;margin:0 auto;padding:0 32px}
+  .lede{max-width:660px}
+
+  /* ============ Top bar (also the canonical web nav spec) ============ */
+  .topbar{
+    position:sticky;top:0;z-index:50;
+    background:var(--navy);
+    display:flex;align-items:center;justify-content:space-between;
+    gap:24px;padding:14px 32px;
+  }
+  .topbar img{height:26px;width:auto;display:block}
+  .topnav{display:flex;gap:28px;align-items:center}
+  .topnav a{
+    color:#C7CFDB;text-decoration:none;font-family:var(--font-sans);
+    font-size:13px;font-weight:600;letter-spacing:.01em;
+    transition:color var(--dur-fast) var(--ease-out);
+  }
+  .topnav a:hover{color:#fff}
+  .topnav .cta{
+    background:var(--amber);color:#fff;border-radius:999px;
+    padding:9px 18px;font-weight:700;font-size:12.5px;
+  }
+  .topnav .cta:hover{color:#fff;background:var(--amber-110)}
+  @media (max-width:880px){ .topnav{display:none} }
+
+  /* ============ Hero ============ */
+  .hero{padding:88px 0 72px}
+  .hero .eyebrow{margin-bottom:20px}
+  .hero h1{
+    font-family:var(--font-serif);font-weight:600;
+    font-size:clamp(40px,5.6vw,72px);line-height:1.04;
+    letter-spacing:-0.015em;margin:0;max-width:14ch;
+  }
+  .hero h1 em{font-style:normal;color:var(--amber)}
+  .hero .sub{margin-top:24px;font-size:18px;line-height:1.6;color:var(--fg-muted);max-width:52ch}
+  .hero .meta{margin-top:40px;display:flex;flex-wrap:wrap;gap:28px;align-items:center}
+  .hero .meta .pill{
+    font-family:var(--font-sans);font-size:12px;font-weight:800;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--fg-muted);
+  }
+
+  /* ============ Section scaffolding ============ */
+  section[id]{padding:64px 0;border-top:1px solid var(--stone)}
+  .sec-head{margin-bottom:40px;max-width:720px}
+  .sec-head h2{
+    font-family:var(--font-serif);font-weight:600;color:var(--navy);
+    font-size:clamp(28px,3.4vw,44px);line-height:1.12;letter-spacing:-0.01em;margin:0;
+  }
+  .sec-head h2 em{font-style:normal;color:var(--amber)}
+  .sec-head p{margin-top:16px;font-size:16px;line-height:1.6;color:var(--fg-muted)}
+  .num{
+    font-family:var(--font-sans);font-size:12px;font-weight:800;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--amber);margin-bottom:14px;display:block;
+  }
+
+  /* ============ Generic grid + card ============ */
+  .grid{display:grid;gap:24px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media (max-width:860px){ .g3,.g4{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:560px){ .g2,.g3,.g4{grid-template-columns:1fr} }
+
+  .card{
+    background:var(--white);border:1px solid var(--stone);border-radius:var(--r-lg);
+    padding:24px;box-shadow:var(--shadow-md);
+  }
+  .card h3{font-family:var(--font-sans);font-size:16px;font-weight:700;color:var(--navy);margin:0 0 8px}
+  .card p{font-size:14px;line-height:1.55;color:var(--fg-muted);margin:0}
+
+  /* ============ Principle list ============ */
+  .principles{display:grid;gap:0}
+  .principle{
+    display:grid;grid-template-columns:64px 1fr;gap:24px;
+    padding:24px 0;border-bottom:1px solid var(--stone);align-items:start;
+  }
+  .principle:last-child{border-bottom:0}
+  .principle .k{font-family:var(--font-serif);font-size:34px;color:var(--amber);line-height:1}
+  .principle h3{font-family:var(--font-sans);font-size:17px;font-weight:700;margin:0 0 6px;color:var(--navy)}
+  .principle p{margin:0;font-size:14.5px;line-height:1.6;color:var(--fg-muted)}
+
+  /* ============ Color swatches ============ */
+  .swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  @media (max-width:860px){ .swatches{grid-template-columns:repeat(2,1fr)} }
+  @media (max-width:560px){ .swatches{grid-template-columns:1fr} }
+  .swatch{border:1px solid var(--stone);border-radius:var(--r-lg);overflow:hidden;background:#fff}
+  .swatch .chip{height:96px}
+  .swatch .info{padding:14px 16px}
+  .swatch .name{font-weight:700;font-size:14px;color:var(--navy)}
+  .swatch .hex{font-family:var(--font-mono);font-size:12px;color:var(--fg-muted);margin-top:2px}
+  .swatch .use{font-size:12px;color:var(--fg-muted);margin-top:8px;line-height:1.45}
+
+  /* ============ Type specimens ============ */
+  .spec{border-bottom:1px solid var(--stone);padding:22px 0;display:grid;grid-template-columns:160px 1fr;gap:24px;align-items:baseline}
+  .spec:last-child{border-bottom:0}
+  .spec .tag{font-family:var(--font-mono);font-size:11px;color:var(--fg-muted);line-height:1.5}
+  .spec .tag b{display:block;color:var(--navy);font-family:var(--font-sans);font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+  @media (max-width:620px){ .spec{grid-template-columns:1fr;gap:8px} }
+
+  /* ============ Button demo ============ */
+  .btn{font-family:var(--font-sans);font-weight:700;font-size:15px;border-radius:999px;padding:13px 26px;border:0;cursor:pointer;letter-spacing:.01em;transition:all var(--dur-base) var(--ease-out);display:inline-flex;align-items:center;gap:8px}
+  .btn.primary{background:var(--amber);color:#fff}
+  .btn.primary:hover{background:var(--amber-110);box-shadow:var(--shadow-amber)}
+  .btn.secondary{background:transparent;color:var(--navy);border:1.5px solid var(--navy)}
+  .btn.secondary:hover{background:var(--navy);color:#fff}
+  .btn.ghost{background:transparent;color:var(--navy);text-decoration:underline;text-underline-offset:3px;padding:13px 8px}
+  .btn.ghost:hover{color:var(--amber)}
+  .btn.disabled{background:var(--amber);color:#fff;opacity:.4;cursor:not-allowed}
+  .btnrow{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+
+  /* ============ Form demo ============ */
+  .field{display:flex;flex-direction:column;gap:7px;margin-bottom:18px}
+  .field label{font-family:var(--font-sans);font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--navy)}
+  .field input,.field select{
+    font-family:var(--font-sans);font-size:15px;color:var(--navy);
+    padding:13px 15px;border:1px solid var(--border-strong);border-radius:var(--r-md);
+    background:#fff;transition:border-color var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out);
+  }
+  .field input:focus,.field select:focus{outline:0;border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-30)}
+  .field .hint{font-size:12px;color:var(--fg-subtle)}
+
+  /* ============ Before / After ============ */
+  .ba{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .ba .ph{position:relative;aspect-ratio:4/3;border-radius:var(--r-lg);overflow:hidden}
+  .ba .ph.before{background:repeating-linear-gradient(45deg,#4d473e,#4d473e 12px,#46413a 12px,#46413a 24px)}
+  .ba .ph.after{background:repeating-linear-gradient(45deg,#efe9df,#efe9df 12px,#e7ddcf 12px,#e7ddcf 24px)}
+  .ba .tag{position:absolute;left:12px;top:12px;font-family:var(--font-sans);font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;padding:5px 13px;border-radius:999px;color:#fff;line-height:1}
+  .ba .ph.before .tag{background:var(--navy)}
+  .ba .ph.after .tag{background:var(--amber)}
+  .ba .note{position:absolute;right:12px;bottom:10px;font-family:var(--font-mono);font-size:11px}
+  .ba .ph.before .note{color:rgba(255,255,255,.5)}
+  .ba .ph.after .note{color:rgba(13,37,77,.4)}
+
+  /* ============ Feature row ============ */
+  .feat{display:flex;gap:16px;align-items:flex-start}
+  .disc{width:56px;height:56px;border-radius:999px;background:var(--stone);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--navy)}
+  .feat .lab{font-family:var(--font-sans);font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--navy);margin-bottom:5px}
+  .feat p{margin:0;font-size:13.5px;line-height:1.5;color:var(--fg-muted)}
+
+  /* ============ Testimonial ============ */
+  .quote{background:var(--stone);border-radius:var(--r-xl);padding:32px 32px 28px;position:relative}
+  .quote .mark{font-family:var(--font-serif);font-size:72px;line-height:0;color:var(--amber);position:absolute;top:34px;left:24px}
+  .quote .body{font-family:var(--font-serif);font-size:20px;line-height:1.5;color:var(--navy);padding-left:30px}
+  .quote .by{font-family:var(--font-sans);font-size:13px;font-weight:700;margin-top:16px;padding-left:30px;color:var(--navy)}
+  .stars{display:flex;gap:3px;margin-top:10px;padding-left:30px}
+
+  /* ============ Navy CTA closer ============ */
+  .closer{background:var(--navy);border-radius:var(--r-xl);padding:56px 48px;color:#fff;display:flex;flex-wrap:wrap;gap:32px;align-items:center;justify-content:space-between}
+  .closer h2{font-family:var(--font-serif);font-size:clamp(28px,3.2vw,40px);font-weight:600;color:#fff;margin:0;line-height:1.1;max-width:18ch}
+  .closer h2 em{font-style:normal;color:var(--amber)}
+  .closer p{color:#C7CFDB;font-size:15px;margin:12px 0 0;max-width:44ch}
+
+  /* ============ Do / Don't ============ */
+  .dd{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  @media (max-width:720px){ .dd{grid-template-columns:1fr} }
+  .dd .col{border-radius:var(--r-lg);padding:24px;border:1px solid var(--stone)}
+  .dd .do{background:var(--sage)}
+  .dd .dont{background:#fff}
+  .dd h3{font-family:var(--font-sans);font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin:0 0 16px}
+  .dd .do h3{color:var(--teal)}
+  .dd .dont h3{color:var(--fg-muted)}
+  .dd ul{margin:0;padding:0;list-style:none;display:grid;gap:12px}
+  .dd li{font-size:14px;line-height:1.5;color:var(--navy);padding-left:24px;position:relative}
+  .dd .do li::before{content:"";position:absolute;left:0;top:7px;width:9px;height:9px;border-radius:999px;background:var(--teal)}
+  .dd .dont li{color:var(--fg-muted)}
+  .dd .dont li::before{content:"";position:absolute;left:2px;top:9px;width:12px;height:2px;background:var(--border-strong);border-radius:2px}
+
+  /* ============ Token table ============ */
+  table.tok{width:100%;border-collapse:collapse;font-family:var(--font-sans);font-size:14px}
+  table.tok th{background:var(--navy);color:#fff;text-align:left;padding:11px 14px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+  table.tok td{padding:11px 14px;border-top:1px solid var(--stone);color:var(--navy);vertical-align:top}
+  table.tok td:first-child{font-family:var(--font-mono);font-size:12.5px;color:var(--amber-120);white-space:nowrap}
+  table.tok tr:nth-child(even) td{background:#fff}
+  .scrollx{overflow-x:auto}
+
+  /* ============ Footer ============ */
+  .foot{background:var(--navy);color:#fff;padding:40px 32px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin-top:64px}
+  .foot img{height:26px}
+  .foot .tag{font-family:var(--font-sans);font-size:12px;font-weight:600;color:#C7CFDB;text-align:right;line-height:1.3}
+
+  /* spacing demo */
+  .spacescale{display:flex;flex-direction:column;gap:10px}
+  .spacescale .row{display:flex;align-items:center;gap:16px}
+  .spacescale .bar{height:18px;background:var(--amber-30);border-left:3px solid var(--amber);border-radius:2px}
+  .spacescale .lab{font-family:var(--font-mono);font-size:12px;color:var(--fg-muted);width:140px;flex-shrink:0}
+
+  .swatch-on{display:flex;gap:0;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--stone)}
+  .swatch-on div{flex:1;padding:20px 18px;font-family:var(--font-sans);font-weight:600;font-size:14px}
+</style>
+</head>
+<body>
+
+<!-- ============ TOP BAR (canonical web nav) ============ -->
+<header class="topbar">
+  <img src="assets/logo-wordmark-white.png" alt="Curbio">
+  <nav class="topnav">
+    <a href="#foundation">Foundation</a>
+    <a href="#color">Color</a>
+    <a href="#type">Type</a>
+    <a href="#components">Components</a>
+    <a href="#pages">Pages</a>
+    <a href="#rules" class="cta">Do &amp; Don't</a>
+  </nav>
+</header>
+
+<!-- ============ HERO ============ -->
+<div class="page">
+  <section class="hero">
+    <span class="eyebrow eyebrow--amber">Website Design Brief · 2026</span>
+    <h1>Build the web like the brochure feels — <em>editorial, calm, trusted.</em></h1>
+    <p class="sub">This brief translates the Curbio brand system into a working frontend language: how pages are built, how the palette and type behave on screen, the component set, and the rules that keep every surface unmistakably Curbio.</p>
+    <div class="meta">
+      <span class="pill">Navy #0D254D + Amber #CD8629</span>
+      <span class="pill">Lora &amp; Libre Franklin</span>
+      <span class="pill">Photo-led · agent-protective</span>
+    </div>
+  </section>
+</div>
+
+<!-- ============ 01 — THE BRAND IN ONE SCREEN ============ -->
+<div class="page">
+<section id="brand">
+  <div class="sec-head">
+    <span class="num">01 — The brand in one screen</span>
+    <h2>Curbio is the agent's <em>pre-listing</em> home improvement partner.</h2>
+    <p>A licensed general contractor that gets a listing market-ready on time and on budget — sold to and through real estate agents. The website's job is to make that feel effortless and credible. Every page should read like a luxury listing brochure: wide margins, real photography, one idea at a time.</p>
+  </div>
+  <div class="grid g3">
+    <div class="card">
+      <h3>Agents</h3>
+      <p>"The one call that does it all." Win more listings, protect your reputation, fast starts and on-time completion. Partner-to-partner, outcome-focused.</p>
+    </div>
+    <div class="card">
+      <h3>Home sellers</h3>
+      <p>"Get your home market-ready — without managing the work yourself." Warm, calm, simple. Always framed as <em>your agent recommends Curbio.</em></p>
+    </div>
+    <div class="card">
+      <h3>Teams &amp; brokerages</h3>
+      <p>A recruit-and-retain Concierge offering, available as Curbio or white-labeled. Strategic and credible.</p>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ============ 02 — DESIGN PRINCIPLES ============ -->
+<div class="page">
+<section id="foundation">
+  <div class="sec-head">
+    <span class="num">02 — Design principles for web</span>
+    <h2>Six rules that decide every layout.</h2>
+    <p>When a screen feels noisy, dated, cheap, or salesy — start over. If it feels sophisticated, airy, modern, and trusted, you're on brand.</p>
+  </div>
+  <div class="principles">
+    <div class="principle">
+      <span class="k">1</span>
+      <div>
+        <h3>Photography is the hero, not chrome.</h3>
+        <p>Real homes, beautifully lit, high-key. Full-bleed photography is the one approved "background." Lead heroes and section breaks with a real interior or before/after pair — never stock collages, gradients, or illustration.</p>
+      </div>
+    </div>
+    <div class="principle">
+      <span class="k">2</span>
+      <div>
+        <h3>Let it breathe.</h3>
+        <p>Wide margins, generous gaps, one idea per block. Sections are 64–96px apart; hero whitespace is luxurious. When in doubt, add 16px. Density is the enemy of "high-end."</p>
+      </div>
+    </div>
+    <div class="principle">
+      <span class="k">3</span>
+      <div>
+        <h3>Navy carries the type. Amber is a spark.</h3>
+        <p>Most text on light backgrounds is navy, not black. Amber appears only on CTAs, one or two emphasis words, AFTER tags, and stars. If everything is amber, nothing is.</p>
+      </div>
+    </div>
+    <div class="principle">
+      <span class="k">4</span>
+      <div>
+        <h3>Calm motion only.</h3>
+        <p>Fade + 8px rise on entrance, 220ms. Hover changes color and shadow — never scale, skew, or bounce. The brand is reassuring; the interface should feel settled.</p>
+      </div>
+    </div>
+    <div class="principle">
+      <span class="k">5</span>
+      <div>
+        <h3>Respect the agent.</h3>
+        <p>Even homeowner-facing pages frame Curbio as the contractor the agent brings in. Never talk past or above the agent's authority.</p>
+      </div>
+    </div>
+    <div class="principle">
+      <span class="k">6</span>
+      <div>
+        <h3>Paper-real, not web 3.0.</h3>
+        <p>No mesh gradients, glassmorphism, grain, neon, or glow. Flat solid navy panels, clean whites, restrained navy-tinted shadows. The web should feel like good print.</p>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ============ 03 — COLOR ============ -->
+<div class="page">
+<section id="color">
+  <div class="sec-head">
+    <span class="num">03 — Color</span>
+    <h2>A navy + amber system on a Cloud White canvas.</h2>
+    <p>Exact values — do not approximate. Saturation stays low; the page breathes on near-whites and stone.</p>
+  </div>
+
+  <div class="swatches">
+    <div class="swatch">
+      <div class="chip" style="background:var(--navy)"></div>
+      <div class="info"><div class="name">Navy</div><div class="hex">#0D254D</div><div class="use">Headlines, body type, dark panels, footer, nav bar. The default ink.</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:var(--amber)"></div>
+      <div class="info"><div class="name">Amber</div><div class="hex">#CD8629</div><div class="use">CTAs, emphasis words, AFTER tags, stars. Never the dominant color.</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:var(--teal)"></div>
+      <div class="info"><div class="name">Teal</div><div class="hex">#176C67</div><div class="use">Backgrounds &amp; banners only. Never on text, never in the logo.</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:var(--stone)"></div>
+      <div class="info"><div class="name">Stone</div><div class="hex">#DFDCDA</div><div class="use">Dividers, photo mats, icon discs, quote washes. Not for text.</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:var(--sage)"></div>
+      <div class="info"><div class="name">Pastel Sage</div><div class="hex">#E2EBE5</div><div class="use">Section backgrounds, large blocks, subtle accents. Not for text or CTAs.</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:var(--cloud-white);border-bottom:1px solid var(--stone)"></div>
+      <div class="info"><div class="name">Cloud White</div><div class="hex">#F7F7F7</div><div class="use">Default page canvas. Keeps layouts open.</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:var(--white);border-bottom:1px solid var(--stone)"></div>
+      <div class="info"><div class="name">White</div><div class="hex">#FFFFFF</div><div class="use">Cards, reversed type on navy. Always real white.</div></div>
+    </div>
+    <div class="swatch">
+      <div class="chip" style="background:var(--amber-10);border-bottom:1px solid var(--stone)"></div>
+      <div class="info"><div class="name">Amber 10</div><div class="hex">#FAF1E3</div><div class="use">Faint wash for info cards / highlighted rows. Optional.</div></div>
+    </div>
+  </div>
+
+  <div class="sec-head" style="margin-top:48px;margin-bottom:20px">
+    <h2 style="font-size:22px">Approved contrast pairings</h2>
+  </div>
+  <div class="grid g3">
+    <div class="swatch-on">
+      <div style="background:var(--cloud-white);color:var(--navy)">Navy on Cloud White</div>
+    </div>
+    <div class="swatch-on">
+      <div style="background:var(--navy);color:#fff">White on Navy</div>
+    </div>
+    <div class="swatch-on">
+      <div style="background:var(--stone);color:var(--navy)">Navy on Stone</div>
+    </div>
+  </div>
+  <p style="margin-top:20px;font-size:14px;color:var(--fg-muted);max-width:62ch">Amber is reserved for accents and large display words — <strong style="color:var(--navy)">never small body text on white</strong> (it fails contrast and cheapens the spark). Web text and interactive elements must meet WCAG AA: 4.5:1 for body, 3:1 for large headings and UI.</p>
+</section>
+</div>
+
+<!-- ============ 04 — TYPOGRAPHY ============ -->
+<div class="page">
+<section id="type">
+  <div class="sec-head">
+    <span class="num">04 — Typography</span>
+    <h2>Lora for voice. Libre Franklin for clarity.</h2>
+    <p>A two-face editorial system. Serif headlines read as trustworthy and class; the humanist sans is sleek and screen-readable. <strong style="color:var(--navy)">Never use Lora italic</strong> — emphasis is amber color, upright.</p>
+  </div>
+
+  <div class="spec">
+    <div class="tag"><b>Hero</b>Lora · 600<br>clamp 40–72px<br>line-height 1.04</div>
+    <div><span class="hero-headline" style="font-size:clamp(34px,5vw,60px)">Today's buyers want <em>move-in ready</em> homes.</span></div>
+  </div>
+  <div class="spec">
+    <div class="tag"><b>H2 / Section</b>Lora · 600<br>clamp 28–44px</div>
+    <div><h2 style="font-size:clamp(26px,3vw,40px)">List with confidence. We'll <em>take care</em> of the rest.</h2></div>
+  </div>
+  <div class="spec">
+    <div class="tag"><b>H3 / Subhead</b>Libre Franklin · 700<br>22px</div>
+    <div><h3 style="font-size:22px">One team. One timeline. One accountable partner.</h3></div>
+  </div>
+  <div class="spec">
+    <div class="tag"><b>Body</b>Libre Franklin · 400<br>16px · line-height 1.55</div>
+    <div><p style="max-width:60ch">Curbio is a licensed general contractor that handles design, materials, and full project management — coordinated by one dedicated project manager, with pay-at-closing financing for qualified sellers.</p></div>
+  </div>
+  <div class="spec">
+    <div class="tag"><b>Eyebrow / Label</b>Libre Franklin · 800<br>12px · 0.14em · UPPERCASE</div>
+    <div><span class="eyebrow">Dedicated project management</span></div>
+  </div>
+  <div class="spec">
+    <div class="tag"><b>Caption / fine print</b>Libre Franklin · 400<br>14px · muted navy</div>
+    <div><span class="caption">Financing available to qualified sellers. Subject to approval.</span></div>
+  </div>
+
+  <div class="card" style="margin-top:32px;background:var(--sage);border-color:var(--sage-110)">
+    <h3 style="margin-bottom:10px">The signature headline move</h3>
+    <p style="font-size:14.5px;max-width:70ch">Serif headline in navy, with <strong style="color:var(--navy)">one or two amber emphasis words</strong> — pick the verb or the value word. The emphasis is <strong style="color:var(--navy)">color only</strong>: same weight, upright, no italic. Use <code style="font-family:var(--font-mono);font-size:13px;background:#fff;padding:1px 6px;border-radius:4px;border:1px solid var(--stone)">&lt;em&gt;</code> inside any headline and the system colors it amber automatically.</p>
+  </div>
+</section>
+</div>
+
+<!-- ============ 05 — SPACING, LAYOUT, GRID ============ -->
+<div class="page">
+<section id="layout">
+  <div class="sec-head">
+    <span class="num">05 — Spacing, layout &amp; grid</span>
+    <h2>A 4px scale and a centered editorial column.</h2>
+    <p>Reach for 24–48px between sub-sections, 64–96px between major sections and for hero whitespace.</p>
+  </div>
+
+  <div class="grid g2" style="align-items:start">
+    <div>
+      <div class="spacescale">
+        <div class="row"><span class="lab">--space-1 · 4px</span><span class="bar" style="width:4px"></span></div>
+        <div class="row"><span class="lab">--space-2 · 8px</span><span class="bar" style="width:8px"></span></div>
+        <div class="row"><span class="lab">--space-4 · 16px</span><span class="bar" style="width:16px"></span></div>
+        <div class="row"><span class="lab">--space-6 · 24px</span><span class="bar" style="width:24px"></span></div>
+        <div class="row"><span class="lab">--space-8 · 32px</span><span class="bar" style="width:32px"></span></div>
+        <div class="row"><span class="lab">--space-12 · 48px</span><span class="bar" style="width:48px"></span></div>
+        <div class="row"><span class="lab">--space-16 · 64px</span><span class="bar" style="width:64px"></span></div>
+        <div class="row"><span class="lab">--space-20 · 80px</span><span class="bar" style="width:80px"></span></div>
+        <div class="row"><span class="lab">--space-24 · 96px</span><span class="bar" style="width:96px"></span></div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h3>Container &amp; breakpoints</h3>
+        <p style="margin-bottom:14px">Content lives in a centered column with a <strong style="color:var(--navy)">max-width of ~1180px</strong> and a minimum 32px gutter. Full-bleed photography breaks out edge-to-edge; everything else stays inside the column.</p>
+        <div class="scrollx">
+          <table class="tok" style="font-size:13px">
+            <tr><td style="color:var(--navy)">Desktop</td><td>≥ 1024px — multi-column grids, side-by-side before/after</td></tr>
+            <tr><td style="color:var(--navy)">Tablet</td><td>640–1023px — 2-up grids, nav collapses at 880px</td></tr>
+            <tr><td style="color:var(--navy)">Mobile</td><td>&lt; 640px — single column, stacked, 24px gutter</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="card" style="margin-top:24px">
+        <h3>Radii &amp; elevation</h3>
+        <p>Cards use <code style="font-family:var(--font-mono);font-size:12px">--r-lg</code> (12px) + <code style="font-family:var(--font-mono);font-size:12px">--shadow-md</code>. Hero panels and soft cards use <code style="font-family:var(--font-mono);font-size:12px">--r-xl</code> (20px). Buttons and tags are always pills (999px). Shadows are restrained and navy-tinted — never blown-out gray, never inner shadow or glow.</p>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ============ 06 — COMPONENTS ============ -->
+<div class="page">
+<section id="components">
+  <div class="sec-head">
+    <span class="num">06 — Components</span>
+    <h2>The frontend kit.</h2>
+    <p>Live specimens, built on the brand tokens. These are the building blocks every page composes from.</p>
+  </div>
+
+  <!-- Buttons -->
+  <h3 style="font-family:var(--font-sans);font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin:0 0 18px">Buttons</h3>
+  <div class="card" style="margin-bottom:40px">
+    <div class="btnrow">
+      <button class="btn primary">Request a free estimate</button>
+      <button class="btn secondary">Learn more</button>
+      <button class="btn ghost">Ask your agent</button>
+      <button class="btn disabled">Disabled</button>
+    </div>
+    <p style="font-size:13.5px;color:var(--fg-muted);margin-top:18px;max-width:74ch"><strong style="color:var(--navy)">Primary</strong> is a solid amber pill — one per view, the single most important action. <strong style="color:var(--navy)">Secondary</strong> is a navy outline that fills on hover. <strong style="color:var(--navy)">Tertiary</strong> is an underlined navy link. Hover deepens color and adds shadow; never scale. CTAs are short and active — <em>Request a free estimate · Ask your agent · Get started.</em> No "click here," no "learn more" as the primary.</p>
+  </div>
+
+  <!-- Nav (reference the top bar) -->
+  <h3 style="font-family:var(--font-sans);font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin:0 0 18px">Navigation bar</h3>
+  <div class="card" style="margin-bottom:40px;padding:0;overflow:hidden">
+    <div style="background:var(--navy);display:flex;align-items:center;justify-content:space-between;gap:24px;padding:14px 22px">
+      <img src="assets/logo-wordmark-white.png" alt="Curbio" style="height:24px">
+      <div style="display:flex;gap:24px;align-items:center">
+        <a href="#" style="color:#C7CFDB;text-decoration:none;font-size:13px;font-weight:600">For Agents</a>
+        <a href="#" style="color:#C7CFDB;text-decoration:none;font-size:13px;font-weight:600">For Sellers</a>
+        <a href="#" style="color:#C7CFDB;text-decoration:none;font-size:13px;font-weight:600">How it works</a>
+        <span style="background:var(--amber);color:#fff;border-radius:999px;padding:9px 18px;font-size:12.5px;font-weight:700">Get an estimate</span>
+      </div>
+    </div>
+    <p style="font-size:13.5px;color:var(--fg-muted);margin:0;padding:18px 22px;max-width:74ch">A fixed navy bar is the one acceptable piece of sticky chrome. White wordmark, muted links that brighten to white on hover, and a single amber pill CTA on the right. Collapse to a menu below 880px.</p>
+  </div>
+
+  <!-- Cards -->
+  <h3 style="font-family:var(--font-sans);font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin:0 0 18px">Feature cards &amp; icon rows</h3>
+  <div class="grid g3" style="margin-bottom:24px">
+    <div class="card">
+      <div class="feat">
+        <div class="disc">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.35 1.85.59 2.81.72A2 2 0 0 1 22 16.92z"/></svg>
+        </div>
+        <div>
+          <div class="lab">The one call</div>
+          <p>Estimate, design, materials, and management — coordinated by one project manager.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="feat">
+        <div class="disc">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+        </div>
+        <div>
+          <div class="lab">Licensed &amp; insured</div>
+          <p>Thousands of successful projects. We cross the finish line with you.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="feat">
+        <div class="disc">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div>
+          <div class="lab">Pay at closing</div>
+          <p>No upfront cost for qualified sellers — Curbio is paid when the home sells.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p style="font-size:13.5px;color:var(--fg-muted);margin:0 0 40px;max-width:74ch">Icons are thin single-weight line glyphs (Lucide, stroke 1.75) in navy, inside a Stone disc. Icons are <strong style="color:var(--navy)">never amber</strong> — the amber lives in the disc only for primary moments (e.g. the QR/CTA disc). No emoji, no unicode arrows or stars.</p>
+
+  <!-- Before/After -->
+  <h3 style="font-family:var(--font-sans);font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin:0 0 18px">Before / After — the signature device</h3>
+  <div class="grid g2" style="margin-bottom:40px;align-items:center">
+    <div class="ba">
+      <div class="ph before"><span class="tag">Before</span><span class="note">dim · dated</span></div>
+      <div class="ph after"><span class="tag">After</span><span class="note">bright · turnkey</span></div>
+    </div>
+    <p style="font-size:14px;color:var(--fg-muted);max-width:46ch">Navy <strong style="color:var(--navy)">BEFORE</strong> pill on the dim/dated image, amber <strong style="color:var(--navy)">AFTER</strong> pill on the bright/turnkey one. This pairing is the most recognizable Curbio device — give it room and let real photography do the work. Placeholders shown here ship with a stripe so they read as "needs real photo."</p>
+  </div>
+
+  <!-- Form -->
+  <h3 style="font-family:var(--font-sans);font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin:0 0 18px">Forms &amp; the estimate request</h3>
+  <div class="grid g2" style="margin-bottom:40px;align-items:start">
+    <div class="card">
+      <div class="field">
+        <label>Property address</label>
+        <input type="text" placeholder="123 Main St, Bethesda MD">
+      </div>
+      <div class="field">
+        <label>You are a</label>
+        <select><option>Real estate agent</option><option>Home seller</option><option>Brokerage / team</option></select>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" placeholder="you@brokerage.com">
+        <span class="hint">We'll only use this to send your estimate.</span>
+      </div>
+      <button class="btn primary" style="width:100%;justify-content:center">Request a free estimate</button>
+    </div>
+    <p style="font-size:14px;color:var(--fg-muted);max-width:46ch">The estimate request is the site's primary conversion. Labels are uppercase eyebrows; inputs have an 8px radius and a 1px stone-strong border. Focus shows an amber ring (<code style="font-family:var(--font-mono);font-size:12px">--amber-30</code>), never a default blue outline. Keep forms short — address, role, contact. The primary submit is a full-width amber pill.</p>
+  </div>
+
+  <!-- Testimonial -->
+  <h3 style="font-family:var(--font-sans);font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin:0 0 18px">Testimonial</h3>
+  <div class="quote" style="margin-bottom:8px">
+    <span class="mark">&ldquo;</span>
+    <div class="body">Curbio handled everything from start to finish. My sellers were stress-free, and the home sold above asking in eight days.</div>
+    <div class="by">— Dana R., REALTOR&reg;</div>
+    <div class="stars">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="#CD8629" stroke="#CD8629"><polygon points="12,2 15,9 22,9.5 17,14.5 18.5,22 12,18 5.5,22 7,14.5 2,9.5 9,9"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="#CD8629" stroke="#CD8629"><polygon points="12,2 15,9 22,9.5 17,14.5 18.5,22 12,18 5.5,22 7,14.5 2,9.5 9,9"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="#CD8629" stroke="#CD8629"><polygon points="12,2 15,9 22,9.5 17,14.5 18.5,22 12,18 5.5,22 7,14.5 2,9.5 9,9"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="#CD8629" stroke="#CD8629"><polygon points="12,2 15,9 22,9.5 17,14.5 18.5,22 12,18 5.5,22 7,14.5 2,9.5 9,9"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="#CD8629" stroke="#CD8629"><polygon points="12,2 15,9 22,9.5 17,14.5 18.5,22 12,18 5.5,22 7,14.5 2,9.5 9,9"/></svg>
+    </div>
+  </div>
+  <p style="font-size:13.5px;color:var(--fg-muted);margin:18px 0 0;max-width:74ch">Warm Stone wash, large amber quotation mark, navy serif body (upright — no italic). Five amber SVG stars, never the unicode ★.</p>
+</section>
+</div>
+
+<!-- ============ 07 — PAGE ARCHITECTURE ============ -->
+<div class="page">
+<section id="pages">
+  <div class="sec-head">
+    <span class="num">07 — Page architecture</span>
+    <h2>How a Curbio page is assembled.</h2>
+    <p>Every page is a vertical stack of full-width sections in a consistent rhythm. Photography and navy panels alternate with airy Cloud White content blocks.</p>
+  </div>
+
+  <div class="grid g2" style="align-items:start">
+    <div class="card">
+      <h3 style="font-size:15px;margin-bottom:14px">Standard page stack</h3>
+      <ol style="margin:0;padding-left:18px;display:grid;gap:10px;font-size:14px;line-height:1.5;color:var(--fg-muted)">
+        <li><strong style="color:var(--navy)">Sticky navy nav</strong> — wordmark, links, one amber CTA.</li>
+        <li><strong style="color:var(--navy)">Hero</strong> — full-bleed photo, serif headline with amber emphasis, short amber rule, sub, primary CTA.</li>
+        <li><strong style="color:var(--navy)">Value row</strong> — 3 icon-disc features ("the one call that does it all").</li>
+        <li><strong style="color:var(--navy)">Before/After proof</strong> — real project pairing.</li>
+        <li><strong style="color:var(--navy)">How it works</strong> — numbered steps, one idea each.</li>
+        <li><strong style="color:var(--navy)">Comparison</strong> — Curbio vs. traditional (navy + amber table header).</li>
+        <li><strong style="color:var(--navy)">Testimonial</strong> — stone quote card + stars.</li>
+        <li><strong style="color:var(--navy)">Navy CTA closer</strong> — headline + amber pill + estimate form.</li>
+        <li><strong style="color:var(--navy)">Footer bar</strong> — white wordmark + tagline.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h3 style="font-size:15px;margin-bottom:14px">Audience landing pages</h3>
+      <p style="margin-bottom:16px">Three primary entry points, each leading with its verbatim promise:</p>
+      <div style="display:grid;gap:14px">
+        <div style="border-left:3px solid var(--amber);padding-left:14px">
+          <div class="lab" style="font-family:var(--font-sans);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--navy)">/agents</div>
+          <p style="font-size:13.5px;color:var(--fg-muted);margin:4px 0 0">"The one call that does it all." Win more listings.</p>
+        </div>
+        <div style="border-left:3px solid var(--amber);padding-left:14px">
+          <div class="lab" style="font-family:var(--font-sans);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--navy)">/sellers</div>
+          <p style="font-size:13.5px;color:var(--fg-muted);margin:4px 0 0">"Get your home market-ready — without managing the work yourself."</p>
+        </div>
+        <div style="border-left:3px solid var(--amber);padding-left:14px">
+          <div class="lab" style="font-family:var(--font-sans);font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--navy)">/brokerages</div>
+          <p style="font-size:13.5px;color:var(--fg-muted);margin:4px 0 0">A Concierge offering — Curbio or white-labeled.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Closer demo -->
+  <div class="closer" style="margin-top:32px">
+    <div>
+      <h2>Ready when you are. <em>One call</em> does it all.</h2>
+      <p>The closing panel on every page: flat navy, white serif headline, amber emphasis, and a single amber pill into the estimate flow.</p>
+    </div>
+    <button class="btn primary" style="font-size:16px;padding:15px 30px">Request a free estimate</button>
+  </div>
+</section>
+</div>
+
+<!-- ============ 08 — VOICE ============ -->
+<div class="page">
+<section id="voice">
+  <div class="sec-head">
+    <span class="num">08 — Voice &amp; copy</span>
+    <h2>Trusted, expert, reassuring, refreshingly plain.</h2>
+    <p>We sound like the dependable pro who has done this thousands of times and makes it easy. Confident, never boastful. Reuse the verbatim brand lines before writing fresh marketing copy.</p>
+  </div>
+  <div class="grid g2" style="align-items:start">
+    <div class="card">
+      <h3 style="font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal)">Verbatim lines — reuse these</h3>
+      <ul style="margin:14px 0 0;padding:0;list-style:none;display:grid;gap:10px;font-family:var(--font-serif);font-size:16px;color:var(--navy);line-height:1.4">
+        <li>"The one call that does it all."</li>
+        <li>"On time and on budget."</li>
+        <li>"List with confidence. We'll take care of the rest."</li>
+        <li>"Today's buyers want move-in ready homes."</li>
+        <li>"One team. One timeline. One accountable partner."</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-muted)">Micro-style rules</h3>
+      <ul style="margin:14px 0 0;padding:0;list-style:none;display:grid;gap:11px;font-size:14px;color:var(--navy);line-height:1.45">
+        <li><strong>pre-listing</strong> is always hyphenated.</li>
+        <li><strong>REALTOR&reg;</strong> always carries the mark.</li>
+        <li><strong>Curbio</strong> is singular — "Curbio does the work."</li>
+        <li>Sentence case headlines; ALL-CAPS only for eyebrows.</li>
+        <li>Second person to the reader ("your listings"), first-person plural for us ("we'll").</li>
+        <li><strong>No emoji. No exclamation points</strong> in headlines or body.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ============ 09 — DO / DON'T ============ -->
+<div class="page">
+<section id="rules">
+  <div class="sec-head">
+    <span class="num">09 — Do &amp; don't</span>
+    <h2>The quick gut-check before shipping a screen.</h2>
+  </div>
+  <div class="dd">
+    <div class="col do">
+      <h3>Do</h3>
+      <ul>
+        <li>Lead with real, high-key home photography.</li>
+        <li>Keep navy as the ink, amber as a single spark.</li>
+        <li>Use the serif headline + one or two amber emphasis words.</li>
+        <li>Give every section room — 64–96px of air.</li>
+        <li>Make buttons amber pills; one primary per view.</li>
+        <li>Pair before/after with navy + amber tags.</li>
+        <li>Meet WCAG AA contrast on all text and controls.</li>
+        <li>Frame Curbio as the contractor the agent brings in.</li>
+      </ul>
+    </div>
+    <div class="col dont">
+      <h3>Don't</h3>
+      <ul>
+        <li>Use Lora italic, or italicize emphasis words.</li>
+        <li>Put amber on body text, backgrounds, or large blocks.</li>
+        <li>Use teal on text or anywhere in the logo.</li>
+        <li>Add gradients, mesh, glassmorphism, grain, or glow.</li>
+        <li>Scale, bounce, or spring on hover.</li>
+        <li>Use emoji, unicode arrows, or hand-drawn SVG.</li>
+        <li>Crowd the layout or stack two ideas in one block.</li>
+        <li>Use exclamation points or pushy sales language.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- ============ FOOTER ============ -->
+<footer class="foot">
+  <img src="assets/logo-wordmark-white.png" alt="Curbio">
+  <div class="tag">The pre-listing<br>home improvement experts.</div>
+</footer>
+
+<script>
+  // Calm entrance: fade + 8px rise, staggered, gated on reduced-motion.
+  if (matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+    const els = document.querySelectorAll('.card, .principle, .swatch, .spec, .quote, .closer, .ba');
+    els.forEach(el => { el.style.opacity = '0'; el.style.transform = 'translateY(8px)'; el.style.transition = 'opacity .42s var(--ease-out), transform .42s var(--ease-out)'; });
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e, i) => {
+        if (e.isIntersecting) {
+          const el = e.target;
+          setTimeout(() => { el.style.opacity = '1'; el.style.transform = 'none'; }, Math.min(i, 4) * 80);
+          io.unobserve(el);
+        }
+      });
+    }, { threshold: 0.12 });
+    els.forEach(el => io.observe(el));
+  }
+</script>
+
+<template id="__bundler_thumbnail" data-bg-color="#0D254D">
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100" height="100" fill="#0D254D"/>
+  <rect x="30" y="42" width="40" height="6" rx="3" fill="#F7F7F7"/>
+  <rect x="30" y="52" width="26" height="6" rx="3" fill="#CD8629"/>
+</svg>
+</template>
+
+</body>
+</html>

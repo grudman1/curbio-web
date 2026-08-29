@@ -540,3 +540,17 @@
 @media (prefers-reduced-motion: reduce) {
   .ops-drift { animation: none !important; }
 }
+
+/* The Ask panel's loading spinner. Reduced-motion keeps it visible and still —
+   it is a state indicator, not decoration, so hiding it would remove
+   information rather than a flourish. */
+@keyframes ops-spin {
+  to { transform: rotate(360deg); }
+}
+.ops-spin {
+  animation: ops-spin 900ms linear infinite;
+  transform-origin: 50% 50%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ops-spin { animation: none; }
+}

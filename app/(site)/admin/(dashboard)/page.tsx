@@ -483,15 +483,25 @@ export default async function HomeScreen({
   const scopeLabel = `Scope: ${windowLabel} · All markets`;
   const attributionLabel = attribution === "first" ? "First touch" : "Last touch";
 
-  const worstMarket = marketRows[marketRows.length - 1];
+  // One chip per capability the assistant actually has: diagnosis, copy
+  // generation, data Q&A, site/tech. They are the page's statement of what it
+  // can answer, so they cover the four surfaces rather than four flavours of
+  // the same pacing question.
+  // The SHORT market name here ("Maryland"), not the display name
+  // ("Maryland, MD") — this is a sentence, and the state code reads as a typo
+  // inside one. Both strings are live text; config/markets.ts keeps them apart
+  // on purpose.
+  const bestMarket = marketRows[0]
+    ? (MARKETS.find((m) => m.slug === marketRows[0].key)?.name ?? marketRows[0].name)
+    : null;
   const suggestions = [
+    { label: "What's broken right now?", ink: "var(--ops-error-500)" },
+    { label: "Draft an email campaign for Atlanta agents", ink: "var(--ops-accent)" },
     {
-      label: worstMarket ? `Why is ${worstMarket.name} behind?` : "Which market is furthest behind?",
-      ink: "var(--ops-error-500)",
+      label: bestMarket ? `Why is ${bestMarket} ahead?` : "Which market is furthest ahead?",
+      ink: "var(--ops-brand)",
     },
-    { label: "How much of this window is unattributed?", ink: "var(--ops-ch-direct)" },
-    { label: "Which channel moved most?", ink: "var(--ops-accent)" },
-    { label: "Draft the Monday pacing note", ink: "var(--ops-brand)" },
+    { label: "What's our tech stack?", ink: "var(--ops-ch-direct)" },
   ];
 
 

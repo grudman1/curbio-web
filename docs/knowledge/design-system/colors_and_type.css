@@ -1,0 +1,302 @@
+/* ============================================================
+   Curbio Design System — Colors & Type
+   ============================================================
+   Source of truth for tokens. Import in any HTML:
+   <link rel="stylesheet" href="colors_and_type.css">
+   Fonts: Lora (display serif, Reg+Bold only — no italic per 2026
+   guide) + Libre Franklin (humanist sans). Both wired from local
+   variable TTF files in /fonts via @font-face below.
+   ============================================================ */
+
+/* ---------- Brand fonts (variable .ttf files in /fonts) ---------- */
+/* Lora — used Regular + Bold. NO italic (2026 style guide). */
+@font-face {
+  font-family: 'Lora';
+  src: url('fonts/Lora.ttf') format('truetype-variations'),
+       url('fonts/Lora.ttf') format('truetype');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Libre Franklin — variable upright (Thin → Black) + italic. */
+@font-face {
+  font-family: 'Libre Franklin';
+  src: url('fonts/LibreFranklin.ttf') format('truetype-variations'),
+       url('fonts/LibreFranklin.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Libre Franklin';
+  src: url('fonts/LibreFranklin-Italic.ttf') format('truetype-variations'),
+       url('fonts/LibreFranklin-Italic.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  /* ---------- Brand colors (exact, from 2026 style guide) ---------- */
+  --navy:           #0D254D;   /* Primary. Headlines, body type, dark panels, footer bars. */
+  --amber:          #CD8629;   /* Accent — CTAs, emphasis, AFTER tags, stars. Never the dominant color. */
+  --stone:          #DFDCDA;   /* Neutral — photo mats, dividers, subtle accents. */
+  --sage:           #E2EBE5;   /* Pastel Sage — backgrounds, large color blocks, accents. NEW. */
+  --cloud-white:    #F7F7F7;   /* Background — page canvas. */
+  --teal:           #176C67;   /* Secondary — banners, large color blocks. Never in logo, never on text. */
+  --white:          #FFFFFF;
+
+  /* ---------- Navy scale (derived) ---------- */
+  --navy-95:        #1A335E;   /* hover on navy buttons */
+  --navy-85:        #2E466F;   /* pressed */
+  --navy-30:        #8A98AE;   /* muted, captions */
+  --navy-15:        #C7CFDB;   /* dividers on dark */
+  --navy-08:        #E4E8EE;
+
+  /* ---------- Amber scale ---------- */
+  --amber-110:      #B5731F;   /* hover/pressed amber */
+  --amber-120:      #9D6118;
+  --amber-30:       #F0DAB8;   /* light amber, soft tints */
+  --amber-10:       #FAF1E3;   /* faintest amber wash, info cards */
+
+  /* ---------- Sage / Teal scales ---------- */
+  --sage-110:       #C9D6CE;
+  --sage-50:        #EFF4F1;
+  --teal-110:       #105752;
+  --teal-30:        #B1CCC9;
+
+  /* ---------- Semantic tokens ---------- */
+  --bg:             var(--cloud-white);
+  --bg-elevated:    var(--white);
+  --bg-inverse:     var(--navy);
+  --bg-tint:        var(--amber-10);
+
+  --fg:             var(--navy);          /* default text is navy, not black */
+  --fg-muted:       #4A5A75;              /* navy at ~70% perceived (derived from new navy) */
+  --fg-subtle:      var(--navy-30);
+  --fg-inverse:     var(--white);
+  --fg-accent:      var(--amber);
+
+  --border:         var(--stone);
+  --border-strong:  #BFBCBA;
+  --border-dark:    rgba(255,255,255,0.18);
+
+  --rule-accent:    var(--amber);         /* short amber rule under headlines */
+
+  /* ---------- Typography families ---------- */
+  --font-serif:     'Lora', 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-sans:      'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:      ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* ---------- Type scale (editorial system) ---------- */
+  --fs-hero:        clamp(48px, 6.4vw, 88px); /* @kind font */
+  --fs-h1:          clamp(40px, 4.6vw, 64px); /* @kind font */
+  --fs-h2:          clamp(30px, 3.2vw, 44px); /* @kind font */
+  --fs-h3:          22px;
+  --fs-h4:          18px;
+  --fs-body:        16px;
+  --fs-small:       14px;
+  --fs-label:       12px;       /* eyebrows / BEFORE / AFTER labels */
+  --fs-micro:       11px;
+
+  --lh-tight:       1.05;  /* @kind font */
+  --lh-display:     1.1;   /* @kind font */
+  --lh-heading:     1.2;   /* @kind font */
+  --lh-body:        1.55;  /* @kind font */
+  --lh-loose:       1.7;   /* @kind font */
+
+  --tracking-label: 0.14em;     /* uppercase eyebrow labels */
+  --tracking-tight: -0.01em;    /* serif headlines */
+
+  /* ---------- Spacing scale ---------- */
+  --space-0:  0;
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* ---------- Radii ---------- */
+  --r-none:   0;         /* @kind radius */
+  --r-sm:     4px;       /* tag/badge */
+  --r-md:     8px;       /* inputs, small cards */
+  --r-lg:     12px;      /* cards, image mats */
+  --r-xl:     20px;      /* hero panels */
+  --r-pill:   999px;     /* CTA buttons, QR/icon disks */
+
+  /* ---------- Shadows (restrained, editorial) ---------- */
+  --shadow-sm:  0 1px 2px rgba(13,37,77,0.06), 0 1px 1px rgba(13,37,77,0.04);
+  --shadow-md:  0 4px 12px rgba(13,37,77,0.08), 0 1px 2px rgba(13,37,77,0.04);
+  --shadow-lg:  0 16px 40px -12px rgba(13,37,77,0.18), 0 4px 12px rgba(13,37,77,0.06);
+  --shadow-amber:0 8px 24px -8px rgba(205,134,41,0.45);
+
+  /* ---------- Motion ---------- */
+  --ease-out:     cubic-bezier(.22,.61,.36,1); /* @kind other */
+  --ease-in-out:  cubic-bezier(.45,.05,.55,.95); /* @kind other */
+  --dur-fast:     120ms; /* @kind other */
+  --dur-base:     220ms; /* @kind other */
+  --dur-slow:     420ms; /* @kind other */
+}
+
+/* ============================================================
+   Element defaults — semantic styles ready to use
+   ============================================================ */
+
+html { color-scheme: light; }
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--fg);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Display / headlines — Lora, navy.
+   NOTE: per the 2026 style guide, DO NOT use Lora italic. Emphasis is
+   achieved by switching color to amber (same weight, upright), not by
+   italicizing. The .em-amber class / <em> inside a headline gets amber
+   color only — no font-style change. */
+h1, .h1, h2, .h2 {
+  font-family: var(--font-serif);
+  color: var(--navy);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--lh-display);
+  margin: 0;
+  text-wrap: balance;
+  font-style: normal;
+}
+
+h1, .h1 { font-size: var(--fs-h1); }
+h2, .h2 { font-size: var(--fs-h2); line-height: var(--lh-heading); }
+
+.hero-headline {
+  font-family: var(--font-serif);
+  font-size: var(--fs-hero);
+  line-height: var(--lh-tight);
+  color: var(--navy);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  font-style: normal;
+}
+
+/* Amber emphasis — used INSIDE serif headlines. Same weight, upright. */
+.em-amber,
+h1 em, .h1 em,
+h2 em, .h2 em,
+.hero-headline em {
+  font-style: normal;
+  color: var(--amber);
+  font-weight: inherit;
+}
+
+/* Subheads — bold sans, navy */
+h3, .h3 {
+  font-family: var(--font-sans);
+  font-size: var(--fs-h3);
+  font-weight: 700;
+  color: var(--navy);
+  line-height: var(--lh-heading);
+  margin: 0;
+}
+
+h4, .h4 {
+  font-family: var(--font-sans);
+  font-size: var(--fs-h4);
+  font-weight: 700;
+  color: var(--navy);
+  margin: 0;
+}
+
+/* Eyebrow / label — uppercase, letter-spaced bold sans */
+.eyebrow, .label-uc {
+  font-family: var(--font-sans);
+  font-size: var(--fs-label);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--navy);
+}
+
+.eyebrow--amber { color: var(--amber); }
+
+/* Body */
+p, .body { font-family: var(--font-sans); font-size: var(--fs-body); line-height: var(--lh-body); color: var(--fg); margin: 0; }
+.body-sm  { font-size: var(--fs-small); line-height: 1.5; }
+.body-muted { color: var(--fg-muted); }
+
+/* Caption / fine print */
+.caption {
+  font-family: var(--font-sans);
+  font-size: var(--fs-small);
+  color: var(--fg-muted);
+  line-height: 1.45;
+}
+
+/* Short amber rule under headlines */
+.rule-amber {
+  display: block;
+  width: 56px;
+  height: 3px;
+  background: var(--amber);
+  border: 0;
+  border-radius: 2px;
+  margin: 16px 0;
+}
+
+/* Quote — large amber quotation mark + navy body. Body stays upright
+   (per 2026 guide: no italic Lora). Libre Franklin italic is allowed for
+   quote bodies if the piece is sans-serif throughout. */
+.pullquote {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--navy);
+  font-style: normal;
+  position: relative;
+  padding-left: 28px;
+}
+.pullquote::before {
+  content: "\201C";
+  font-family: var(--font-serif);
+  position: absolute;
+  left: -4px;
+  top: -18px;
+  font-size: 72px;
+  line-height: 1;
+  color: var(--amber);
+  font-style: normal;
+}
+.pullquote cite {
+  display: block;
+  margin-top: 12px;
+  font-family: var(--font-sans);
+  font-style: normal;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--navy);
+}
+
+a {
+  color: var(--navy);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+a:hover { color: var(--amber); }
+
+::selection { background: var(--amber); color: var(--white); }
