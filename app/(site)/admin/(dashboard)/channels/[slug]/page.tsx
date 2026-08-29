@@ -41,7 +41,10 @@ export default async function Page({
   const { slug } = await params;
   return (
     <ChannelScreen slug={slug} searchParams={searchParams}>
-      {slug === "events" && <EventLogPanel />}
+      {/* `undefined`, not `false`, when there is no surface — ChannelBrief
+          renders an EmptyState for a channel that has none, and `false` would
+          read as "a child was passed". */}
+      {slug === "events" ? <EventLogPanel /> : undefined}
     </ChannelScreen>
   );
 }
