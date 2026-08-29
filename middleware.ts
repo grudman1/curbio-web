@@ -8,6 +8,7 @@ import {
   SESSION_REISSUE_BELOW_MS,
   openSession,
   sealSession,
+  timingSafeEqualStr,
   type OpenedSession,
 } from "./lib/adminSession";
 import { ACTIVE_EXPERIMENT, bucket } from "./lib/ctaVariant";
@@ -202,8 +203,27 @@ export async function middleware(req: NextRequest) {
   //     session. Fails closed — env unset means no bypass exists at all. The
   //     page re-validates the token itself; this bypass only skips the login
   //     redirect.
+  //
+  //     THE COMPARISON IS CONSTANT-TIME, and this is the one that matters.
+  //     A `===` here short-circuits on the first differing character, so
+  //     response time leaks a prefix-match oracle — and because this check
+  //     runs BEFORE the /marketing gate below, it is the only comparison an
+  //     unauthenticated caller can reach. The page's own timingSafeEqualStr
+  //     never runs for them: a non-matching path falls through to the gate
+  //     and redirects to login. Guessing the token one character at a time
+  //     against the edge is exactly the attack the page-level check was
+  //     written to prevent, so the edge has to hold the same line.
+  //
+  //     The prefix is matched with startsWith and is NOT secret; only the
+  //     token segment goes through the constant-time compare. That helper
+  //     early-exits on length, which is documented as non-secret there.
   const shareToken = process.env.MARKETING_EXEC_SHARE_TOKEN;
-  if (shareToken && pathname === `/marketing/executive/${shareToken}`) {
+  const SHARE_PREFIX = "/marketing/executive/";
+  if (
+    shareToken &&
+    pathname.startsWith(SHARE_PREFIX) &&
+    timingSafeEqualStr(pathname.slice(SHARE_PREFIX.length), shareToken)
+  ) {
     const res = NextResponse.next();
     res.headers.set("X-Robots-Tag", "noindex, nofollow");
     return res;
