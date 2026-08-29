@@ -1,9 +1,9 @@
 import type { WaitlistEntry } from "@/lib/adminWaitlist";
 import { deliveryState, maskEmail, maskName, type LeadRow, type PiiVisibility } from "@/lib/adminLeads";
 import { readMarketSource } from "@/lib/marketSignals";
-import { Chip, Panel } from "../../_ui/primitives";
-import { EmptyState } from "../../_ui/EmptyState";
-import { InfoPopover } from "../../_ui/InfoPopover";
+import { OpsCard } from "../../_ui/v2/OpsCard";
+import { EmptyState } from "../../_ui/v2/EmptyState";
+import { StatusBadge } from "../../_ui/v2/HealthDot";
 import { LeadFeedTable, type FeedRow } from "./LeadFeedTable";
 import { marketSourceSection } from "./marketSourceSection";
 
@@ -132,10 +132,11 @@ export function WaitlistPanel({
   pii?: PiiVisibility;
 }) {
   if (!configured) {
-    return <EmptyState headline="Upstash isn't configured in this environment, so there's no waitlist store to read." />;
+    return <EmptyState headline="Upstash isn't configured in this environment — no waitlist store to read." />;
   }
   if (error) {
-    return <EmptyState headline={`Waitlist store unreadable — ${error}. This is a read failure, not proof the waitlist is empty.`} />;
+    // A read failure, not proof the waitlist is empty — the error is the value.
+    return <EmptyState headline={`Waitlist store unreadable — ${error}`} />;
   }
 
   const rows = [
@@ -148,31 +149,18 @@ export function WaitlistPanel({
   }
 
   return (
-    <Panel
+    <OpsCard
       title="Waitlist"
-      right={
+      titleTooltip="Out-of-area signups, kept out of the CRM entirely — expansion demand, not leads. Entries from 2026-08-20 onward live in waitlist:leads; older ones are still in leads:v1 and are marked legacy."
+      control={
         <span className="inline-flex items-center gap-1.5">
-          {legacy.length > 0 && <Chip tone="unknown">{legacy.length} legacy</Chip>}
-          <InfoPopover label="What the waitlist is and why it spans two stores" align="right">
-            <p className="m-0 mb-2">
-              Out-of-area signups. They are kept out of the CRM entirely — this is the
-              expansion-demand signal, not a lead, and counting it as one would inflate every
-              conversion number on the site.
-            </p>
-            <p className="m-0">
-              Entries from <strong className="font-bold text-content">2026-08-20</strong> onward live
-              in <code className="font-mono">waitlist:leads</code>. Older ones are still in{" "}
-              <code className="font-mono">leads:v1</code> and were posted to the CRM, where they
-              404&apos;d — marked <em>legacy</em> here.
-            </p>
-          </InfoPopover>
-          <span className="font-sans text-ops-label tabular-nums text-content-subtle">
-            {rows.length}
-          </span>
+          {legacy.length > 0 && <StatusBadge status={`${legacy.length} legacy`} tone="neutral" />}
+          <span className="ops-subtle ops-tnum">{rows.length}</span>
         </span>
       }
+      ruled
     >
       <LeadFeedTable rows={rows} />
-    </Panel>
+    </OpsCard>
   );
 }
