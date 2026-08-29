@@ -72,16 +72,10 @@ function greetingFor(firstName: string): string {
 export function AskHero({
   configured,
   firstName,
-  scopeLabel,
-  attributionLabel,
   suggestions,
 }: {
   configured: boolean;
   firstName: string;
-  /** "Scope: August · All markets" — the live header state, not a constant. */
-  scopeLabel: string;
-  /** "Last touch" / "First touch" — likewise. */
-  attributionLabel: string;
   suggestions: Suggestion[];
 }) {
   const [value, setValue] = useState("");
@@ -199,8 +193,13 @@ export function AskHero({
     }
   }
 
+  // The negative margins cancel <main>'s padding EXACTLY so the wash meets the
+  // header with no seam. They must track it on BOTH axes: main is `p-4 md:p-6`,
+  // so this is `-m-4 md:-m-6`. It was `-mt-5` (20px) against 24px of padding at
+  // md and up, which left a 4px strip of page ground showing under the header —
+  // and overshot by 4px below that breakpoint.
   return (
-    <section className="relative -mx-4 -mt-5 md:-mx-6">
+    <section className="relative -mx-4 -mt-4 md:-mx-6 md:-mt-6">
       {/* The wash. aria-hidden and pointer-events-none throughout: it is
           decoration, and it sits under interactive content. */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
@@ -275,9 +274,13 @@ export function AskHero({
             style={{ color: "var(--ops-text)" }}
           />
 
+          {/* NO SCOPE CHIPS. "Scope: Aug 2026 · All markets" restated the date
+              picker sitting a few centimetres above it, and "Last touch"
+              announced an attribution mode that cannot even be changed from
+              this screen. Both were notes about the state rather than controls
+              over it, and the assistant states the window it answered for in
+              the answer itself. */}
           <div className="flex items-center gap-2 pb-3 pl-4 pr-3 pt-2">
-            <ScopeChip>{scopeLabel}</ScopeChip>
-            <ScopeChip>{attributionLabel}</ScopeChip>
             <div className="flex-1" />
             <span className="ops-subtle text-[12px]" aria-hidden>
               ⏎ to ask
@@ -420,16 +423,5 @@ function Spinner() {
       <circle cx="8" cy="8" r="6" strokeOpacity="0.25" />
       <path d="M14 8a6 6 0 0 0-6-6" strokeLinecap="round" />
     </svg>
-  );
-}
-
-function ScopeChip({ children }: { children: React.ReactNode }) {
-  return (
-    <span
-      className="ops-muted inline-flex h-7 items-center rounded-full border px-2.5 text-[12px]"
-      style={{ borderColor: "var(--ops-border)", background: "var(--ops-surface)" }}
-    >
-      {children}
-    </span>
   );
 }

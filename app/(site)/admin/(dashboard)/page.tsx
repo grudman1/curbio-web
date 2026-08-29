@@ -26,7 +26,6 @@ import {
   monthLabelFull,
   monthShort,
   monthsFor,
-  parseAttribution,
   parseTimeframe,
   timeframeLabel,
 } from "../_ui/timeframe";
@@ -191,7 +190,6 @@ export default async function HomeScreen({
   const sp = await searchParams;
   const tf = parseTimeframe(sp.t, SNAPSHOT_MONTHS, "month");
   const months = monthsFor(tf, SNAPSHOT_MONTHS);
-  const attribution = parseAttribution(sp.a);
 
   // cache()d in session.ts — the layout reads this in the same request, so
   // this is a shared Redis hit rather than a second one.
@@ -488,8 +486,6 @@ export default async function HomeScreen({
 
   // ── hero context ─────────────────────────────────────────────────────────
   const windowLabel = timeframeLabel(tf, SNAPSHOT_MONTHS);
-  const scopeLabel = `Scope: ${windowLabel} · All markets`;
-  const attributionLabel = attribution === "first" ? "First touch" : "Last touch";
 
   // One chip per capability the assistant actually has: diagnosis, copy
   // generation, data Q&A, site/tech. They are the page's statement of what it
@@ -518,8 +514,6 @@ export default async function HomeScreen({
       <AskHero
         configured={Boolean(process.env.ANTHROPIC_API_KEY)}
         firstName={firstName}
-        scopeLabel={scopeLabel}
-        attributionLabel={attributionLabel}
         suggestions={suggestions}
       />
 
