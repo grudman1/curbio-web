@@ -37,7 +37,7 @@ export type Callout = {
   atStake: number;
 };
 
-export function Callouts({ items, meta }: { items: Callout[]; meta: string }) {
+export function Callouts({ items }: { items: Callout[] }) {
   return (
     <section className="ops-card overflow-hidden">
       <div className="ops-card-head">
@@ -50,10 +50,10 @@ export function Callouts({ items, meta }: { items: Callout[]; meta: string }) {
               : "var(--ops-success-500)" }}
           aria-hidden
         />
+        {/* The ranking key used to be stated here in grey ("ranked by leads at
+            stake · Aug vs Jul"). It was a caption explaining the panel, and the
+            order of the rows already shows it. */}
         <h2 className="ops-card-title">What&rsquo;s in the way</h2>
-        {/* A label, not a caption: it states the ranking key and the window,
-            which the numbers below are meaningless without. */}
-        <span className="ops-card-meta">{meta}</span>
       </div>
 
       {items.length === 0 ? (

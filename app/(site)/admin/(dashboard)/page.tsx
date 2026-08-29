@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { MARKETS } from "@/config/markets";
 import {
   SNAPSHOT_AS_OF,
@@ -428,6 +429,13 @@ export default async function HomeScreen({
     };
   }).sort((a, b) => b.ratio - a.ratio);
 
+  // The panel shows the WORST first — the eight rows worth acting on — while
+  // `marketRows` stays best-first for the callouts and the hero chip below.
+  // Two orderings of one array, never two sources of truth.
+  // The visible cap (8 rows) is enforced in CSS by `.ops-scroll-8`, derived
+  // from --ops-prow-h, so it cannot drift from the real row height.
+  const marketRowsWorstFirst = [...marketRows].reverse();
+
   const worst = marketRows[marketRows.length - 1];
   if (worst && expectedPerMarket > 0) {
     const short = Math.round(expectedPerMarket - expectedPerMarket * worst.ratio);
@@ -515,19 +523,9 @@ export default async function HomeScreen({
         suggestions={suggestions}
       />
 
-      <div className="mb-4 md:mb-6">
-        <Callouts
-          items={rankedCallouts}
-          meta={
-            priorLabel
-              ? `ranked by leads at stake · ${windowLabel} vs ${priorLabel}`
-              : `ranked by leads at stake · ${windowLabel}`
-          }
-        />
-      </div>
-
-      {/* KPI row. Four equal tiles — the one thing on this screen that is a
-          simple repeating unit, so it stays a simple repeating grid. */}
+      {/* KPI row FIRST. The four headline numbers are what the screen is for;
+          "what's in the way" is the follow-up question, and it was reading as
+          the headline purely by sitting above them. */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
         <OpsMetric
           label="Qualified leads"
@@ -571,14 +569,21 @@ export default async function HomeScreen({
         />
       </div>
 
+      <div className="mt-4 md:mt-6">
+        <Callouts items={rankedCallouts} />
+      </div>
+
       {/* The body grid. Asymmetric spans on purpose: the gauge is a single
-          figure and needs less width than the eight market bars beside it. */}
-      <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6">
+          figure and needs less width than the eight market bars beside it.
+          `items-stretch` plus `fill` on both cards is what makes the short
+          gauge and the tall market list agree on height. */}
+      <div className="mt-4 grid grid-cols-12 items-stretch gap-4 md:mt-6 md:gap-6">
         {pace && (
           <div className="col-span-12 xl:col-span-5">
             <OpsCard
               title="Pace"
-              meta={`through ${formatFreshness(SNAPSHOT_AS_OF)}`}
+              titleTooltip={`Through ${formatFreshness(SNAPSHOT_AS_OF)}`}
+              fill
               ruled
             >
               <PaceGauge
@@ -600,31 +605,41 @@ export default async function HomeScreen({
         )}
 
         <div className={pace ? "col-span-12 xl:col-span-7" : "col-span-12"}>
+          {/* CAPPED, NOT TRUNCATED. Eight rows are shown and the rest scroll
+              inside a fixed viewport, so the card is the same height at 8
+              markets as at 50 — the panel stops being a function of how many
+              markets exist. The footer link is outside the scroll area so it
+              never has to be scrolled to. */}
           <OpsCard
             title="Markets against pace"
-            meta={`${windowLabel} · ${expectedPerMarket} expected each`}
-            headerHref="/admin/markets"
+            titleTooltip={`${expectedPerMarket} expected each · ${windowLabel}`}
+            fill
             ruled
+            footer={
+              <Link href="/admin/markets" className="ops-foot-link">
+                View all markets
+              </Link>
+            }
           >
-            <ProgressRows rows={marketRows} />
+            <div className="ops-scroll-8">
+              <ProgressRows rows={marketRowsWorstFirst} />
+            </div>
           </OpsCard>
         </div>
 
         <div className="col-span-12">
-          <OpsCard
-            title="Qualified by month"
-            meta={`${trendMonths.length} months · ${windowLabel} selected`}
-            ruled
-          >
+          <OpsCard title="Qualified by month" ruled>
             <QualifiedByMonth months={trendMonths} channels={chartLegend} />
           </OpsCard>
         </div>
 
         <div className="col-span-12">
           <ChannelsTable
-            title={`Channels, ${windowLabel}`}
+            title="Channels"
             deltaLabel={priorLabel ? `vs ${priorLabel}` : "vs prior"}
-            meta={latest ? `${attributedTotal} attributed of ${latest.total} qualified` : ""}
+            titleTooltip={
+              latest ? `${attributedTotal} attributed of ${latest.total} qualified` : undefined
+            }
             rows={channelRows}
           />
         </div>
