@@ -17,7 +17,10 @@ import { PAGE_STATUS_TONE } from "./tone";
 // THE IFRAME IS NOT A DATA SOURCE. It is sandboxed WITHOUT allow-scripts, so
 // no JS runs and analytics can never fire from a preview — a dashboard that
 // inflated the numbers it reports by rendering them would be worse than
-// useless. Every figure in the strip comes from /api/admin/page-stats.
+// useless. Every figure in the strip is computed server-side by
+// lib/pageStats.ts (computePageStats), called directly from the Pages
+// screen — NOT fetched from /api/admin/page-stats, which nothing in this
+// codebase currently calls.
 // allow-same-origin is granted only so stylesheets apply; with scripting off
 // the document cannot act on that origin.
 // ─────────────────────────────────────────────────────────────────────────────

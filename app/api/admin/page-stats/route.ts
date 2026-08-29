@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAdminApiSession, unauthorized } from "@/lib/adminApiAuth";
 import { buildPageRegistry } from "@/config/pageRegistry";
 import { computePageStats } from "@/lib/pageStats";
 import { bucketFor, dayRange, monthsFor, parseTimeframe } from "@/app/(site)/admin/_ui/timeframe";
@@ -16,19 +17,30 @@ import { SNAPSHOT_MONTHS } from "@/config/appLeadsSnapshot";
 // is what keeps a preview from being able to fire analytics at the page it is
 // previewing.
 //
-// Behind the /admin session gate via middleware.ts, same as every other admin
-// surface.
+// GATES ITSELF. middleware.ts's matcher excludes /api (the leading `api` in
+// its negative lookahead), so the /admin session gate that covers every admin
+// PAGE never runs here. This route previously claimed the opposite in this
+// comment and was reachable unauthenticated, serving per-page traffic for the
+// whole registry to anyone who knew the URL. See lib/adminApiAuth.ts.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** ~15 minutes. Traffic numbers do not need to be fresher than the time it
- *  takes to read them, and the upstream API is rate limited. */
-export const revalidate = 900;
+// DYNAMIC, and it must stay that way. This route reads the session cookie, so
+// neither the Next route cache nor a CDN may hold its response — an
+// authenticated payload sitting in a shared cache is the same leak the missing
+// gate was, one layer further out. The ~15-minute reuse that used to live here
+// as `revalidate` now lives on the upstream fetches in lib/vercelAnalytics.ts
+// (ANALYTICS_TTL_S), where it still shields the rate-limited Vercel API but
+// caches only the traffic data — which is identical for every admin — instead
+// of an authenticated HTTP response.
+export const dynamic = "force-dynamic";
 
 /** How many recent leads the conversion denominator scans. Matches SCAN in the
  *  admin UI so the two never disagree about what window they cover. */
 const SCAN = 500;
 
 export async function GET(req: Request) {
+  if (!(await requireAdminApiSession())) return unauthorized();
+
   const url = new URL(req.url);
   // Day-grain default: this route only ever serves day-grain screens (Pages),
   // so an absent ?t= means 30d, not the latest snapshot month.
@@ -56,7 +68,9 @@ export async function GET(req: Request) {
 
   const result = await computePageStats(paths, since, until, bucketFor(tf), SCAN);
 
+  // no-store, not `private, s-maxage=...`: those two directives disagree about
+  // whether a shared cache may store this, and the response is authenticated.
   return NextResponse.json(result, {
-    headers: { "Cache-Control": "private, max-age=0, s-maxage=900, stale-while-revalidate=300" },
+    headers: { "Cache-Control": "private, no-store" },
   });
 }
