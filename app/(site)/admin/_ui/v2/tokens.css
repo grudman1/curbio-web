@@ -324,9 +324,12 @@
 
 /* ═══ Table ════════════════════════════════════════════════════════════════ */
 .ops-table { width: 100%; border-collapse: collapse; }
+/* Alignment is NOT baked in here. It was, and a hardcoded `text-align: left`
+   silently beat the `text-right` utility on numeric columns — headers sat left
+   while their values sat right. Alignment now comes from the modifiers below,
+   so a header and its column cannot drift apart. */
 .ops-th {
   padding: 12px 0;
-  text-align: left;
   font-size: var(--ops-text-xs);
   line-height: var(--ops-text-xs-lh);
   font-weight: 500;
@@ -339,6 +342,8 @@
 .ops-tbody-row:last-child { border-bottom: 0; }
 .ops-tbody-row--link { cursor: pointer; transition: background var(--ops-fast) var(--ops-ease); }
 .ops-tbody-row--link:hover { background: var(--ops-gray-25); }
+.ops-th--left  { text-align: left; }
+.ops-th--right { text-align: right; }
 .ops-num { font-variant-numeric: tabular-nums; text-align: right; }
 
 /* ═══ Nav (sidebar) ════════════════════════════════════════════════════════

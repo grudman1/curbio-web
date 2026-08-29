@@ -118,9 +118,7 @@ export function ChannelsTable({
                     ? `${c.label}, sorted ${dir === -1 ? "descending" : "ascending"}. Activate to reverse.`
                     : `Sort by ${c.label}`
                 }
-                className={`ops-th cursor-pointer border-0 bg-transparent p-0 transition-colors duration-fast ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
-                  c.align === "right" ? "text-right" : "text-left"
-                }`}
+                className={`ops-th ops-th--${c.align} w-full cursor-pointer border-0 bg-transparent p-0 transition-colors duration-fast ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2`}
                 style={{ color: sort === c.key ? "var(--ops-text)" : undefined }}
               >
                 {c.label}

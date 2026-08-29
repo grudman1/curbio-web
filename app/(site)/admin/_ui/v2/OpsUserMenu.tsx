@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { firstNameFrom } from "../userDisplay";
 
 // Account chip + menu. Replaces the header's flat avatar / email / "Sign out"
@@ -87,11 +86,10 @@ export function OpsUserMenu({
             <span className="ops-subtle block truncate text-[12px]">{email ?? "Signed in"}</span>
           </p>
           <div className="my-1 h-px" style={{ background: "var(--ops-divider)" }} />
-          <Link href="/admin/settings" className="ops-pop-item" onClick={() => setOpen(false)}>
-            Settings
-          </Link>
-          {/* A form, not a client handler: signOut is a server action and
-              nothing here needs state. */}
+          {/* SIGN OUT ONLY. "Settings" does not belong here: /admin/settings is
+              a working screen for building marketing links and spend entries,
+              not this account's preferences. It is a nav destination, and it
+              lives in the sidebar where the other destinations are. */}
           <form action={signOut}>
             <button type="submit" className="ops-pop-item">
               Sign out
