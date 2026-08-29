@@ -103,7 +103,15 @@ export async function POST(req: Request) {
             // Copy generation needs room to think about brand rules; data
             // answers resolve fast. Adaptive thinking covers both without a
             // per-question setting.
-            thinking: { type: "adaptive" },
+            // display: "summarized" is deliberate, not cosmetic. The default on
+            // Opus 5 is "omitted", which returns thinking blocks whose text is
+            // an empty string. This loop echoes the assistant's content back on
+            // the next tool turn, so those empty blocks get replayed — a
+            // plausible cause of the 400 seen in production on the multi-turn
+            // (tool-using) path. Summarized blocks carry real text and replay
+            // cleanly. Thinking is not streamed to the client either way: the
+            // "text" handler below only fires for text blocks.
+            thinking: { type: "adaptive", display: "summarized" },
             output_config: { effort: "medium" },
             system: [
               {
@@ -164,14 +172,23 @@ export async function POST(req: Request) {
 
         send("done", {});
       } catch (err) {
+        // SURFACE THE API'S OWN MESSAGE. The first version of this handler
+        // reported `Anthropic API error 400.` and dropped err.message — which
+        // is the only part that says WHAT was malformed. A 400 is a bug in the
+        // request we build, so hiding its explanation turns a five-minute fix
+        // into guesswork. The status alone is not a diagnosis.
         const message =
           err instanceof Anthropic.AuthenticationError
             ? "The Anthropic API key was rejected."
             : err instanceof Anthropic.RateLimitError
               ? "Rate limited by the Anthropic API — try again in a moment."
               : err instanceof Anthropic.APIError
-                ? `Anthropic API error ${err.status}.`
-                : "Something went wrong answering that.";
+                ? `Anthropic API error ${err.status}: ${err.message}`
+                : err instanceof Error
+                  ? `Something went wrong answering that: ${err.message}`
+                  : "Something went wrong answering that.";
+        // Also to the server log, where it survives the user closing the tab.
+        console.error("[admin/ask] request failed:", err);
         send("error", { error: message });
         send("done", {});
       } finally {
