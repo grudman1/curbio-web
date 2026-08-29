@@ -5,40 +5,57 @@ import Link from "next/link";
 //
 // `headerHref` makes ONLY the header row a link, never the whole card — a card
 // whose body is an interactive chart or table must not swallow clicks meant
-// for its contents. The right-hand `meta` slot takes a measurement or a scope
-// label; it is not a place for a sentence explaining the panel.
+// for its contents.
+//
+// NO CAPTIONS. There is no slot for a grey sentence explaining what a card
+// contains — the title and the data carry that. Where a number genuinely needs
+// qualifying ("through Aug 14"), it goes on `titleTooltip` and surfaces on
+// hover, costing no vertical space and no visual weight. The old `meta` slot
+// became a caption slot in practice and is gone.
 
 export function OpsCard({
   title,
-  meta,
+  titleTooltip,
   headerHref,
   control,
   children,
+  footer,
+  fill = false,
   ruled = false,
   className = "",
 }: {
   title?: string;
-  /** A count or a window — "11 attributed of 56 qualified", "8 months". */
-  meta?: React.ReactNode;
+  /** Qualification for the title, on hover. Never rendered as standing text. */
+  titleTooltip?: string;
   /** When set, the header row links here. The body never does. */
   headerHref?: string;
   /** A control that scopes this card's own contents (e.g. a segmented range). */
   control?: React.ReactNode;
   children: React.ReactNode;
+  /** Pinned below the body — a link out of a capped list, never a caption. */
+  footer?: React.ReactNode;
+  /** Fill the grid row's height, so paired cards agree. */
+  fill?: boolean;
   /** Rule between header and body — for panels where the two are distinct. */
   ruled?: boolean;
   className?: string;
 }) {
-  const head = (title || meta || control) && (
+  const head = (title || control) && (
     <div className="ops-card-head">
-      {title && <h2 className="ops-card-title">{title}</h2>}
-      {meta && <span className="ops-card-meta">{meta}</span>}
-      {control && <span className={meta ? "" : "ml-auto"}>{control}</span>}
+      {title && (
+        <h2
+          className={`ops-card-title${titleTooltip ? " ops-card-title--info" : ""}`}
+          title={titleTooltip}
+        >
+          {title}
+        </h2>
+      )}
+      {control && <span className="ml-auto">{control}</span>}
     </div>
   );
 
   return (
-    <section className={`ops-card ${className}`}>
+    <section className={`ops-card${fill ? " ops-card--fill" : ""} ${className}`}>
       {head &&
         (headerHref ? (
           <Link href={headerHref} className="block no-underline">
@@ -47,7 +64,10 @@ export function OpsCard({
         ) : (
           head
         ))}
-      <div className={`ops-card-body${ruled ? " ops-card-body--ruled" : ""}`}>{children}</div>
+      <div className={`ops-card-body${ruled ? " ops-card-body--ruled" : ""}`}>
+        {children}
+        {footer && <div className="ops-card-foot">{footer}</div>}
+      </div>
     </section>
   );
 }

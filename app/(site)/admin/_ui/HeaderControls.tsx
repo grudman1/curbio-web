@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { grainFor } from "@/config/adminNav";
 import { InfoPopover } from "./InfoPopover";
@@ -48,30 +49,77 @@ export function Timeframe({ months }: { months: string[] }) {
   const tf = parseTimeframe(searchParams.get("t") ?? undefined, months, grain);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+  // Viewport coordinates for the portalled panel. Null until measured, so the
+  // panel never paints at 0,0 for a frame before it is positioned.
+  const [at, setAt] = useState<{ top: number; left: number } | null>(null);
 
   const current = timeframeParam(tf);
+
+  // ── Why this is a PORTAL and not an absolutely-positioned child ───────────
+  // The trigger lives inside the header's control strip, which is
+  // `overflow-x-auto` so the controls can scroll on narrow screens. Per CSS,
+  // a non-visible overflow on one axis forces the other axis to compute to
+  // `auto` too — so that strip clipped the dropdown VERTICALLY, and the panel
+  // opened into a hidden region. It was rendering correctly the whole time and
+  // simply could not be seen. No z-index could fix that; only leaving the
+  // clipping container can. The panel therefore renders into document.body
+  // with fixed coordinates measured from the trigger.
+  const place = useCallback(() => {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (!r) return;
+    const W = 248;
+    setAt({
+      top: r.bottom + 6,
+      // Keep the panel on screen when the trigger sits near the right edge.
+      left: Math.max(8, Math.min(r.left, window.innerWidth - W - 8)),
+    });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (open) place();
+  }, [open, place]);
 
   useEffect(() => {
     if (!open) return;
     function onDown(e: MouseEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      // The panel is no longer a DOM descendant of the trigger, so an
+      // outside-click test has to consider both.
+      if (!rootRef.current?.contains(t) && !popRef.current?.contains(t)) setOpen(false);
     }
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        btnRef.current?.focus();
+      }
     }
+    // Fixed coordinates go stale when the page moves underneath them.
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
+    window.addEventListener("resize", place);
+    window.addEventListener("scroll", place, true);
     return () => {
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", place);
+      window.removeEventListener("scroll", place, true);
     };
-  }, [open]);
+  }, [open, place]);
+
+  // Focus moves into the panel on open so it is reachable from the keyboard,
+  // and returns to the trigger on close (handled at each close site).
+  useEffect(() => {
+    if (open && at) popRef.current?.querySelector("button")?.focus();
+  }, [open, at]);
 
   function set(value: string) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("t", value);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     setOpen(false);
+    btnRef.current?.focus();
   }
 
   // Months grouped by year, newest year first, for the grid.
@@ -99,9 +147,10 @@ export function Timeframe({ months }: { months: string[] }) {
   return (
     <div ref={rootRef} className="relative">
       <button
+        ref={btnRef}
         type="button"
         aria-expanded={open}
-        aria-haspopup="true"
+        aria-haspopup="dialog"
         onClick={() => setOpen(!open)}
         className="inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-md border border-nav3-border bg-app-card px-2.5 py-2 font-sans text-[13px] font-medium text-nav3-hover-text transition-colors duration-fast ease-out hover:bg-app-well focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
       >
@@ -110,8 +159,14 @@ export function Timeframe({ months }: { months: string[] }) {
         <Icon name="chevron-down" size={11} className="text-nav3-gray-400" />
       </button>
 
-      {open && (
-        <div className="absolute left-0 top-[36px] z-overlay w-[248px] rounded-lg border border-app-border bg-app-card p-1.5 shadow-app-pop motion-safe:animate-[pop-in_120ms_var(--easing-out)] motion-reduce:animate-none">
+      {open && at !== null &&
+        createPortal(
+          <div
+            ref={popRef}
+            role="dialog"
+            aria-label="Select timeframe"
+            style={{ position: "fixed", top: at.top, left: at.left, zIndex: 200 }}
+            className="w-[248px] rounded-lg border border-app-border bg-app-card p-1.5 shadow-app-pop motion-safe:animate-[pop-in_120ms_var(--easing-out)] motion-reduce:animate-none">
           {grain === "day" && (
             <>
               {DAY_PRESETS.map((p) => option(p.key, p.label))}
@@ -144,8 +199,9 @@ export function Timeframe({ months }: { months: string[] }) {
 
           <div className="mx-1 my-1.5 border-t border-app-border" />
           {RANGE_PRESETS.map((p) => option(p.key, p.label))}
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

@@ -10,10 +10,9 @@ import { CHANNEL_INK } from "./channelViz";
 //
 // ROWS ARE ATTRIBUTED CHANNELS ONLY. `direct` — the absence of attribution —
 // is not a row here, because a grey bar sitting in a ranked list of channels
-// reads as a channel that is winning. The header's count states the split
-// ("11 attributed of 56 qualified"), which is a measurement rather than a
-// caption, and the stacked chart above already shows unattributed at its true
-// size. Nothing on this card explains that in a sentence.
+// reads as a channel that is winning. The split used to be stated in the header
+// ("11 attributed of 56 qualified"); it now hangs off the title as a tooltip,
+// and the stacked chart above already shows unattributed at its true size.
 
 export type ChannelRow = {
   channel: Channel;
@@ -45,12 +44,13 @@ const GRID = "grid grid-cols-[1.6fr_.7fr_.8fr_.8fr_.8fr] items-center gap-2";
 export function ChannelsTable({
   rows,
   title,
-  meta,
+  titleTooltip,
   deltaLabel,
 }: {
   rows: ChannelRow[];
   title: string;
-  meta: string;
+  /** The attributed/qualified split, on hover. Never standing text. */
+  titleTooltip?: string;
   /** "vs Jul" — the prior period this table's delta column measures. */
   deltaLabel: string;
 }) {
@@ -88,8 +88,12 @@ export function ChannelsTable({
   return (
     <section className="ops-card overflow-hidden">
       <div className="ops-card-head">
-        <h2 className="ops-card-title">{title}</h2>
-        <span className="ops-card-meta">{meta}</span>
+        <h2
+          className={`ops-card-title${titleTooltip ? " ops-card-title--info" : ""}`}
+          title={titleTooltip}
+        >
+          {title}
+        </h2>
       </div>
 
       {rows.length === 0 ? (

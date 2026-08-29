@@ -111,6 +111,11 @@
   --ops-border: var(--ops-gray-200);
   --ops-divider: var(--ops-gray-100);
   --ops-text: var(--ops-gray-800);
+  /* Card TITLES only. Navy, not the body grey — a card's title is the one
+     piece of chrome that has to survive being skimmed, and grey headings made
+     every panel read as secondary to its own contents. Grey is still correct
+     for data labels and axis text; it is never correct for a card title. */
+  --ops-heading: var(--navy);
   --ops-text-muted: var(--ops-gray-500);
   --ops-text-subtle: var(--ops-gray-400);
 
@@ -130,6 +135,9 @@
   --ops-ch-direct: var(--ops-gray-300);
 
   /* ── Radii — the 16px card is TailAdmin's signature ───────────────────── */
+  /* One market row. `.ops-scroll-8` caps its viewport at eight of these. */
+  --ops-prow-h: 58px;
+
   --ops-r-sm: 4px;
   --ops-r-md: 8px;
   --ops-r-lg: 12px;
@@ -191,8 +199,16 @@
   font-family: var(--ops-font);
   font-size: var(--ops-text-md);
   line-height: var(--ops-text-md-lh);
-  font-weight: 600;
-  color: var(--ops-text);
+  font-weight: 700;
+  color: var(--ops-heading);
+}
+/* A title carrying a tooltip advertises it: dotted underline on hover, and a
+   help cursor. The qualification a caption used to state in standing grey text
+   lives here instead — available on demand, costing no vertical space. */
+.ops-card-title--info { cursor: help; }
+.ops-card-title--info:hover {
+  text-decoration: underline dotted var(--ops-gray-300);
+  text-underline-offset: 4px;
 }
 /* Right-hand meta on a card header — a measurement or a scope label. Never a
    sentence: this system has no slot for explanatory prose. */
@@ -212,11 +228,14 @@
    label → number → badge. NO icon tile: an icon cannot disambiguate
    "Qualified leads" from "Close rate", so it is decoration, and this screen
    does not spend space on decoration. */
+/* The KPI tile's label IS that card's title, so it follows the title rule —
+   navy and bold — not the data-label rule. */
 .ops-metric-label {
   display: block;
-  font-size: var(--ops-text-sm);
-  line-height: var(--ops-text-sm-lh);
-  color: var(--ops-text-muted);
+  font-size: var(--ops-text-md);
+  line-height: var(--ops-text-md-lh);
+  font-weight: 700;
+  color: var(--ops-heading);
 }
 .ops-metric-value {
   font-size: var(--ops-metric-size);
@@ -258,7 +277,19 @@
    name + sub-label left, bar + figure right. The densest honest way to show a
    set of things against a shared target — markets against pace, channels
    against share. */
-.ops-prow { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+/* The row height is FIXED and exported as a token, because the capped market
+   list computes its viewport from it (`.ops-scroll-8`). A guessed pixel value
+   in the component drifted from the real row height and showed six rows where
+   it claimed eight; deriving one from the other makes that impossible. The
+   name truncates rather than wraps, so the height is deterministic. */
+.ops-prow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  height: var(--ops-prow-h);
+  box-sizing: border-box;
+}
 .ops-prow-name {
   font-size: var(--ops-text-sm);
   line-height: var(--ops-text-sm-lh);
@@ -514,32 +545,8 @@
 
    @keyframes cannot be scoped by a class, so these are global — prefixed so
    they cannot collide with the marketing site's own animation names. */
-@keyframes ops-drift-a {
-  0%   { transform: translate3d(-6%, -4%, 0) scale(1.05); }
-  50%  { transform: translate3d(8%, 5%, 0) scale(1.18); }
-  100% { transform: translate3d(-6%, -4%, 0) scale(1.05); }
-}
-@keyframes ops-drift-b {
-  0%   { transform: translate3d(5%, 6%, 0) scale(1.14); }
-  50%  { transform: translate3d(-7%, -5%, 0) scale(1.02); }
-  100% { transform: translate3d(5%, 6%, 0) scale(1.14); }
-}
-@keyframes ops-drift-c {
-  0%   { transform: translate3d(0, 3%, 0) scale(1); opacity: 0.55; }
-  50%  { transform: translate3d(-5%, -6%, 0) scale(1.2); opacity: 0.8; }
-  100% { transform: translate3d(0, 3%, 0) scale(1); opacity: 0.55; }
-}
-
-.ops-drift { animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
-.ops-drift-a { animation-name: ops-drift-a; animation-duration: 30s; }
-.ops-drift-b { animation-name: ops-drift-b; animation-duration: 38s; }
-.ops-drift-c { animation-name: ops-drift-c; animation-duration: 46s; }
-
-/* The wash is the design; the movement is the flourish, and only the flourish
-   is negotiable. Gradients stay, drift stops. */
-@media (prefers-reduced-motion: reduce) {
-  .ops-drift { animation: none !important; }
-}
+/* (The three-blob `ops-drift` wash was replaced by `.ops-wash` + `.ops-bloom`
+   below — cooler, and one gradient instead of three coloured blobs.) */
 
 /* The Ask panel's loading spinner. Reduced-motion keeps it visible and still —
    it is a state indicator, not decoration, so hiding it would remove
@@ -554,3 +561,131 @@
 @media (prefers-reduced-motion: reduce) {
   .ops-spin { animation: none; }
 }
+
+/* ═══ Focus, inside the ops surfaces ═══════════════════════════════════════
+   app/globals.css sets a GLOBAL focus ring in amber:
+
+     :where(button, a, input, select, textarea):focus-visible {
+       box-shadow: 0 0 0 3px var(--amber-30); border-color: var(--amber);
+     }
+
+   That is correct for the public site, where amber is the accent. It is wrong
+   inside /admin: the Ask box draws its own navy focus border on the card, so
+   the textarea's amber ring landed INSIDE it — a double frame, amber within
+   navy, which reads as an error state rather than as focus.
+
+   `:where()` has zero specificity, so scoping to `.ops` is enough to win
+   without !important. Amber keeps its meaning on the marketing site and stops
+   appearing in ops chrome. */
+.ops :where(button, a, input, select, textarea):focus-visible {
+  box-shadow: var(--ops-ring);
+  border-color: var(--ops-brand);
+}
+
+/* The Ask textarea is the exception to the exception: its focus treatment
+   belongs to the CARD around it, so the control itself draws nothing. One
+   frame, on the element a reader perceives as the input. */
+.ops-ask-input:focus-visible,
+.ops-ask-input:focus {
+  box-shadow: none;
+  border-color: transparent;
+  outline: none;
+}
+
+/* ═══ Equal-height cards in a grid row ═════════════════════════════════════
+   A short card beside a tall one floats against the top of its cell. These
+   two make the card fill its grid row and its body take the slack, so paired
+   panels agree on height whatever their contents. */
+.ops-card--fill { height: 100%; display: flex; flex-direction: column; }
+.ops-card--fill > .ops-card-body { flex: 1 1 auto; display: flex; flex-direction: column; }
+
+/* A list that is capped rather than truncated: a fixed viewport with its own
+   scrollbar. The card's height stops depending on how many rows exist, which
+   is what lets 8 markets and 50 markets render the same panel. */
+.ops-scroll-8 {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: calc(var(--ops-prow-h) * 8);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.ops-scroll-8::-webkit-scrollbar { width: 6px; }
+.ops-scroll-8::-webkit-scrollbar-thumb {
+  background: var(--ops-gray-200);
+  border-radius: 999px;
+}
+.ops-scroll-8::-webkit-scrollbar-track { background: transparent; }
+
+/* The footer link under a capped list. Sits below the scroll viewport, so it
+   is always reachable without scrolling to the end of the rows. */
+.ops-card-foot {
+  flex: none;
+  border-top: 1px solid var(--ops-divider);
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+/* ═══ Hero wash ════════════════════════════════════════════════════════════
+   A slow, cool gradient rather than three coloured blobs.
+
+   COOLER ON PURPOSE. The previous wash carried an amber blob, which put the
+   brand's one accent colour behind the whole screen at large scale — the exact
+   thing the brand rules forbid ("amber is never the dominant colour"). Navy,
+   teal and sage are all sanctioned for large blocks, so the wash is built from
+   those and amber is left to do its actual job on CTAs.
+
+   Two layers: a large linear gradient panning across an oversized background
+   box, plus two soft radial blooms drifting against it. The periods are
+   coprime-ish (24s / 30s / 38s) so the layers never resynchronise into a
+   visible pulse. */
+@keyframes ops-wash-pan {
+  0%   { background-position:   0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position:   0% 50%; }
+}
+.ops-wash {
+  background-image: linear-gradient(
+    115deg,
+    rgba(13, 37, 77, 0.16) 0%,
+    rgba(23, 108, 103, 0.20) 26%,
+    rgba(226, 235, 229, 0.55) 50%,
+    rgba(23, 108, 103, 0.16) 74%,
+    rgba(13, 37, 77, 0.18) 100%
+  );
+  background-size: 320% 320%;
+  animation: ops-wash-pan 24s linear infinite;
+}
+@keyframes ops-bloom-a {
+  0%   { transform: translate3d(-6%, -3%, 0) scale(1.04); }
+  50%  { transform: translate3d(7%, 4%, 0)  scale(1.20); }
+  100% { transform: translate3d(-6%, -3%, 0) scale(1.04); }
+}
+@keyframes ops-bloom-b {
+  0%   { transform: translate3d(5%, 4%, 0)  scale(1.16); }
+  50%  { transform: translate3d(-6%, -4%, 0) scale(1.02); }
+  100% { transform: translate3d(5%, 4%, 0)  scale(1.16); }
+}
+.ops-bloom { animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+.ops-bloom-a { animation-name: ops-bloom-a; animation-duration: 30s; }
+.ops-bloom-b { animation-name: ops-bloom-b; animation-duration: 38s; }
+
+/* The gradient is the design; the movement is the flourish, and only the
+   flourish is negotiable. Colour stays, motion stops. */
+@media (prefers-reduced-motion: reduce) {
+  .ops-wash { animation: none; background-position: 50% 50%; }
+  .ops-bloom { animation: none; }
+}
+
+/* The link out of a capped list. Reads as an action, not as a caption. */
+.ops-foot-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--ops-text-sm);
+  line-height: var(--ops-text-sm-lh);
+  font-weight: 600;
+  color: var(--ops-brand);
+  text-decoration: none;
+}
+.ops-foot-link:hover { color: var(--ops-accent); text-decoration: underline; text-underline-offset: 3px; }

@@ -104,9 +104,13 @@ export function AskHero({
 
   const started = turns.length > 0 || streaming;
 
-  function fill(text: string) {
+  // A chip is a QUESTION, not a draft of one. Filling the box and waiting for
+  // a second click made the chip a two-step affordance for a one-step
+  // intention. `ask` takes the text directly rather than reading `value`,
+  // because setState is async and the very next render is too late.
+  function askChip(text: string) {
     setValue(text);
-    inputRef.current?.focus();
+    void ask(text);
   }
 
   function reset() {
@@ -120,8 +124,8 @@ export function AskHero({
     inputRef.current?.focus();
   }
 
-  async function ask() {
-    const question = value.trim();
+  async function ask(override?: string) {
+    const question = (override ?? value).trim();
     if (!question || streaming || !configured) return;
 
     const next: Turn[] = [...turns, { role: "user", content: question }];
@@ -200,28 +204,26 @@ export function AskHero({
       {/* The wash. aria-hidden and pointer-events-none throughout: it is
           decoration, and it sits under interactive content. */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        {/* The wash: one slow linear gradient panning across an oversized box,
+            with two soft blooms drifting against it. Navy, teal and sage —
+            all sanctioned for large colour blocks. The amber blob that used to
+            sit here is gone: it put the brand's single accent behind the whole
+            screen, which is the one thing the colour rules forbid. */}
+        <div className="ops-wash absolute inset-0" />
         <div
-          className="ops-drift ops-drift-a absolute left-[-16%] top-[-46%] h-[150%] w-[80%] rounded-full"
+          className="ops-bloom ops-bloom-a absolute left-[-14%] top-[-48%] h-[150%] w-[78%] rounded-full"
           style={{
             background:
-              "radial-gradient(closest-side, rgba(13,37,77,.40), rgba(13,37,77,0) 74%)",
-            filter: "blur(60px)",
-          }}
-        />
-        <div
-          className="ops-drift ops-drift-b absolute right-[-18%] top-[-52%] h-[155%] w-[84%] rounded-full"
-          style={{
-            background:
-              "radial-gradient(closest-side, rgba(23,108,103,.32), rgba(23,108,103,0) 74%)",
-            filter: "blur(66px)",
-          }}
-        />
-        <div
-          className="ops-drift ops-drift-c absolute left-[22%] top-[-40%] h-[130%] w-[62%] rounded-full"
-          style={{
-            background:
-              "radial-gradient(closest-side, rgba(205,134,41,.24), rgba(205,134,41,0) 72%)",
+              "radial-gradient(closest-side, rgba(13,37,77,.34), rgba(13,37,77,0) 74%)",
             filter: "blur(64px)",
+          }}
+        />
+        <div
+          className="ops-bloom ops-bloom-b absolute right-[-16%] top-[-52%] h-[155%] w-[82%] rounded-full"
+          style={{
+            background:
+              "radial-gradient(closest-side, rgba(23,108,103,.30), rgba(23,108,103,0) 74%)",
+            filter: "blur(70px)",
           }}
         />
         {/* Dissolve into the page ground. Same token as the body background,
@@ -242,6 +244,11 @@ export function AskHero({
 
         <div
           className="ops-card relative mx-auto mt-7 max-w-[780px] transition-shadow duration-base ease-out"
+          // ONE frame. app/globals.css paints a global amber focus ring on
+          // form controls, which landed inside this card's navy one — amber
+          // within navy, which reads as an error state. The textarea's own
+          // ring is suppressed (.ops-ask-input in tokens.css) and the card
+          // carries focus: navy border, soft navy ring.
           style={
             focused
               ? { borderColor: "var(--ops-brand)", boxShadow: "var(--ops-ring)" }
@@ -264,7 +271,7 @@ export function AskHero({
             disabled={!configured || streaming}
             placeholder={configured ? PLACEHOLDER : ""}
             aria-label="Ask a question about the dashboard"
-            className="block min-h-[84px] w-full resize-none border-0 bg-transparent px-[18px] pb-2 pt-4 text-[15px] leading-relaxed outline-none disabled:cursor-not-allowed"
+            className="ops-ask-input block min-h-[84px] w-full resize-none border-0 bg-transparent px-[18px] pb-2 pt-4 text-[15px] leading-relaxed outline-none disabled:cursor-not-allowed"
             style={{ color: "var(--ops-text)" }}
           />
 
@@ -315,7 +322,7 @@ export function AskHero({
               <button
                 key={s.label}
                 type="button"
-                onClick={() => fill(s.label)}
+                onClick={() => askChip(s.label)}
                 disabled={!configured}
                 className="ops-btn h-8 gap-2 rounded-[var(--ops-r-pill)] px-3 text-[13px] disabled:cursor-not-allowed"
               >
