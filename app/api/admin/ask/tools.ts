@@ -2,6 +2,7 @@ import { MARKETS, MARKET_BY_SLUG } from "@/config/markets";
 import {
   OTHER_MARKETS_KEY,
   OTHER_MARKETS_LABEL,
+  REVENUE_BY_WON_MONTH,
   SNAPSHOT_AS_OF,
   SNAPSHOT_DEALS,
   SNAPSHOT_MONTHS,
@@ -215,7 +216,9 @@ function getMarketDetail(args: { market: string; month?: string }) {
     closed,
     closeRate: qualified ? Number(((closed / qualified) * 100).toFixed(1)) : null,
     revenue: revenue || null,
-    revenueNote: revenue ? "sum of deal value across WON deals only" : "no won deals with a recorded value in this window",
+    revenueNote: revenue
+      ? "Booked revenue from the sales report, keyed on WON date and attributed to this market's leads. This is the ATTRIBUTED slice only: sales rows that cannot be joined to a lead are absent, so market and channel revenue under-totals the company figure. Use getTrend(revenue) for booked totals."
+      : "no revenue booked to this market's leads in this window",
     owner: market?.hsm.name ?? null,
     ownerNote: market
       ? "static HSM assignment from config/markets.ts; the authoritative HSM identity comes from the operator API"
@@ -423,7 +426,11 @@ function getTrend(args: { metric: string; months?: number }) {
     const qualified = deals.length;
     const won = deals.filter(isClosed);
     const closed = won.length;
-    const revenue = won.reduce((a, d) => a + (d.value ?? 0), 0);
+    // Revenue keys on WON month and comes from the authoritative series — the
+    // same number Home shows. Summing deal VALUE over deals CREATED in the
+    // month answered a different question with the same label: it put July
+    // leads' money in July and reported August as $13.8k against $126.9k.
+    const revenue = REVENUE_BY_WON_MONTH[ym] ?? 0;
     const directCount = deals.filter((d) => channelForDeal(d) === "direct").length;
     const value =
       metric === "qualified"
@@ -446,6 +453,12 @@ function getTrend(args: { metric: string; months?: number }) {
     metric,
     unit:
       metric === "revenue" ? "USD" : metric === "close_rate" || metric === "unattributed_share" ? "%" : "leads",
+    ...(metric === "revenue"
+      ? {
+          basis:
+            "Booked revenue by WON month, from the sales report — every row, including credits and change orders. A deal created in July and won in August is August revenue. Do not describe this as the value of leads created in the month.",
+        }
+      : {}),
     series,
     partialLastMonth: `${SNAPSHOT_AS_OF.slice(0, 7)} is partial — the snapshot reaches ${SNAPSHOT_AS_OF} only.`,
     targetPerMonth: metric === "qualified" ? MARKETS.length * QUALIFIED_TARGET_PER_MARKET_PER_MONTH : null,
@@ -496,7 +509,7 @@ async function getSystemHealth() {
     gap: "GA4 not wired (owner unknown)",
     leadsAffected: null,
     evidence:
-      "GA4 account owner is UNKNOWN per Migration Plan v10. Search Console is self-serviceable by DNS; GA4 is not.",
+      "GA4 account owner is UNKNOWN per Migration Plan v11. Search Console is self-serviceable by DNS; GA4 is not.",
     fix: "Verify Search Console by DNS, then use its Users and Permissions list to identify the GA4 owner.",
   });
   gaps.push({

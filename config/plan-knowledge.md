@@ -1,11 +1,13 @@
 # Plan knowledge
 
-Distilled from `docs/knowledge/` — the 2026 Marketing Strategy, the CEO memo,
-Attribution System v3.2 (Aug 26 2026), and Website Migration Plan v10 (Aug 17
-2026) — reconciled against what the codebase actually implements. Loaded into
-the assistant's system prompt; the source documents are not read at runtime.
+Distilled from `docs/knowledge/` — Marketing Strategy v1.1 (Aug 29 2026), the
+CEO memo, Attribution System v3.3 (Aug 29 2026), and Website Migration Plan v11
+(Aug 29 2026) — reconciled against what the codebase actually implements.
+Loaded into the assistant's system prompt; the source documents are not read at
+runtime.
 
 **Where a document and the code disagree, the code wins and this file says so.**
+There is one such disagreement right now, in §3 — the backfill counts.
 
 ---
 
@@ -100,25 +102,22 @@ the format. Those are separate fields.
 
 ### The closed channel value list
 
-`lib/channels.ts` — **nine values, as implemented today:**
+`lib/channels.ts` — **ten values, as implemented today:**
 
 ```
 email · paid_search · paid_social · creator · hsm_field
-partnership · organic · referral · direct
+partnership · organic · referral · direct · event
 ```
+
+`event` was added Aug 26 (spec v3.2) so the October event push launches
+attributed, and the code now carries it — the nine/ten drift that stood in the
+previous distillation is **resolved**. `mail` is next in line, to be added only
+when direct mail actually launches.
 
 Derivation rule: channel is derived from `utm_source` against this list.
 **Absent source → `direct`. Unrecognized source → `direct`.** Never null, never
 "landing page," never a phantom channel minted from a typo. The raw value still
 travels in `utmSource` for audit.
-
-> **Spec/code drift — state this when it matters.** Attribution spec v3.2
-> (Aug 26 2026) adds a **tenth** value, `event`, so the October event push
-> launches attributed, and documents `mail` as next in line for the direct-mail
-> launch. **`lib/channels.ts` still has nine.** Until the code is updated, an
-> `event` UTM would silently derive to `direct` — which is exactly the failure
-> the closed list exists to prevent. Treat nine as the runtime truth and ten as
-> the spec.
 
 ### The CRM field model
 
@@ -163,7 +162,10 @@ converted; `LeadSource` holds what originated.
 ### Naming convention
 
 - `utm_source` is always one of the closed channel values, spelled exactly.
-  Lowercase, no spaces.
+  Lowercase, no spaces. **Both email platforms send `utm_source=email`** —
+  ActiveCampaign (opt-in) and Instantly (cold). A platform name in `utm_source`
+  would mint a phantom channel and derive to `direct`; the `cold-` / `nurture-`
+  campaign prefix is what separates the two domains, never the source.
 - `utm_campaign` is `[tactic]-[descriptor]-[market-or-date]`, lowercase,
   hyphens not underscores — `nurture-payatclosing-jun`, `cookie-q3-nova`,
   `expcon-booth-oct`. Email splits on the leading token: cold sends begin
@@ -173,6 +175,19 @@ converted; `LeadSource` holds what originated.
 - **Trailing whitespace fractures a campaign silently.** Two live values carry
   a trailing non-breaking space (`price-jul ` and `halfway-jul `) and will not
   aggregate with their clean twins. Fix at the link source.
+- **Normalize before every match, and never fall through silently** (v3.3).
+  The same fracture recurred on referral values: two `landing page` rows with
+  trailing whitespace missed the backfill mapping and were routed to `direct`.
+  Rule: every string match against lead data normalizes first — trim, collapse
+  internal whitespace, strip non-breaking and zero-width characters, lowercase
+  — and any value that still fails to match is logged in the import report
+  **with its raw bytes**. Silent fallthrough to `direct` is banned.
+- **QA tags are excluded, not documented.** `testcampaign-`, `phase2-` and
+  similar prefixes are filtered out of lead-facing reporting and the
+  undocumented-tags banner (`config/campaignHygiene.ts`). Genuine undocumented
+  tags are auto-created in the Links registry with first-seen date, lead count
+  and inferred channel, flagged **auto-documented** for review — evidence
+  awaiting confirmation, never presented as authored documentation.
 
 ### Enforcement
 
@@ -180,28 +195,92 @@ Channel required, closed-list, no free text, no blank. **Kill "OTHER" as a
 resting state** — unclassifiable leads route to a triage queue cleared weekly;
 every permanent OTHER is unattributable spend.
 
-### The unattributed problem — the standing caveat
+### The §8 backfill — EXECUTED Aug 29, and what it did and did not fix
 
-Roughly **80% of qualified leads carry no usable channel**, and the honest
-reason is that most of the funnel predates or bypasses the web door.
+The one-time import ran on Aug 29: **852 deals, Jan 2 – Aug 29**, tagged
+`source: app-import` and superseded record-by-record (keyed on Deal ID) when
+the API sync lands. The mapping is versioned code
+(`config/referral-backfill.ts`, v1.0.0), applied at ingest, **never edited
+per-lead**.
 
-Measured state as of the v3.2 window (848 deals, Jan 2 – Aug 27 2026):
+> **The Marketing Strategy's own §4 backfill table is SUPERSEDED** (v1.1 says
+> so explicitly). The implemented mapping differs from that sketch in two
+> places: `landing page` (all case variants) maps to **email**, because an
+> email CTA click is the only path onto those pages; and `lonewolf` maps to
+> **partnership**, flagged low-confidence for reclassification. The authority
+> is the config file, not the table in the strategy doc — do not quote that
+> table.
 
-- `Channel` populated on **55 / 848 (6%)** — all from July onward, i.e. the web
-  door working from the moment it shipped. Values: email 45, partnership 7,
-  direct 3.
-- `ReferralSource` populated on 716 / 848 (84%) — and it is the junk drawer:
-  `www.curbio.com` (331), `Phone Call` (53), `landing page` (50), `Other` (49),
-  `lonewolf` (45), `Inbound Email` (38).
-- `Origin`, `UtmContent`, `FirstTouchCampaign`: **0%** — three casualties of a
-  key-name mismatch in the payload, root-caused and fixed Aug 26. Expected to
-  populate from that date forward.
-- **52 deals Won in 2026, and zero carry channel attribution.** The first fully
-  attributed closed-won is still ahead.
+Referral values map to channel + entry point per §3c: landing-page variants →
+`email` / `web_form`; `Inbound Email` → `email` / `inbound_email`; `Phone Call`
+→ `direct` / `phone`; partner labels → `partnership` with campaign = the
+partner name (lonewolf's 45 rows flagged **low-confidence**); `www.curbio.com`,
+`curbio.com/*` pages and the Webflow city LPs → `direct` per §4/§9 — the
+surface is preserved in `landing_page_url`, the channel is never minted.
 
-**Therefore: every channel-level comparison carries this caveat.** A channel
-that looks small may simply be unattributed. Never present a channel ranking as
-conclusive.
+**Result, and the one place the spec and the code disagree:**
+
+| | Attribution spec v3.3 | The code today | Why |
+|---|---|---|---|
+| email | 87 (10.2%) | **90 (10.6%)** | see below |
+| partnership | 123 (14.4%) | **123 (14.4%)** | — |
+| direct | 642 (75.4%) | **639 (75.0%)** | see below |
+| provenance | 58 measured · 757 inferred · 37 inferred-by-date | **55 measured · 758 inferred · 39 inferred-by-date** | — |
+
+v3.3 records the first import run. Three rows have moved since: the CRM writes
+`Channel = "direct"` as a **default** on web-form leads, not as a measurement,
+so rows carrying `Referral source = "landing page"` were being treated as
+measured-direct and never reached the mapping. The import now trusts `Channel`
+only when it is non-direct, or direct with real UTM data behind it. Two of the
+three rows then picked up Mailchimp correlations, which is why
+inferred-by-date rose to 39. **Quote the code's numbers; mention the spec's if
+precision matters.**
+
+That **75% direct is the honest ceiling for history, not a defect.** Most of
+the funnel predates or bypasses the web door, and dark traffic is not
+convertible into a channel by inference.
+
+**Provenance is load-bearing — never present inferred as tracked.**
+`measured` = a real captured signal. `inferred` = the §8 mapping. 
+`inferred-by-date` = a Mailchimp send-time correlation. The Attribution page
+carries a Measured/Inferred filter and states both numbers; any answer about
+historical channel performance must say which kind it is resting on.
+
+**Mailchimp campaign correlation.** Backfilled email leads get `utm_campaign`
+by date-correlation against the send log: the most recent qualifying campaign
+within **72h** before lead creation, market-named campaigns must match the
+lead's market, test sends excluded. **39 of 39 eligible leads matched, 15
+flagged ambiguous.** Historical email rows carry `utm_source = mailchimp` for
+audit.
+
+**Therefore: every channel-level comparison still carries a caveat.** A channel
+that looks small may be unattributed, and most historical attribution is
+inferred rather than tracked. Never present a channel ranking as conclusive.
+
+### Revenue keys to Won date, never created date
+
+Revenue aggregates by the month a project was **won**. August won **$126,903**
+across 5 projects; the created-in-August view showed $15.3k — the same money
+filed under the month the lead arrived. Negative rows (Final Credits, Change
+Orders, including Excel's leading-apostrophe minus) are **real money** and
+count in monthly totals even when they cannot join to a lead.
+
+Booked revenue by won month: Jan 42,840 · Feb 84,345 · Mar 410,810 ·
+Apr 221,372 · May 185,812 · Jun 369,364 · Jul 243,256 · Aug 126,903.
+Total $1,684,702.
+
+Two series exist and are not interchangeable: the **authoritative** total
+(every sales row, no join needed) and the **attributed** slice (joined to a
+lead, the only part splittable by channel). Jun–Aug are fully attributed;
+Jan–May are not — March has $77,575 that cannot be placed in a market × channel
+cell. Channel-level revenue therefore under-totals the month, and the surfaces
+say so rather than letting the grid total stand in for booked revenue.
+
+### Stage casing
+
+New app exports changed funnel-stage casing ("Spoke with agent" vs "Spoke with
+Agent"). Ordinal lookups are case-insensitive; a casing drift must never
+silently demote a deal to stage 0.
 
 ### Dark traffic — the four recovery methods
 
@@ -263,9 +342,19 @@ named.** Adding a market is a row in that array and nothing else.
 Three systems name markets and only one is authoritative for the public slug:
 `slug`/`displayName` (marketing's naming, live and converting — verbatim, do
 not tidy), `operatorName` (app.curbio.com's ZIP→HSM lookup key), `crmName`
-(what the CRM expects in the payload). App market codes not mapped to a market
-(SEA, SD in the snapshot) aggregate under **"Other markets"** and never become
-market rows.
+(what the CRM expects in the payload).
+
+**The app-code rollup lives in `config/market-map.ts`** — the authority for
+which app market code reports as which market:
+
+- **Seattle opened.** It is one of the 8 active markets.
+- **San Diego is CLOSED.** Its history is retained and shows in trends under
+  "Other / closed markets", and it is excluded from pace, targets, and the
+  active-market denominator.
+- **SMD / NMD / BAL consolidate into one Maryland.** The CRM code stays `BAL`.
+
+Any app code the rollup does not place on an active market aggregates under
+**"Other markets"** and never becomes a market row.
 
 **No per-market special cases anywhere.** If something is true of one market
 and not another, it is a field in `config/markets.ts`, not a branch elsewhere.
@@ -309,11 +398,30 @@ pages and search do that job.
 ### Phase state
 
 - **Phase 1 complete** — redirect export landed (219 rules).
-- **Phase 2 complete** — the `/admin` Control Room shipped (page registry +
-  read-only lead viewer). Foundation work done.
-- **Phase 3 in progress** — pages and content. The homepage exists as a real
-  page at `/home-preview`, noindexed, **waiting on sign-off**, and is the
-  single item blocking Week 3.
+- **Phase 2 complete** — the `/admin` Control Room shipped. It has since grown
+  well past the original page registry + lead viewer into a full ops dashboard
+  (§7). **v10 deferred the Marketing Hub to post-cutover; v11 records that
+  decision reversed — it was built early.**
+- **Phase 3 in progress** — pages and content; the homepage design pass has
+  begun. The public-site redesign runs on `feat/site-redesign` in a git
+  worktree owning `app/(site)/(chrome)/`, `/lp/` and `public/`.
+
+### Working agreements that now govern the repo (v11)
+
+- **`main` is the source of truth. Production deploys from `main` only — never
+  a Vercel branch promotion.** Adopted after production was found running an
+  unmerged branch tip, and written into `CLAUDE.md`.
+- **Shared-files freeze list**, requiring a stop-and-ask from either branch:
+  `package.json`, `tailwind.config.ts`, `globals.css`, `tokens.css`, the root
+  layout, `middleware.ts`, `next.config.js`, `lib/channels.ts`,
+  `config/markets.ts`.
+- **Two token systems are deliberate.** The public site keeps Google's
+  subsetted WOFF2 on `--font-serif` / `--font-sans`; admin keeps self-hosted
+  TTFs on `--ops-font-*` (605KB unsubsetted — never promoted global). A Phase 3
+  design pass must **not** "consolidate" either.
+- **`/marketing/executive/<token>`** renders the exec review to a token holder:
+  aggregates only, PII stripped at the import boundary, token rotatable by env
+  var, comparison timing-safe at both middleware and page.
 
 ### Known open items
 
@@ -343,14 +451,39 @@ automatically as `planned`.
 
 ---
 
-## 7. The reporting gap — the highest-leverage remaining build
+## 7. The reporting layer — BUILT, with one gap left
 
-Nothing today joins CRM + email platform + paid spend into one **channel ×
-market** view. That view is what lets us say "creator leads in Atlanta close at
-4% at $50 each; email nurture in DC closes at 11%; partner-sourced leads in
-NOVA close at 18% over 60 days" — and reallocate accordingly. It also answers
-the open sales question directly: whether a low close rate is a rep problem or
-a lead-source problem. Today that is invisible.
+**"Nothing today joins CRM + email + spend" is no longer true.** The ops
+dashboard at `sell.curbio.com/admin` joins the CRM snapshot and Mailchimp into
+the channel × market view: Qualified / Engaged / Closed / Revenue by market and
+channel, first-touch beside last-touch, Attribution Health with a
+Measured/Inferred filter, a Links registry that auto-documents live campaign
+tags, email list health, and an Ask assistant grounded in these documents. One
+merged lead store (`lib/leadStore.ts` — import + live, deduped on Deal ID)
+feeds every surface, verified to agree across Home, Email, Performance and
+Attribution.
+
+**The remaining gap is the paid-spend join, and it blocks CAC everywhere.**
+Also outstanding: the two email webhooks, wired at the September migration.
+Until spend lands, CAC renders as an em-dash and must never be estimated.
+
+The view exists to say "creator leads in Atlanta close at 4% at $50 each; email
+nurture in DC closes at 11%; partner-sourced leads in NOVA close at 18% over 60
+days" — and to answer whether a low close rate is a rep problem or a
+lead-source problem. The channel and market halves are now real; the cost half
+is not.
+
+### Email platform migration — in flight
+
+**Mailchimp is retiring.** Sends ran through it up to Aug 29 (6 market
+audiences, 648 campaigns YTD; **Seattle and Riverside have no audience** — that
+is absent, not zero, and it never counts toward Qualified). Migration begins the
+**first week of September**: opt-in to **ActiveCampaign**, cold to
+**Instantly**. Both send `utm_source=email`; the `cold-` / `nurture-` prefix
+separates the domains. Historical Mailchimp attribution is preserved through
+the Aug 29 backfill (`utm_source: mailchimp`). Mailchimp joins the Phase 8
+retirement list once the two webhooks are live and the send history is
+archived.
 
 ### What the data actually is right now
 
@@ -373,10 +506,14 @@ such, and it never invents what it does not have.
 ### Open decisions
 
 Cold list size (~100k, Gavin to confirm) · partner marketing fee structure and
-compliance framing (Adam) · paid agency select-or-in-house · CRM ↔ email
-identity match capability · self-reported attribution field: add now and A/B
-test, or keep deferring for friction · reporting layer tool and owner · creator
-program size per market · events cadence and which markets go first.
+compliance framing (Adam) · paid agency select-or-in-house · self-reported
+attribution field: add now and A/B test, or keep deferring for friction ·
+creator program size per market · events cadence and which markets go first.
+
+**Closed since v1.0:** the reporting layer's tool and owner (built in-repo,
+§7), and the CRM ↔ email identity-match question — the Mailchimp send-time
+correlation answers it for history, though it is correlation, not a true
+identity match, and it retires with Mailchimp.
 
 Cadence: **monthly marketing review** with the team. The channel × market
 report is the agenda.
