@@ -12,8 +12,8 @@ import { useToast } from "@/app/(site)/admin/_ui/Toast";
 import { CHANNEL_FUNNEL_ORDER, CHANNEL_LABELS } from "@/config/marketingHub";
 import { MARKETS } from "@/config/markets";
 import type { SpendEntry as Entry } from "@/lib/opsSpend";
-import { ArchivedNote } from "../ArchivedNote";
-import { archiveSpendAction, saveSpendAction } from "./actions";
+import { ArchivedNote } from "@/app/(site)/marketing/(hub)/ArchivedNote";
+import { archiveSpendAction, saveSpendAction } from "@/app/(site)/marketing/(hub)/settings/actions";
 
 // Spend — a real table now: month × market × channel × amount, added from a
 // drawer, amount editable in place. Typed in from invoices, so every row
@@ -112,7 +112,10 @@ export function SpendEntryPanel({
           {entries.length === 0 && (
             <tr>
               <Td muted colSpan={isOwner ? 5 : 4}>
-                No spend logged yet — CAC and every cost-per number stay em-dashes until it is.
+                {/* The consequence of an empty store is already visible as an
+                    em-dash on every CAC in the product; saying it again here
+                    is the coaching text this system does not carry. */}
+                No spend logged yet
               </Td>
             </tr>
           )}
