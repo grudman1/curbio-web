@@ -74,9 +74,15 @@ export function SurfaceHealth({ surface }: { surface: HubSurface }) {
   );
 }
 
-/** First clause of a need sentence — enough to name it, short enough to scan. */
+/** First clause of a need sentence — enough to name it, short enough to scan.
+ *  Trailing connectives and operators are dropped: truncating "Spend entry per
+ *  month × market × channel" at five words left a dangling "×". */
 function shortLabel(need: string): string {
   const clause = need.split(/[—:(]/)[0].trim();
   const words = clause.split(/\s+/);
-  return words.length <= 5 ? clause : words.slice(0, 5).join(" ");
+  const cut = words.length <= 5 ? words : words.slice(0, 5);
+  while (cut.length > 1 && /^(and|or|per|of|the|a|by|for|with|to|in|on|×|x|\+|&)$/i.test(cut[cut.length - 1])) {
+    cut.pop();
+  }
+  return cut.join(" ");
 }
