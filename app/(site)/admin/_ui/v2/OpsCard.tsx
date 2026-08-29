@@ -72,10 +72,11 @@ export function OpsMetric({
   sparkline?: React.ReactNode;
 }) {
   return (
-    <div
-      className="ops-card ops-card--pad flex flex-col justify-between"
-      style={unwired ? { borderStyle: "dashed", borderColor: "var(--ops-gray-300)" } : undefined}
-    >
+    // No dashed border for an unwired metric. It singled ONE card out as
+    // visually broken among four, which reads as "this card failed" rather
+    // than "this number has no source yet". The hollow dot and the em-dash
+    // already carry that, and they carry it without shouting.
+    <div className="ops-card ops-card--pad flex flex-col justify-between">
       <div className="flex items-center gap-2">
         <span className="ops-metric-label truncate">{label}</span>
         {unwired && (
@@ -89,13 +90,16 @@ export function OpsMetric({
       </div>
 
       <div className="mt-3 flex items-end justify-between gap-3">
-        <div className="flex items-baseline gap-1.5">
+        <div className="flex min-w-0 items-baseline gap-1.5">
           <span className={`ops-metric-value${unwired ? " ops-metric-value--empty" : ""}`}>
             {value}
           </span>
-          {suffix && <span className="ops-metric-suffix">{suffix}</span>}
+          {/* nowrap: the suffix is a unit, and a unit that wraps under its own
+              number reads as a second line of data rather than as part of it. */}
+          {suffix && <span className="ops-metric-suffix whitespace-nowrap">{suffix}</span>}
         </div>
-        {sparkline}
+        {/* flex-none: if anything has to give, it is not the chart's scale. */}
+        {sparkline && <span className="flex-none">{sparkline}</span>}
       </div>
 
       {/* Reserved even when empty, so a card without a delta doesn't sit

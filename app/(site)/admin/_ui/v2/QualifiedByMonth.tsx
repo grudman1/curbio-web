@@ -33,6 +33,10 @@ export type TrendMonth = {
   breakdownTitle: string;
   byChannel: Partial<Record<Channel, number>>;
   total: number;
+  /** Is this month inside the window the rest of the page is reading? Months
+   *  outside it stay visible but recede — the trend is never truncated, and
+   *  the selection is never invisible. */
+  selected: boolean;
 };
 
 /** A channel and the name to print for it. Same reason as above — the label
@@ -76,7 +80,10 @@ export function QualifiedByMonth({
                 aria-label={`${m.label}: ${m.total} qualified`}
                 aria-pressed={isActive}
                 className="flex h-full flex-1 cursor-pointer flex-col justify-end border-0 bg-transparent p-0 transition-opacity duration-fast ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                style={{ opacity: isActive ? 1 : 0.62 }}
+                // Focus (hover/click) is full strength; an unselected month
+                // recedes furthest. Three steps, so "what am I pointing at"
+                // and "what is the page reading" never look the same.
+                style={{ opacity: isActive ? 1 : m.selected ? 0.85 : 0.38 }}
               >
                 <span className="ops-tnum ops-muted pb-1 text-center text-[12px] font-semibold leading-[18px]">
                   {m.total}
@@ -105,16 +112,13 @@ export function QualifiedByMonth({
         </div>
 
         <div className="mt-1.5 flex gap-2.5">
-          {months.map((m, i) => (
+          {months.map((m) => (
             <div
               key={m.ym}
               className="ops-tnum flex-1 text-center text-[12px] leading-[18px]"
               style={{
-                fontWeight: i === (focus > last ? last : focus) ? 600 : 400,
-                color:
-                  i === (focus > last ? last : focus)
-                    ? "var(--ops-text)"
-                    : "var(--ops-text-subtle)",
+                fontWeight: m.selected ? 600 : 400,
+                color: m.selected ? "var(--ops-text)" : "var(--ops-text-subtle)",
               }}
             >
               {m.label}
