@@ -399,9 +399,11 @@ for (const j of joined) {
   if (revenue != null) deal.revenue = Math.round(revenue * 100) / 100;
 
   const derivedFromUtm = deriveChannel(utmSource);
-  if (CHANNEL_SET.has(rawChannel)) {
-    // Real channel captured at submission — the web door working. Measured;
-    // the mapping never touches it.
+  // Channel="direct" is the CRM's default, not a measurement. Only treat it as
+  // measured if backed by UTM data. Non-direct channels are real measurements.
+  const isMeasuredChannel = CHANNEL_SET.has(rawChannel) && rawChannel !== "direct";
+  if (isMeasuredChannel) {
+    // Non-direct real channel captured at submission — the web door working.
     deal.channel = rawChannel as Channel;
     deal.attribution = "measured";
     deal.entryPoint =
@@ -409,7 +411,7 @@ for (const j of joined) {
         ? origin
         : "web_form";
   } else if (utmSource && derivedFromUtm !== "direct") {
-    // No Channel column, but a real utm_source that derives one (spec §4).
+    // No measured Channel column, but a real utm_source that derives one (spec §4).
     deal.channel = derivedFromUtm;
     deal.attribution = "measured";
   } else {
