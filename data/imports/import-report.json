@@ -106,9 +106,9 @@
     "wonDealsWithRevenue": 52
   },
   "attribution": {
-    "measured": 58,
-    "inferred": 757,
-    "inferredByDate": 37,
+    "measured": 55,
+    "inferred": 758,
+    "inferredByDate": 39,
     "channelBefore": {
       "(none)": 796,
       "email": 46,
@@ -116,9 +116,9 @@
       "direct": 3
     },
     "channelAfter": {
-      "direct": 642,
+      "direct": 639,
       "partnership": 123,
-      "email": 87
+      "email": 90
     },
     "utmWhitespaceTrimmed": 7,
     "unknownMarketCodes": []
@@ -126,8 +126,8 @@
   "correlation": {
     "logicalCampaigns": 385,
     "collapsedDuplicateSends": 198,
-    "emailLeadsEligible": 39,
-    "matched": 37,
+    "emailLeadsEligible": 41,
+    "matched": 39,
     "ambiguous": 15,
     "preSendDataLeads": 0,
     "topCampaigns": [
