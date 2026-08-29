@@ -6,6 +6,10 @@
 // that screen's folder, not this index.
 export { OpsShell } from "./OpsShell";
 export { OpsCard, OpsMetric, OpsDelta } from "./OpsCard";
+export { PageHeader } from "./PageHeader";
+export { Table, Thead, Th, Tr, Td, Swatch, type SortDir } from "./DataTable";
+export { EmptyState } from "./EmptyState";
+export { HealthDot, HealthList, StatusBadge, type HealthItem } from "./HealthDot";
 export { Callouts, type Callout } from "./Callouts";
 export { PaceGauge } from "./PaceGauge";
 export { ProgressRows, type ProgressRow } from "./ProgressRows";

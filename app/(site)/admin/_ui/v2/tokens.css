@@ -692,3 +692,93 @@
   text-decoration: none;
 }
 .ops-foot-link:hover { color: var(--ops-accent); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ═══ Page header ══════════════════════════════════════════════════════════
+   The one place a serif is allowed below the shell: a page-level H1, matching
+   Home's greeting. Everything smaller — card titles, labels, table headers,
+   numerals — stays on --ops-font, which is why .ops-card-title binds the sans
+   explicitly rather than inheriting.
+
+   Sizes live here, not inline, so a page cannot invent its own title scale. */
+.ops-page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 20px;
+}
+.ops-page-title {
+  margin: 0;
+  font-family: var(--ops-font-display);
+  font-size: 28px;
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ops-heading);
+}
+/* ONE line, and there is deliberately nowhere to put a second: provenance or
+   window, never explanation. */
+.ops-page-sub {
+  margin: 2px 0 0;
+  font-size: var(--ops-text-sm);
+  line-height: var(--ops-text-sm-lh);
+  color: var(--ops-text-subtle);
+}
+
+/* ═══ Sortable column header ═══════════════════════════════════════════════
+   A header that sorts is a button, so it is keyboard-reachable. The arrow is
+   the whole affordance — no "click to sort" caption anywhere. */
+.ops-th--sort {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.ops-th--sort:hover { color: var(--ops-text); }
+.ops-th-arrow { font-size: 9px; line-height: 1; opacity: 0.55; }
+.ops-th--sort[aria-sort="none"] .ops-th-arrow { opacity: 0; }
+.ops-th--sort:hover .ops-th-arrow { opacity: 0.55; }
+
+/* ═══ Empty state ══════════════════════════════════════════════════════════
+   For a surface with nothing to show yet. One line, optionally one link. It is
+   centred and quiet rather than boxed and loud: an empty section is a fact,
+   not an error. */
+.ops-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--ops-text-muted);
+  font-size: var(--ops-text-sm);
+  line-height: var(--ops-text-sm-lh);
+}
+.ops-empty--ruled { border-top: 1px solid var(--ops-divider); }
+
+/* ═══ Health list ══════════════════════════════════════════════════════════
+   What a surface is missing, as dots rather than a numbered prose block. The
+   label names the thing; the tooltip carries the why. */
+.ops-health {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ops-health-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--ops-text-sm);
+  line-height: var(--ops-text-sm-lh);
+  color: var(--ops-text-muted);
+}
