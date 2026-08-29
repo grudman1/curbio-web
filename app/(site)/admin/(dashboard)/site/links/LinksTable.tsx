@@ -5,13 +5,17 @@ import { deriveChannel } from "@/lib/channels";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/app/(site)/admin/_ui/Button";
-import { Table, Td, Th, Tr } from "@/app/(site)/admin/_ui/DataTable";
+import { Table, Thead, Th, Tr, Td } from "@/app/(site)/admin/_ui/v2/DataTable";
 import { Drawer } from "@/app/(site)/admin/_ui/Drawer";
 import { Field, FieldError, Input, Select } from "@/app/(site)/admin/_ui/Field";
 import { InfoPopover } from "@/app/(site)/admin/_ui/InfoPopover";
-import { Badge, DASH, Eyebrow, Meta, Panel } from "@/app/(site)/admin/_ui/primitives";
+import { OpsCard } from "@/app/(site)/admin/_ui/v2/OpsCard";
+import { StatusBadge } from "@/app/(site)/admin/_ui/v2/HealthDot";
+
+/** Em-dash for a value that does not exist. */
+const DASH = "\u2014";
 import { useToast } from "@/app/(site)/admin/_ui/Toast";
-import { UndocumentedCampaignsBanner } from "../hubUi";
+import { UndocumentedCampaignsBanner } from "@/app/(site)/admin/_ui/UndocumentedCampaignsBanner";
 import { CHANNEL_FUNNEL_ORDER, CHANNEL_LABELS } from "@/config/marketingHub";
 import { MARKETS } from "@/config/markets";
 import {
@@ -42,6 +46,15 @@ export type LeadLite = {
 };
 
 type Orphan = { campaign: string; count: number };
+
+/** Link status -> ops badge tone. live is the only good state; retired is
+ *  neutral rather than red — a retired link is finished, not broken. */
+const OPS_STATUS_TONE: Record<string, "success" | "warning" | "error" | "neutral"> = {
+  live: "success",
+  printed: "warning",
+  draft: "neutral",
+  retired: "neutral",
+};
 
 const STATUS_TONE: Record<TrackedLink["status"], "good" | "info" | "neutral"> = {
   draft: "neutral",
@@ -75,12 +88,12 @@ function QrBlock({ url, label }: { url: string; label: string }) {
 
   if (!url) {
     return (
-      <p className="m-0 font-sans text-ops-label text-content-subtle">
+      <p className="m-0 ops-subtle">
         No tracked URL recorded — nothing to encode.
       </p>
     );
   }
-  if (!qr) return <Meta>generating…</Meta>;
+  if (!qr) return <span className="ops-card-meta">generating…</span>;
 
   const svgHref = `data:image/svg+xml;base64,${btoa(qr.svg)}`;
   const fileBase = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "qr";
@@ -220,7 +233,7 @@ function BuilderDrawer({
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Meta>saves a row — publishes nothing</Meta>
+          <span className="ops-card-meta">saves a row — publishes nothing</span>
         </>
       }
     >
@@ -472,12 +485,12 @@ export function LinksTable({
       </div>
 
       {/* ── the table ── */}
-      <Panel
-        flush
+      <OpsCard
+       
         title={`${filtered.length} of ${rows.length} links`}
-        right={
+        control={
           <span className="inline-flex items-center gap-1.5">
-            <Meta>Qualified = estimate requests carrying the campaign, last {leadWindow} leads</Meta>
+            <span className="ops-card-meta">Qualified = estimate requests carrying the campaign, last {leadWindow} leads</span>
             <InfoPopover label="Where these rows come from" align="right">
               <p className="m-0 mb-2">
                 Seed rows come from the redirect export of {seedExportedAt} plus the HSM business
@@ -492,7 +505,7 @@ export function LinksTable({
           </span>
         }
       >
-        <Table wide>
+        <Table>
           <thead>
             <tr>
               <Th>Label</Th>
@@ -519,7 +532,7 @@ export function LinksTable({
                 >
                   <Td className="min-w-[180px]">
                     <span className="font-semibold">{r.label}</span>
-                    <span className="mt-px block font-sans text-ops-label text-content-subtle">
+                    <span className="mt-px block ops-subtle">
                       {r.owner}
                       {r.market !== "all" ? ` · ${r.market}` : ""}
                     </span>
@@ -529,7 +542,7 @@ export function LinksTable({
                     <span className={r.channel === "direct" ? "text-content-subtle" : "text-content"}>
                       {CHANNEL_LABELS[r.channel]}
                     </span>
-                    {r.medium && <span className="block font-sans text-ops-label text-content-subtle">{r.medium}</span>}
+                    {r.medium && <span className="block ops-subtle">{r.medium}</span>}
                   </Td>
                   <Td muted={!r.campaign} className="font-mono text-[12px]">
                     {r.campaign || DASH}
@@ -543,21 +556,17 @@ export function LinksTable({
                     </span>
                     <span className="flex flex-wrap gap-1 pt-0.5 empty:hidden">
                       {direct && (
-                        <Badge tone="warn" title="Printed asset pointing straight at sell.curbio.com — it cannot be repointed.">
-                          printed → direct
-                        </Badge>
+                        <span title="Printed asset pointing straight at sell.curbio.com — it cannot be repointed."><StatusBadge status={"printed → direct"} tone={"warning"} /></span>
                       )}
                       {wp && (
-                        <Badge tone="warn" title="Destination is a WordPress page — it may not survive the website migration.">
-                          WP migration risk
-                        </Badge>
+                        <span title="Destination is a WordPress page — it may not survive the website migration."><StatusBadge status={"WP migration risk"} tone={"warning"} /></span>
                       )}
                     </span>
                   </Td>
                   <Td className="whitespace-nowrap">
-                    <Badge tone={STATUS_TONE[r.status]}>{r.status}</Badge>
+                    <StatusBadge status={<>{r.status}</>} tone={OPS_STATUS_TONE[r.status]} />
                     {(r.printedAt || r.createdAt) && (
-                      <span className="mt-0.5 block font-sans text-ops-micro text-content-subtle">
+                      <span className="mt-0.5 block ops-subtle text-[11px]">
                         {r.status === "printed" && r.printedAt ? `printed ${r.printedAt}` : r.createdAt ? r.createdAt.slice(0, 10) : ""}
                       </span>
                     )}
@@ -583,7 +592,7 @@ export function LinksTable({
             )}
           </tbody>
         </Table>
-      </Panel>
+      </OpsCard>
 
       {/* ── row detail drawer ── */}
       <Drawer
@@ -620,15 +629,15 @@ export function LinksTable({
               Edit row
             </Button>
           ) : (
-            <Meta>Seed row — corrections happen in git (config/linkRegistry.ts), where they are reviewable.</Meta>
+            <span className="ops-card-meta">Seed row — corrections happen in git (config/linkRegistry.ts), where they are reviewable.</span>
           )
         }
       >
         {selected && (
           <>
-            <p className="m-0 flex flex-wrap items-center gap-1.5 font-sans text-ops-label text-content-subtle">
+            <p className="m-0 flex flex-wrap items-center gap-1.5 ops-subtle">
               {typeLabel(selected.type)} · {selected.owner} · {selected.market}
-              <Badge tone={STATUS_TONE[selected.status]}>{selected.status}</Badge>
+              <StatusBadge status={selected.status} tone={OPS_STATUS_TONE[selected.status]} />
             </p>
 
             {printedDirectRisk(selected) && (
@@ -639,12 +648,12 @@ export function LinksTable({
             )}
 
             <div className="mt-4">
-              <Eyebrow className="mb-2 block">QR</Eyebrow>
+              <span className="ops-eyebrow mb-2 block">QR</span>
               <QrBlock url={selected.trackedUrl} label={selected.label} />
             </div>
 
             <div className="mt-5">
-              <Eyebrow className="mb-2 block">URLs</Eyebrow>
+              <span className="ops-eyebrow mb-2 block">URLs</span>
               {selected.trackedUrl ? (
                 <div className="flex items-baseline gap-2">
                   <span className="flex-1 break-words font-mono text-[12px] leading-[1.5] [overflow-wrap:anywhere]">
@@ -653,7 +662,7 @@ export function LinksTable({
                   <CopyButton text={selected.trackedUrl} />
                 </div>
               ) : (
-                <p className="m-0 font-sans text-ops-label text-content-subtle">
+                <p className="m-0 ops-subtle">
                   Tracked URL unknown — recover it from the physical asset.
                 </p>
               )}
@@ -670,19 +679,19 @@ export function LinksTable({
               {selected.rawUtmSource &&
                 (deriveChannel(selected.rawUtmSource) === "direct" &&
                 selected.rawUtmSource.trim().toLowerCase() !== "direct" ? (
-                  <p className="m-0 mt-1.5 font-sans text-ops-label text-content-subtle">
+                  <p className="m-0 mt-1.5 ops-subtle">
                     carries utm_source={selected.rawUtmSource} — outside the nine channels, so its
                     leads land as direct.
                   </p>
                 ) : (
-                  <p className="m-0 mt-1.5 font-sans text-ops-label text-content-subtle">
+                  <p className="m-0 mt-1.5 ops-subtle">
                     carries utm_source={selected.rawUtmSource} → {deriveChannel(selected.rawUtmSource)}
                   </p>
                 ))}
             </div>
 
             <div className="mt-5">
-              <Eyebrow className="mb-2 block">Clicks</Eyebrow>
+              <span className="ops-eyebrow mb-2 block">Clicks</span>
               <p className="m-0 font-sans text-ops-body leading-[1.6] text-content-muted">
                 30-day clicks: {DASH} — no click source exists for these redirects yet.
                 {selected.lifetimeHits != null &&
@@ -691,9 +700,9 @@ export function LinksTable({
             </div>
 
             <div className="mt-5">
-              <Eyebrow className="mb-2 block">Qualified — last {leadWindow} leads</Eyebrow>
+              <span className="ops-eyebrow mb-2 block">Qualified — last {leadWindow} leads</span>
               {!leadJoinAvailable ? (
-                <p className="m-0 font-sans text-ops-label text-content-subtle">
+                <p className="m-0 ops-subtle">
                   Lead store unavailable — the campaign join is off.
                 </p>
               ) : !selected.campaign ? (
@@ -702,7 +711,7 @@ export function LinksTable({
                   exactly what the registry exists to fix.
                 </p>
               ) : selLeads.length === 0 ? (
-                <p className="m-0 font-sans text-ops-label text-content-subtle">
+                <p className="m-0 ops-subtle">
                   No estimate requests carrying &ldquo;{selected.campaign}&rdquo; in the window.
                 </p>
               ) : (
@@ -738,7 +747,7 @@ export function LinksTable({
 
             {selected.notes && (
               <div className="mt-5">
-                <Eyebrow className="mb-2 block">Notes</Eyebrow>
+                <span className="ops-eyebrow mb-2 block">Notes</span>
                 <p className="m-0 font-sans text-ops-body leading-[1.6] text-content">{selected.notes}</p>
               </div>
             )}

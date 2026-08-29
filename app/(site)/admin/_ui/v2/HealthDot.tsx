@@ -53,9 +53,18 @@ export function HealthList({ items }: { items: readonly HealthItem[] }) {
 export function StatusBadge({
   status,
   tone,
+  title,
 }: {
-  status: string;
+  /** Usually a word. ReactNode because some rows label a risk with a fragment
+   *  ("printed → direct") rather than a single token. */
+  status: React.ReactNode;
   tone: "success" | "warning" | "error" | "neutral";
+  /** Why this badge is here, on hover — never as standing text beside it. */
+  title?: string;
 }) {
-  return <span className={`ops-badge ops-badge--${tone}`}>{status}</span>;
+  return (
+    <span className={`ops-badge ops-badge--${tone}`} title={title}>
+      {status}
+    </span>
+  );
 }

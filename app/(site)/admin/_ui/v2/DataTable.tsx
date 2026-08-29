@@ -103,6 +103,7 @@ export function Td({
   numeric = false,
   muted = false,
   colSpan,
+  title,
   className = "",
 }: {
   children: React.ReactNode;
@@ -111,11 +112,15 @@ export function Td({
   numeric?: boolean;
   muted?: boolean;
   colSpan?: number;
+  /** Qualification for the cell, on hover. This is where a sentence goes when
+   *  a cell would otherwise need a caption under it. */
+  title?: string;
   className?: string;
 }) {
   return (
     <td
       colSpan={colSpan}
+      title={title}
       className={`ops-td text-${align}${numeric ? " ops-tnum" : ""}${muted ? " ops-muted" : ""} ${className}`}
     >
       {children}
