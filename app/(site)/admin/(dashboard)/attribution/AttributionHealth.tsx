@@ -18,10 +18,12 @@ import {
 import { BACKFILL_MAPPING_VERSION } from "@/config/referral-backfill";
 import { mergedSnapshotDeals } from "@/lib/leadStore";
 import { CHANNEL_COLORS } from "@/lib/channels";
-import { Table, Td, Th, Tr } from "@/app/(site)/admin/_ui/DataTable";
-import { Eyebrow, Meta, Panel } from "@/app/(site)/admin/_ui/primitives";
-import { monthShort } from "./timeframe";
-import { DASH } from "./hubUi";
+import { OpsCard } from "@/app/(site)/admin/_ui/v2/OpsCard";
+import { Table, Thead, Th, Tr, Td } from "@/app/(site)/admin/_ui/v2/DataTable";
+import { monthShort } from "@/app/(site)/marketing/(hub)/timeframe";
+
+/** Em-dash for a value that does not exist. */
+const DASH = "\u2014";
 
 /** 6-month line of the unattributed share, 0–100% fixed scale so month-to-
  *  month movement reads against the whole range, not a zoomed drama. */
@@ -140,31 +142,25 @@ export async function AttributionHealthPanel({
   const sources = detailed ? directSourceBreakdown(monthSet, filter, deals) : [];
 
   return (
-    <Panel
-      title="Attribution health"
-      right={
-        <Meta>
-          {tfLabel} · {SNAPSHOT_LABEL}
-        </Meta>
-      }
+    <OpsCard
+      title={detailed ? undefined : "Attribution health"}
+      titleTooltip={detailed ? undefined : `${tfLabel} · ${SNAPSHOT_LABEL}`}
     >
       {detailed && (
         <div className="mb-4 flex flex-wrap items-center gap-1.5">
-          {FILTERS.map((f) => (
-            <Link
-              key={f.key}
-              href={`?${new URLSearchParams({ ...(tParam ? { t: tParam } : {}), f: f.key })}`}
-              className={
-                "rounded-full border px-3 py-1 font-sans text-ops-label font-bold " +
-                (filter === f.key
-                  ? "border-app-border bg-app-surface-2 text-content"
-                  : "border-transparent text-content-muted hover:text-content")
-              }
-            >
-              {f.label}
-            </Link>
-          ))}
-          <span className="ml-1 font-sans text-ops-label text-content-subtle">
+          <span className="ops-seg">
+            {FILTERS.map((f) => (
+              <Link
+                key={f.key}
+                href={`?${new URLSearchParams({ ...(tParam ? { t: tParam } : {}), f: f.key })}`}
+                className="ops-seg-btn"
+                data-active={filter === f.key}
+              >
+                {f.label}
+              </Link>
+            ))}
+          </span>
+          <span className="ml-1 ops-subtle">
             measured = real UTM signal · inferred = referral-source backfill (spec §8, mapping v
             {BACKFILL_MAPPING_VERSION})
           </span>
@@ -173,34 +169,49 @@ export async function AttributionHealthPanel({
       <div className="flex flex-wrap items-start gap-9">
         <div className="min-w-[240px] flex-[0_1_300px]">
           <div className="flex items-baseline gap-2.5">
-            <span className="font-sans text-[46px] font-bold leading-none tabular-nums text-content">
+            <span className="ops-metric-value ops-tnum">
               {share === null ? DASH : `${Math.round(share * 100)}%`}
             </span>
-            <span className="font-sans text-ops-body text-content-muted">
+            <span className="ops-muted">
               {share === null ? "no Qualified in this timeframe" : `${direct} of ${total} Qualified`}
             </span>
           </div>
-          <p className="m-0 mt-3 max-w-[340px] font-sans text-ops-body leading-[1.6] text-content">
-            <strong>Unattributed.</strong> These leads arrived with no UTM, no first-touch cookie,
-            and no tracked phone number. We do not know what produced them.
-          </p>
-          <p className="m-0 mt-2 max-w-[340px] font-sans text-ops-label leading-[1.6] text-content-subtle">
-            Counting backfill-inferred channels as attributed:{" "}
-            <strong className="tabular-nums">
+          {/* The definition of "unattributed" rides on the label's tooltip
+              rather than standing as a paragraph under the number. The two
+              provenance figures below it are DATA, not commentary, and stay
+              visible: an answer that shows only the post-backfill share would
+              be presenting inference as tracking. */}
+          <div
+            className="ops-eyebrow mt-3"
+            title="No UTM, no first-touch cookie, no tracked phone number — we do not know what produced these leads."
+          >
+            Unattributed
+          </div>
+          <dl className="m-0 mt-2 grid max-w-[340px] grid-cols-[1fr_auto] gap-x-4 gap-y-1">
+            <dt className="ops-subtle">Incl. backfill-inferred</dt>
+            <dd className="ops-tnum m-0 text-right font-semibold">
               {allTotal ? `${Math.round((allDirect / allTotal) * 100)}%` : DASH}
-            </strong>{" "}
-            unattributed ({allDirect} of {allTotal}). Measured signal only:{" "}
-            <strong className="tabular-nums">
+              <span className="ops-subtle ml-1.5 font-normal">
+                {allDirect}/{allTotal}
+              </span>
+            </dd>
+            <dt className="ops-subtle">Measured signal only</dt>
+            <dd className="ops-tnum m-0 text-right font-semibold">
               {measuredTotal ? `${Math.round((measuredDirect / measuredTotal) * 100)}%` : DASH}
-            </strong>{" "}
-            ({measuredDirect} of {measuredTotal}). {inferredAttributed} attributed rows are
-            inferred, not tracked.
-          </p>
+              <span className="ops-subtle ml-1.5 font-normal">
+                {measuredDirect}/{measuredTotal}
+              </span>
+            </dd>
+            <dt className="ops-subtle" title="Channel assigned by the spec-§8 backfill mapping or by Mailchimp send-time correlation — not captured at submission.">
+              Inferred, not tracked
+            </dt>
+            <dd className="ops-tnum m-0 text-right font-semibold">{inferredAttributed}</dd>
+          </dl>
           {!detailed && (
             <p className="m-0 mt-2.5">
               <Link
                 href="/marketing/attribution"
-                className="font-sans text-ops-label font-bold text-content-muted hover:text-content"
+                className="ops-foot-link"
               >
                 What the app recorded instead →
               </Link>
@@ -208,35 +219,34 @@ export async function AttributionHealthPanel({
           )}
         </div>
         <div className="min-w-[260px] max-w-[440px] flex-[1_1_300px]">
-          <Eyebrow className="mb-1.5 block">Unattributed share, last {line.length} months</Eyebrow>
+          <div
+            className="ops-eyebrow mb-1.5 block"
+            title="Falls when links carry UTMs, printed assets point at tracked redirects, and phone leads get tracked numbers."
+          >
+            Unattributed share, last {line.length} months
+          </div>
           <ShareLine points={line} />
-          <p className="m-0 mt-1.5 font-sans text-ops-label leading-[1.5] text-content-subtle">
-            Shrinking this line is the job. It falls when links carry UTMs, printed assets point at
-            tracked redirects, and phone leads get tracked numbers.
-          </p>
         </div>
       </div>
 
       {detailed && (
         <div className="mt-5">
-          <Eyebrow className="mb-2 block">What the app recorded for these leads</Eyebrow>
+          <div className="ops-eyebrow mb-2 block">What the app recorded for these leads</div>
           <div className="max-w-[600px] overflow-hidden rounded-md border border-app-border">
             <Table>
-              <thead>
-                <tr>
-                  <Th>Raw referral source</Th>
-                  <Th align="right">Leads</Th>
-                  <Th>What would attribute it</Th>
-                </tr>
-              </thead>
+              <Thead>
+                <Th>Raw referral source</Th>
+                <Th align="right">Leads</Th>
+                <Th>What would attribute it</Th>
+              </Thead>
               <tbody>
                 {sources.map((s) => (
                   <Tr key={s.source}>
                     <Td className="font-mono text-[12.5px]">{s.source}</Td>
-                    <Td align="right" className="font-semibold">
+                    <Td align="right" numeric className="font-semibold">
                       {s.count}
                     </Td>
-                    <Td className="text-content-muted">
+                    <Td muted>
                       {/* Sources the spec-§8 backfill resolved (landing page, partner
                           labels, Inbound Email) no longer appear here — what remains
                           direct is honestly unattributable today. */}
@@ -262,14 +272,8 @@ export async function AttributionHealthPanel({
               </tbody>
             </Table>
           </div>
-          <p className="m-0 mt-3 font-sans text-ops-label leading-[1.6] text-content-subtle">
-            These strings say where the form was, not what brought the visitor — which is why they
-            stay direct instead of being minted into a channel. Sources with a known meaning
-            (landing page, partner labels, Inbound Email) are already resolved by the spec-§8
-            backfill mapping and no longer appear here.
-          </p>
         </div>
       )}
-    </Panel>
+    </OpsCard>
   );
 }

@@ -10,9 +10,11 @@ import {
   type LeadRow,
 } from "@/lib/adminLeads";
 import { SCAN } from "../ui";
-import { Badge, InlineStat, Meta, Panel } from "../../_ui/primitives";
-import { Table, Td, Tr } from "../../_ui/DataTable";
-import { PageHeader } from "../../_ui/AppShell";
+import { PageHeader } from "../../_ui/v2/PageHeader";
+import { OpsCard } from "../../_ui/v2/OpsCard";
+import { Table, Thead, Th, Td, Tr } from "../../_ui/v2/DataTable";
+import { EmptyState } from "../../_ui/v2/EmptyState";
+import { StatusBadge } from "../../_ui/v2/HealthDot";
 import { LeadFeedTable, type FeedRow, type FeedDetailSection } from "./LeadFeedTable";
 import { readRecentWaitlist } from "@/lib/adminWaitlist";
 import { FilterChips } from "../../_ui/FilterChips";
@@ -44,6 +46,32 @@ export const metadata: Metadata = {
   title: "Leads · Ops — Curbio",
   robots: { index: false, follow: false },
 };
+
+/** In-card figure: number over label, em-dash when the store could not be
+ *  read. Never a zero for "unknown" — the two are different facts. */
+function Stat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number | null;
+  /** Colours the figure only where the number carries a judgement. */
+  tone?: "bad";
+}) {
+  return (
+    <div className="min-w-[72px]">
+      <div
+        className={`ops-metric-value ops-tnum${value === null ? " ops-metric-value--empty" : ""}${
+          tone === "bad" && value ? " text-tone-bad" : ""
+        }`}
+      >
+        {value === null ? "—" : value}
+      </div>
+      <div className="ops-subtle mt-1">{label}</div>
+    </div>
+  );
+}
 
 type Aggregates = {
   scanned: number;
@@ -300,46 +328,51 @@ export default async function LeadsTab({
       {filter !== "waitlist" && (<>
       {/* ── numbers row ── */}
       <div className="mb-ops-gap grid grid-cols-1 gap-ops-gap md:grid-cols-3">
-        <Panel
+        <OpsCard
           title="Volume"
-          right={<Meta>{leads.configured ? `${leads.total} stored` : "no store"}</Meta>}
+          control={
+            <span className="ops-subtle ops-tnum">
+              {leads.configured ? `${leads.total} stored` : "no store"}
+            </span>
+          }
         >
           <div className="flex flex-wrap gap-8">
-            <InlineStat label="last 24 h" value={leads.configured ? agg.last24h : null} />
-            <InlineStat label="last 7 d" value={leads.configured ? agg.last7d : null} />
-            <InlineStat label={`scanned (last ${agg.scanned})`} value={leads.configured ? agg.scanned : null} />
+            <Stat label="last 24 h" value={leads.configured ? agg.last24h : null} />
+            <Stat label="last 7 d" value={leads.configured ? agg.last7d : null} />
+            <Stat label={`scanned (last ${agg.scanned})`} value={leads.configured ? agg.scanned : null} />
           </div>
-        </Panel>
-        <Panel title="Delivery" right={<Meta>last {agg.scanned} leads</Meta>}>
+        </OpsCard>
+        <OpsCard
+          title="Delivery"
+          titleTooltip={`Across the last ${agg.scanned} leads scanned.`}
+        >
           <div className="flex flex-wrap gap-8">
-            <InlineStat label="delivered" value={agg.delivered} tone="good" />
+            <Stat label="delivered" value={agg.delivered} />
             {/* REAL failures only. Counting expected non-delivery here made a
                 working system look broken — see expectedNonDelivery(). */}
-            <InlineStat label="CRM failed" value={agg.failed} tone={agg.failed ? "bad" : undefined} />
-            <InlineStat label="expected non-delivery" value={agg.expected} tone="unknown" />
-            <InlineStat label="pre-observability" value={agg.unknown} tone="unknown" />
+            <Stat label="CRM failed" value={agg.failed} tone="bad" />
+            <Stat label="expected non-delivery" value={agg.expected} />
+            <Stat label="pre-observability" value={agg.unknown} />
           </div>
-        </Panel>
-        <Panel title="Attribution" right={<Meta>referral source tag</Meta>}>
+        </OpsCard>
+        <OpsCard title="Attribution" titleTooltip="Referral source tag, on the leads scanned.">
           <div className="flex flex-wrap gap-8">
-            <InlineStat label="verified" value={agg.verified} tone="good" />
-            <InlineStat label="unverified" value={agg.unverified} tone={agg.unverified ? "warn" : undefined} />
-            <InlineStat label="untagged (pre-tag)" value={agg.untagged} tone="unknown" />
+            <Stat label="verified" value={agg.verified} />
+            <Stat label="unverified" value={agg.unverified} />
+            <Stat label="untagged (pre-tag)" value={agg.untagged} />
           </div>
-        </Panel>
+        </OpsCard>
       </div>
 
       {/* ── the feed: full-width table, every value shown whole ── */}
       <div className="mb-ops-gap">
-        <Panel flush title="Lead feed" right={<Meta>newest 25 · click a row for the full record</Meta>}>
+        <OpsCard title="Lead feed" control={<span className="ops-subtle">newest 25</span>} ruled>
           {!leads.configured ? (
-            <p className="m-0 px-ops-panel pb-4 font-sans text-ops-body text-content-muted">
-              Upstash not configured in this environment.
-            </p>
+            <EmptyState headline="Upstash not configured in this environment." />
           ) : (
             <LeadFeedTable rows={feedRows.slice(0, 25).map((r, i) => toFeedRow(r, i, pii))} />
           )}
-        </Panel>
+        </OpsCard>
       </div>
 
       </>)}
@@ -357,27 +390,40 @@ export default async function LeadsTab({
       {filter !== "waitlist" && (<>
       {/* ── attribution detail ── */}
       <div className="max-w-[720px]">
-        <Panel flush title="Referral sources arriving" right={<Meta>raw values, kept verbatim · last {agg.scanned}</Meta>}>
+        <OpsCard
+          title="Referral sources arriving"
+          titleTooltip={`Raw values, kept verbatim, across the last ${agg.scanned} leads.`}
+          ruled
+        >
           {agg.referralValues.length === 0 ? (
-            <p className="m-0 px-ops-panel pb-4 font-sans text-ops-body text-content-muted">
-              No referral source data in range.
-            </p>
+            <EmptyState headline="No referral source data in range." />
           ) : (
             <Table>
+              <Thead>
+                <Th>Value</Th>
+                <Th align="right">Leads</Th>
+                <Th align="right">Tag</Th>
+              </Thead>
               <tbody>
                 {agg.referralValues.map((r) => (
                   <Tr key={r.value}>
                     <Td className="font-semibold">{r.value}</Td>
-                    <Td align="right" muted>{r.count}</Td>
+                    <Td align="right" numeric muted>
+                      {r.count}
+                    </Td>
                     <Td align="right">
-                      {r.known ? <Badge tone="good">known</Badge> : <Badge tone="warn">unrecognised</Badge>}
+                      {r.known ? (
+                        <StatusBadge status="known" tone="success" />
+                      ) : (
+                        <StatusBadge status="unrecognised" tone="warning" />
+                      )}
                     </Td>
                   </Tr>
                 ))}
               </tbody>
             </Table>
           )}
-        </Panel>
+        </OpsCard>
       </div>
       </>)}
     </>

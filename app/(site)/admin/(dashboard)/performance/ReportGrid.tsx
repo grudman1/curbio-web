@@ -4,7 +4,10 @@ import { useState } from "react";
 import { Drawer } from "@/app/(site)/admin/_ui/Drawer";
 import { Disclosure } from "@/app/(site)/admin/_ui/Disclosure";
 import { SegmentedControl } from "@/app/(site)/admin/_ui/SegmentedControl";
-import { DASH, Eyebrow, Panel } from "@/app/(site)/admin/_ui/primitives";
+import { OpsCard } from "@/app/(site)/admin/_ui/v2/OpsCard";
+
+/** Em-dash for a value that does not exist. */
+const DASH = "\u2014";
 import {
   CHANNEL_FUNNEL_ORDER,
   CHANNEL_LABELS,
@@ -19,8 +22,8 @@ import {
 } from "@/config/marketingHub";
 import type { Channel } from "@/lib/channels";
 import type { SnapshotAggregates, SourceBreakdownRow, CellAggregate } from "@/config/appLeadsSnapshot";
-import type { AttributionMode } from "../timeframe";
-import { OutlineBar } from "../hubUi";
+import type { AttributionMode } from "@/app/(site)/marketing/(hub)/timeframe";
+import { OutlineBar } from "@/app/(site)/marketing/(hub)/hubUi";
 
 // The grid: rows × channel columns, ONE metric at a time — nine columns × six
 // numbers is a spreadsheet, not a view. Rows and metric are page-local
@@ -75,8 +78,8 @@ function formatMetric(cell: CellAggregate, m: ReportMetricKey): { n: number | nu
   }
 }
 
-const TH = "whitespace-nowrap border-b border-app-border bg-app-well px-3 py-2 font-sans text-ops-micro font-bold uppercase text-content-subtle";
-const TD = "border-b border-app-border px-3 py-2 font-sans text-ops-table";
+const TH = "ops-th whitespace-nowrap border-b px-3 py-2";
+const TD = "ops-td border-b px-3 py-2";
 
 export function ReportGrid({
   markets,
@@ -208,7 +211,7 @@ export function ReportGrid({
       {/* ── controls ── */}
       <div className="mb-3 flex flex-wrap items-center gap-x-6 gap-y-3">
         <span className="inline-flex items-center gap-2">
-          <Eyebrow>Rows</Eyebrow>
+          <span className="ops-eyebrow">Rows</span>
           <SegmentedControl
             label="Rows"
             options={ROW_DIMENSIONS}
@@ -220,10 +223,10 @@ export function ReportGrid({
           />
         </span>
         <span className="inline-flex items-center gap-2">
-          <Eyebrow>Metric</Eyebrow>
+          <span className="ops-eyebrow">Metric</span>
           <SegmentedControl label="Metric" options={REPORT_METRICS} value={metric} onChange={setMetric} />
         </span>
-        <label className="inline-flex cursor-pointer items-center gap-2 font-sans text-ops-label font-semibold text-content-muted">
+        <label className="inline-flex cursor-pointer items-center gap-2 ops-muted text-[13px] font-semibold">
           <input
             type="checkbox"
             checked={emailSplit}
@@ -281,21 +284,7 @@ export function ReportGrid({
       </div>
 
       {/* ── the grid ── */}
-      <Panel
-        flush
-        title={`${metricLabel} by ${rowDim === "market" ? "market" : "HSM"} × channel`}
-        right={
-          <span
-            className={`whitespace-nowrap font-sans text-ops-label ${
-              stale ? "font-bold text-tone-warn-text" : "text-content-subtle"
-            }`}
-            title={stale ? "The snapshot is more than 7 days old — numbers have drifted." : undefined}
-          >
-            {provenance}
-            {stale && " · STALE"}
-          </span>
-        }
-      >
+      <OpsCard>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
@@ -317,7 +306,7 @@ export function ReportGrid({
                   <tr key={r.key}>
                     <td className={`${TD} min-w-[190px] pl-ops-panel`}>
                       <div className="font-semibold text-content">{r.label}</div>
-                      {r.sub && <div className="mt-px font-sans text-ops-label text-content-subtle">{r.sub}</div>}
+                      {r.sub && <div className="mt-px ops-subtle">{r.sub}</div>}
                       {/* Target bars only when the header timeframe IS a
                           single month — the 50 target is per month, and a
                           YTD grid with this-month bars was two timeframes
@@ -348,7 +337,7 @@ export function ReportGrid({
                             aria-pressed={isSelected}
                             aria-label={`${r.label} × ${c.label} — open breakdown`}
                             style={{ background: isSelected ? undefined : heatFor(c.key, n) }}
-                            className={`min-w-[64px] w-full cursor-pointer rounded-sm border-0 px-2 py-3.5 text-right font-sans text-ops-table tabular-nums transition-colors duration-fast ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent ${
+                            className={`min-w-[64px] w-full cursor-pointer rounded-sm border-0 px-2 py-3.5 text-right ops-tnum transition-colors duration-fast ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent ${
                               isSelected
                                 ? "bg-accent-subtle shadow-[inset_0_0_0_1.5px_var(--color-accent)]"
                                 : "hover:bg-app-well"
@@ -399,7 +388,7 @@ export function ReportGrid({
             </tbody>
           </table>
         </div>
-      </Panel>
+      </OpsCard>
 
       {/* ── drill-down drawer ── */}
       <Drawer
@@ -410,7 +399,7 @@ export function ReportGrid({
       >
         {selectionValid && (
           <>
-            <p className="m-0 font-sans text-ops-label text-content-subtle">{provenance}</p>
+            <p className="m-0 ops-subtle">{provenance}</p>
 
             {/* the six metrics */}
             <div className="mt-4 flex flex-wrap gap-x-7 gap-y-4">
@@ -419,13 +408,13 @@ export function ReportGrid({
                 return (
                   <div key={m.key} className="min-w-[74px]">
                     <div
-                      className={`font-sans text-[22px] font-semibold leading-none tabular-nums ${
+                      className={`ops-tnum text-[22px] font-semibold leading-none ${
                         v.text === null ? "text-content-subtle" : "text-content"
                       }`}
                     >
                       {v.text ?? DASH}
                     </div>
-                    <div className="mt-1 font-sans text-ops-label text-content-muted">{m.label}</div>
+                    <div className="mt-1 ops-muted text-[13px]">{m.label}</div>
                   </div>
                 );
               })}
@@ -433,9 +422,9 @@ export function ReportGrid({
 
             {/* by source — the campaign-ish dimension the snapshot has */}
             <div className="mt-6">
-              <Eyebrow className="mb-2 block">By referral source</Eyebrow>
+              <span className="ops-eyebrow mb-2 block">By referral source</span>
               {drawerBreakdown.length === 0 ? (
-                <p className="m-0 font-sans text-ops-body leading-[1.6] text-content-muted">
+                <p className="m-0 ops-muted">
                   {drawerCell
                     ? "No Qualified leads in this cell for the selected timeframe."
                     : "This view has no data source yet — see the page notes for what it needs."}
@@ -471,13 +460,13 @@ export function ReportGrid({
             {/* funnel */}
             {drawerCell && (
               <div className="mt-6">
-                <Eyebrow className="mb-2 block">Funnel</Eyebrow>
+                <span className="ops-eyebrow mb-2 block">Funnel</span>
                 {FUNNEL_STAGES.map((stage, i) => {
                   const n = drawerCell.funnel[i];
                   const max = drawerCell.funnel[0] || 1;
                   return (
                     <div key={stage} className="flex items-center gap-2.5 py-[3px]">
-                      <span className="w-[118px] flex-none font-sans text-ops-label text-content-muted">{stage}</span>
+                      <span className="w-[118px] flex-none ops-muted text-[13px]">{stage}</span>
                       <span
                         aria-hidden
                         className="h-2 flex-none rounded-sm bg-brand/55"
@@ -487,18 +476,18 @@ export function ReportGrid({
                           background: "color-mix(in srgb, var(--color-brand) 55%, transparent)",
                         }}
                       />
-                      <span className="font-sans text-ops-label font-semibold tabular-nums">{n}</span>
+                      <span className="ops-tnum text-[13px] font-semibold">{n}</span>
                     </div>
                   );
                 })}
-                <p className="m-0 mt-2 font-sans text-ops-label leading-[1.5] text-content-subtle">
+                <p className="m-0 mt-2 ops-subtle leading-[1.5] text-content-subtle">
                   Cumulative reached-at-least counts. Closed = status Won only.
                 </p>
               </div>
             )}
 
             {/* the honest limit */}
-            <p className="m-0 mt-6 border-t border-app-border pt-3 font-sans text-ops-label leading-[1.6] text-content-muted">
+            <p className="m-0 mt-6 border-t border-app-border pt-3 ops-subtle leading-[1.6] text-content-muted">
               The contributing leads themselves — names, dates, campaigns, entry points, first vs
               last touch, links into the app — need the live app sync. The snapshot is
               PII-stripped and carries no lead ids, so this drawer shows everything it honestly

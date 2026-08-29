@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { FORM_REGISTRY, FORM_REGISTRY_BY_SLUG } from "@/config/formRegistry";
-import { PageHeader } from "@/app/(site)/admin/_ui/AppShell";
-import { Panel } from "@/app/(site)/admin/_ui/primitives";
-import { InfoPopover } from "@/app/(site)/admin/_ui/InfoPopover";
-import { EmptyLog } from "@/app/(site)/admin/_ui/EmptyLog";
+import { PageHeader } from "@/app/(site)/admin/_ui/v2/PageHeader";
+import { OpsCard } from "@/app/(site)/admin/_ui/v2/OpsCard";
+import { Table, Thead, Th, Td } from "@/app/(site)/admin/_ui/v2/DataTable";
 
 // A form's own submission table lives HERE, not on the registry index — one
 // form, one table, no duplicate global feed (Leads already owns that view).
@@ -34,23 +33,34 @@ export default async function FormDetailPage({ params }: { params: Promise<{ slu
 
   return (
     <>
-      <PageHeader title={entry.label} subtitle={entry.deliversAsset ? "delivers an asset on submit" : "no asset delivered"} />
-      <Panel
-        flush
+      <PageHeader
+        title={entry.label}
+        subtitle={entry.deliversAsset ? "delivers an asset on submit" : "no asset delivered"}
+      />
+      <OpsCard
         title="Submissions"
-        right={
-          entry.deliversAsset ? (
-            <InfoPopover label="Why the asset-delivered column exists" align="right">
-              <p className="m-0">
-                An unconfirmed delivery is a broken promise to an agent — the column exists so
-                that promise is checked, not assumed.
-              </p>
-            </InfoPopover>
-          ) : undefined
+        titleTooltip={
+          entry.deliversAsset
+            ? "An unconfirmed delivery is a broken promise to an agent — the asset-delivered column exists so that promise is checked, not assumed."
+            : undefined
         }
+        ruled
       >
-        <EmptyLog columns={columns} fedBy="/api/intake" />
-      </Panel>
+        <Table>
+          <Thead>
+            {columns.map((c) => (
+              <Th key={c}>{c}</Th>
+            ))}
+          </Thead>
+          <tbody>
+            <tr>
+              <Td muted colSpan={columns.length}>
+                No rows yet — fed by /api/intake.
+              </Td>
+            </tr>
+          </tbody>
+        </Table>
+      </OpsCard>
     </>
   );
 }
