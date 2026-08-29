@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Channel } from "@/lib/channels";
 import { CHANNEL_INK } from "./channelViz";
+import { defaultMonthIndex } from "./monthFocus";
 
 // Qualified per month, stacked by attribution, with the focused month's
 // breakdown beside it.
@@ -10,9 +11,9 @@ import { CHANNEL_INK } from "./channelViz";
 // HOVER *AND* CLICK set the focus, and the columns are real <button>s, so the
 // breakdown is reachable by keyboard and on touch — where hover does not
 // exist — without a second affordance. Nothing tells the reader to hover: the
-// bars respond, and the panel is already populated with the latest month on
-// arrival, so the interaction is discovered by using it rather than by
-// reading an instruction.
+// bars respond, and the panel arrives already populated with the month the
+// page is scoped to, so the interaction is discovered by using it rather than
+// by reading an instruction.
 //
 // The legend carries the channel names. That is the whole explanation budget
 // for this chart — a caption saying which band is which would be repeating the
@@ -54,10 +55,31 @@ export function QualifiedByMonth({
   channels: ChannelLegend[];
 }) {
   const last = months.length - 1;
-  const [focus, setFocus] = useState(last);
+
+  // ── The panel opens on the month the PAGE is scoped to ────────────────────
+  // `selected` marks the months inside the header's timeframe; the newest of
+  // them is what the rest of the screen is reporting, so it is what the
+  // breakdown must open on.
+  //
+  // This regressed in the ops redesign (#101): that pass added `selected` and
+  // switched the month LABELS to render from it, but left the breakdown's
+  // initial state as `useState(last)` — the last month of the twelve-month
+  // series, which is not the selected month whenever the header is on any
+  // earlier one. Selecting April left the labels on April and the breakdown on
+  // August. The rule now lives in one tested function so the two cannot drift
+  // apart again — see monthFocus.ts / monthFocus.test.ts.
+  const defaultIndex = defaultMonthIndex(months);
+
+  // null = "follow the page". A hover or click pins a month; changing the
+  // header's timeframe unpins it, so the panel never keeps showing a month the
+  // rest of the screen has moved off.
+  const [pinned, setPinned] = useState<number | null>(null);
+  useEffect(() => setPinned(null), [defaultIndex]);
+  const setFocus = setPinned;
 
   if (months.length === 0) return null;
 
+  const focus = pinned ?? defaultIndex;
   const active = months[Math.min(focus, last)] ?? months[last];
   const max = Math.max(...months.map((m) => m.total), 1);
 
