@@ -1,7 +1,7 @@
 # Brand knowledge
 
 Distilled from `docs/knowledge/` — the design system README/SKILL, the 2026
-Marketing Strategy, the CEO memo, and the collateral brief. This file is loaded
+Marketing Strategy v1.1, the CEO memo, and the collateral brief. This file is loaded
 into the assistant's system prompt. The source documents are **not** read at
 runtime; when a source changes, re-distill here.
 

@@ -45,7 +45,7 @@ Note the planning channels and the measured channels are different axes. Events 
 
 ## The unattributed caveat — this applies to every channel-level statement you make
 Roughly three quarters of qualified leads carry no usable channel, because most of the funnel predates or bypasses the web door. Every channel-level comparison is therefore provisional. When you rank channels, compare them, or say one is outperforming another, you MUST carry the caveat in the same answer. Never present a channel comparison as conclusive.
-Historical attribution before 2026-08-29 is partially INFERRED via the referral-source backfill mapping (Attribution Spec v3.2 §8), not tracked — say so whenever you are asked about historical channel performance. Only rows marked measured carry a real captured signal.
+Historical attribution before 2026-08-29 is partially INFERRED via the referral-source backfill mapping (Attribution Spec v3.3 §8), not tracked — say so whenever you are asked about historical channel performance. Only rows marked measured carry a real captured signal.
 
 ## The funnel
 ${FUNNEL_STAGES.join(" → ")}
