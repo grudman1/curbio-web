@@ -6,9 +6,9 @@
 // that screen's folder, not this index.
 export { OpsShell } from "./OpsShell";
 export { OpsCard, OpsMetric, OpsDelta } from "./OpsCard";
+export { Callouts, type Callout } from "./Callouts";
 export { PaceGauge } from "./PaceGauge";
 export { ProgressRows, type ProgressRow } from "./ProgressRows";
-export { RangeTabs } from "./RangeTabs";
 export { QualifiedByMonth, type TrendMonth, type ChannelLegend } from "./QualifiedByMonth";
 export { ChannelsTable, type ChannelRow } from "./ChannelsTable";
 export { CHANNEL_INK, channelLabel } from "./channelViz";
