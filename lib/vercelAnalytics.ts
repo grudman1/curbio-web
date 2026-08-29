@@ -31,6 +31,12 @@
 
 const BASE = "https://api.vercel.com/v1/query/web-analytics";
 
+/** How long an upstream analytics read is reused. Traffic numbers do not need
+ *  to be fresher than the time it takes to read them, and the Vercel API is
+ *  rate limited. This was the route handler's `revalidate` until the route
+ *  became authenticated — see the fetch comments below. */
+export const ANALYTICS_TTL_S = 900;
+
 export type Bucket = "hour" | "day" | "week" | "month";
 
 /** One (timestamp × route) row as the aggregate endpoint returns it. */
@@ -90,9 +96,13 @@ export async function routeTraffic(
   try {
     const res = await fetch(`${BASE}/visits/aggregate?${params}`, {
       headers: { Authorization: `Bearer ${creds.token}` },
-      // Caching is the route handler's job (revalidate), not this client's —
-      // it has no idea what timeframe it is being asked for.
-      cache: "no-store",
+      // Caching lives HERE, not on the route handler, because the route is
+      // authenticated and its RESPONSE must never be cached (see
+      // app/api/admin/page-stats/route.ts). This upstream request is keyed
+      // entirely by project + timeframe + dimensions — identical for every
+      // admin, carrying nothing user-specific — so the data cache is shared
+      // safely and the rate-limited Vercel API is still protected.
+      next: { revalidate: ANALYTICS_TTL_S },
     });
 
     if (!res.ok) {
@@ -133,7 +143,8 @@ export async function pathTotals(
   try {
     const res = await fetch(`${BASE}/visits/count?${params}`, {
       headers: { Authorization: `Bearer ${creds.token}` },
-      cache: "no-store",
+      // Same reasoning as visits/aggregate above.
+      next: { revalidate: ANALYTICS_TTL_S },
     });
     if (!res.ok) return null;
     const json = (await res.json()) as { data?: { visitors: number; pageviews: number } };

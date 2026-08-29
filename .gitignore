@@ -36,3 +36,16 @@ pnpm-debug.log*
 # local reference docs (kept on disk, excluded from the deployed repo)
 /Curbio Website Design Brief (standalone).html
 /curbio-claude-code-brief.md
+
+# knowledge sources — the DISTILLED files (config/*-knowledge.md) are what the
+# assistant loads and they are committed. These are the raw sources: kept on
+# disk for re-distillation, excluded from the repo because they are 138MB of
+# .zip, video, and PDF that no build or runtime path reads.
+/docs/knowledge/*.zip
+/docs/knowledge/design-system/uploads/
+/docs/knowledge/design-system/assets/
+/docs/knowledge/design-system/fonts/
+/docs/knowledge/design-system/screenshots/
+/docs/knowledge/design-system/preview/
+/docs/knowledge/design-system/ui_kits/
+/docs/knowledge/design-system/*.html
