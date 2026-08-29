@@ -29,6 +29,17 @@ import { TOOL_SCHEMAS, runTool } from "./tools";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// A tool-backed answer is not a fast request. Measured locally on real
+// questions: 6.4s for a single-tool data answer, 26.8s for a copy-generation
+// one that ran several tools and then wrote a full draft. Vercel's default
+// function ceiling is well under that, so without this the long answers — the
+// valuable ones — get cut off mid-stream.
+//
+// 60s is chosen against the measured worst case plus headroom, not as a
+// maximum-allowed value. MAX_TURNS is the real runaway guard; this is the
+// wall clock the platform enforces underneath it.
+export const maxDuration = 60;
+
 /** Hard cap on model→tool→model round trips for one question. */
 const MAX_TURNS = 8;
 
