@@ -1,173 +1,537 @@
-/* Dashboard v2 — Home's token layer, now sitting ON the 2026 design system.
- *
- * Scoped under .ui2, NOT :root — the rest of /admin keeps DESIGN-APP.md's
- * slate system untouched. Apply the `.ui2` class to a screen's root element
- * to opt that subtree in. See tailwind.config.ts's `ui2` colour / fontSize /
- * fontFamily entries, which all point at these variables.
- *
- * ── What changed, and why it is now derived rather than literal ─────────────
- * This file used to carry a hand-picked cool-grey palette (#111827 text,
- * #e5e7eb borders, a separate Inter face) chosen from a Stripe/Linear
- * reference. The design system landed with its own brand primitives — and
- * app/globals.css already ships them at exactly the values the system
- * specifies (--navy #0d254d, --amber #cd8629, --teal #176c67, --stone,
- * --sage, --fg-muted #4a5a75, --ease-out, --dur-*). So the brand half of this
- * file is now var() references onto those primitives rather than duplicated
- * hex: a rebrand is a primitive swap, and this file cannot drift from it.
- *
- * ── What is deliberately NOT derived ────────────────────────────────────────
- * The NEUTRAL UI greys (--ui2-border, --ui2-divider, --ui2-well, the gray
- * steps) stay literal and stay COOL. The design system's neutral is --stone
- * (#dfdcda), a warm paper tone built for photo mats and print rules on a
- * marketing page. On a dense data screen a warm hairline against white reads
- * as a smudge, and a table of 8 rows becomes visibly beige. These greys are
- * still tokens — nothing in a component hardcodes them — they are just the
- * app surface's neutral ramp rather than the brand's. DESIGN-APP.md already
- * draws that same line for the v1 system.
- *
- * ── Type ───────────────────────────────────────────────────────────────────
- * Headings are Lora, body/labels/numerals are Libre Franklin — both the
- * self-hosted variable files declared in ./fonts.ts and applied on the /admin
- * layout. They arrive as `--ui2-font-serif` / `--ui2-font-sans`, which are
- * ADMIN'S OWN NAMES: the marketing site's global `--font-serif` /
- * `--font-sans` are left exactly as app/layout.tsx sets them, neither
- * redefined nor shadowed here.
- *
- * `--ui2-font` is the name tailwind.config.ts's pre-existing `font-ui2`
- * family already points at, so it is aliased onto the sans face rather than
- * the config being touched.
- */
+/* ═══════════════════════════════════════════════════════════════════════════
+   THE OPS DESIGN SYSTEM — /admin only.
+   ═══════════════════════════════════════════════════════════════════════════
 
-.ui2 {
-  /* ── Type ─────────────────────────────────────────────────────────────── */
-  --ui2-font: var(--ui2-font-sans);
+   Scoped under `.ops`, which the shell (OpsShell.tsx) puts on its root. Every
+   admin screen inside that shell can use these classes; nothing outside it
+   sees them. The marketing site's tokens, fonts and stylesheets are untouched.
 
-  /* ── Surfaces ─────────────────────────────────────────────────────────── */
-  /* #f7f8fa, not the system's --cloud-white (#f7f7f7): a hair cooler, which
-     is what the approved Home mockup fades its hero into. Kept as a token so
-     the hero gradient's terminal colour and the page ground are provably the
-     same value. */
-  --ui2-bg: #f7f8fa;
-  --ui2-card: var(--white);
-  --ui2-well: #f9fafb;
+   ── What this is ──────────────────────────────────────────────────────────
+   The visual language is TailAdmin's (MIT, v2.3), translated onto Curbio's
+   brand. What was taken is the SYSTEM, not the skin: 16px card radius, flat
+   bordered panels with no drop shadow, ~40% more padding and gap than we had,
+   a complete neutral ramp, and tinted-not-solid active states. What was left
+   is TailAdmin's identity — its indigo `brand-500`, its Outfit typeface, its
+   dark mode, and its dependency tree (ApexCharts, jvectormap, FullCalendar).
+   None of that is here; charts stay hand-rolled SVG.
 
-  /* ── Ink ──────────────────────────────────────────────────────────────── */
-  /* Navy, not black — the system's default text colour. */
-  --ui2-text: var(--navy);
-  --ui2-text-muted: var(--fg-muted);
-  --ui2-gray-400: #98a2b3;
-  --ui2-gray-300: #d0d5dd;
+   ── Reusable on purpose ───────────────────────────────────────────────────
+   These are COMPONENT classes, not Home-specific one-offs, so Leads, Markets,
+   Performance and Channels can adopt them mechanically next pass. If a rule
+   below only makes sense on Home, it is in the wrong file.
 
-  /* ── Neutral ramp (cool, app-surface — see header) ────────────────────── */
-  --ui2-border: #e5e7eb;
-  --ui2-divider: #f3f4f6;
+   ── Plain CSS, deliberately ───────────────────────────────────────────────
+   No `@apply`, no `@layer`. This file is imported as a standalone stylesheet;
+   `@layer components` needs a matching `@tailwind components` directive that
+   lives in globals.css — the marketing site's file, and off limits. Plain CSS
+   has no such coupling and cannot break if the Tailwind pipeline changes.
 
-  /* ── Brand ────────────────────────────────────────────────────────────── */
-  --ui2-accent: var(--navy);
-  --ui2-accent-hover: var(--navy-95);
-  --ui2-accent-ring: rgba(13, 37, 77, 0.08);
-  --ui2-amber: var(--amber);
-  --ui2-amber-hover: var(--amber-110);
-  /* Text-safe amber — AA on white, which --amber itself is not. */
-  --ui2-amber-text: var(--amber-120);
-  --ui2-teal: var(--teal);
+   ── Reserved names — do not use ───────────────────────────────────────────
+   globals.css already defines these `--ops-*` variables at :root for the v1
+   density system, and un-migrated v1 screens render INSIDE this scope.
+   Redefining any of them here would silently reflow every one of them:
+     --ops-row-h  --ops-row-head-h  --ops-panel-pad  --ops-gap  --ops-tile-h
+     --ops-sidebar-w  --ops-sidebar-collapsed-w  --ops-nav-item-h
+     --ops-header-h
+   Every name below is checked against that list.
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-  /* ── Status: deltas and health ONLY. Never decorative. ────────────────── */
-  --ui2-green: #067647;
-  --ui2-red: #b42318;
-  --ui2-green-10: rgba(6, 118, 71, 0.1);
-  --ui2-red-10: rgba(180, 35, 24, 0.1);
+.ops {
+  /* ── Type ───────────────────────────────────────────────────────────────
+     Libre Franklin for everything structural — labels, numerals, tables,
+     nav. Lora is NOT aliased onto the body font on purpose: it is applied
+     deliberately by the two elements allowed to use it (page title, greeting)
+     via .ops-display, so a serif can never leak into a table by inheritance. */
+  --ops-font: var(--ops-font-sans);
+  --ops-font-display: var(--ops-font-serif);
 
-  /* ── Attribution palette — the stacked chart, channel swatches, dots ──── */
-  /* Built from brand primitives wherever one exists; the rest are distinct
-     hues chosen for categorical separation, not brand expression. */
-  --ui2-ch-partnership: var(--navy);
-  --ui2-ch-email: var(--teal);
-  --ui2-ch-organic: #3b7bc4;
-  --ui2-ch-events: #6b4e86;
-  --ui2-ch-paid-search: var(--amber);
-  --ui2-ch-paid-social: #b0894f;
-  --ui2-ch-creator: #8aa6c4;
-  --ui2-ch-content: #7a8f3d;
-  --ui2-ch-referral: #5b7d8f;
-  /* Unattributed. Grey because it is the ABSENCE of a channel — it must
-     never read as a channel win. */
-  --ui2-ch-direct: #d7dbe2;
+  --ops-text-xs: 12px;
+  --ops-text-xs-lh: 18px;
+  --ops-text-sm: 14px;
+  --ops-text-sm-lh: 20px;
+  --ops-text-md: 16px;
+  --ops-text-md-lh: 24px;
+  --ops-metric-size: 30px;
+  --ops-metric-lh: 38px;
 
-  /* ── Hero atmosphere ──────────────────────────────────────────────────── */
-  --ui2-hero-navy: rgba(13, 37, 77, 0.44);
-  --ui2-hero-teal: rgba(23, 108, 103, 0.36);
-  --ui2-hero-amber: rgba(205, 134, 41, 0.28);
+  /* ── Neutral ramp (TailAdmin / Untitled UI) ─────────────────────────────
+     Adopted wholesale: a properly-spaced 11-step ramp where the app
+     previously had four ad-hoc greys. One source of truth for /admin
+     neutrals. */
+  --ops-gray-25: #fcfcfd;
+  --ops-gray-50: #f9fafb;
+  --ops-gray-100: #f2f4f7;
+  --ops-gray-200: #e4e7ec;
+  --ops-gray-300: #d0d5dd;
+  --ops-gray-400: #98a2b3;
+  --ops-gray-500: #667085;
+  --ops-gray-600: #475467;
+  --ops-gray-700: #344054;
+  --ops-gray-800: #1d2939;
+  --ops-gray-900: #101828;
 
-  /* ── Radii — the system's scale ───────────────────────────────────────── */
-  --ui2-radius-sm: var(--radius-sm);
-  --ui2-radius-md: var(--radius-md);
-  --ui2-radius-input: 10px;
-  --ui2-radius-card: var(--radius-lg);
-  --ui2-radius-panel: 14px;
-  --ui2-radius-pill: var(--radius-pill);
+  /* ── Status ramps ──────────────────────────────────────────────────────
+     Also adopted: the 50/500/600/700 steps give a tinted fill and an
+     AA-legible text tone from the same hue, which our previous two-value
+     green/red could not. */
+  --ops-success-50: #ecfdf3;
+  --ops-success-500: #12b76a;
+  --ops-success-600: #039855;
+  --ops-success-700: #027a48;
+  --ops-error-50: #fef3f2;
+  --ops-error-500: #f04438;
+  --ops-error-600: #d92d20;
+  --ops-error-700: #b42318;
+  --ops-warning-50: #fffaeb;
+  --ops-warning-500: #f79009;
+  --ops-warning-600: #dc6803;
+  --ops-warning-700: #b54708;
 
-  /* ── Shadows — the system's restrained editorial set ──────────────────── */
-  --ui2-shadow-card: 0 1px 2px rgba(13, 37, 77, 0.06), 0 1px 1px rgba(13, 37, 77, 0.04);
-  --ui2-shadow-ask: 0 2px 10px -4px rgba(13, 37, 77, 0.18);
-  --ui2-shadow-ask-focus: 0 0 0 4px var(--ui2-accent-ring), 0 16px 34px -20px rgba(13, 37, 77, 0.6);
-  --ui2-shadow-send: 0 6px 14px -6px rgba(13, 37, 77, 0.7);
+  /* ── Brand ─────────────────────────────────────────────────────────────
+     Where TailAdmin uses indigo, we use Curbio navy; amber stays the one
+     accent. Both reference the primitives already shipping in globals.css,
+     so a brand change is a primitive change and this file cannot drift. */
+  --ops-brand: var(--navy);
+  --ops-brand-hover: var(--navy-95);
+  --ops-brand-50: #eef1f6;
+  --ops-brand-100: #dde3ed;
+  --ops-accent: var(--amber);
+  --ops-accent-hover: var(--amber-110);
+  --ops-accent-50: var(--amber-10);
+  /* AA-legible amber for text and numerals; --amber itself is not. */
+  --ops-accent-text: var(--amber-120);
+  --ops-teal: var(--teal);
 
-  /* ── Motion — the system's easing + durations ─────────────────────────── */
-  --ui2-ease: var(--easing-out);
-  --ui2-dur-fast: var(--duration-fast);
-  --ui2-dur-base: var(--duration-base);
-  /* Hero drift loops. Three different primes so the three blobs never
-     re-synchronise into a visible pulse. */
-  --ui2-drift-a: 30s;
-  --ui2-drift-b: 38s;
-  --ui2-drift-c: 46s;
+  /* ── Surfaces ──────────────────────────────────────────────────────────
+     Ground is gray-50, cards are white — TailAdmin's exact relationship, so
+     a card reads as a panel even where its border is subtle. */
+  --ops-bg: var(--ops-gray-50);
+  --ops-surface: #ffffff;
+  --ops-well: var(--ops-gray-50);
+  --ops-border: var(--ops-gray-200);
+  --ops-divider: var(--ops-gray-100);
+  --ops-text: var(--ops-gray-800);
+  --ops-text-muted: var(--ops-gray-500);
+  --ops-text-subtle: var(--ops-gray-400);
 
-  /* ── Type scale ───────────────────────────────────────────────────────── */
-  --ui2-text-micro: 11px;
-  --ui2-text-eyebrow: 11px;
-  --ui2-text-caption: 12px;
-  --ui2-text-body: 13px;
-  --ui2-text-row: 14px;
-  --ui2-text-section: 16px;
-  --ui2-text-ask: 15.5px;
-  --ui2-text-metric: 28px;
-  --ui2-text-pace: 42px;
-  --ui2-text-greeting: 40px;
+  /* ── Attribution palette — channel swatches, bars, legend ──────────────
+     Brand primitives wherever one exists; the rest are distinct hues chosen
+     for categorical separation, not brand expression. */
+  --ops-ch-partnership: var(--navy);
+  --ops-ch-email: var(--teal);
+  --ops-ch-organic: #3b7bc4;
+  --ops-ch-paid-search: var(--amber);
+  --ops-ch-paid-social: #b0894f;
+  --ops-ch-creator: #8aa6c4;
+  --ops-ch-events: #6b4e86;
+  --ops-ch-referral: #5b7d8f;
+  /* Grey, because it is the ABSENCE of attribution — it must never read as
+     a channel that is winning. */
+  --ops-ch-direct: var(--ops-gray-300);
+
+  /* ── Radii — the 16px card is TailAdmin's signature ───────────────────── */
+  --ops-r-sm: 4px;
+  --ops-r-md: 8px;
+  --ops-r-lg: 12px;
+  --ops-r-card: 16px;
+  --ops-r-pill: 999px;
+
+  /* ── Shadows — used SPARINGLY ──────────────────────────────────────────
+     TailAdmin's cards carry a border and no shadow; only interactive controls
+     get one. That flatness is most of why it reads as modern, so there is
+     deliberately no card-shadow token to reach for. */
+  --ops-shadow-xs: 0 1px 2px 0 rgba(16, 24, 40, 0.05);
+  --ops-shadow-sm: 0 1px 3px 0 rgba(16, 24, 40, 0.1), 0 1px 2px 0 rgba(16, 24, 40, 0.06);
+  --ops-shadow-lg: 0 12px 16px -4px rgba(16, 24, 40, 0.08), 0 4px 6px -2px rgba(16, 24, 40, 0.03);
+  --ops-ring: 0 0 0 4px rgba(13, 37, 77, 0.1);
+
+  /* ── Motion ─────────────────────────────────────────────────────────── */
+  --ops-ease: var(--easing-out);
+  --ops-fast: var(--duration-fast);
+  --ops-base: var(--duration-base);
+
+  font-family: var(--ops-font);
+  color: var(--ops-text);
 }
 
-/* ── Hero atmosphere: three blurred radials on long, unequal loops ────────
-   Keyframes are global (they are referenced from .ui2 descendants but
-   @keyframes cannot be scoped by a class). Prefixed so they cannot collide
-   with the marketing site's animation names. */
-@keyframes ui2-drift-a {
+/* ═══ Display type — the ONLY two places Lora is allowed ═══════════════════
+   Curbio's serif is the signature, so it carries the page title and the
+   greeting and nothing else. Card titles, labels, numerals, tables and nav
+   are all Libre Franklin. Applied explicitly rather than by inheritance so a
+   serif cannot leak downward into a data table. */
+.ops-display {
+  font-family: var(--ops-font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--navy);
+}
+
+/* ═══ Card — the workhorse container ═══════════════════════════════════════
+   16px radius, hairline border, NO shadow. `--pad` adds the standard body
+   padding; omit it when the card owns a full-bleed table or its own header
+   band. */
+.ops-card {
+  background: var(--ops-surface);
+  border: 1px solid var(--ops-border);
+  border-radius: var(--ops-r-card);
+}
+.ops-card--pad { padding: 20px; }
+@media (min-width: 768px) { .ops-card--pad { padding: 24px; } }
+
+.ops-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 20px 16px;
+}
+@media (min-width: 768px) { .ops-card-head { padding: 20px 24px 16px; } }
+
+.ops-card-title {
+  margin: 0;
+  font-family: var(--ops-font);
+  font-size: var(--ops-text-md);
+  line-height: var(--ops-text-md-lh);
+  font-weight: 600;
+  color: var(--ops-text);
+}
+/* Right-hand meta on a card header — a measurement or a scope label. Never a
+   sentence: this system has no slot for explanatory prose. */
+.ops-card-meta {
+  margin-left: auto;
+  font-size: var(--ops-text-xs);
+  line-height: var(--ops-text-xs-lh);
+  color: var(--ops-text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+.ops-card-body { padding: 0 20px 20px; }
+@media (min-width: 768px) { .ops-card-body { padding: 0 24px 24px; } }
+/* Body separated from its header by a rule — TailAdmin's ComponentCard. */
+.ops-card-body--ruled { border-top: 1px solid var(--ops-divider); padding-top: 20px; }
+
+/* ═══ Metric card ══════════════════════════════════════════════════════════
+   label → number → badge. NO icon tile: an icon cannot disambiguate
+   "Qualified leads" from "Close rate", so it is decoration, and this screen
+   does not spend space on decoration. */
+.ops-metric-label {
+  display: block;
+  font-size: var(--ops-text-sm);
+  line-height: var(--ops-text-sm-lh);
+  color: var(--ops-text-muted);
+}
+.ops-metric-value {
+  font-size: var(--ops-metric-size);
+  line-height: var(--ops-metric-lh);
+  font-weight: 700;
+  color: var(--ops-text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.ops-metric-value--empty { color: var(--ops-gray-300); }
+.ops-metric-suffix {
+  font-size: var(--ops-text-sm);
+  color: var(--ops-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══ Badge ════════════════════════════════════════════════════════════════
+   Tinted fill + same-hue text. Colour is reserved for deltas and status;
+   nothing decorative uses these. */
+.ops-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: var(--ops-r-pill);
+  font-size: var(--ops-text-xs);
+  line-height: var(--ops-text-xs-lh);
+  font-weight: 500;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.ops-badge--success { background: var(--ops-success-50); color: var(--ops-success-700); }
+.ops-badge--error   { background: var(--ops-error-50);   color: var(--ops-error-700); }
+.ops-badge--warning { background: var(--ops-warning-50); color: var(--ops-warning-700); }
+.ops-badge--neutral { background: var(--ops-gray-100);   color: var(--ops-gray-600); }
+
+/* ═══ Progress row ═════════════════════════════════════════════════════════
+   name + sub-label left, bar + figure right. The densest honest way to show a
+   set of things against a shared target — markets against pace, channels
+   against share. */
+.ops-prow { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+.ops-prow-name {
+  font-size: var(--ops-text-sm);
+  line-height: var(--ops-text-sm-lh);
+  font-weight: 600;
+  color: var(--ops-text);
+}
+.ops-prow-sub {
+  display: block;
+  font-size: var(--ops-text-xs);
+  line-height: var(--ops-text-xs-lh);
+  color: var(--ops-text-subtle);
+  font-variant-numeric: tabular-nums;
+}
+.ops-prow-figure {
+  min-width: 40px;
+  text-align: right;
+  font-size: var(--ops-text-sm);
+  font-weight: 500;
+  color: var(--ops-text);
+  font-variant-numeric: tabular-nums;
+}
+.ops-track {
+  position: relative;
+  height: 8px;
+  width: 100%;
+  border-radius: var(--ops-r-sm);
+  background: var(--ops-gray-200);
+  overflow: hidden;
+}
+.ops-track-fill { position: absolute; inset: 0 auto 0 0; border-radius: var(--ops-r-sm); background: var(--ops-brand); }
+.ops-track-fill--accent { background: var(--ops-accent); }
+
+/* ═══ Segmented control ════════════════════════════════════════════════════
+   Pill inside a sunken tray. Lives on the card whose scope it controls. */
+.ops-seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--ops-r-md);
+  background: var(--ops-gray-100);
+}
+.ops-seg-btn {
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: var(--ops-text-sm);
+  font-weight: 500;
+  color: var(--ops-text-muted);
+  text-decoration: none;
+  transition: color var(--ops-fast) var(--ops-ease), background var(--ops-fast) var(--ops-ease);
+}
+.ops-seg-btn:hover { color: var(--ops-text); }
+.ops-seg-btn[aria-pressed="true"],
+.ops-seg-btn[data-active="true"] {
+  background: var(--ops-surface);
+  color: var(--ops-text);
+  box-shadow: var(--ops-shadow-xs);
+}
+
+/* ═══ Table ════════════════════════════════════════════════════════════════ */
+.ops-table { width: 100%; border-collapse: collapse; }
+.ops-th {
+  padding: 12px 0;
+  text-align: left;
+  font-size: var(--ops-text-xs);
+  line-height: var(--ops-text-xs-lh);
+  font-weight: 500;
+  color: var(--ops-text-muted);
+  white-space: nowrap;
+}
+.ops-td { padding: 14px 0; font-size: var(--ops-text-sm); line-height: var(--ops-text-sm-lh); color: var(--ops-text); }
+.ops-thead-row { border-top: 1px solid var(--ops-divider); border-bottom: 1px solid var(--ops-divider); }
+.ops-tbody-row { border-bottom: 1px solid var(--ops-divider); }
+.ops-tbody-row:last-child { border-bottom: 0; }
+.ops-tbody-row--link { cursor: pointer; transition: background var(--ops-fast) var(--ops-ease); }
+.ops-tbody-row--link:hover { background: var(--ops-gray-25); }
+.ops-num { font-variant-numeric: tabular-nums; text-align: right; }
+
+/* ═══ Nav (sidebar) ════════════════════════════════════════════════════════
+   Active is a TINTED pill, not a solid navy fill — the solid version made the
+   sidebar the loudest object on a screen whose job is the data. */
+.ops-nav-section {
+  padding: 0 12px;
+  margin-bottom: 8px;
+  font-size: var(--ops-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ops-text-subtle);
+}
+.ops-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: var(--ops-r-md);
+  background: transparent;
+  font-family: inherit;
+  font-size: var(--ops-text-sm);
+  line-height: var(--ops-text-sm-lh);
+  font-weight: 500;
+  color: var(--ops-gray-700);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--ops-fast) var(--ops-ease), color var(--ops-fast) var(--ops-ease);
+}
+.ops-nav-item:hover { background: var(--ops-gray-100); color: var(--ops-gray-900); }
+.ops-nav-item--active { background: var(--ops-brand-50); color: var(--ops-brand); font-weight: 600; }
+.ops-nav-item--active:hover { background: var(--ops-brand-100); }
+.ops-nav-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--ops-r-md);
+  font-size: var(--ops-text-sm);
+  line-height: var(--ops-text-sm-lh);
+  font-weight: 500;
+  color: var(--ops-gray-600);
+  text-decoration: none;
+  transition: background var(--ops-fast) var(--ops-ease), color var(--ops-fast) var(--ops-ease);
+}
+.ops-nav-sub:hover { background: var(--ops-gray-100); color: var(--ops-gray-900); }
+.ops-nav-sub--active { background: var(--ops-brand-50); color: var(--ops-brand); font-weight: 600; }
+
+/* ═══ Controls ═════════════════════════════════════════════════════════════ */
+.ops-icon-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  width: 40px;
+  flex: none;
+  border: 1px solid var(--ops-border);
+  border-radius: var(--ops-r-pill);
+  background: var(--ops-surface);
+  color: var(--ops-text-muted);
+  cursor: pointer;
+  transition: background var(--ops-fast) var(--ops-ease), color var(--ops-fast) var(--ops-ease);
+}
+.ops-icon-btn:hover { background: var(--ops-gray-50); color: var(--ops-text); }
+
+.ops-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  border: 1px solid var(--ops-border);
+  border-radius: var(--ops-r-md);
+  background: var(--ops-surface);
+  box-shadow: var(--ops-shadow-xs);
+  font-family: inherit;
+  font-size: var(--ops-text-sm);
+  font-weight: 500;
+  color: var(--ops-gray-700);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--ops-fast) var(--ops-ease);
+}
+.ops-btn:hover { background: var(--ops-gray-50); color: var(--ops-text); }
+.ops-btn--primary { background: var(--ops-brand); border-color: var(--ops-brand); color: #fff; box-shadow: none; }
+.ops-btn--primary:hover { background: var(--ops-brand-hover); color: #fff; }
+
+.ops-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--ops-border);
+  border-radius: var(--ops-r-md);
+  background: var(--ops-surface);
+  font-size: var(--ops-text-sm);
+  color: var(--ops-text-muted);
+}
+.ops-field:focus-within { border-color: var(--ops-brand); box-shadow: var(--ops-ring); }
+.ops-kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border: 1px solid var(--ops-border);
+  border-radius: var(--ops-r-sm);
+  background: var(--ops-gray-50);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ops-text-subtle);
+}
+
+/* ═══ Dropdown / popover ═══════════════════════════════════════════════════ */
+.ops-pop {
+  border: 1px solid var(--ops-border);
+  border-radius: var(--ops-r-lg);
+  background: var(--ops-surface);
+  box-shadow: var(--ops-shadow-lg);
+  padding: 8px;
+}
+.ops-pop-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--ops-r-md);
+  background: transparent;
+  font-family: inherit;
+  font-size: var(--ops-text-sm);
+  color: var(--ops-gray-700);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.ops-pop-item:hover { background: var(--ops-gray-50); color: var(--ops-text); }
+
+/* ═══ Bits ═════════════════════════════════════════════════════════════════ */
+.ops-swatch { height: 10px; width: 10px; flex: none; border-radius: 3px; }
+.ops-dot { height: 8px; width: 8px; flex: none; border-radius: var(--ops-r-pill); }
+/* Absent, not zero — a metric with no source must never read as measured. */
+.ops-dot--unwired { background: transparent; border: 1px dashed var(--ops-gray-400); }
+.ops-eyebrow {
+  font-size: var(--ops-text-xs);
+  line-height: var(--ops-text-xs-lh);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ops-text-subtle);
+}
+.ops-muted { color: var(--ops-text-muted); }
+.ops-subtle { color: var(--ops-text-subtle); }
+.ops-tnum { font-variant-numeric: tabular-nums; }
+
+/* ═══ Hero atmosphere ══════════════════════════════════════════════════════
+   Three heavily-blurred radials drifting on long, unequal loops. The periods
+   are deliberately not multiples of each other so the three never resynchronise
+   into a visible pulse.
+
+   @keyframes cannot be scoped by a class, so these are global — prefixed so
+   they cannot collide with the marketing site's own animation names. */
+@keyframes ops-drift-a {
   0%   { transform: translate3d(-6%, -4%, 0) scale(1.05); }
   50%  { transform: translate3d(8%, 5%, 0) scale(1.18); }
   100% { transform: translate3d(-6%, -4%, 0) scale(1.05); }
 }
-@keyframes ui2-drift-b {
+@keyframes ops-drift-b {
   0%   { transform: translate3d(5%, 6%, 0) scale(1.14); }
   50%  { transform: translate3d(-7%, -5%, 0) scale(1.02); }
   100% { transform: translate3d(5%, 6%, 0) scale(1.14); }
 }
-@keyframes ui2-drift-c {
+@keyframes ops-drift-c {
   0%   { transform: translate3d(0, 3%, 0) scale(1); opacity: 0.55; }
   50%  { transform: translate3d(-5%, -6%, 0) scale(1.2); opacity: 0.8; }
   100% { transform: translate3d(0, 3%, 0) scale(1); opacity: 0.55; }
 }
 
-.ui2-drift {
-  animation-duration: var(--ui2-drift-a);
-  animation-timing-function: ease-in-out;
-  animation-iteration-count: infinite;
-}
-.ui2-drift-a { animation-name: ui2-drift-a; animation-duration: var(--ui2-drift-a); }
-.ui2-drift-b { animation-name: ui2-drift-b; animation-duration: var(--ui2-drift-b); }
-.ui2-drift-c { animation-name: ui2-drift-c; animation-duration: var(--ui2-drift-c); }
+.ops-drift { animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+.ops-drift-a { animation-name: ops-drift-a; animation-duration: 30s; }
+.ops-drift-b { animation-name: ops-drift-b; animation-duration: 38s; }
+.ops-drift-c { animation-name: ops-drift-c; animation-duration: 46s; }
 
-/* The whole point of the hero wash is that it is barely-perceptible motion.
-   For anyone who has asked for less of it, it stops — the gradients stay,
-   which is what carries the design; only the drift goes. */
+/* The wash is the design; the movement is the flourish, and only the flourish
+   is negotiable. Gradients stay, drift stops. */
 @media (prefers-reduced-motion: reduce) {
-  .ui2-drift { animation: none !important; }
+  .ops-drift { animation: none !important; }
 }

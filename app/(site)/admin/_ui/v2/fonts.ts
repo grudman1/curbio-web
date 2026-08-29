@@ -6,7 +6,7 @@ import localFont from "next/font/local";
 //
 // ── SCOPED TO /admin, AND NOT SHARING THE MARKETING SITE'S NAMES ────────────
 // These are declared here, applied on the /admin layout, and exported under
-// `--ui2-font-serif` / `--ui2-font-sans` — deliberately NOT `--font-serif` /
+// `--ops-font-serif` / `--ops-font-sans` — deliberately NOT `--font-serif` /
 // `--font-sans`.
 //
 // Those two global names already exist: app/layout.tsx binds them to the
@@ -35,7 +35,7 @@ import localFont from "next/font/local";
 export const opsSerif = localFont({
   src: [{ path: "./fonts/Lora.ttf", weight: "400 700", style: "normal" }],
   display: "swap",
-  variable: "--ui2-font-serif",
+  variable: "--ops-font-serif",
   fallback: ["Georgia", "Times New Roman", "serif"],
 });
 
@@ -45,7 +45,7 @@ export const opsSans = localFont({
     { path: "./fonts/LibreFranklin-Italic.ttf", weight: "100 900", style: "italic" },
   ],
   display: "swap",
-  variable: "--ui2-font-sans",
+  variable: "--ops-font-sans",
   fallback: [
     "-apple-system",
     "BlinkMacSystemFont",
