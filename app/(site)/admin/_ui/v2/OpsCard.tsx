@@ -72,10 +72,11 @@ export function OpsMetric({
   sparkline?: React.ReactNode;
 }) {
   return (
-    <div
-      className="ops-card ops-card--pad flex flex-col justify-between"
-      style={unwired ? { borderStyle: "dashed", borderColor: "var(--ops-gray-300)" } : undefined}
-    >
+    // No dashed border for an unwired metric. It singled ONE card out as
+    // visually broken among four, which reads as "this card failed" rather
+    // than "this number has no source yet". The hollow dot and the em-dash
+    // already carry that, and they carry it without shouting.
+    <div className="ops-card ops-card--pad flex flex-col justify-between">
       <div className="flex items-center gap-2">
         <span className="ops-metric-label truncate">{label}</span>
         {unwired && (

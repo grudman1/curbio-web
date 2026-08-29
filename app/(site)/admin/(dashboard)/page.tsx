@@ -17,6 +17,8 @@ import {
   QUALIFIED_TARGET_PER_MARKET_PER_MONTH,
 } from "@/config/marketingHub";
 import { CHANNEL_PLAN } from "@/config/channelPlan";
+import { readRecentLeads, recentCrmFailures } from "@/lib/adminLeads";
+import { computeUndocumentedCampaigns } from "@/lib/campaignOrphans";
 import type { Channel } from "@/lib/channels";
 import { paceRead } from "@/app/(site)/marketing/(hub)/pacing";
 import {
@@ -37,11 +39,12 @@ import {
   OpsMetric,
   PaceGauge,
   ProgressRows,
+  Callouts,
   QualifiedByMonth,
-  RangeTabs,
   Sparkline,
   channelLabel,
   formatFreshness,
+  type Callout,
   type ChannelLegend,
   type ChannelRow,
   type ProgressRow,
@@ -93,6 +96,12 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
+/** How many recent leads to scan for delivery outcomes and campaign tags. */
+const SCAN = 200;
+
+/** A snapshot older than this stops being "current" and says so. */
+const STALE_AFTER_DAYS = 10;
+
 type MonthCut = {
   total: number;
   byChannel: Partial<Record<Channel, number>>;
@@ -101,13 +110,25 @@ type MonthCut = {
   proposals: Partial<Record<Channel, number>>;
 };
 
-/** Deals in `month` on or before `throughDay`. Every row in the snapshot is
- *  Qualified by definition, so a count IS the Qualified figure. */
-function cutMonth(month: string, throughDay: number): MonthCut {
+/** Deals across `monthSet`, with the LAST month truncated at `throughDay`.
+ *
+ *  Windows are cut this way — not just the latest month — because every panel
+ *  on this screen states the selected window in its title, and computing any
+ *  of them from the newest month alone made the title a lie: "Channels, Last 3
+ *  months" over August's 56 leads, and "23 expected each" against a
+ *  three-month target. The truncation applies to whichever month is last so a
+ *  window ending in the partial as-of month compares like-for-like against a
+ *  prior window cut to the same shape.
+ *
+ *  Every row in the snapshot is Qualified by definition, so a count IS the
+ *  Qualified figure. */
+function cutWindow(monthSet: readonly string[], throughDay: number): MonthCut {
   const out: MonthCut = { total: 0, byChannel: {}, byMarket: {}, meetings: {}, proposals: {} };
+  const last = monthSet[monthSet.length - 1];
+  const inWindow = new Set(monthSet);
   for (const deal of SNAPSHOT_DEALS) {
-    if (deal.month !== month) continue;
-    if (Number(deal.date.slice(8, 10)) > throughDay) continue;
+    if (!inWindow.has(deal.month)) continue;
+    if (deal.month === last && Number(deal.date.slice(8, 10)) > throughDay) continue;
     const ch = channelForDeal(deal);
     const mk = marketKeyForCode(deal.marketCode);
     out.total++;
@@ -120,6 +141,14 @@ function cutMonth(month: string, throughDay: number): MonthCut {
     if (reached >= 4) out.proposals[ch] = (out.proposals[ch] ?? 0) + 1;
   }
   return out;
+}
+
+/** The N months immediately before `monthSet`, for a like-for-like comparison
+ *  window. Shorter than N near the start of the snapshot; empty at the start. */
+function priorWindow(monthSet: readonly string[]): string[] {
+  const firstIdx = SNAPSHOT_MONTHS.indexOf(monthSet[0]);
+  if (firstIdx <= 0) return [];
+  return SNAPSHOT_MONTHS.slice(Math.max(0, firstIdx - monthSet.length), firstIdx);
 }
 
 /** Qualified per month across the whole snapshot, for KPI sparklines. */
@@ -151,15 +180,7 @@ const CHANNEL_HREF: Partial<Record<Channel, string>> = Object.fromEntries(
 
 const MARKET_NAME = new Map(MARKETS.map((m) => [m.slug, m.displayName]));
 
-/** Ranges the chart card offers. These are timeframe kinds parseTimeframe
- *  already understands, so the card control and the header control are one
- *  piece of state (`?t=`) rather than two that can disagree. Month-grain only
- *  — the snapshot is a monthly export and cannot answer a 7-day question. */
-const RANGE_OPTIONS = [
-  { value: "3m", label: "3 months" },
-  { value: "12m", label: "12 months" },
-  { value: "ytd", label: "Year to date" },
-];
+
 
 export default async function HomeScreen({
   searchParams,
@@ -170,9 +191,6 @@ export default async function HomeScreen({
   const tf = parseTimeframe(sp.t, SNAPSHOT_MONTHS, "month");
   const months = monthsFor(tf, SNAPSHOT_MONTHS);
   const attribution = parseAttribution(sp.a);
-  // Which range pill reads as selected. Falls back to the month default when the
-  // URL carries a specific month rather than one of the named ranges.
-  const rangeValue = RANGE_OPTIONS.some((o) => o.value === sp.t) ? (sp.t as string) : "";
 
   // cache()d in session.ts — the layout reads this in the same request, so
   // this is a shared Redis hit rather than a second one.
@@ -192,17 +210,22 @@ export default async function HomeScreen({
   const target = companyTargetPerMonth * (months.length || 1);
   const pace = paceRead(qualified, months, SNAPSHOT_AS_OF, companyTargetPerMonth);
 
-  // ── like-for-like cuts: latest month in view vs the month before it ──────
+  // ── the selected window, and the equivalent window before it ────────────
+  // EVERY panel below reads these. Nothing computes from "the newest month"
+  // any more: each card states the window in its own title, so each card has
+  // to be measured over that window or the title is wrong.
   const latestMonth = months[months.length - 1] ?? null;
-  const latestIdx = latestMonth ? SNAPSHOT_MONTHS.indexOf(latestMonth) : -1;
-  const priorMonth = latestIdx > 0 ? SNAPSHOT_MONTHS[latestIdx - 1] : null;
-  // The as-of day only truncates the as-of month; any earlier month in view
-  // is complete, so it is cut at its own full length.
+  // The as-of day truncates only the as-of month; earlier months are complete.
   const isPartial = latestMonth === SNAPSHOT_AS_OF.slice(0, 7);
   const cutDay = isPartial ? asOfDay : 31;
-  const latest = latestMonth ? cutMonth(latestMonth, cutDay) : null;
-  const prior = priorMonth ? cutMonth(priorMonth, cutDay) : null;
-  const priorLabel = priorMonth ? monthShort(priorMonth) : null;
+  const priorMonths = priorWindow(months);
+  const latest = months.length ? cutWindow(months, cutDay) : null;
+  const prior = priorMonths.length ? cutWindow(priorMonths, cutDay) : null;
+  const priorLabel = priorMonths.length
+    ? priorMonths.length === 1
+      ? monthShort(priorMonths[0])
+      : `${monthShort(priorMonths[0])}–${monthShort(priorMonths[priorMonths.length - 1])}`
+    : null;
 
   // ── KPI row ──────────────────────────────────────────────────────────────
   const closed = Object.values(agg.cells).reduce((s, c) => s + c.closed, 0);
@@ -217,16 +240,25 @@ export default async function HomeScreen({
     d.filter(isClosed).reduce((s, x) => s + (x.value ?? 0), 0)
   );
 
-  // Prior-month comparisons for the KPI deltas, on the same cut as above.
-  const priorClosed = priorMonth
-    ? SNAPSHOT_DEALS.filter((d) => d.month === priorMonth && isClosed(d)).length
+  // Prior-window comparisons for the KPI deltas, cut identically.
+  const priorSet = new Set(priorMonths);
+  const priorLast = priorMonths[priorMonths.length - 1];
+  const priorClosed = priorMonths.length
+    ? SNAPSHOT_DEALS.filter(
+        (d) =>
+          priorSet.has(d.month) &&
+          !(d.month === priorLast && Number(d.date.slice(8, 10)) > cutDay) &&
+          isClosed(d)
+      ).length
     : null;
   const priorQualified = prior?.total ?? null;
-  const latestClosed = latestMonth
-    ? SNAPSHOT_DEALS.filter(
-        (d) => d.month === latestMonth && Number(d.date.slice(8, 10)) <= cutDay && isClosed(d)
-      ).length
-    : 0;
+  const monthSet = new Set(months);
+  const latestClosed = SNAPSHOT_DEALS.filter(
+    (d) =>
+      monthSet.has(d.month) &&
+      !(d.month === latestMonth && Number(d.date.slice(8, 10)) > cutDay) &&
+      isClosed(d)
+  ).length;
   const qualifiedDelta =
     priorQualified && latest ? (latest.total - priorQualified) / priorQualified : null;
   const closeRateDelta =
@@ -235,14 +267,21 @@ export default async function HomeScreen({
       : null;
 
   // ── the stacked chart: every snapshot month, by channel ──────────────────
+  // It always shows the FULL history and marks which months the rest of the
+  // page is reading. A card-level range switcher used to live here; it wrote
+  // the same ?t= the header owns, so using it silently re-scoped the whole
+  // screen. One control, in the header — and the chart shows where that
+  // selection sits in the trend rather than hiding the rest of it.
+  const inWindow = new Set(months);
   const trendMonths: TrendMonth[] = SNAPSHOT_MONTHS.slice(-12).map((ym) => {
-    const cut = cutMonth(ym, 31);
+    const cut = cutWindow([ym], 31);
     return {
       ym,
       label: monthShort(ym),
       breakdownTitle: monthLabelFull(ym),
       byChannel: cut.byChannel,
       total: cut.total,
+      selected: inWindow.has(ym),
     };
   });
   const presentChannels = CHANNEL_FUNNEL_ORDER.filter((c) =>
@@ -271,14 +310,111 @@ export default async function HomeScreen({
 
   const attributedTotal = channelRows.reduce((s, r) => s + r.qualified, 0);
 
+  // ── What's in the way: every source the app has, ranked together ────────
+  // Snapshot findings, the Redis lead store's delivery outcomes and the
+  // campaign registry all land in one ranked list. They are the same KIND of
+  // fact to whoever opens this screen — something is wrong and it is costing
+  // leads — so ranking them against each other is the point, even though each
+  // comes from a different system.
+  const [leads, { orphans }] = await Promise.all([
+    readRecentLeads(SCAN),
+    computeUndocumentedCampaigns(SCAN),
+  ]);
+  const leadRows = leads.configured && !leads.error ? leads.rows : [];
+  const crmFailures = recentCrmFailures(leadRows);
+  const storeError = leads.configured && leads.error ? leads.error : null;
+
+  const callouts: Callout[] = [];
+
+  if (storeError) {
+    callouts.push({
+      key: "lead-store",
+      severity: "error",
+      title: "Lead store is unreadable",
+      delta: null,
+      goodDirection: "down",
+      href: "/admin/leads",
+      linkLabel: "Leads",
+      // Unknowable rather than zero — an unreadable store could be hiding any
+      // number of failures, so it sorts to the top of its severity band.
+      atStake: Number.MAX_SAFE_INTEGER,
+    });
+  }
+
+  if (crmFailures.length > 0) {
+    callouts.push({
+      key: "crm-failures",
+      severity: "error",
+      title: `${crmFailures.length} lead${crmFailures.length === 1 ? "" : "s"} failed CRM delivery in the last 24 hours`,
+      delta: -crmFailures.length,
+      goodDirection: "up",
+      href: "/admin/leads",
+      linkLabel: "Leads",
+      atStake: crmFailures.length,
+    });
+  }
+
+  if (latest && latest.total > 0) {
+    const unattributed = latest.byChannel.direct ?? 0;
+    if (unattributed > 0) {
+      const share = unattributed / latest.total;
+      const priorShare =
+        prior && prior.total > 0 ? (prior.byChannel.direct ?? 0) / prior.total : null;
+      callouts.push({
+        key: "unattributed",
+        severity: share >= 0.5 ? "error" : "warning",
+        title: `${unattributed} of ${latest.total} qualified leads have no known channel`,
+        delta: priorShare === null ? null : Math.round((share - priorShare) * 100),
+        deltaUnit: "pts",
+        goodDirection: "down",
+        href: "/admin/attribution",
+        linkLabel: "Attribution",
+        atStake: unattributed,
+      });
+    }
+  }
+
+  if (orphans.length > 0) {
+    const leadsAtStake = orphans.reduce((n, o) => n + o.count, 0);
+    callouts.push({
+      key: "orphan-campaigns",
+      severity: "warning",
+      title: `${orphans.length} campaign tag${orphans.length === 1 ? "" : "s"} producing leads but undocumented`,
+      delta: -leadsAtStake,
+      goodDirection: "up",
+      href: "/admin/site/links",
+      linkLabel: "Links",
+      atStake: leadsAtStake,
+    });
+  }
+
+  const snapshotAge = Math.round(
+    (Date.parse(new Date().toISOString().slice(0, 10)) - Date.parse(SNAPSHOT_AS_OF)) / 86_400_000
+  );
+  if (Number.isFinite(snapshotAge) && snapshotAge > STALE_AFTER_DAYS) {
+    callouts.push({
+      key: "snapshot-age",
+      severity: "warning",
+      title: `App snapshot is ${snapshotAge} days old`,
+      delta: null,
+      goodDirection: "down",
+      href: "/admin/settings",
+      linkLabel: "Settings",
+      atStake: 0,
+    });
+  }
+
   // ── markets against pace ────────────────────────────────────────────────
   // Every market, not a top-three: the shape of the set is the finding, and
   // eight bars carry it without a sentence. Measured against the same
   // prorated expectation the company total uses, so the parts and the whole
   // are computed identically.
-  const expectedPerMarket = latestMonth
-    ? (paceRead(0, [latestMonth], SNAPSHOT_AS_OF, QUALIFIED_TARGET_PER_MARKET_PER_MONTH)?.expected ?? 0)
-    : 0;
+  // Prorated across EVERY month in the window — a three-month window expects
+  // roughly three months of leads per market, not one. This read "23 expected
+  // each" under a "Last 3 months" title, which was the same window bug as the
+  // channel table's.
+  const expectedPerMarket =
+    paceRead(0, months, SNAPSHOT_AS_OF, QUALIFIED_TARGET_PER_MARKET_PER_MONTH)?.expected ?? 0;
   const marketRows: ProgressRow[] = MARKETS.map((m) => {
     const got = latest?.byMarket[m.slug] ?? 0;
     return {
@@ -291,6 +427,56 @@ export default async function HomeScreen({
       tone: "accent" as const,
     };
   }).sort((a, b) => b.ratio - a.ratio);
+
+  const worst = marketRows[marketRows.length - 1];
+  if (worst && expectedPerMarket > 0) {
+    const short = Math.round(expectedPerMarket - expectedPerMarket * worst.ratio);
+    if (short > 0) {
+      callouts.push({
+        key: `market-${worst.key}`,
+        severity: worst.ratio < 0.5 ? "error" : "warning",
+        title: `${worst.name} is ${short} behind pace, the widest market gap`,
+        delta: prior ? (latest?.byMarket[worst.key] ?? 0) - (prior.byMarket[worst.key] ?? 0) : null,
+        goodDirection: "up",
+        href: "/admin/markets",
+        linkLabel: "Markets",
+        atStake: short,
+      });
+    }
+  }
+
+  if (latest && prior) {
+    const drops = attributedChannels
+      .map((c) => ({ c, drop: (prior.byChannel[c] ?? 0) - (latest.byChannel[c] ?? 0) }))
+      .filter((r) => r.drop > 0)
+      .sort((a, b) => b.drop - a.drop);
+    const worstDrop = drops[0];
+    if (worstDrop) {
+      callouts.push({
+        key: `channel-${worstDrop.c}`,
+        severity: "warning",
+        title: `${CHANNEL_LABELS[worstDrop.c]} is down ${worstDrop.drop} qualified, the largest attributed drop`,
+        delta: -worstDrop.drop,
+        goodDirection: "up",
+        href: CHANNEL_HREF[worstDrop.c] ?? "/admin/attribution",
+        linkLabel: CHANNEL_LABELS[worstDrop.c],
+        atStake: worstDrop.drop,
+      });
+    }
+  }
+
+  // Errors above warnings, then by leads at stake. Five rows is the cap: this
+  // is a list of what to do next, and a list of everything is a list of
+  // nothing.
+  const rankedCallouts = callouts
+    .sort((a, b) =>
+      a.severity === b.severity
+        ? b.atStake - a.atStake
+        : a.severity === "error"
+          ? -1
+          : 1
+    )
+    .slice(0, 5);
 
   // ── hero context ─────────────────────────────────────────────────────────
   const windowLabel = timeframeLabel(tf, SNAPSHOT_MONTHS);
@@ -318,6 +504,17 @@ export default async function HomeScreen({
         attributionLabel={attributionLabel}
         suggestions={suggestions}
       />
+
+      <div className="mb-4 md:mb-6">
+        <Callouts
+          items={rankedCallouts}
+          meta={
+            priorLabel
+              ? `ranked by leads at stake · ${windowLabel} vs ${priorLabel}`
+              : `ranked by leads at stake · ${windowLabel}`
+          }
+        />
+      </div>
 
       {/* KPI row. Four equal tiles — the one thing on this screen that is a
           simple repeating unit, so it stays a simple repeating grid. */}
@@ -406,7 +603,7 @@ export default async function HomeScreen({
         <div className="col-span-12">
           <OpsCard
             title="Qualified by month"
-            control={<RangeTabs options={RANGE_OPTIONS} current={rangeValue} />}
+            meta={`${trendMonths.length} months · ${windowLabel} selected`}
             ruled
           >
             <QualifiedByMonth months={trendMonths} channels={chartLegend} />
