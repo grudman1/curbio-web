@@ -33,12 +33,17 @@ export default async function AttributionPage({
   // backfill) / all. Anything unrecognised falls to "all".
   const f = sp.f === "measured" || sp.f === "inferred" ? sp.f : "all";
   const tParam = typeof sp.t === "string" ? sp.t : undefined;
-  const { orphans } = await computeUndocumentedCampaigns(SCAN);
+  const { orphans, autoDocumented, testTags } = await computeUndocumentedCampaigns(SCAN);
 
   return (
     <>
       <HubPageHeader surface={surface} />
-      <UndocumentedCampaignsBanner orphans={orphans} leadWindow={SCAN} />
+      <UndocumentedCampaignsBanner
+        orphans={orphans}
+        autoDocumented={autoDocumented}
+        testTags={testTags}
+        leadWindow={SCAN}
+      />
       <AttributionHealthPanel months={months} tfLabel={tfLabel} detailed filter={f} tParam={tParam} />
       <NeedsBlock surface={surface} />
     </>

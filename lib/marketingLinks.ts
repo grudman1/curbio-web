@@ -26,6 +26,9 @@ export const LINK_TYPES = [
   // Imported vanity redirects that predate the registry — real links in the
   // world whose purpose hasn't been classified yet.
   { key: "redirect", label: "Vanity redirect" },
+  // A campaign tag observed in lead traffic with no registry row behind it.
+  // The link is demonstrably real; what kind of link it is, nobody has said.
+  { key: "unclassified", label: "Unclassified" },
 ] as const;
 export type LinkType = (typeof LINK_TYPES)[number]["key"];
 
@@ -60,7 +63,9 @@ export type TrackedLink = {
   /** Lifetime hits from the redirect export — NOT 30-day clicks. */
   lifetimeHits?: number;
   /** seed = imported inventory; registry = created here. */
-  origin: "seed" | "registry";
+  /** seed = imported inventory; registry = created here; auto = derived from
+   *  observed lead traffic and awaiting review (see lib/campaignAutoDoc.ts). */
+  origin: "seed" | "registry" | "auto";
 };
 
 // ── campaign validation ──────────────────────────────────────────────────────

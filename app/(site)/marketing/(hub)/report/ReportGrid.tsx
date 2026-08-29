@@ -88,6 +88,8 @@ export function ReportGrid({
   barMonth,
   initialMetric,
   sourceBreakdowns,
+  revenueTotal,
+  revenueUnattributed,
   stale,
 }: {
   markets: Row[];
@@ -106,11 +108,18 @@ export function ReportGrid({
   initialMetric?: ReportMetricKey;
   /** `${marketKey}|${channel}` → raw-referral-source rows (drawer content). */
   sourceBreakdowns: Record<string, SourceBreakdownRow[]>;
+  /** Booked revenue in the selected months, on the authoritative won-date
+   *  series — and the part of it that could not be placed in a cell. The grid
+   *  states the gap rather than letting its own total quietly stand in for
+   *  booked revenue. */
+  revenueTotal: number;
+  revenueUnattributed: number;
   /** Snapshot older than 7 days — provenance renders in warning colour. */
   stale: boolean;
 }) {
   const [rowDim, setRowDim] = useState<RowDimension>("market");
   const [metric, setMetric] = useState<ReportMetricKey>(initialMetric ?? "qualified");
+  const usd = (n: number) => `$${Math.round(n).toLocaleString("en-US")}`;
   const [emailSplit, setEmailSplit] = useState(false);
   const [selected, setSelected] = useState<{ row: string; col: string } | null>(null);
 
@@ -241,6 +250,16 @@ export function ReportGrid({
               The email split is a view resolved from the source webhook (ActiveCampaign = opt-in,
               Instantly = cold), not a separate channel — those webhooks don&apos;t exist yet, so
               the split columns render em-dashes.
+            </p>
+          )}
+          {metric === "revenue" && revenueUnattributed > 0 && (
+            <p>
+              Revenue is booked to the month it was <strong>won</strong>, not the month the lead
+              came in. {usd(revenueUnattributed)} of {usd(revenueTotal)} won in{" "}
+              {tfLabel} is missing from this grid: those sales rows carry no agent email, or none
+              that resolves to exactly one lead, so they cannot be placed in a market × channel
+              cell. The grid&apos;s total is therefore lower than booked revenue — Home shows the
+              full figure.
             </p>
           )}
           {mode === "first" && (

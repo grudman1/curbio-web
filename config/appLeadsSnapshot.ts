@@ -65,8 +65,12 @@ export type SnapshotDeal = {
   referralSource: string;
   dealType: string;
   value: number | null;
-  /** Won-project revenue from the sales report, where it joined. */
+  /** Won revenue from the sales report, where it joined — all months. */
   revenue?: number;
+  /** Won month → revenue booked that month. Keyed on the sales report's WON
+   *  date, NOT this deal's created date: a July lead won in August is August
+   *  revenue. Absent when nothing joined. */
+  revenueByMonth?: Record<string, number>;
   /** Backfilled or measured at import — see header. */
   channel: Channel;
   entryPoint: "web_form" | "phone" | "manual" | "inbound_email";
@@ -104,6 +108,61 @@ export const SNAPSHOT_DEALS: SnapshotDeal[] = snapshot.deals as SnapshotDeal[];
 /** Every month with at least one deal, ascending ("2026-01"…). The Hub's
  *  timeframe selector offers exactly these — never a month with no data. */
 export const SNAPSHOT_MONTHS: string[] = [...new Set(SNAPSHOT_DEALS.map((d) => d.month))].sort();
+
+// ── revenue ──────────────────────────────────────────────────────────────────
+//
+// Revenue is keyed on WON DATE, never on the lead's created date. The two
+// series below answer different questions and are never interchangeable:
+//
+//   REVENUE_BY_WON_MONTH is the authoritative booked total. It is summed at
+//   import over EVERY row of the sales report, so it needs no lead join and
+//   nothing drops out of it — credits (negative), change orders, and the rows
+//   carrying no agent email all count. Any "how much did we book" number
+//   reads this.
+//
+//   ATTRIBUTED_REVENUE_BY_WON_MONTH is the slice that joined to a lead, and
+//   therefore the only part that can be split by market × channel. It is a
+//   subset; the difference is real money we cannot attribute, and surfaces
+//   that break revenue down by channel must say so rather than let the
+//   columns quietly fail to add up.
+
+export const REVENUE_BY_WON_MONTH: Record<string, number> = snapshot.revenueByWonMonth ?? {};
+
+export const ATTRIBUTED_REVENUE_BY_WON_MONTH: Record<string, number> =
+  snapshot.attributedRevenueByWonMonth ?? {};
+
+/** Won month → projects won that month. Change orders and credits move the
+ *  money without being wins of their own, so this is deliberately not the
+ *  number of rows behind the revenue figure. */
+export const WON_PROJECTS_BY_MONTH: Record<string, number> =
+  snapshot.wonProjectsByMonth ?? {};
+
+/** Projects won across the given months. */
+export function wonProjectsForMonths(months?: ReadonlySet<string>): number {
+  return Object.entries(WON_PROJECTS_BY_MONTH).reduce(
+    (sum, [m, v]) => (!months || months.has(m) ? sum + v : sum),
+    0
+  );
+}
+
+const sumMonths = (series: Record<string, number>, months?: ReadonlySet<string>): number =>
+  Object.entries(series).reduce((sum, [m, v]) => (!months || months.has(m) ? sum + v : sum), 0);
+
+/** Booked revenue over the given won months (all months when omitted). */
+export function revenueForMonths(months?: ReadonlySet<string>): number {
+  return sumMonths(REVENUE_BY_WON_MONTH, months);
+}
+
+/** The channel-splittable slice, and the remainder that is not. */
+export function revenueAttribution(months?: ReadonlySet<string>): {
+  total: number;
+  attributed: number;
+  unattributed: number;
+} {
+  const total = sumMonths(REVENUE_BY_WON_MONTH, months);
+  const attributed = sumMonths(ATTRIBUTED_REVENUE_BY_WON_MONTH, months);
+  return { total, attributed, unattributed: Math.max(0, total - attributed) };
+}
 
 /** The aggregate row for closed markets (SD) and any app code we don't serve
  *  landing pages for. History shows in trends; the bucket never counts toward
@@ -225,19 +284,30 @@ export function aggregateSnapshot(
     cell.qualified++;
     const reached = funnelOrdinal(deal);
     for (let i = 0; i <= reached; i++) cell.funnel[i]++;
-    if (isClosed(deal)) {
-      cell.closed++;
-      // Won-project revenue from the sales report where it joined; the deal
-      // value otherwise. Never both.
-      const rev = deal.revenue ?? deal.value;
-      if (rev) cell.revenue += rev;
-    }
+    if (isClosed(deal)) cell.closed++;
 
     const mm = `${marketKey}|${deal.month}`;
     qualifiedByMarketMonth[mm] = (qualifiedByMarketMonth[mm] ?? 0) + 1;
     if (isClosed(deal)) closedByMarketMonth[mm] = (closedByMarketMonth[mm] ?? 0) + 1;
     months.add(deal.month);
     marketKeys.add(marketKey);
+  }
+
+  // Revenue is a SEPARATE pass because it keys on the won month, which is not
+  // the deal's created month — a July lead won in August belongs to August's
+  // revenue and July's Qualified. Filtering the first loop by created month
+  // would drop exactly that money. The deal value is NOT a fallback here:
+  // proposal value is not booked revenue, and adding one to the other made a
+  // month's revenue a mixture of two different quantities.
+  for (const deal of deals) {
+    if (!deal.revenueByMonth || !matchesAttribution(deal, attribution)) continue;
+    const marketKey = marketKeyForCode(deal.marketCode);
+    const cellKey = `${marketKey}|${channelForDeal(deal)}`;
+    for (const [wonMonth, amount] of Object.entries(deal.revenueByMonth)) {
+      if (monthFilter && !monthFilter.has(wonMonth)) continue;
+      (cells[cellKey] ??= emptyCell()).revenue += amount;
+      marketKeys.add(marketKey);
+    }
   }
 
   return {
@@ -285,16 +355,23 @@ export function cellSourceBreakdowns(
   deals: SnapshotDeal[] = SNAPSHOT_DEALS
 ): Record<string, SourceBreakdownRow[]> {
   const map: Record<string, Record<string, SourceBreakdownRow>> = {};
-  for (const deal of deals) {
-    if (monthFilter && !monthFilter.has(deal.month)) continue;
+  const rowFor = (deal: SnapshotDeal) => {
     const cellKey = `${marketKeyForCode(deal.marketCode)}|${channelForDeal(deal)}`;
     const source = deal.referralSource.trim() || "(blank)";
-    const row = ((map[cellKey] ??= {})[source] ??= { source, qualified: 0, closed: 0, revenue: 0 });
+    return ((map[cellKey] ??= {})[source] ??= { source, qualified: 0, closed: 0, revenue: 0 });
+  };
+  for (const deal of deals) {
+    if (monthFilter && !monthFilter.has(deal.month)) continue;
+    const row = rowFor(deal);
     row.qualified++;
-    if (isClosed(deal)) {
-      row.closed++;
-      const rev = deal.revenue ?? deal.value;
-      if (rev) row.revenue += rev;
+    if (isClosed(deal)) row.closed++;
+  }
+  // Revenue by WON month — see aggregateSnapshot for why this is its own pass.
+  for (const deal of deals) {
+    if (!deal.revenueByMonth) continue;
+    for (const [wonMonth, amount] of Object.entries(deal.revenueByMonth)) {
+      if (monthFilter && !monthFilter.has(wonMonth)) continue;
+      rowFor(deal).revenue += amount;
     }
   }
   return Object.fromEntries(
