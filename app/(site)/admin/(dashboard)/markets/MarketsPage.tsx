@@ -15,34 +15,53 @@ import {
   SNAPSHOT_LABEL,
   SNAPSHOT_MONTHS,
 } from "@/config/appLeadsSnapshot";
-import { Table, Td, Th, Tr } from "@/app/(site)/admin/_ui/DataTable";
-import { Meta, Panel } from "@/app/(site)/admin/_ui/primitives";
-import { PACE_TONE, TONE_TEXT } from "@/app/(site)/admin/_ui/tone";
+import { OpsCard } from "@/app/(site)/admin/_ui/v2/OpsCard";
+import { Table, Thead, Th, Tr, Td } from "@/app/(site)/admin/_ui/v2/DataTable";
+import { SurfaceHeader, SurfaceHealth } from "@/app/(site)/admin/_ui/v2/SurfaceHeader";
 import { ownerSession } from "@/lib/adminGuards";
 import { readOpsNotes, type OpsNote } from "@/lib/opsNotes";
-import { NotesPanel } from "../notes/NotesPanel";
-import { monthsFor, parseAttribution, parseTimeframe, timeframeLabel, timeframeParam } from "../timeframe";
-import { paceRead, paceSentence } from "../pacing";
-import { DASH, DefinitionsInfo, HubPageHeader, NeedsBlock } from "../hubUi";
+import { NotesPanel } from "@/app/(site)/marketing/(hub)/notes/NotesPanel";
+import {
+  monthsFor,
+  parseAttribution,
+  parseTimeframe,
+  timeframeLabel,
+  timeframeParam,
+} from "@/app/(site)/marketing/(hub)/timeframe";
+import { paceRead, paceSentence, type PaceState } from "@/app/(site)/marketing/(hub)/pacing";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Markets — one row per market: trajectory against the target, close rate,
 // revenue, and the channel mix that produced it. The mix bar is last-touch
 // from the snapshot; on first touch it renders as unavailable, honestly.
+//
+// This screen used to live in marketing/(hub)/ and be re-exported into /admin.
+// The dashboard now owns it and /marketing re-exports the other way.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {
-  title: "Markets · Marketing — Curbio",
+  title: "Markets · Ops — Curbio",
   robots: { index: false, follow: false },
 };
 
 const surface = HUB_SURFACE_BY_SLUG.markets;
 
+/** Em-dash for a value that does not exist. */
+const DASH = "—";
+
+/** Pace state on the ops badge tones. `risk` is red, never a dimmed amber —
+ *  a market that will miss its target reads differently from one that is late. */
+const PACE_BADGE: Record<PaceState, "success" | "warning" | "error"> = {
+  on: "success",
+  behind: "warning",
+  risk: "error",
+};
+
 /** Tiny horizontal stacked bar of channel shares — the same fixed colours as
  *  every other chart, no labels (the Report grid is one click away). */
 function MixBar({ shares }: { shares: { channel: string; frac: number }[] }) {
   if (shares.length === 0) {
-    return <span className="font-sans text-ops-label text-content-subtle">{DASH}</span>;
+    return <span className="ops-subtle">{DASH}</span>;
   }
   return (
     <span aria-hidden className="inline-flex h-2 w-[110px] overflow-hidden rounded-pill border border-app-border">
@@ -55,8 +74,6 @@ function MixBar({ shares }: { shares: { channel: string; frac: number }[] }) {
     </span>
   );
 }
-
-export const dynamic = "force-dynamic";
 
 export default async function MarketsPage({
   searchParams,
@@ -118,29 +135,25 @@ export default async function MarketsPage({
 
   return (
     <>
-      <HubPageHeader surface={surface} right={<DefinitionsInfo align="right" />} />
-      <Panel
-        flush
+      <SurfaceHeader surface={surface} subtitle={tfLabel} />
+
+      <OpsCard
         title={`Markets vs ${target || QUALIFIED_TARGET_PER_MARKET_PER_MONTH} Qualified`}
-        right={
-          <Meta>
-            {tfLabel} · {SNAPSHOT_LABEL} · {firstTouch ? "first touch (unavailable)" : "mix = last touch"}
-          </Meta>
-        }
+        titleTooltip={`${tfLabel} · ${SNAPSHOT_LABEL} · ${
+          firstTouch ? "first touch (unavailable)" : "channel mix is last touch"
+        }`}
       >
         <Table>
-          <thead>
-            <tr>
-              <Th>Market</Th>
-              <Th align="right">Qualified</Th>
-              <Th align="right">Target</Th>
-              <Th>Pace</Th>
-              <Th align="right">Closed</Th>
-              <Th align="right">Close rate</Th>
-              <Th align="right">Revenue</Th>
-              <Th>Channel mix</Th>
-            </tr>
-          </thead>
+          <Thead>
+            <Th>Market</Th>
+            <Th align="right">Qualified</Th>
+            <Th align="right">Target</Th>
+            <Th>Pace</Th>
+            <Th align="right">Closed</Th>
+            <Th align="right">Close rate</Th>
+            <Th align="right">Revenue</Th>
+            <Th>Channel mix</Th>
+          </Thead>
           <tbody>
             {rows.map((r) => (
               <Tr key={r.key}>
@@ -152,30 +165,48 @@ export default async function MarketsPage({
                   >
                     {r.label}
                   </Link>
-                  {r.sub && <div className="mt-px font-sans text-ops-label text-content-subtle">{r.sub}</div>}
+                  {r.sub && <div className="ops-subtle mt-px">{r.sub}</div>}
                 </Td>
-                <Td align="right" className={r.qualified ? "font-semibold" : ""} muted={!r.qualified}>
+                <Td align="right" numeric className={r.qualified ? "font-semibold" : ""} muted={!r.qualified}>
                   {r.qualified}
                 </Td>
-                <Td align="right" muted>
+                <Td align="right" numeric muted>
                   {r.key === OTHER_MARKETS_KEY ? DASH : target || DASH}
                 </Td>
                 <Td className="whitespace-nowrap">
                   {r.pace ? (
-                    <span className={`font-sans text-ops-label font-bold ${TONE_TEXT[PACE_TONE[r.pace.state]]}`}>
-                      {paceSentence(r.pace)}
+                    // Bar = share of the expectation earned so far, amber
+                    // because pace is the metric under scrutiny; badge = the
+                    // signed gap. The sentence behind both rides the tooltip.
+                    <span
+                      className="inline-flex items-center gap-2"
+                      title={`${paceSentence(r.pace)} · expected ${r.pace.expected}, ${r.pace.coverage}`}
+                    >
+                      <span className="inline-flex w-[72px] flex-none">
+                        <span className="ops-track">
+                          <span
+                            className="ops-track-fill ops-track-fill--accent"
+                            style={{
+                              width: `${Math.min(100, Math.max(0, (r.qualified / r.pace.expected) * 100)).toFixed(1)}%`,
+                            }}
+                          />
+                        </span>
+                      </span>
+                      <span className={`ops-badge ops-badge--${PACE_BADGE[r.pace.state]} ops-tnum`}>
+                        {r.pace.delta > 0 ? `+${r.pace.delta}` : r.pace.delta}
+                      </span>
                     </span>
                   ) : (
-                    <span className="font-sans text-ops-label text-content-subtle">{DASH}</span>
+                    <span className="ops-subtle">{DASH}</span>
                   )}
                 </Td>
-                <Td align="right" muted={!r.closed}>
+                <Td align="right" numeric muted={!r.closed}>
                   {r.closed}
                 </Td>
-                <Td align="right" muted>
+                <Td align="right" numeric muted>
                   {r.qualified ? `${Math.round((r.closed / r.qualified) * 100)}%` : DASH}
                 </Td>
-                <Td align="right" muted={!r.revenue}>
+                <Td align="right" numeric muted={!r.revenue}>
                   {r.revenue ? `$${Math.round(r.revenue).toLocaleString("en-US")}` : "$0"}
                 </Td>
                 <Td muted={firstTouch}>{firstTouch ? DASH : <MixBar shares={r.mix} />}</Td>
@@ -183,30 +214,30 @@ export default async function MarketsPage({
             ))}
           </tbody>
         </Table>
-      </Panel>
+      </OpsCard>
 
       {/* ── notes per market — claimed context beside the measured numbers ── */}
-      <div className="mt-ops-gap">
-        <Panel title="Market notes" right={<Meta>logged · author and date on every line</Meta>}>
+      <div className="mt-5">
+        <OpsCard title="Market notes" titleTooltip="Author and date on every line.">
           <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
             {MARKETS.map((m) => (
               <div key={m.slug}>
-                <div className="mb-1.5 font-sans text-ops-body font-bold text-content">{m.name}</div>
+                <div className="ops-eyebrow mb-1.5 block">{m.name}</div>
                 <NotesPanel
                   subjectType="market"
                   subjectId={m.slug}
                   notes={notesByMarket.get(m.slug) ?? []}
                   isOwner={isOwner && notesResult.configured}
-                  revalidate="/marketing/markets"
+                  revalidate="/admin/markets"
                   emptyHint="No notes yet."
                 />
               </div>
             ))}
           </div>
-        </Panel>
+        </OpsCard>
       </div>
 
-      <NeedsBlock surface={surface} />
+      <SurfaceHealth surface={surface} />
     </>
   );
 }
