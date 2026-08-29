@@ -46,6 +46,67 @@ Start a fresh branch off the updated `main` for the next piece of work.
    plus a still-existing branch is the trap above.
 3. If it has, branch off `origin/main` instead of adding to it.
 
+## Parallel workstreams — who owns which files
+
+Two branches are worked simultaneously, in separate git worktrees of this same
+repo. The rules below are written in terms of **branches**, not whichever agent
+or person happens to be driving one, because that assignment can change.
+
+| Branch | Worktree | Owns |
+|---|---|---|
+| `feat/site-redesign` | `../curbio-site` | `app/(site)/(chrome)/` · `app/(campaigns)/lp/` · `app/(site)/exp/` and the partner-page templates · `public/` |
+| dashboard work (branches off `main`) | `curbio-web` | `app/(site)/admin/` · `app/(site)/marketing/` · `app/api/admin/` · the import scripts · the `config/` and `lib/` modules those read |
+
+**Own means: edit freely without asking. Everything else, ask first.**
+
+Note the two path corrections against how these are often described: the
+campaign pages are at **`app/(campaigns)/lp/`**, not `app/(site)/lp/`; and the
+Next config is **`next.config.mjs`**, not `.js`.
+
+### Shared files — stop and ask before touching
+
+Neither branch changes any of these without checking with Gavin first, because
+both trees import them and a change lands on the other branch invisibly:
+
+- `package.json` (and the lockfile)
+- `tailwind.config.ts`
+- `app/globals.css`
+- `app/tokens.css`
+- `app/layout.tsx` — the root layout
+- **`app/(site)/layout.tsx`** — easy to miss: `/admin` and the public
+  `(chrome)` group are **both** inside `app/(site)/`, so this layout wraps the
+  dashboard too. It is currently a deliberate pass-through; adding site chrome
+  here would render it around `/admin`.
+- `middleware.ts`
+- `next.config.mjs`
+- `lib/channels.ts`
+- `config/markets.ts`
+
+The list is not exhaustive. The test is the principle behind it: **if both
+trees import it, it is shared** — stop and ask.
+
+### Fonts: two systems, on purpose. Do not consolidate.
+
+This is the likeliest trap in the whole split, because the two setups look like
+duplication and are not.
+
+- The **public site** loads Google's subsetted WOFF2 through `next/font/google`
+  in the root layout, bound to `--font-serif` / `--font-sans`. Every `.lp-*`
+  rule and the whole marketing site renders through those two names.
+- **`/admin`** separately loads self-hosted variable TTFs through
+  `next/font/local` in `app/(site)/admin/_ui/v2/fonts.ts`, bound to
+  `--ops-font-serif` / `--ops-font-sans` — deliberately different names, so
+  nothing global is overridden.
+
+The self-hosted files are **605,724 bytes (605KB) and unsubsetted**. They must
+**never** be promoted to the root layout or bound to the global `--font-*`
+names: that would change which bytes sell.curbio.com serves to every visitor,
+to no benefit for the public site.
+
+Neither branch consolidates fonts, unifies the variable names, or "removes the
+duplicate" font loading. `app/(site)/admin/_ui/v2/fonts.ts` carries the longer
+rationale — read it before proposing any font change.
+
 ## Environment variables
 
 Server-side secrets live in Vercel project settings and in gitignored
