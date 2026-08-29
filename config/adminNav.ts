@@ -80,6 +80,10 @@ export const ADMIN_NAV: NavTopItem[] = [
       { href: "/admin/performance", label: "Performance", grain: "month" },
       { href: "/admin/markets", label: "Markets", grain: "month" },
       { href: "/admin/attribution", label: "Attribution", grain: "month" },
+      // The monthly exec review — moved in from the retired /marketing hub
+      // (two-tree consolidation, 2026-08). Without this entry the screen
+      // would exist only as a URL nobody can find.
+      { href: "/admin/executive", label: "Executive", grain: "month" },
     ],
   },
   { key: "settings", href: "/admin/settings", label: "Settings", icon: "gear", grain: "day" },

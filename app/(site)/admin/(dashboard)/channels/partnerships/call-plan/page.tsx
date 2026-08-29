@@ -7,4 +7,4 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export { default, dynamic } from "@/app/(site)/marketing/(hub)/partners/page";
+export { default, dynamic } from "@/app/(site)/admin/(dashboard)/channels/partnerships/call-plan/CallPlanPage";

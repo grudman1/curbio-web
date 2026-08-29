@@ -12,8 +12,8 @@ import { useToast } from "@/app/(site)/admin/_ui/Toast";
 import { CHANNEL_FUNNEL_ORDER, CHANNEL_LABELS } from "@/config/marketingHub";
 import { MARKETS } from "@/config/markets";
 import type { SpendEntry as Entry } from "@/lib/opsSpend";
-import { ArchivedNote } from "@/app/(site)/marketing/(hub)/ArchivedNote";
-import { archiveSpendAction, saveSpendAction } from "@/app/(site)/marketing/(hub)/settings/actions";
+import { ArchivedNote } from "@/app/(site)/admin/_ui/ArchivedNote";
+import { archiveSpendAction, saveSpendAction } from "@/app/(site)/admin/(dashboard)/settings/actions";
 
 // Spend — a real table now: month × market × channel × amount, added from a
 // drawer, amount editable in place. Typed in from invoices, so every row

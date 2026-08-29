@@ -1,4 +1,4 @@
-import type { PaceState } from "@/app/(site)/marketing/(hub)/pacing";
+import type { PaceState } from "@/app/(site)/admin/_ui/pacing";
 import { DASH, StatusDot } from "./primitives";
 import { PACE_TONE } from "./tone";
 

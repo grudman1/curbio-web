@@ -107,6 +107,6 @@ export async function saveLinkAction(input: SaveLinkInput): Promise<SaveLinkResu
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "write failed" };
   }
-  revalidatePath("/marketing/links");
+  revalidatePath("/admin/site/links");
   return { ok: true, id: link.id };
 }

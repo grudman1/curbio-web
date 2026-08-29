@@ -20,7 +20,7 @@ import { mergedSnapshotDeals } from "@/lib/leadStore";
 import { CHANNEL_COLORS } from "@/lib/channels";
 import { OpsCard } from "@/app/(site)/admin/_ui/v2/OpsCard";
 import { Table, Thead, Th, Tr, Td } from "@/app/(site)/admin/_ui/v2/DataTable";
-import { monthShort } from "@/app/(site)/marketing/(hub)/timeframe";
+import { monthShort } from "@/app/(site)/admin/_ui/timeframe";
 
 /** Em-dash for a value that does not exist. */
 const DASH = "\u2014";
@@ -210,7 +210,7 @@ export async function AttributionHealthPanel({
           {!detailed && (
             <p className="m-0 mt-2.5">
               <Link
-                href="/marketing/attribution"
+                href="/admin/attribution"
                 className="ops-foot-link"
               >
                 What the app recorded instead →

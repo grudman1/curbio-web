@@ -48,6 +48,20 @@ Start a fresh branch off the updated `main` for the next piece of work.
 
 ## Parallel workstreams — who owns which files
 
+The codebase has exactly TWO trees, and every route belongs to one of them:
+
+- **Public** — the marketing site and campaign landing pages. What visitors
+  and agents see. `app/(site)/(chrome)/`, `app/(campaigns)/`, partner pages.
+- **Admin** — everything internal: the ops dashboard, reporting, and the
+  tokened exec share. All of it under `app/(site)/admin/`, all behind one
+  session gate (plus login/signup and the exec share token as the only
+  controlled unauthenticated entries).
+
+There is no third category. `app/(site)/marketing/` used to be one — an
+internal control room that wasn't in /admin and sounded public when it wasn't
+— and was consolidated into /admin (2026-08). Old `/marketing/*` URLs 301 to
+their /admin homes via middleware; do not recreate the tree.
+
 Two branches are worked simultaneously, in separate git worktrees of this same
 repo. The rules below are written in terms of **branches**, not whichever agent
 or person happens to be driving one, because that assignment can change.
@@ -55,7 +69,7 @@ or person happens to be driving one, because that assignment can change.
 | Branch | Worktree | Owns |
 |---|---|---|
 | `feat/site-redesign` | `../curbio-site` | `app/(site)/(chrome)/` · `app/(campaigns)/lp/` · `app/(site)/exp/` and the partner-page templates · `public/` |
-| dashboard work (branches off `main`) | `curbio-web` | `app/(site)/admin/` · `app/(site)/marketing/` · `app/api/admin/` · the import scripts · the `config/` and `lib/` modules those read |
+| dashboard work (branches off `main`) | `curbio-web` | `app/(site)/admin/` · `app/api/admin/` · the import scripts · the `config/` and `lib/` modules those read |
 
 **Own means: edit freely without asking. Everything else, ask first.**
 

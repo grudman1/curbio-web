@@ -22,8 +22,8 @@ import {
 } from "@/config/marketingHub";
 import type { Channel } from "@/lib/channels";
 import type { SnapshotAggregates, SourceBreakdownRow, CellAggregate } from "@/config/appLeadsSnapshot";
-import type { AttributionMode } from "@/app/(site)/marketing/(hub)/timeframe";
-import { OutlineBar } from "@/app/(site)/marketing/(hub)/hubUi";
+import type { AttributionMode } from "@/app/(site)/admin/_ui/timeframe";
+import { OutlineBar } from "@/app/(site)/admin/_ui/hubUi";
 
 // The grid: rows × channel columns, ONE metric at a time — nine columns × six
 // numbers is a spreadsheet, not a view. Rows and metric are page-local

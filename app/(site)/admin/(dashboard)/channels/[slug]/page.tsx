@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { CHANNEL_PLAN, CHANNEL_PLAN_BY_SLUG } from "@/config/channelPlan";
-import { EventLogPanel } from "@/app/(site)/marketing/(hub)/events/EventLogPanel";
+import { EventLogPanel } from "@/app/(site)/admin/(dashboard)/channels/_events/EventLogPanel";
 import { ChannelScreen } from "../channelScreen";
 
 // One route, every Magnificent Seven channel except Partnerships and Email,

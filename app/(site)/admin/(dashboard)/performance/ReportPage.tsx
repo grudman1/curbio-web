@@ -14,7 +14,7 @@ import {
 import { REPORT_METRICS, type ReportMetricKey } from "@/config/marketingHub";
 import { mergedSnapshotDeals } from "@/lib/leadStore";
 
-import { monthsFor, parseAttribution, parseTimeframe, timeframeLabel } from "@/app/(site)/marketing/(hub)/timeframe";
+import { monthsFor, parseAttribution, parseTimeframe, timeframeLabel } from "@/app/(site)/admin/_ui/timeframe";
 import { SurfaceHeader, SurfaceHealth } from "@/app/(site)/admin/_ui/v2/SurfaceHeader";
 import { ReportGrid } from "./ReportGrid";
 

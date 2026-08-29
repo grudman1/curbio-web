@@ -24,7 +24,7 @@ import { readRecentLeads, recentCrmFailures } from "@/lib/adminLeads";
 import { mergedSnapshotDeals } from "@/lib/leadStore";
 import { computeUndocumentedCampaigns } from "@/lib/campaignOrphans";
 import type { Channel } from "@/lib/channels";
-import { paceRead } from "@/app/(site)/marketing/(hub)/pacing";
+import { paceRead } from "@/app/(site)/admin/_ui/pacing";
 import {
   monthLabelFull,
   monthShort,

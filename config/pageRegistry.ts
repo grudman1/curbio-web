@@ -210,11 +210,11 @@ function implementedPages(): RegistryEntry[] {
   out.push({
     path: "/marketing",
     group: "internal",
-    title: "Marketing Hub",
-    status: "stub", // own control room; interim snapshot data, live sources still unwired (see config/marketingHub.ts registry)
+    title: "Marketing Hub (retired)",
+    status: "live", // the redirect is live; the tree is gone
     indexed: false,
-    derivedFrom: "app/(site)/marketing",
-    note: "the marketing control room — same admin session; /admin/marketing/* 301s here",
+    derivedFrom: "middleware.ts",
+    note: "consolidated into /admin (two-tree, 2026-08) — every /marketing/* URL 301s to its /admin home",
   });
   out.push({
     path: "/admin/design-system",

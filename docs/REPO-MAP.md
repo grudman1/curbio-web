@@ -43,8 +43,8 @@ experiment is not currently testing anything.
 
 ### Group `(site)` — layout `app/(site)/layout.tsx`
 
-Also a pass-through. Under it: the nested `(chrome)` group, `/exp`, `/admin`,
-`/marketing`.
+Also a pass-through. Under it: the nested `(chrome)` group, `/exp`, `/admin`.
+(`/marketing` no longer exists as a tree — see §2.)
 
 #### `(site)/(chrome)` — layout `app/(site)/(chrome)/layout.tsx`
 
@@ -85,89 +85,83 @@ without a session; everything else redirects to `/admin/login`.
 | `/admin/experiments` | Gated | + `(dashboard)` | A/B results from stored lead `variant`. |
 | `/admin/pages` | Gated | + `(dashboard)` | Page registry with live previews, per-page views/leads/conversion. |
 | `/admin/design-system` | Gated | + `(dashboard)` | Token reference from `config/designTokens.ts`. `/design-system` 301s here. |
-| `/admin/settings` | Gated | + `(dashboard)` | **Re-export** of `marketing/(hub)/settings/page`. |
-| `/admin/markets` | Gated | + `(dashboard)` | **Re-export** of `marketing/(hub)/markets/page`. |
-| `/admin/attribution` | Gated | + `(dashboard)` | **Re-export** of `marketing/(hub)/attribution/page`. |
-| `/admin/performance` | Gated | + `(dashboard)` | **Re-export** of `marketing/(hub)/report/page`. Renamed from Funnel. |
-| `/admin/site/links` | Gated | + `(dashboard)` | **Re-export** of `marketing/(hub)/links/page`. |
+| `/admin/settings` | Gated | + `(dashboard)` | Spend entry, UTM builder, sync health — owned here. |
+| `/admin/markets` | Gated | + `(dashboard)` | Per-market trajectory, pace, notes — owned here. |
+| `/admin/attribution` | Gated | + `(dashboard)` | Attribution health + Measured/Inferred filter — owned here. |
+| `/admin/performance` | Gated | + `(dashboard)` | Channel × market grid — owned here. Renamed from Funnel. |
+| `/admin/site/links` | Gated | + `(dashboard)` | Tracked-link registry — owned here. |
 | `/admin/site/forms` | Gated | + `(dashboard)` | Forms registry cards from `config/formRegistry.ts`. |
 | `/admin/site/forms/[slug]` | Gated | + `(dashboard)` | One form's submission table. `notFound()` on unknown slug. |
 | `/admin/channels/[slug]` | Gated | + `(dashboard)` | Channel brief. `generateStaticParams` = `CHANNEL_PLAN` minus `partnerships`/`email` → `paid`, `organic`, `events`, `content`. `notFound()` otherwise. |
 | `/admin/channels/email` | Gated | + `channels/email/layout.tsx` | Email overview + list-health table. |
 | `/admin/channels/email/database` | Gated | + email layout | `ContactsScreen` from the hub, heading overridden to "Database". |
 | `/admin/channels/partnerships` | Gated | + `channels/partnerships/layout.tsx` | Partnerships overview. |
-| `/admin/channels/partnerships/call-plan` | Gated | + partnerships layout | **Re-export** of `marketing/(hub)/partners/page`. |
-| `/admin/channels/partnerships/outreach` | Gated | + partnerships layout | **Re-export** of `marketing/(hub)/outreach/page`. |
+| `/admin/channels/partnerships/call-plan` | Gated | + partnerships layout | Brokerage call plan, editable — owned here. |
+| `/admin/channels/partnerships/outreach` | Gated | + partnerships layout | Per-HSM outreach cadence — owned here. |
 
 `app/(site)/admin/(dashboard)/loading.tsx` gives every screen in that group a
 skeleton.
 
-Handled in middleware, so not routes: `/design-system`, `/admin/marketing/*`,
-`/admin/attribution/{links,forms,contacts}`, `/admin/executive`,
-`/admin/funnel`.
+Handled in middleware, so not routes: `/design-system`, every `/marketing/*`
+and `/admin/marketing/*` (301 to the /admin home of each retired hub screen —
+the exec share redirect preserves its token segment), 
+`/admin/attribution/{links,forms,contacts}`, `/admin/funnel`.
 
-#### `(site)/marketing` — gated (§2)
+#### The exec share and review — the one token-gated entry
 
 | Path | Public/gated | Layouts | Renders |
 |---|---|---|---|
-| `/marketing` | Gated | root → `(site)` → `marketing/(hub)` | Hub "Today" — pace against the Qualified target. |
-| `/marketing/report` | Gated | + `(hub)` | Markets/HSMs × channels grid, one metric at a time. |
-| `/marketing/channels` | Gated | + `(hub)` | One row per channel across markets and months. |
-| `/marketing/markets` | Gated | + `(hub)` | Per-market trajectory and funnel. |
-| `/marketing/attribution` | Gated | + `(hub)` | Share of Qualified with no known channel, plus raw referral sources. |
-| `/marketing/links` | Gated | + `(hub)` | Tracked-link registry, Redis-backed, seeded from a WordPress redirect export. |
-| `/marketing/contacts` | Gated | + `(hub)` | Contacts screen. |
-| `/marketing/forms` | Gated | + `(hub)` | Form-type counts. All em-dashes — unwired. |
-| `/marketing/partners` | Gated | + `(hub)` | Brokerage call plan, editable. |
-| `/marketing/outreach` | Gated | + `(hub)` | Starbucks-vs-plain-email A/B, per-HSM cadence. |
-| `/marketing/events` | Gated | + `(hub)` | Event pipeline by format, write-capable event log. |
-| `/marketing/executive` | Gated | + `(hub)` | Operator view of the exec review; agenda editable. |
-| `/marketing/settings` | Gated | + `(hub)` | Spend entry, UTM builder, sync/webhook health. |
-| `/marketing/executive/[token]` | **Token-gated, no session** | root → `(site)` → `marketing/(share)` | Read-only exec review for projection. See §7. |
+| `/admin/executive` | Gated | + `(dashboard)` | Operator view of the exec review; agenda editable. |
+| `/admin/executive/[token]` | **Token-gated, no session** | root → `(site)` → `admin/(share)` | Read-only exec review for projection. See §7. |
 
-`marketing/(hub)/notes/` has `actions.ts` and `NotesPanel.tsx` but **no
-`page.tsx`** — there is no `/marketing/notes`; the panel is embedded elsewhere.
+`admin/_ui/notes/` has `actions.ts` and `NotesPanel.tsx` but no `page.tsx` —
+the panel is embedded in screens (Markets), not routed.
 
 `app/sitemap.ts` derives from `config/routes.ts` and currently emits **zero**
 entries — every route has `indexed: false`.
 
 ---
 
-## 2. What `app/(site)/marketing/` is
+## 2. Where `app/(site)/marketing/` went
 
-**Not marketing pages.** An internal marketing-operations control room:
-reporting, attribution health, spend entry, partner call plans, outreach
-cadence, executive review.
+**Deleted — the codebase is two trees now.** Public (`(chrome)`, `(campaigns)`,
+the partner pages) and Admin (`app/(site)/admin/`, everything internal). The
+hub was an internal marketing-operations control room whose name suggested it
+was public; once the 2026-08 v2 rollout moved its screen implementations into
+admin, what remained was consolidated and the tree removed.
 
-**Reachability.** Behind auth — middleware gates `/marketing` and
-`/marketing/*` with the same session check as `/admin` (same cookie, same
-login, same revocation). One exception: the share route in §7.
-
-**Created after `/admin`, as part of it.**
+**History, for archaeology.**
 
 - `app/(site)/admin/` first appears `c0df4fa`, **2026-07-28** (#20).
 - The hub was first built *inside* admin as `app/(site)/admin/(dashboard)/marketing/` in `a81a921`, **2026-08-14** (#56).
 - It moved to top-level `app/(site)/marketing/` in `585d3d4`, **2026-08-17** (#59).
+- It was consolidated back into `/admin` in the two-tree pass, **2026-08-29**.
 
-Middleware rule 1b still 301s `/admin/marketing/*` → `/marketing/*`
-(`monthly` → `executive`).
+**Where its pieces live now.** Shared modules → `admin/_ui/` (`timeframe` was
+already there; `pacing`, `hubUi`, `notes/`, `ArchivedNote`, `opsActionUtils`
+joined it). Screens → their admin consumers: call plan and outreach under
+`channels/partnerships/`, contacts under `channels/email/database/`, the event
+log under `channels/_events/`, spend actions under `settings/`, the exec
+review at `(dashboard)/executive/` with the tokened share at
+`(share)/executive/[token]`. The hub's own chrome (sidebar, landing, charts)
+was superseded by the ops shell and deleted.
 
-**Linked from any public surface? No.** `config/navigation.ts` (source for both
-header and footer) contains no `/marketing` or `/admin` href — its targets are
-`/how-it-works`, `/services`, `/brokers`, `/contact`, `/markets`, the 8 market
-paths, `/exp`, `/privacy-policy`, `/terms`. `app/sitemap.ts` derives only from
-`ROUTES`, which has no internal paths. The only `/marketing` links in the repo
-are `config/marketingHub.ts:403` (`hubPath()`, the hub's own sidebar) and the
-"← Control Room" link inside the gated shells. Middleware sets
-`X-Robots-Tag: noindex, nofollow` on every gated response.
+**Old URLs.** Middleware 301s every `/marketing/*` (and the older
+`/admin/marketing/*`) to the /admin home of its screen — the map lives in
+`middleware.ts` (`HUB_TO_ADMIN`). The exec share redirect preserves the token
+segment, because those links are held by people outside this codebase and must
+keep working indefinitely.
 
----
+**Linked from any public surface? No**, unchanged: `config/navigation.ts` and
+the sitemap carry no internal hrefs, and every gated response gets
+`X-Robots-Tag: noindex, nofollow`.
+
 
 ## 3. The admin/public boundary
 
-### admin/marketing → public trees
+### admin → public trees
 
-**None.** No file under `app/(site)/admin/` or `app/(site)/marketing/` imports
+**None.** No file under `app/(site)/admin/` imports
 from `@/components/*`, `(chrome)`, `(campaigns)`, or `exp`.
 
 ### public/shared → admin or marketing
@@ -204,7 +198,7 @@ The two trees are one application by import graph; the directory split is a URL
 and history artifact, not a module boundary. **This is the coupling that blocks
 §5** — see there.
 
-### Imported by *both* the public tree and admin/marketing
+### Imported by *both* the public tree and admin
 
 Only two modules directly: `config/markets.ts` and `lib/channels.ts`. Two more
 transitively — `config/routes.ts` and `config/campaigns/` + `navigation.ts`
@@ -225,7 +219,7 @@ path, which runs for both trees.
 - **CSS**: `./globals.css` then `./tokens.css`.
 
 Worth stating plainly: Vercel Analytics, Speed Insights, GA4, Clarity, PostHog,
-CookieYes and scroll-depth all mount on `/admin` and `/marketing` too — there is
+CookieYes and scroll-depth all mount on `/admin` too — there is
 no branch on route.
 
 ### The font double-load — deliberate, deferred
@@ -253,7 +247,7 @@ pages, and every `font-sans` utility still resolve to Google.
 
 **Consequences of collapsing it, either direction:**
 
-- *Remove the Google load.* Breaks the entire public site and `/marketing` — 45 rules in `globals.css`, 109 in `site.css`, 135 in the hub shell depend on `--font-*`. Plus the 137 admin usages above.
+- *Remove the Google load.* Breaks the entire public site — 45 rules in `globals.css` and 109 in `site.css` depend on `--font-*`. Plus the 137 admin usages above, and the exec-share layout renders on the public families by design.
 - *Promote the self-hosted files to global.* Ships 605KB of unsubsetted TTF on every campaign landing page, against Google's subset woff2 — unacceptable for the tier the TTFB architecture exists for.
 - *Scope the Google load off `/admin` only.* Would require adding heading selectors to the ops sheet, rewriting 114 utility classes, and giving login/signup their own font wrapper — which also puts the two auth pages on a different typeface stack from the site they belong to.
 
@@ -296,7 +290,7 @@ matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.[\\w]+$).*)"]
 
 **Covers** every path not starting with `api`, `_next/static`, `_next/image`,
 `favicon.ico`, and not ending in a file extension: `/`, all campaign paths, all
-site pages, `/exp*`, `/admin*`, `/marketing*`.
+site pages, `/exp*`, `/admin*` (old `/marketing*` URLs are 301s, rule 1b).
 
 **Skips** everything under `/api/*` (so no API route is session-gated by
 middleware — §7), Next's static and image pipelines, `favicon.ico`, and any path
@@ -309,7 +303,7 @@ excluded.
 2. `/admin/marketing/*` → 301 `/marketing/*` (`monthly` → `executive`).
 3. Executive share-token bypass — §7.
 4. Five nav-move 301s: `/admin/attribution/{links,forms,contacts}`, `/admin/executive` → `/admin`, `/admin/funnel` → `/admin/performance`.
-5. **Auth gate** for `/admin`, `/admin/*`, `/marketing`, `/marketing/*`. Requires `ADMIN_SESSION_SECRET`, `UPSTASH_REDIS_REST_KV_REST_API_URL`, `..._READ_ONLY_TOKEN` — any missing → 404, fail closed. Verifies cookie HMAC + idle expiry, then confirms `admin:session:<sid>` exists in Redis on the **read-only** token; Redis failure fails closed. `/admin/login` and `/admin/signup` exempt. Adds `X-Robots-Tag`. Sliding reissue under half the idle window.
+5. **Auth gate** for `/admin` and `/admin/*` (old `/marketing*` never reaches it — 1b redirects first). Requires `ADMIN_SESSION_SECRET`, `UPSTASH_REDIS_REST_KV_REST_API_URL`, `..._READ_ONLY_TOKEN` — any missing → 404, fail closed. Verifies cookie HMAC + idle expiry, then confirms `admin:session:<sid>` exists in Redis on the **read-only** token; Redis failure fails closed. `/admin/login`, `/admin/signup`, and a token-matching `/admin/executive/<token>` (rule 1c, constant-time) exempt. Adds `X-Robots-Tag`. Sliding reissue under half the idle window.
 6. **Campaign-host allowlist** for `sell.curbio.com` (and, in production, any host not in `SITE_HOSTS`): only `/`, `/m/*`, `/confirm*`, `/exp*`, `/lp/*`. Everything else 404s unless the request carries a valid admin session (QA pass-through).
 7. Legacy `/markets/<old-slug>` → 301 from `LEGACY_SLUG_REDIRECTS`.
 8. `?market=<slug>` → rewrite to the prerendered per-market path; the only rewrite allowed to drop the query string.
@@ -347,23 +341,29 @@ Declaration counts, taken mechanically:
 All 40 are in `app/tokens.css`. `globals.css` holds only the primitives they
 reference. Anyone looking for them in `globals.css` will not find them.
 
-### Why they cannot move into the `.ops` sheet yet — deliberate, deferred
+### The `.ops`-sheet move is UNBLOCKED — but not done
 
-`_ui/v2/tokens.css` is imported **only** by `OpsShell.tsx`, and `.ops` is
-applied on **only** that root. `/marketing` neither loads that sheet nor sits in
-that scope — its shell is `.mk-root`.
+The historical blocker was `/marketing`: its screens consumed these families
+163 times outside `.ops` scope (155 Tailwind utilities + 8 raw `var(--tone-*)`
+in `hubUi.tsx`). The two-tree consolidation (2026-08-29) deleted that tree, and
+a repo-wide audit confirms **zero** `--app-*`/`--tone-*`/`--pill-*`/`--ops-*`
+consumers outside `app/(site)/admin/` now.
 
-And `/marketing` depends on those tokens **163 times**: 155 Tailwind utilities
-backed by them (`ops-` 115, `app-` 26, `tone-` 14 — `text-ops-label` ×66,
-`border-app-border` ×16, `text-ops-body` ×15, `text-tone-bad` ×6, `bg-app-well`
-×5 …) plus 8 raw `var(--tone-*)` references used directly as CSS values in
-`(hub)/hubUi.tsx:25-33`. The shared `_ui` components add ~200 more when rendered
-from the hub, since the same component renders inside `.ops` from admin and
-outside it from `/marketing`.
+What the move still has to handle, which is why it did not happen in the same
+pass:
 
-Moving these four families under `.ops` visually breaks every Marketing Hub
-screen. **Deferred** until those screens migrate to v2 (or the hub is retired),
-at which point the declarations follow the last consumer out of the global sheet.
+- The Tailwind indirection. `tailwind.config.ts` maps utilities like
+  `text-tone-bad` and `bg-app-well` onto these vars; utilities are emitted
+  unscoped, so the *definitions* must stay reachable wherever those class
+  names render. Everything rendering them is under `/admin` now, but the vars
+  must either stay on `:root` or the utilities must be re-pointed.
+- `admin/(share)/layout.tsx` and the login/signup pages render OUTSIDE
+  `OpsShell`, so a sheet loaded only by `OpsShell` cannot carry anything they
+  need. (Verified: the share layout uses only public `--color-*`/`--font-*`
+  tokens, and the auth pages use the public families too.)
+
+Moving the four families is now a contained admin-only change instead of a
+cross-tree one.
 
 ### Who reads what
 
@@ -442,15 +442,18 @@ per-market scorecard, per-channel rollups and funnel stage counts. The one
 free-text surface is the operator-authored agenda (`wins`, `concerns`,
 `decisions`).
 
-**Token handling.** One env-configured string, `MARKETING_EXEC_SHARE_TOKEN`,
-read at request time in both middleware and the page — so rotation is an env-var
-change plus a redeploy, no code change. Both comparisons are constant-time:
-the page uses `timingSafeEqualStr`, and middleware does too (the edge check runs
-*before* the `/marketing` gate, so it is the only comparison an unauthenticated
-caller can reach; a `===` there would leak a prefix-match oracle and the page's
-check would never run for them). Fails closed — env unset means the bypass does
-not exist. Caveats: one shared token, no expiry, no per-recipient issuance, so
-rotating invalidates every outstanding link at once.
+**Token handling.** One env-configured string — `EXEC_SHARE_TOKEN`, with the
+legacy `MARKETING_EXEC_SHARE_TOKEN` honored as a fallback (`lib/execShare.ts`,
+the single reader both middleware and the page go through) — read at request
+time, so rotation is an env-var change plus a redeploy, no code change. The
+route is `/admin/executive/[token]`; old `/marketing/executive/<token>` links
+301 with the token preserved. Both comparisons are constant-time: the page
+uses `timingSafeEqualStr`, and middleware does too (the edge check runs
+*before* the `/admin` gate, so it is the only comparison an unauthenticated
+caller can reach; a `===` there would leak a prefix-match oracle and the
+page's check would never run for them). Fails closed — env unset means the
+bypass does not exist. Caveats: one shared token, no expiry, no per-recipient
+issuance, so rotating invalidates every outstanding link at once.
 
 ### Routes under `app/api/`
 
@@ -487,8 +490,8 @@ Server actions also write: `admin/actions.ts`, `admin/login/actions.ts`,
 | **GA4 / Clarity / CookieYes** | — | client | `NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_CLARITY_ID`, `NEXT_PUBLIC_COOKIEYES_ID` |
 | **Committed snapshots** (not services) | admin + hub | offline scripts | `config/appLeadsSnapshot.json` (`asOf` 2026-08-29, 852 deals, refreshed by `scripts/import-app-leads.mjs`), `config/linkRegistrySeed.json`, `config/emailListHealth.ts` (transcribed from `data/imports/mailchimp-audience-summary.csv`), the CSVs under `data/imports/` |
 
-Session signing: `ADMIN_SESSION_SECRET`. Exec share link:
-`MARKETING_EXEC_SHARE_TOKEN`.
+Session signing: `ADMIN_SESSION_SECRET`. Exec share link: `EXEC_SHARE_TOKEN`
+(legacy `MARKETING_EXEC_SHARE_TOKEN` honored — `lib/execShare.ts`).
 
 ---
 
