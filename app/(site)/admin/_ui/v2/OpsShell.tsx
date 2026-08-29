@@ -4,8 +4,6 @@ import { AttributionToggle, Timeframe } from "../HeaderControls";
 import { CommandPalette } from "../CommandPalette";
 import { ToastProvider } from "../Toast";
 import { opsFontVars } from "./fonts";
-import { OpsSearchButton } from "./OpsSearchButton";
-import { OpsNotifications, type OpsAlert } from "./OpsNotifications";
 import { OpsUserMenu } from "./OpsUserMenu";
 import "./tokens.css";
 
@@ -25,15 +23,16 @@ import "./tokens.css";
 // classes, which is the point: Leads, Markets, Performance and Channels adopt
 // them next pass without touching this file.
 //
-// ── The header ─────────────────────────────────────────────────────────────
+// ── The header holds four things, and nothing else ─────────────────────────
 // Left: the two controls that govern EVERY screen (timeframe, attribution).
-// Right: search, notifications, account. Nothing page-specific lives up here.
+// Right: the account chip.
 //
-// ALERTS MOVED BEHIND THE BELL. CRM delivery failures and pending access
-// requests used to render as full-width banners at the top of every admin
-// screen — permanent vertical cost for something that is usually empty. They
-// are the notification tray's contents now, and the bell carries an unread
-// dot only when there is something to see.
+// NO SEARCH FIELD AND NO NOTIFICATION BELL. Both were built and both came out:
+// search duplicated ⌘K, which already works from anywhere and needs no
+// permanent header real estate, and the bell hid alerts that are better seen
+// than found. CRM delivery failures and pending access requests render as
+// banners at the top of the content instead — they already cost nothing on a
+// healthy day, because AlertBanner returns null when there is nothing to say.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function OpsShell({
@@ -42,7 +41,6 @@ export function OpsShell({
   user,
   leadCount,
   signOut,
-  alerts,
 }: {
   children: React.ReactNode;
   /** Ascending "YYYY-MM" with data — the month options the header offers. */
@@ -50,8 +48,6 @@ export function OpsShell({
   user: { email: string; role: string } | null;
   leadCount?: number;
   signOut: () => Promise<void>;
-  /** CRM failures + access requests, for the notification tray. */
-  alerts: OpsAlert[];
 }) {
   return (
     <ToastProvider>
@@ -78,9 +74,7 @@ export function OpsShell({
               </span>
             </div>
 
-            <div className="ml-auto flex flex-none items-center gap-2.5">
-              <OpsSearchButton />
-              <OpsNotifications alerts={alerts} />
+            <div className="ml-auto flex flex-none items-center">
               <OpsUserMenu email={user?.email ?? null} signOut={signOut} />
             </div>
           </header>

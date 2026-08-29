@@ -326,7 +326,7 @@ export default async function HomeScreen({
           label="Qualified leads"
           value={qualified.toLocaleString("en-US")}
           suffix={`/ ${target.toLocaleString("en-US")}`}
-          sparkline={<Sparkline points={qualifiedSpark} />}
+          sparkline={<Sparkline points={qualifiedSpark} tone="var(--ops-accent)" />}
           badge={
             priorLabel ? (
               <OpsDelta
@@ -340,7 +340,7 @@ export default async function HomeScreen({
         <OpsMetric
           label="Close rate"
           value={closeRate === null ? DASH : `${(closeRate * 100).toFixed(1)}%`}
-          sparkline={<Sparkline points={closeRateSpark} />}
+          sparkline={<Sparkline points={closeRateSpark} tone="var(--ops-brand)" />}
           badge={
             priorLabel ? (
               <OpsDelta
@@ -355,7 +355,7 @@ export default async function HomeScreen({
           label="Booked revenue"
           value={revenue > 0 ? usdCompact(revenue) : DASH}
           suffix={closed > 0 ? `${closed} won` : undefined}
-          sparkline={<Sparkline points={revenueSpark} />}
+          sparkline={<Sparkline points={revenueSpark} tone="var(--ops-brand)" />}
         />
         <OpsMetric
           label="Blended CAC"

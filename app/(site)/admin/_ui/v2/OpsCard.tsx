@@ -89,13 +89,16 @@ export function OpsMetric({
       </div>
 
       <div className="mt-3 flex items-end justify-between gap-3">
-        <div className="flex items-baseline gap-1.5">
+        <div className="flex min-w-0 items-baseline gap-1.5">
           <span className={`ops-metric-value${unwired ? " ops-metric-value--empty" : ""}`}>
             {value}
           </span>
-          {suffix && <span className="ops-metric-suffix">{suffix}</span>}
+          {/* nowrap: the suffix is a unit, and a unit that wraps under its own
+              number reads as a second line of data rather than as part of it. */}
+          {suffix && <span className="ops-metric-suffix whitespace-nowrap">{suffix}</span>}
         </div>
-        {sparkline}
+        {/* flex-none: if anything has to give, it is not the chart's scale. */}
+        {sparkline && <span className="flex-none">{sparkline}</span>}
       </div>
 
       {/* Reserved even when empty, so a card without a delta doesn't sit
