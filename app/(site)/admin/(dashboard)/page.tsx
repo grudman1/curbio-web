@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { MARKETS } from "@/config/markets";
 import {
+  REVENUE_BY_WON_MONTH,
   SNAPSHOT_AS_OF,
   SNAPSHOT_MONTHS,
   aggregateSnapshot,
@@ -9,6 +10,8 @@ import {
   funnelOrdinal,
   isClosed,
   marketKeyForCode,
+  revenueForMonths,
+  wonProjectsForMonths,
   type SnapshotDeal,
 } from "@/config/appLeadsSnapshot";
 import {
@@ -241,7 +244,12 @@ export default async function HomeScreen({
 
   // ── KPI row ──────────────────────────────────────────────────────────────
   const closed = Object.values(agg.cells).reduce((s, c) => s + c.closed, 0);
-  const revenue = Object.values(agg.cells).reduce((s, c) => s + c.revenue, 0);
+  // Booked revenue reads the authoritative won-date series, NOT the sum of the
+  // market × channel cells. The cells hold only revenue that joined to a lead;
+  // the series counts every sales row, including credits and the ones with no
+  // agent email to join on. Summing cells here under-reported the month.
+  const revenue = revenueForMonths(new Set(months));
+  const wonProjects = wonProjectsForMonths(new Set(months));
   const closeRate = qualified > 0 ? closed / qualified : null;
 
   const qualifiedSpark = monthlySeries((d) => d.length, deals);
@@ -249,10 +257,12 @@ export default async function HomeScreen({
     (d) => (d.length ? d.filter(isClosed).length / d.length : 0),
     deals
   );
-  const revenueSpark = monthlySeries(
-    (d) => d.filter(isClosed).reduce((s, x) => s + (x.revenue ?? x.value ?? 0), 0),
-    deals
-  );
+  // Won-date series, straight through — a month's bar is the money booked in
+  // that month, not the value of the leads created in it.
+  const revenueSpark: SparkPoint[] = SNAPSHOT_MONTHS.map((ym) => ({
+    t: ym,
+    v: REVENUE_BY_WON_MONTH[ym] ?? 0,
+  }));
 
   // Prior-window comparisons for the KPI deltas, cut identically.
   const priorSet = new Set(priorMonths);
@@ -401,6 +411,11 @@ export default async function HomeScreen({
       atStake: leadsAtStake,
     });
   }
+
+  // Auto-documented tags deliberately do NOT appear here. This panel is
+  // "what's in the way" — blockers — and a queue of guesses awaiting
+  // confirmation is not blocking anything. It lives on Links, where the
+  // reviewing actually happens.
 
   const snapshotAge = Math.round(
     (Date.parse(new Date().toISOString().slice(0, 10)) - Date.parse(SNAPSHOT_AS_OF)) / 86_400_000
@@ -568,7 +583,10 @@ export default async function HomeScreen({
         <OpsMetric
           label="Booked revenue"
           value={revenue > 0 ? usdCompact(revenue) : DASH}
-          suffix={closed > 0 ? `${closed} won` : undefined}
+          // Projects won IN this window — the same basis as the money above
+          // it. `closed` counts deals CREATED in the window that later won,
+          // which is a different set and read as if it explained the figure.
+          suffix={wonProjects > 0 ? `${wonProjects} project${wonProjects === 1 ? "" : "s"}` : undefined}
           sparkline={<Sparkline points={revenueSpark} tone="var(--ops-brand)" />}
         />
         <OpsMetric

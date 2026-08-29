@@ -314,7 +314,8 @@ async function getAttributionHealth(args: { month?: string }) {
   const total = perMonth.reduce((a, r) => a + r.total, 0);
 
   const sources = directSourceBreakdown(monthSet);
-  const { orphans, leadJoinAvailable } = await computeUndocumentedCampaigns(200);
+  const { orphans, autoDocumented, testTags, leadJoinAvailable } =
+    await computeUndocumentedCampaigns(200);
 
   return {
     window: label,
@@ -330,6 +331,19 @@ async function getAttributionHealth(args: { month?: string }) {
     undocumentedCampaignTagsNote: leadJoinAvailable
       ? "Campaign tags producing leads that no row in the Links registry documents. Each is spend that cannot be tied back to a link."
       : "Lead store not reachable — undocumented campaign tags could not be computed.",
+    autoDocumentedCampaignTags: autoDocumented.map((c) => ({
+      campaign: c.campaign,
+      leads: c.leadCount,
+      firstSeen: c.firstSeen,
+      channel: c.channel,
+      channelBasis: c.channelBasis,
+      placeholder: c.placeholder,
+    })),
+    autoDocumentedCampaignTagsNote:
+      "Tags described automatically from their own lead traffic and awaiting human review. The channel on these is INFERRED, not authored — say so if asked about them.",
+    excludedTestCampaignTags: testTags,
+    excludedTestCampaignTagsNote:
+      "QA artifacts from our own testing (config/campaignHygiene.ts). Excluded from the undocumented count on purpose; they are not campaigns and need no documentation.",
     byMonth: perMonth,
     snapshot: snapshotMeta(),
     ...(note ? { note } : {}),

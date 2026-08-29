@@ -4,6 +4,7 @@ import { LINK_SEED_EXPORTED_AT, SEED_LINKS } from "@/config/linkRegistry";
 import { readRegistryLinks } from "@/lib/marketingLinksStore";
 import { readRecentLeads, maskName } from "@/lib/adminLeads";
 import { computeUndocumentedCampaigns } from "@/lib/campaignOrphans";
+import { autoDocumentedLink } from "@/lib/campaignAutoDoc";
 import { SCAN } from "@/app/(site)/admin/(dashboard)/ui";
 import { HubPageHeader, NeedsBlock } from "../hubUi";
 import { LinksTable, type LeadLite } from "./LinksTable";
@@ -60,13 +61,21 @@ export default async function LinksPage() {
   // computation, same "documented" set, three surfaces. readRecentLeads is
   // cache()'d per request, so this costs nothing extra alongside the richer
   // per-campaign join above.
-  const { orphans } = await computeUndocumentedCampaigns(SCAN);
+  const { orphans, autoDocumented, testTags } = await computeUndocumentedCampaigns(SCAN);
+
+  // Auto-documented tags render as rows in the table itself, not only as a
+  // banner above it: reviewing one means looking at it next to the links it
+  // sits among. They sort last — evidence awaiting confirmation, below every
+  // row a person actually authored.
+  const autoRows = autoDocumented.map(autoDocumentedLink);
 
   return (
     <>
       <HubPageHeader surface={surface} />
       <LinksTable
-        rows={rows}
+        rows={[...rows, ...autoRows]}
+        autoDocumented={autoDocumented}
+        testTags={testTags}
         campaignLeads={campaignLeads}
         leadWindow={SCAN}
         leadJoinAvailable={leads.configured && !leads.error}

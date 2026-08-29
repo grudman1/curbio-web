@@ -91,6 +91,17 @@ const money = (s: string): number | null => {
   return Number.isFinite(n) && n !== 0 ? n : null;
 };
 
+/** Revenue off the sales report. Excel writes text-forced negatives with a
+ *  leading apostrophe ("'-4,650.67"); the apostrophe and the thousands commas
+ *  come off, THE SIGN STAYS. Credits and negative change orders are real money
+ *  and must reduce the month they were won in. Blank/unparseable → 0, never
+ *  null: a row that exists contributes, and a silent drop is how revenue goes
+ *  missing. */
+const salesRevenue = (s: string): number => {
+  const n = Number(String(s).replace(/^'/, "").replace(/,/g, "").trim());
+  return Number.isFinite(n) ? n : 0;
+};
+
 // ── Load the three app reports ───────────────────────────────────────────────
 
 const attrRows = loadCsv("reports_attributionreport__10_.csv");
@@ -135,7 +146,27 @@ for (const r of attr) {
   joined.push({ attr: r, lead });
 }
 
-// ── 2. Sales report → won-deal revenue ───────────────────────────────────────
+// ── 2. Sales report → won revenue ────────────────────────────────────────────
+//
+// REVENUE IS KEYED ON **WON DATE**, never on the lead's created date. A deal
+// created in July and won in August is August revenue; bucketing it by the
+// created month put money in the wrong month and made August read $15K
+// against an actual $126,902.90.
+//
+// Two products come out of this pass, and they answer different questions:
+//
+//   revenueByWonMonth — the AUTHORITATIVE monthly total, summed over EVERY
+//     sales row by its own won month. It needs no join, so nothing can drop
+//     out of it: the nine rows with no agent email, the credits, and the
+//     change orders all land in their month. This is what the revenue KPI and
+//     the revenue sparkline read.
+//
+//   revenueByDealMonth — the ATTRIBUTED slice: revenue that joined to a lead,
+//     so it can be split by market × channel. Each sales row contributes to
+//     its own won month, so a project and a later change order on the same
+//     deal land in different months, correctly. Its total is necessarily ≤ the
+//     authoritative total; the gap is reported as unattributed, never hidden.
+//
 // Projects (non-change-order rows) join on (agent email, created minute); a
 // miss retries at day precision ONLY when exactly one candidate exists.
 // Change orders attach by agent email ONLY when that agent has exactly one
@@ -154,19 +185,62 @@ for (const j of joined) {
   attrByDay.set(dk, [...(attrByDay.get(dk) ?? []), j]);
 }
 
-/** dealId → accumulated revenue from the sales report. */
+/** dealId → accumulated revenue from the sales report (all months). */
 const revenueByDealId = new Map<string, number>();
+/** dealId → won month → revenue won in that month. */
+const revenueByDealMonth = new Map<string, Map<string, number>>();
 /** agent email → dealIds of won projects that matched (for change orders). */
 const wonProjectsByEmail = new Map<string, Set<string>>();
 const unjoinableSales: { project: string; type: string; reason: string }[] = [];
 
+/** THE authoritative revenue series: won month → total, over every sales row.
+ *  No join, so no row can fall out of it. */
+const revenueByWonMonth = new Map<string, number>();
+/** The joined subset, by won month — for the attributed/unattributed split. */
+const attributedByWonMonth = new Map<string, number>();
+const salesRowsWithoutWonDate: string[] = [];
+
+const wonMonthOf = (r: string[]): string | null => {
+  const won = r[S("Won date")].trim();
+  return /^\d{4}-\d{2}/.test(won) ? won.slice(0, 7) : null;
+};
+
+for (const r of sales) {
+  const m = wonMonthOf(r);
+  if (!m) {
+    salesRowsWithoutWonDate.push(r[S("Project")]);
+    continue;
+  }
+  revenueByWonMonth.set(m, (revenueByWonMonth.get(m) ?? 0) + salesRevenue(r[S("Revenue")]));
+}
+
+/** Book a joined sales row against its deal, in ITS OWN won month. */
+function bookRevenue(dealId: string, row: string[]) {
+  const rev = salesRevenue(row[S("Revenue")]);
+  const m = wonMonthOf(row);
+  if (!m || rev === 0) return;
+  revenueByDealId.set(dealId, (revenueByDealId.get(dealId) ?? 0) + rev);
+  const byMonth = revenueByDealMonth.get(dealId) ?? new Map<string, number>();
+  byMonth.set(m, (byMonth.get(m) ?? 0) + rev);
+  revenueByDealMonth.set(dealId, byMonth);
+  attributedByWonMonth.set(m, (attributedByWonMonth.get(m) ?? 0) + rev);
+}
+
 const projects = sales.filter((r) => r[S("Deal type")] !== "Change order");
 const changeOrders = sales.filter((r) => r[S("Deal type")] === "Change order");
+
+/** Won month → count of PROJECTS won that month. Change orders and credits
+ *  adjust a project that was already won; they are not separate wins, so the
+ *  count and the money answer different questions and are counted apart. */
+const wonProjectsByMonth = new Map<string, number>();
+for (const r of projects) {
+  const m = wonMonthOf(r);
+  if (m) wonProjectsByMonth.set(m, (wonProjectsByMonth.get(m) ?? 0) + 1);
+}
 
 for (const r of projects) {
   const email = r[S("Agent email")].trim().toLowerCase();
   const created = r[S("Created date")];
-  const rev = money(r[S("Revenue")]);
   let hit = attrByMinute.get(minuteKey(created, email)) ?? null;
   if (!hit) {
     const candidates = (attrByDay.get(dayKey(created, email)) ?? []);
@@ -185,7 +259,7 @@ for (const r of projects) {
     }
   }
   const dealId = hit.attr[A("Deal ID")];
-  if (rev != null) revenueByDealId.set(dealId, (revenueByDealId.get(dealId) ?? 0) + rev);
+  bookRevenue(dealId, r);
   if (email) {
     const set = wonProjectsByEmail.get(email) ?? new Set<string>();
     set.add(dealId);
@@ -195,7 +269,6 @@ for (const r of projects) {
 
 for (const r of changeOrders) {
   const email = r[S("Agent email")].trim().toLowerCase();
-  const rev = money(r[S("Revenue")]);
   const won = email ? wonProjectsByEmail.get(email) : undefined;
   if (!email || !won || won.size !== 1) {
     unjoinableSales.push({
@@ -209,8 +282,7 @@ for (const r of changeOrders) {
     });
     continue;
   }
-  const dealId = [...won][0];
-  if (rev != null) revenueByDealId.set(dealId, (revenueByDealId.get(dealId) ?? 0) + rev);
+  bookRevenue([...won][0], r);
 }
 
 // ── 3. Mailchimp campaigns → logical campaigns ───────────────────────────────
@@ -322,8 +394,12 @@ type SnapshotDealOut = {
   referralSource: string;
   dealType: string;
   value: number | null;
-  /** Won-project revenue from the sales report, where it joined. */
+  /** Won revenue from the sales report, where it joined — all months. */
   revenue?: number;
+  /** Won month → revenue won in that month. Keyed on the sales row's WON
+   *  date, not this deal's created date, so a July lead won in August books
+   *  August revenue. */
+  revenueByMonth?: Record<string, number>;
   channel: Channel;
   entryPoint: "web_form" | "phone" | "manual" | "inbound_email";
   attribution: AttributionQuality;
@@ -395,8 +471,15 @@ for (const j of joined) {
     entryPoint: "web_form",
     attribution: "inferred",
   };
+  const round2 = (n: number) => Math.round(n * 100) / 100;
   const revenue = revenueByDealId.get(deal.dealId);
-  if (revenue != null) deal.revenue = Math.round(revenue * 100) / 100;
+  if (revenue != null) deal.revenue = round2(revenue);
+  const revMonths = revenueByDealMonth.get(deal.dealId);
+  if (revMonths?.size) {
+    deal.revenueByMonth = Object.fromEntries(
+      [...revMonths.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([m, v]) => [m, round2(v)])
+    );
+  }
 
   const derivedFromUtm = deriveChannel(utmSource);
   // Channel="direct" is the CRM's default, not a measurement. Only treat it as
@@ -466,10 +549,25 @@ deals.sort((x, y) => (x.date < y.date ? -1 : x.date > y.date ? 1 : 0));
 
 // ── Write the snapshot (full replace — idempotent) ───────────────────────────
 
+const sortedMonths = (m: Map<string, number>) =>
+  Object.fromEntries(
+    [...m.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([k, v]) => [k, Math.round(v * 100) / 100])
+  );
+
 const out = {
   asOf: SNAPSHOT_DATE,
   source: "app-import",
   generatedBy: `scripts/import-app-snapshot.ts · backfill mapping v${BACKFILL_MAPPING_VERSION}`,
+  /** Won month → booked revenue, over EVERY sales row. Authoritative: it needs
+   *  no lead join, so credits, change orders and the rows with no agent email
+   *  all count. The revenue KPI reads this, not the sum of deal revenue. */
+  revenueByWonMonth: sortedMonths(revenueByWonMonth),
+  /** The joined slice of the same series — what can be split by channel. */
+  attributedRevenueByWonMonth: sortedMonths(attributedByWonMonth),
+  /** Won month → projects won. Not the money, and not the change orders. */
+  wonProjectsByMonth: Object.fromEntries(
+    [...wonProjectsByMonth.entries()].sort(([a], [b]) => (a < b ? -1 : 1))
+  ),
   deals,
 };
 writeFileSync(resolve(ROOT, "config/appLeadsSnapshot.json"), JSON.stringify(out));
@@ -492,6 +590,24 @@ const report = {
     salesChangeOrders: changeOrders.length,
     salesUnjoinable: unjoinableSales,
     wonDealsWithRevenue: revenueByDealId.size,
+    salesRowsWithoutWonDate,
+  },
+  // Revenue keys on WON date. The authoritative series counts every sales row;
+  // the attributed series counts only what joined to a lead. The gap is real
+  // revenue that cannot be split by channel — reported, never hidden.
+  revenue: {
+    byWonMonth: sortedMonths(revenueByWonMonth),
+    attributedByWonMonth: sortedMonths(attributedByWonMonth),
+    unattributedByWonMonth: sortedMonths(
+      new Map(
+        [...revenueByWonMonth.entries()].map(([m, total]) => [
+          m,
+          total - (attributedByWonMonth.get(m) ?? 0),
+        ])
+      )
+    ),
+    total: Math.round([...revenueByWonMonth.values()].reduce((a, b) => a + b, 0) * 100) / 100,
+    negativeRows: sales.filter((r) => salesRevenue(r[S("Revenue")]) < 0).length,
   },
   attribution: {
     measured: stats.measured,

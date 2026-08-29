@@ -6,6 +6,7 @@ import {
   cellSourceBreakdowns,
   OTHER_MARKETS_KEY,
   OTHER_MARKETS_LABEL,
+  revenueAttribution,
   SNAPSHOT_AS_OF,
   SNAPSHOT_LABEL,
   SNAPSHOT_MONTHS,
@@ -70,6 +71,8 @@ export default async function ReportPage({
   // be markets.
   const deals = await mergedSnapshotDeals();
   const agg = aggregateSnapshot(new Set(months), "all", deals);
+  // Revenue booked in these months vs. the slice that can be placed in a cell.
+  const revenueSplit = revenueAttribution(new Set(months));
   if (agg.marketKeys.includes(OTHER_MARKETS_KEY)) {
     markets.push({
       key: OTHER_MARKETS_KEY,
@@ -103,6 +106,8 @@ export default async function ReportPage({
         barMonth={tf.kind === "month" ? tf.ym : null}
         initialMetric={initialMetric}
         sourceBreakdowns={cellSourceBreakdowns(new Set(months), deals)}
+        revenueTotal={revenueSplit.total}
+        revenueUnattributed={revenueSplit.unattributed}
         stale={Date.now() - Date.parse(`${SNAPSHOT_AS_OF}T00:00:00Z`) > 7 * 86_400_000}
       />
       <NeedsBlock surface={surface} />

@@ -24,6 +24,7 @@ import {
   type TrackedLink,
 } from "@/lib/marketingLinks";
 import { saveLinkAction, type SaveLinkInput } from "./actions";
+import type { AutoDocumentedCampaign } from "@/lib/campaignAutoDoc";
 
 // The registry table, its row drawer (QR preview + downloads, the leads a
 // campaign produced, notes), and the builder drawer that makes a wrong URL
@@ -342,6 +343,8 @@ export function LinksTable({
   seedExportedAt,
   registryIssue,
   orphans,
+  autoDocumented = [],
+  testTags = [],
 }: {
   rows: TrackedLink[];
   campaignLeads: Record<string, LeadLite[]>;
@@ -350,6 +353,8 @@ export function LinksTable({
   seedExportedAt: string;
   registryIssue: string | null;
   orphans: Orphan[];
+  autoDocumented?: AutoDocumentedCampaign[];
+  testTags?: Orphan[];
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -410,7 +415,12 @@ export function LinksTable({
       )}
 
       {/* ── orphans: the wild vs the registry ── */}
-      <UndocumentedCampaignsBanner orphans={orphans} leadWindow={leadWindow} />
+      <UndocumentedCampaignsBanner
+        orphans={orphans}
+        autoDocumented={autoDocumented}
+        testTags={testTags}
+        leadWindow={leadWindow}
+      />
 
       {/* ── filters ── */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
