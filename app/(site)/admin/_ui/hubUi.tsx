@@ -16,7 +16,6 @@ export { DASH };
 // the admin design system so admin's own imports don't reach into this tree.
 // Re-exported here so nothing in marketing/(hub)/* has to change its import.
 export { EmptyLog } from "@/app/(site)/admin/_ui/EmptyLog";
-export { UndocumentedCampaignsBanner } from "@/app/(site)/admin/_ui/UndocumentedCampaignsBanner";
 
 // CSS colour strings for the legacy /marketing chrome's SVG charts and dots.
 // New surfaces use the tone classes (tone.ts); these exist so the legacy

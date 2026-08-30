@@ -455,6 +455,13 @@ page's check would never run for them). Fails closed — env unset means the
 bypass does not exist. Caveats: one shared token, no expiry, no per-recipient
 issuance, so rotating invalidates every outstanding link at once.
 
+**Document title on the tokened route.** `ExecutiveReview` renders outside
+`OpsShell` on `/admin/executive/[token]`, so unwired states use a plain `<title>`
+attribute instead of the ops dot. The layout reads a `title=` query param as the
+page title override, defaulting to a generic "Curbio Executive Review" if unset.
+This is specific to the share route — the operator view at `/admin/executive`
+uses the full shell and ops-branded page header.
+
 ### Routes under `app/api/`
 
 Middleware's matcher excludes `/api` entirely, so **no API route is gated by
