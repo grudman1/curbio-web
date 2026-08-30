@@ -28,7 +28,7 @@ import {
   timeframeLabel,
   timeframeParam,
 } from "@/app/(site)/admin/_ui/timeframe";
-import { paceRead, paceSentence, type PaceState } from "@/app/(site)/admin/_ui/pacing";
+import { paceRead, paceSentence } from "@/app/(site)/admin/_ui/pacing";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Markets — one row per market: trajectory against the target, close rate,
@@ -49,13 +49,13 @@ const surface = HUB_SURFACE_BY_SLUG.markets;
 /** Em-dash for a value that does not exist. */
 const DASH = "—";
 
-/** Pace state on the ops badge tones. `risk` is red, never a dimmed amber —
- *  a market that will miss its target reads differently from one that is late. */
-const PACE_BADGE: Record<PaceState, "success" | "warning" | "error"> = {
-  on: "success",
-  behind: "warning",
-  risk: "error",
-};
+/** The pace chip is a DELTA with declared polarity: behind pace is negative
+ *  and renders red, ahead renders green — the same rule as Home's chips. The
+ *  on/behind/risk shading collapsed into sign because two colour systems for
+ *  one number made amber read as "sort of fine", which a −41 is not. */
+function paceTone(delta: number): "success" | "error" | "neutral" {
+  return delta > 0 ? "success" : delta < 0 ? "error" : "neutral";
+}
 
 /** Tiny horizontal stacked bar of channel shares — the same fixed colours as
  *  every other chart, no labels (the Report grid is one click away). */
@@ -159,7 +159,7 @@ export default async function MarketsPage({
               <Tr key={r.key}>
                 <Td className="whitespace-nowrap">
                   <Link
-                    href={`/marketing/report?${linkQuery}`}
+                    href={`/admin/performance?${linkQuery}`}
                     title="Open the Funnel grid with this timeframe"
                     className="font-semibold text-content no-underline hover:underline"
                   >
@@ -192,8 +192,8 @@ export default async function MarketsPage({
                           />
                         </span>
                       </span>
-                      <span className={`ops-badge ops-badge--${PACE_BADGE[r.pace.state]} ops-tnum`}>
-                        {r.pace.delta > 0 ? `+${r.pace.delta}` : r.pace.delta}
+                      <span className={`ops-badge ops-badge--${paceTone(r.pace.delta)} ops-tnum`}>
+                        {r.pace.delta > 0 ? `+${r.pace.delta}` : `−${Math.abs(r.pace.delta)}`}
                       </span>
                     </span>
                   ) : (
@@ -206,8 +206,17 @@ export default async function MarketsPage({
                 <Td align="right" numeric muted>
                   {r.qualified ? `${Math.round((r.closed / r.qualified) * 100)}%` : DASH}
                 </Td>
-                <Td align="right" numeric muted={!r.revenue}>
-                  {r.revenue ? `$${Math.round(r.revenue).toLocaleString("en-US")}` : "$0"}
+                {/* Final Credits can push a market negative; "$-4,651" is not
+                    a number anyone typesets. Minus prefix, red. */}
+                <Td
+                  align="right"
+                  numeric
+                  muted={!r.revenue}
+                  className={r.revenue < 0 ? "text-tone-bad" : ""}
+                >
+                  {r.revenue
+                    ? `${r.revenue < 0 ? "−" : ""}$${Math.abs(Math.round(r.revenue)).toLocaleString("en-US")}`
+                    : "$0"}
                 </Td>
                 <Td muted={firstTouch}>{firstTouch ? DASH : <MixBar shares={r.mix} />}</Td>
               </Tr>
