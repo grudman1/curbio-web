@@ -40,6 +40,7 @@ function entryToFeedRow(e: WaitlistEntry, i: number, pii: PiiVisibility): FeedRo
     campaign: v(e.utm_campaign ?? e.firstTouchCampaign),
     deliveryLabel: "not delivered (expected)",
     deliveryTone: "unknown",
+    deliveryTitle: "Out of area — no market to route to, so the CRM has nothing to match.",
     unverified: false,
     detail: [
       {
@@ -67,11 +68,7 @@ function entryToFeedRow(e: WaitlistEntry, i: number, pii: PiiVisibility): FeedRo
         title: "Delivery",
         fields: [
           { label: "Status", value: "not delivered (expected)" },
-          {
-            label: "Why",
-            value:
-              "Out of area — no market to route to, so the CRM has nothing to match. Not sent since 2026-08-20.",
-          },
+          { label: "Why", value: "out of area — not sent since 2026-08-20" },
           { label: "CRM attempted", value: "no" },
         ],
       },
@@ -92,6 +89,7 @@ function legacyToFeedRow(row: LeadRow, i: number, pii: PiiVisibility): FeedRow {
     campaign: v(lead.utm_campaign ?? lead.firstTouchCampaign),
     deliveryLabel: st.label,
     deliveryTone: st.tone,
+    deliveryTitle: st.reason ?? undefined,
     unverified: lead.referralSourceVerified === false,
     detail: [
       {
@@ -132,7 +130,7 @@ export function WaitlistPanel({
   pii?: PiiVisibility;
 }) {
   if (!configured) {
-    return <EmptyState headline="Upstash isn't configured in this environment — no waitlist store to read." />;
+    return <EmptyState headline="Upstash not configured in this environment." />;
   }
   if (error) {
     // A read failure, not proof the waitlist is empty — the error is the value.

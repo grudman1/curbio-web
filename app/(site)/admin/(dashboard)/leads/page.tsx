@@ -230,12 +230,7 @@ function detailSections({ lead, delivery }: LeadRow, pii: PiiVisibility): FeedDe
             },
             { label: "Recorded (UTC)", value: v(delivery.recordedAt) },
           ]
-        : [
-            {
-              label: "Status",
-              value: "unknown — lead predates delivery observability; no record exists",
-            },
-          ],
+        : [{ label: "Status", value: "unknown (pre-observability)" }],
     },
   ];
 }
@@ -255,6 +250,7 @@ function toFeedRow(row: LeadRow, i: number, pii: PiiVisibility): FeedRow {
     campaign: v(lead.utm_campaign),
     deliveryLabel: st.label,
     deliveryTone: st.tone,
+    deliveryTitle: st.reason ?? undefined,
     unverified: lead.referralSourceVerified === false,
     detail: detailSections(row, pii),
   };
@@ -314,7 +310,16 @@ export default async function LeadsTab({
 
   return (
     <>
-      <PageHeader title="Leads" subtitle={leadsReadable ? `last ${agg.scanned} scanned` : undefined} />
+      <PageHeader
+        title="Leads"
+        badge={
+          leadsReadable ? (
+            <span className="ops-subtle ops-tnum" title={`Last ${agg.scanned} leads scanned.`}>
+              last {agg.scanned}
+            </span>
+          ) : undefined
+        }
+      />
       <FilterChips
         param="f"
         active={filter}
