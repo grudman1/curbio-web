@@ -1,8 +1,7 @@
 import Image from "next/image";
 
-// Hero — CONTROL variant: the v1 full-bleed photo hero, restored (Gavin,
-// Aug 6). One primary action: the field. No second button, no outline CTA
-// row, no proof line. The photo is the LCP element — next/image `priority`.
+// Hero — full-bleed Curbio project photography with one primary action.
+// The photo is the LCP element, so next/image owns responsive AVIF/WebP output.
 //
 // The split video hero lives on as the A/B "B" variant in HomeHeroVideo.tsx.
 //
@@ -10,31 +9,15 @@ import Image from "next/image";
 // (white links) while it floats over the photo — same mechanism the ledger
 // and closer sections already use.
 //
-// IMAGE is a one-line swap ↓. 305 Johnsberg Ln, the AFTER shot of a real
-// Curbio project — 4000×2667 source, re-encoded to 2560px / 869KB, which
-// next/image then serves as AVIF/WebP at per-viewport widths.
-//
-// This one is Curbio's own project photography, so the provenance/licensing
-// question that hung over the previous (stock interior) hero is closed.
-//
-// Rejected candidates, for the record: stock stone-fireplace living room
-// (licensing unknown, not Curbio work); gray-panelled living room (1280×720,
-// too small for full-bleed — goes soft on retina, but fine for a card).
-//
-// ONE STANDING NOTE, not blocking: the v2 brief's objection to a full-bleed
-// exterior was "the house in it needs no work, so the image argues against
-// the product." That still applies to any after-only shot. The unlock, if
-// it's ever wanted, is the matching BEFORE frame — pairing them turns the
-// hero from a pretty house into the actual pitch. No before shot for this
-// address exists on disk today.
+// 5412 Caminito Herminia, the AFTER kitchen shot from a real Curbio project.
+// The neutral filter in site.css lowers exposure without introducing a tint.
 //
 // STUB: field is inert; /api/resolve wiring is a separate step, and its
 // backend still only parses ZIPs — see the note in lib/resolveMarket.ts
 // callers before wiring.
 const HERO_IMAGE = {
-  src: "/home/hero/305-johnsberg-exterior.jpg",
-  alt: "305 Johnsberg Lane — brick colonial after Curbio's pre-listing exterior refresh",
-  objectPosition: "center 62%",
+  src: "/home/hero/5412-caminito-herminia-kitchen-after.jpg",
+  alt: "Renovated kitchen at 5412 Caminito Herminia after Curbio completed the work",
 };
 
 export function HomeHero() {
@@ -46,9 +29,8 @@ export function HomeHero() {
         fill
         priority
         sizes="100vw"
-        style={{ objectFit: "cover", objectPosition: HERO_IMAGE.objectPosition }}
+        className="c-hero-image"
       />
-      <div className="c-hero-scrim" />
       <div className="c-container c-hero-inner">
         {/* Review line — eyebrow weight on purpose: it must not compete with
             the headline, so it is 14px/600 next to a ~76px serif, and it is a
@@ -81,10 +63,12 @@ export function HomeHero() {
           </span>
           <span aria-hidden="true">4.8/5 stars from 1,776 Featured Customers</span>
         </a>
-        <h1>Win more listings. Get them market-ready.</h1>
+        <h1>
+          The listing operations department you never had to <em>hire</em>.
+        </h1>
         <p className="c-hero-sub">
-          We do the repairs and updates that get homes sold — your seller pays nothing until
-          closing.
+          Stop playing general contractor. Curbio preps, paints, stages, and repairs — paid at
+          close. You win the listing. We make it market-ready.
         </p>
         <div className="c-hero-form">
           <label className="c-hero-formlabel" htmlFor="c-zip">
