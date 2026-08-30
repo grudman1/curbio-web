@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/app/(site)/admin/_ui/Button";
-import { ActionsTd, IconButton, Table, Td, Th, Toolbar, Tr } from "@/app/(site)/admin/_ui/DataTable";
+import { IconButton } from "@/app/(site)/admin/_ui/DataTable";
+import { Table, Td, Th, Thead, Tr } from "@/app/(site)/admin/_ui/v2/DataTable";
 import { Drawer, DrawerGrid } from "@/app/(site)/admin/_ui/Drawer";
 import { Field, FieldError, Input, Textarea } from "@/app/(site)/admin/_ui/Field";
 import { InlineNumberCell, InlineTextCell } from "@/app/(site)/admin/_ui/InlineCell";
@@ -123,25 +124,27 @@ export function CallPlanTable({ rows, archived, isOwner }: { rows: PlanRow[]; ar
   return (
     <>
       {isOwner && (
-        <Toolbar>
+        <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
           <Button variant="primary" size="sm" onClick={() => openDrawer(emptyForm())}>
             Add partner
           </Button>
-        </Toolbar>
+        </div>
       )}
       <Table>
-        <thead>
-          <tr>
-            <Th>Partner</Th>
-            <Th>Stage</Th>
-            <Th>Next step</Th>
-            <Th>Next step date</Th>
-            <Th>Owner</Th>
-            <Th align="right">Agents reached</Th>
-            <Th align="right">Meetings</Th>
-            {isOwner && <Th aria-label="Actions" />}
-          </tr>
-        </thead>
+        <Thead>
+          <Th>Partner</Th>
+          <Th>Stage</Th>
+          <Th>Next step</Th>
+          <Th>Next step date</Th>
+          <Th>Owner</Th>
+          <Th align="right">Agents reached</Th>
+          <Th align="right">Meetings</Th>
+          {isOwner && (
+            <Th className="w-px">
+              <span className="sr-only">Actions</span>
+            </Th>
+          )}
+        </Thead>
         <tbody>
           {rows.map((row) => {
             const p = row.kind === "record" ? row.partner : null;
@@ -154,7 +157,7 @@ export function CallPlanTable({ rows, archived, isOwner }: { rows: PlanRow[]; ar
                   {p?.notes ? (
                     <div
                       title={p.notes}
-                      className="max-w-[320px] truncate font-sans text-ops-label font-normal text-content-subtle"
+                      className="ops-subtle max-w-[320px] truncate text-[12px] font-normal"
                     >
                       {p.notes}
                     </div>
@@ -183,7 +186,7 @@ export function CallPlanTable({ rows, archived, isOwner }: { rows: PlanRow[]; ar
                       onSave={(next) => saveInline(p, { nextStep: next })}
                     />
                   ) : (
-                    <span className="text-content-subtle">{DASH}</span>
+                    <span className="ops-muted">{DASH}</span>
                   )}
                 </Td>
                 <Td muted={!p?.nextStepDate}>{p?.nextStepDate || DASH}</Td>
@@ -196,7 +199,7 @@ export function CallPlanTable({ rows, archived, isOwner }: { rows: PlanRow[]; ar
                       onSave={(next) => saveInline(p, { owner: next })}
                     />
                   ) : (
-                    <span className="text-content-subtle">{DASH}</span>
+                    <span className="ops-muted">{DASH}</span>
                   )}
                 </Td>
                 <Td align="right" className="min-w-[120px]">
@@ -209,7 +212,7 @@ export function CallPlanTable({ rows, archived, isOwner }: { rows: PlanRow[]; ar
                       suffix={<LoggedTag />}
                     />
                   ) : (
-                    <span className="text-content-subtle">{DASH}</span>
+                    <span className="ops-muted">{DASH}</span>
                   )}
                 </Td>
                 <Td align="right" className="min-w-[110px]">
@@ -222,20 +225,22 @@ export function CallPlanTable({ rows, archived, isOwner }: { rows: PlanRow[]; ar
                       suffix={<LoggedTag />}
                     />
                   ) : (
-                    <span className="text-content-subtle">{DASH}</span>
+                    <span className="ops-muted">{DASH}</span>
                   )}
                 </Td>
                 {isOwner && (
-                  <ActionsTd>
-                    <IconButton
-                      icon="edit"
-                      label={p ? `Edit ${p.name}` : `Add ${name}`}
-                      onClick={() => openDrawer(formFor(row))}
-                    />
-                    {p && (
-                      <IconButton icon="archive" label={`Archive ${p.name}`} onClick={() => setArchived(p.id, true, p.name)} />
-                    )}
-                  </ActionsTd>
+                  <Td align="right" className="w-px whitespace-nowrap">
+                    <span className="inline-flex items-center gap-0.5">
+                      <IconButton
+                        icon="edit"
+                        label={p ? `Edit ${p.name}` : `Add ${name}`}
+                        onClick={() => openDrawer(formFor(row))}
+                      />
+                      {p && (
+                        <IconButton icon="archive" label={`Archive ${p.name}`} onClick={() => setArchived(p.id, true, p.name)} />
+                      )}
+                    </span>
+                  </Td>
                 )}
               </Tr>
             );
