@@ -1,155 +1,58 @@
 # Working rules for this repo
 
-## Deployment — main is the source of truth
+## Branch discipline
 
-**Production deploys from `main`, and only from `main`.**
+**Cut from `origin/main` only.** Never branch off an existing branch. Two engineers working in parallel means conflicts are inevitable if you branch off old commits; starting from main gives both of you the same baseline.
 
-- Every change reaches production by being merged into `main` first.
-- **Never promote a branch or a preview deployment to Production** in the
-  Vercel UI. Not for a quick look, not to show someone, not "just this once".
-- Preview deployments are for review. They are not a delivery mechanism.
+**Before you start work:**
+```
+git fetch --prune origin
+git pull origin main
+```
 
-### Why this rule exists
+**Before you push:**
+```
+git fetch --prune origin
+```
 
-On 2026-08-29 production was found running `1a25456` — the tip of an open,
-unmerged pull request. It had been promoted from the Vercel UI. Three things
-were true at once and none of them were visible from the dashboard:
+Then verify your branch hasn't already been merged — a merged PR plus a still-existing branch is the trap that caused the production incident. If it has been merged, branch off the updated main for your next work.
 
-1. `main` did not contain the code that was live. The next deploy from `main`
-   would have silently removed a shipped feature.
-2. A deliberate deletion of the header search and notification components,
-   committed to a branch after that branch's PR had already been
-   squash-merged, was absent from `main` — so anything branched from `main`
-   brought those components back. Promoting such a branch put deleted UI back
-   in front of users.
-3. Nobody could answer "what is in production?" by looking at `main`.
+**Merge within a day.** Long-lived branches accumulate conflicts. Push early, get review, merge and move on.
 
-The failure was not any one promotion. It was that production and `main` were
-allowed to disagree, so every later branch inherited the wrong baseline.
+**After squash-merge, the branch is finished.** A squash-merge puts your content on main under a new SHA, but the original commits stay on your branch. Adding to an already-merged branch looks merged in the UI but isn't on main — commits easily get lost. Start fresh from the updated main.
 
-### The squash-merge trap that goes with it
+## Shared files — heads-up, not permission
 
-This repo squash-merges. A squash-merge puts the branch's *content* on `main`
-under a **new SHA**, and the original commits keep existing on the branch.
+These are imported by both the public site (`app/(site)/(chrome)/`, `app/(campaigns)/`, `app/(site)/exp/`) and the admin dashboard (`app/(site)/admin/`). A change to one affects work in progress on the other:
 
-**After your PR is squash-merged, that branch is finished. Do not add to it.**
-Commits pushed to an already-merged branch look merged (the PR says "Merged")
-but are not in `main`, and they are easy to lose. That is exactly how the
-header-chrome deletion went missing.
-
-Start a fresh branch off the updated `main` for the next piece of work.
-
-### Before pushing
-
-1. `git fetch --prune origin`
-2. Check whether the branch you are on has already been merged — a merged PR
-   plus a still-existing branch is the trap above.
-3. If it has, branch off `origin/main` instead of adding to it.
-
-## Parallel workstreams — who owns which files
-
-The codebase has exactly TWO trees, and every route belongs to one of them:
-
-- **Public** — the marketing site and campaign landing pages. What visitors
-  and agents see. `app/(site)/(chrome)/`, `app/(campaigns)/`, partner pages.
-- **Admin** — everything internal: the ops dashboard, reporting, and the
-  tokened exec share. All of it under `app/(site)/admin/`, all behind one
-  session gate (plus login/signup and the exec share token as the only
-  controlled unauthenticated entries).
-
-There is no third category. `app/(site)/marketing/` used to be one — an
-internal control room that wasn't in /admin and sounded public when it wasn't
-— and was consolidated into /admin (2026-08). Old `/marketing/*` URLs 301 to
-their /admin homes via middleware; do not recreate the tree.
-
-Two branches are worked simultaneously, in separate git worktrees of this same
-repo. The rules below are written in terms of **branches**, not whichever agent
-or person happens to be driving one, because that assignment can change.
-
-| Branch | Worktree | Owns |
-|---|---|---|
-| `feat/site-redesign` | `../curbio-site` | `app/(site)/(chrome)/` · `app/(campaigns)/lp/` · `app/(site)/exp/` and the partner-page templates · `public/` |
-| dashboard work (branches off `main`) | `curbio-web` | `app/(site)/admin/` · `app/api/admin/` · the import scripts · the `config/` and `lib/` modules those read |
-
-**Own means: edit freely without asking. Everything else, ask first.**
-
-Note the two path corrections against how these are often described: the
-campaign pages are at **`app/(campaigns)/lp/`**, not `app/(site)/lp/`; and the
-Next config is **`next.config.mjs`**, not `.js`.
-
-### Shared files — stop and ask before touching
-
-Neither branch changes any of these without checking with Gavin first, because
-both trees import them and a change lands on the other branch invisibly:
-
-- `package.json` (and the lockfile)
-- `tailwind.config.ts`
+- `middleware.ts`
+- `app/layout.tsx`
+- `app/(site)/layout.tsx`
 - `app/globals.css`
 - `app/tokens.css`
-- `app/layout.tsx` — the root layout
-- **`app/(site)/layout.tsx`** — easy to miss: `/admin` and the public
-  `(chrome)` group are **both** inside `app/(site)/`, so this layout wraps the
-  dashboard too. It is currently a deliberate pass-through; adding site chrome
-  here would render it around `/admin`.
-- `middleware.ts`
+- `tailwind.config.ts`
+- `package.json` (and lockfile)
 - `next.config.mjs`
 - `lib/channels.ts`
 - `config/markets.ts`
 
-The list is not exhaustive. The test is the principle behind it: **if both
-trees import it, it is shared** — stop and ask.
+**The rule is not "don't touch."** It's: before you commit, list your changed files. If any are on that list, say so plainly in your commit message or PR summary. I'll check the other side and coordinate if needed. Editing them is fine — surprising me is not.
 
-### Fonts: two systems, on purpose. Do not consolidate.
+## Two unchanging facts
 
-This is the likeliest trap in the whole split, because the two setups look like
-duplication and are not.
+**1. The duplicate fonts are deliberate.** The public site loads Google's subsetted WOFF2 (bound to `--font-serif` / `--font-sans`) in the root layout. Admin loads self-hosted variable TTFs (bound to `--ops-font-serif` / `--ops-font-sans`) in `app/(site)/admin/_ui/v2/fonts.ts`. They are two systems on purpose:
 
-- The **public site** loads Google's subsetted WOFF2 through `next/font/google`
-  in the root layout, bound to `--font-serif` / `--font-sans`. Every `.lp-*`
-  rule and the whole marketing site renders through those two names.
-- **`/admin`** separately loads self-hosted variable TTFs through
-  `next/font/local` in `app/(site)/admin/_ui/v2/fonts.ts`, bound to
-  `--ops-font-serif` / `--ops-font-sans` — deliberately different names, so
-  nothing global is overridden.
+- Consolidating into Google strips admin of its typeface.
+- Consolidating into self-hosted ships 605 KB of unsubsetted TTF onto every campaign landing page.
 
-The self-hosted files are **605,724 bytes (605KB) and unsubsetted**. They must
-**never** be promoted to the root layout or bound to the global `--font-*`
-names: that would change which bytes sell.curbio.com serves to every visitor,
-to no benefit for the public site.
+Leave both alone. The detailed rationale is in `fonts.ts`.
 
-Neither branch consolidates fonts, unifies the variable names, or "removes the
-duplicate" font loading. `app/(site)/admin/_ui/v2/fonts.ts` carries the longer
-rationale — read it before proposing any font change.
+**2. `app/tokens.css` is shared, not admin-only.** It declares 40 `--ops-*` / `--app-*` / `--tone-*` / `--pill-*` variables used across the admin tree. Don't move them, rename them, or scope them — they're imported by both trees.
 
-## Environment variables
+## Deployment
 
-Server-side secrets live in Vercel project settings and in gitignored
-`.env.local` for local work. `.env.example` documents every variable by name
-with an empty value, and is the checklist when standing up a new environment.
-
-A variable that exists in Production but not Preview will make the feature
-that depends on it appear broken on preview URLs while working in production —
-check both. `ADMIN_SESSION_SECRET` is currently Production-only, which is why
-`/admin` fails closed (404) on preview deployments.
-
-## Route handlers under `app/api/`
-
-`middleware.ts`'s matcher excludes `/api`:
-
-```
-"/((?!api|_next/static|_next/image|favicon.ico|.*\\.[\\w]+$).*)"
-```
-
-So the `/admin` session gate **does not cover route handlers**. Anything under
-`app/api/admin/` must call `requireAdminApiSession()` from `lib/adminApiAuth.ts`
-itself and return `unauthorized()` when it comes back null. There is no second
-layer behind it.
-
-An authenticated route must also never be cacheable — no `revalidate`, no
-`s-maxage`. Cache the upstream data instead, where it is shared and carries
-nothing user-specific.
+**Production deploys from `main` only.** Never promote a branch or preview to Production in the Vercel UI. It happened once: production ran an open PR while main ran different code. Next deploy from main would have silently deleted a shipped feature. `main` is the source of truth.
 
 ## Page registry
 
-Every new page gets a row in `config/pageRegistry.ts`, added as `stub`. Only
-Gavin flips a row to `live`.
+Every new page gets a `stub` row in `config/pageRegistry.ts`. Only I flip it to `live`.
