@@ -3,9 +3,10 @@ import { HUB_SURFACE_BY_SLUG } from "@/config/marketingHub";
 import { SNAPSHOT_MONTHS } from "@/config/appLeadsSnapshot";
 import { readExecNotes } from "@/lib/marketingExecNotes";
 import { execShareToken } from "@/lib/execShare";
-import { Meta } from "@/app/(site)/admin/_ui/primitives";
 import { monthLabel, parseTimeframe } from "@/app/(site)/admin/_ui/timeframe";
-import { DefinitionsInfo, HubPageHeader, NeedsBlock } from "@/app/(site)/admin/_ui/hubUi";
+import { DefinitionsInfo } from "@/app/(site)/admin/_ui/hubUi";
+import { SurfaceHeader, SurfaceHealth } from "@/app/(site)/admin/_ui/v2/SurfaceHeader";
+import { StatusBadge } from "@/app/(site)/admin/_ui/v2/HealthDot";
 import { ExecutiveReview } from "./ExecutiveReview";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -38,27 +39,44 @@ export default async function ExecutivePage({
 
   return (
     <>
-      <HubPageHeader surface={surface} right={<DefinitionsInfo align="right" />} />
-      {tf.kind !== "month" && month && (
-        <p className="m-0 mb-4 font-sans text-ops-label text-content-muted">
-          The review is monthly — showing {monthLabel(month)}, the latest month with data.
-        </p>
-      )}
+      {/* The coerced-month fact and the share-link state are chips with the
+          sentence on hover — the operator chrome follows the no-prose rule
+          even though the review body below is deliberately a narrated
+          document. */}
+      <SurfaceHeader
+        surface={surface}
+        right={
+          <>
+            {tf.kind !== "month" && month && (
+              <StatusBadge
+                status={`showing ${monthLabel(month)}`}
+                tone="neutral"
+                title="The review is monthly — a range in the header coerces to its latest month with data."
+              />
+            )}
+            {shareToken ? (
+              <StatusBadge
+                status="share link live"
+                tone="success"
+                title="Read-only share: /admin/executive/<token> — no sidebar, larger type, printable."
+              />
+            ) : (
+              <StatusBadge
+                status="no share link"
+                tone="neutral"
+                title="Set EXEC_SHARE_TOKEN to enable the read-only share route."
+              />
+            )}
+            <DefinitionsInfo align="right" />
+          </>
+        }
+      />
       {month ? (
         <ExecutiveReview month={month} notes={notes} editable />
       ) : (
         <p className="font-sans text-ops-body text-content-muted">No months with data yet.</p>
       )}
-      <div className="mt-6">
-        <Meta>
-          {shareToken
-            ? "Read-only share link: /admin/executive/<token> — no sidebar, larger type."
-            : "Set EXEC_SHARE_TOKEN to enable the read-only share link."}
-        </Meta>
-      </div>
-      <div className="mt-5">
-        <NeedsBlock surface={surface} />
-      </div>
+      <SurfaceHealth surface={surface} />
     </>
   );
 }

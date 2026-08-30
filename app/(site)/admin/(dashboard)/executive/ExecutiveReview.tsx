@@ -47,18 +47,23 @@ function Arrow({ delta }: { delta: number }) {
   );
 }
 
-function SectionHead({ label, right }: { label: string; right?: React.ReactNode }) {
+function SectionHead({ label, right, tooltip }: { label: string; right?: React.ReactNode; tooltip?: string }) {
   return (
     <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
-      <Eyebrow>{label}</Eyebrow>
+      <span title={tooltip} className={tooltip ? "cursor-help" : undefined}>
+        <Eyebrow>{label}</Eyebrow>
+      </span>
       {right}
     </div>
   );
 }
 
-function DashStat({ label }: { label: string }) {
+function DashStat({ label, tooltip }: { label: string; tooltip?: string }) {
+  // Plain title= rather than the ops unwired dot: this component also renders
+  // on the tokened share route, outside OpsShell, where the ops classes do
+  // not exist.
   return (
-    <div>
+    <div title={tooltip} className={tooltip ? "cursor-help" : undefined}>
       <div className="font-sans text-[26px] font-semibold leading-none tabular-nums text-content-subtle">{DASH}</div>
       <div className="mt-1.5 font-sans text-ops-label text-content-muted">{label}</div>
     </div>
@@ -292,6 +297,7 @@ export function ExecutiveReview({
       <section className="mb-8">
         <SectionHead
           label="Funnel — is it a lead problem or a closing problem"
+          tooltip="Cumulative reached-at-least counts; Closed = status Won only. Engaged has no wired source yet and renders an em-dash, never a zero."
           right={<Meta>{monthName}{prevMonth ? ` beside ${monthShort(prevMonth)}` : ""} · all app markets</Meta>}
         />
         <div className="overflow-x-auto">
@@ -327,10 +333,6 @@ export function ExecutiveReview({
             ))}
           </div>
         </div>
-        <p className="m-0 mt-2.5 font-sans text-ops-label leading-[1.6] text-content-subtle">
-          Cumulative reached-at-least counts; Closed = status Won only. Engaged has no wired source yet and renders an
-          em-dash, never a zero.
-        </p>
       </section>
 
       {/* ── 5. initiatives ── */}
@@ -339,33 +341,24 @@ export function ExecutiveReview({
         <div className="grid grid-cols-1 gap-ops-gap md:grid-cols-3">
           <Panel title="Partners" right={<Meta>vs ${COST_PER_MEETING_TARGET_USD} per meeting</Meta>}>
             <div className="flex gap-7">
-              <DashStat label="meetings booked" />
-              <DashStat label="cost per meeting" />
+              <DashStat label="meetings booked" tooltip="No on-track read until the meeting log and spend entry exist." />
+              <DashStat label="cost per meeting" tooltip="No on-track read until the meeting log and spend entry exist." />
             </div>
-            <p className="m-0 mt-2.5 font-sans text-ops-label leading-[1.5] text-content-subtle">
-              No on-track read until the meeting log and spend entry exist.
-            </p>
           </Panel>
           <Panel title="Events" right={<Meta>vs ${COST_PER_ATTENDEE_TARGET_USD} per attendee</Meta>}>
             <div className="flex gap-7">
-              <DashStat label="events held" />
-              <DashStat label="cost per attendee" />
+              <DashStat label="events held" tooltip="No on-track read until the event log and spend entry exist." />
+              <DashStat label="cost per attendee" tooltip="No on-track read until the event log and spend entry exist." />
             </div>
-            <p className="m-0 mt-2.5 font-sans text-ops-label leading-[1.5] text-content-subtle">
-              No on-track read until the event log and spend entry exist.
-            </p>
           </Panel>
           <Panel
             title="Outreach"
             right={<Meta>target {OUTREACH_WEEKLY_MAILINGS_TARGET} mailings · {OUTREACH_WEEKLY_CALLS_TARGET} calls / HSM / wk</Meta>}
           >
             <div className="flex gap-7">
-              <DashStat label="cadence kept" />
-              <DashStat label="meetings booked" />
+              <DashStat label="cadence kept" tooltip="No on-track read until the mailing log exists." />
+              <DashStat label="meetings booked" tooltip="No on-track read until the mailing log exists." />
             </div>
-            <p className="m-0 mt-2.5 font-sans text-ops-label leading-[1.5] text-content-subtle">
-              No on-track read until the mailing log exists.
-            </p>
           </Panel>
         </div>
       </section>
