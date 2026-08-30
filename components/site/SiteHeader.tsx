@@ -12,7 +12,7 @@ import { MobileNav } from "./MobileNav";
 //
 // STRUCTURE
 //   Logo · How It Works · Services · Our Work · For Brokerages · Contact ·
-//   phone · Log in · [Free quote]
+//   phone · Log in · [Free Estimate]
 //
 // Labels, hrefs and order come from NAVIGATION — never hardcode a link here.
 // ONE sanctioned exception: "Our Work" is a visible-but-INERT span, hardcoded
