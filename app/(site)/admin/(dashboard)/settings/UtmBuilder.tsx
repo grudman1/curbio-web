@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Field, Input, Select } from "@/app/(site)/admin/_ui/Field";
-import { InfoPopover } from "@/app/(site)/admin/_ui/InfoPopover";
 import { Badge, Panel } from "@/app/(site)/admin/_ui/primitives";
 import { CHANNEL_FUNNEL_ORDER } from "@/config/marketingHub";
 
@@ -34,14 +33,11 @@ export function UtmBuilder() {
     <Panel
       title="UTM builder"
       right={
-        <span className="inline-flex items-center gap-1.5">
+        <span
+          className="inline-flex items-center gap-1.5"
+          title="utm_source values outside the nine channels map back to direct at the boundary — the builder only offers the closed list."
+        >
           <Badge tone="good">live</Badge>
-          <InfoPopover label="Why only nine utm_source values" align="right">
-            <p className="m-0">
-              utm_source values outside the nine channels map back to direct at the boundary — the
-              builder only offers the closed list, so a link built here always attributes.
-            </p>
-          </InfoPopover>
         </span>
       }
     >
