@@ -159,16 +159,25 @@ export default async function PagesScreen({
     <>
       <PageHeader
         title="Pages"
-        subtitle={
-          <span className="inline-flex flex-wrap items-center gap-1.5">
-            {registry.length} pages · {label}
+        badge={
+          <>
+            <StatusBadge status={label} tone="neutral" />
             {resample && <StatusBadge status={resample} tone="neutral" />}
-            {stats?.analyticsError && <StatusBadge status="analytics unreadable" tone="error" />}
-            {stats && !stats.analyticsConfigured && (
-              <StatusBadge status="analytics not configured" tone="neutral" />
+            {stats?.analyticsError && (
+              <StatusBadge
+                status="analytics unreadable"
+                tone="error"
+                title="Vercel Web Analytics could not be read — a read failure, not zero traffic."
+              />
             )}
-            {stats?.leadsTruncated && <StatusBadge status="partial range" tone="warning" />}
-          </span>
+            {stats?.leadsTruncated && (
+              <StatusBadge
+                status="partial range"
+                tone="warning"
+                title={`The lead scan (newest ${SCAN}) does not cover the whole timeframe.`}
+              />
+            )}
+          </>
         }
         right={
           <>
@@ -184,7 +193,6 @@ export default async function PagesScreen({
         <OpsMetric
           label="Views"
           value={viewsKnown ? totalViews!.toLocaleString("en-US") : DASH}
-          suffix={viewsKnown ? "Vercel" : undefined}
           unwired={
             viewsKnown
               ? undefined
@@ -194,12 +202,17 @@ export default async function PagesScreen({
                     : "Vercel Web Analytics is not configured in this environment.",
                 }
           }
-          badge={viewsKnown ? <OpsDelta value={pct(delta(totalViews, prevViews))} suffix="%" label="vs prev" /> : undefined}
+          badge={
+            viewsKnown ? (
+              <span title="Vercel Web Analytics, counted server-side.">
+                <OpsDelta value={pct(delta(totalViews, prevViews))} suffix="%" label="vs prev" />
+              </span>
+            ) : undefined
+          }
         />
         <OpsMetric
           label="Leads"
           value={totalLeads === null ? DASH : totalLeads.toLocaleString("en-US")}
-          suffix={stats?.leadsTruncated ? `last ${SCAN} · partial` : `last ${SCAN}`}
           unwired={
             totalLeads === null
               ? { tooltip: "The Redis lead store could not be read in this environment." }
@@ -207,14 +220,17 @@ export default async function PagesScreen({
           }
           badge={
             totalLeads === null ? undefined : (
-              <OpsDelta value={pct(delta(totalLeads, prevLeads))} suffix="%" label="vs prev" />
+              <span
+                title={`Scanned from the newest ${SCAN} lead records${stats?.leadsTruncated ? " — the scan does not cover the whole timeframe" : ""}.`}
+              >
+                <OpsDelta value={pct(delta(totalLeads, prevLeads))} suffix="%" label="vs prev" />
+              </span>
             )
           }
         />
         <OpsMetric
           label="Conversion"
           value={conversion === null ? DASH : `${(conversion * 100).toFixed(2)}%`}
-          suffix={conversion === null ? undefined : "leads ÷ views"}
           unwired={
             conversion === null
               ? {
@@ -226,7 +242,9 @@ export default async function PagesScreen({
           }
           badge={
             conversion === null ? undefined : (
-              <OpsDelta value={pct(delta(conversion, prevConversion))} suffix="%" label="vs prev" />
+              <span title="Leads ÷ views over the selected timeframe.">
+                <OpsDelta value={pct(delta(conversion, prevConversion))} suffix="%" label="vs prev" />
+              </span>
             )
           }
         />
