@@ -15,7 +15,7 @@ import {
   SNAPSHOT_LABEL,
   type AttributionFilter,
 } from "@/config/appLeadsSnapshot";
-import { BACKFILL_MAPPING_VERSION } from "@/config/referral-backfill";
+import { BACKFILL_MAPPING_VERSION, backfillForReferralSource } from "@/config/referral-backfill";
 import { mergedSnapshotDeals } from "@/lib/leadStore";
 import { CHANNEL_COLORS } from "@/lib/channels";
 import { OpsCard } from "@/app/(site)/admin/_ui/v2/OpsCard";
@@ -148,7 +148,10 @@ export async function AttributionHealthPanel({
     >
       {detailed && (
         <div className="mb-4 flex flex-wrap items-center gap-1.5">
-          <span className="ops-seg">
+          <span
+            className="ops-seg"
+            title={`measured = real UTM signal · inferred = referral-source backfill (spec §8, mapping v${BACKFILL_MAPPING_VERSION})`}
+          >
             {FILTERS.map((f) => (
               <Link
                 key={f.key}
@@ -159,10 +162,6 @@ export async function AttributionHealthPanel({
                 {f.label}
               </Link>
             ))}
-          </span>
-          <span className="ml-1 ops-subtle">
-            measured = real UTM signal · inferred = referral-source backfill (spec §8, mapping v
-            {BACKFILL_MAPPING_VERSION})
           </span>
         </div>
       )}
@@ -176,34 +175,26 @@ export async function AttributionHealthPanel({
               {share === null ? "no Qualified in this timeframe" : `${direct} of ${total} Qualified`}
             </span>
           </div>
-          {/* The definition of "unattributed" rides on the label's tooltip
-              rather than standing as a paragraph under the number. The two
-              provenance figures below it are DATA, not commentary, and stay
-              visible: an answer that shows only the post-backfill share would
-              be presenting inference as tracking. */}
-          <div
-            className="ops-eyebrow mt-3"
-            title="No UTM, no first-touch cookie, no tracked phone number — we do not know what produced these leads."
-          >
-            Unattributed
-          </div>
-          <dl className="m-0 mt-2 grid max-w-[340px] grid-cols-[1fr_auto] gap-x-4 gap-y-1">
-            <dt className="ops-subtle">Incl. backfill-inferred</dt>
+          {/* Definitions ride on the row labels' tooltips. The provenance
+              figures are DATA, not commentary, and stay visible: showing only
+              the post-backfill share would present inference as tracking. */}
+          <dl className="m-0 mt-3 grid max-w-[340px] grid-cols-[1fr_auto] gap-x-4 gap-y-1">
+            <dt className="ops-subtle" title="No UTM, no first-touch cookie, no tracked phone number — counting backfill-inferred channels as attributed.">Unattributed</dt>
             <dd className="ops-tnum m-0 text-right font-semibold">
               {allTotal ? `${Math.round((allDirect / allTotal) * 100)}%` : DASH}
               <span className="ops-subtle ml-1.5 font-normal">
                 {allDirect}/{allTotal}
               </span>
             </dd>
-            <dt className="ops-subtle">Measured signal only</dt>
+            <dt className="ops-subtle" title="Share with no channel among rows carrying a REAL captured signal only.">Measured</dt>
             <dd className="ops-tnum m-0 text-right font-semibold">
               {measuredTotal ? `${Math.round((measuredDirect / measuredTotal) * 100)}%` : DASH}
               <span className="ops-subtle ml-1.5 font-normal">
                 {measuredDirect}/{measuredTotal}
               </span>
             </dd>
-            <dt className="ops-subtle" title="Channel assigned by the spec-§8 backfill mapping or by Mailchimp send-time correlation — not captured at submission.">
-              Inferred, not tracked
+            <dt className="ops-subtle" title="Attributed rows whose channel was assigned by the spec-§8 backfill mapping or Mailchimp send-time correlation — inferred, not tracked at submission.">
+              Inferred
             </dt>
             <dd className="ops-tnum m-0 text-right font-semibold">{inferredAttributed}</dd>
           </dl>
@@ -237,7 +228,16 @@ export async function AttributionHealthPanel({
               <Thead>
                 <Th>Raw referral source</Th>
                 <Th align="right">Leads</Th>
-                <Th>What would attribute it</Th>
+                {/* Per-row remediation advice used to be a prose column here.
+                    The mapped channel is the datum; the fix rides on the
+                    header's tooltip — and the fix is per-row obvious once the
+                    source is visible (phone → call tracking, sites → UTMs,
+                    OTHER → the triage queue, blanks → a form that records). */}
+                <Th className="ops-th--sortable">
+                  <span title="What would attribute these: UTMs on the links that bring dark traffic (spec §9), a tracked phone number per market (spec §5b — not built), a triage queue that kills OTHER as a resting state (spec §8), and forms that record their source.">
+                    Maps to
+                  </span>
+                </Th>
               </Thead>
               <tbody>
                 {sources.map((s) => (
@@ -246,20 +246,7 @@ export async function AttributionHealthPanel({
                     <Td align="right" numeric className="font-semibold">
                       {s.count}
                     </Td>
-                    <Td muted>
-                      {/* Sources the spec-§8 backfill resolved (landing page, partner
-                          labels, Inbound Email) no longer appear here — what remains
-                          direct is honestly unattributable today. */}
-                      {/^phone/i.test(s.source)
-                        ? "a tracked phone number per market / event (spec §5b — not built)"
-                        : s.source === "(blank)"
-                          ? "a form that records its source"
-                          : /^other$/i.test(s.source)
-                            ? "triage queue — kill OTHER as a resting state (spec §8)"
-                            : /curbio\.com|lp$/i.test(s.source)
-                              ? "dark traffic (spec §9) — UTMs on the links that brought them"
-                              : "a documented source mapping (see Links registry)"}
-                    </Td>
+                    <Td muted>{backfillForReferralSource(s.source).channel}</Td>
                   </Tr>
                 ))}
                 {sources.length === 0 && (

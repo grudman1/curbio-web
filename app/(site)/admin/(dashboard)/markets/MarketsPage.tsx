@@ -135,7 +135,7 @@ export default async function MarketsPage({
 
   return (
     <>
-      <SurfaceHeader surface={surface} subtitle={tfLabel} />
+      <SurfaceHeader surface={surface} />
 
       <OpsCard
         title={`Markets vs ${target || QUALIFIED_TARGET_PER_MARKET_PER_MONTH} Qualified`}
