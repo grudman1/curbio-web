@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/app/(site)/admin/_ui/Button";
-import { ActionsTd, IconButton, Table, Td, Th, Toolbar, Tr } from "@/app/(site)/admin/_ui/DataTable";
+import { IconButton } from "@/app/(site)/admin/_ui/DataTable";
+import { Table, Td, Th, Thead, Tr } from "@/app/(site)/admin/_ui/v2/DataTable";
 import { Drawer, DrawerGrid } from "@/app/(site)/admin/_ui/Drawer";
 import { Field, FieldError, Input, Select } from "@/app/(site)/admin/_ui/Field";
 import { InlineNumberCell } from "@/app/(site)/admin/_ui/InlineCell";
@@ -126,41 +127,46 @@ export function EventLog({
   return (
     <>
       {isOwner && (
-        <Toolbar>
+        <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
           <Button variant="primary" size="sm" onClick={() => { setError(null); setForm(emptyForm()); }}>
             Add event
           </Button>
-        </Toolbar>
+        </div>
       )}
 
-      <Table wide>
-        <thead>
-          <tr>
-            <Th>Event</Th>
-            <Th>Format</Th>
-            <Th>Market</Th>
-            <Th>Date</Th>
-            <Th>Campaign code</Th>
-            {/* Every count in these four columns is typed in, so the marker
-                belongs on the column, not repeated in all four cells of
-                every row — same rule, a quarter of the noise. */}
-            {COUNT_COLUMNS.map((c) => (
-              <Th key={c.field} align="right">
-                <span className="inline-flex items-center gap-1">
-                  {c.label} <LoggedTag />
-                </span>
-              </Th>
-            ))}
-            <Th align="right">Cost per attendee</Th>
-            {isOwner && <Th aria-label="Actions" />}
-          </tr>
-        </thead>
+      <Table>
+        <Thead>
+          <Th>Event</Th>
+          <Th>Format</Th>
+          <Th>Market</Th>
+          <Th>Date</Th>
+          <Th>Campaign code</Th>
+          {/* Every count in these four columns is typed in, so the marker
+              belongs on the column, not repeated in all four cells of
+              every row — same rule, a quarter of the noise. */}
+          {COUNT_COLUMNS.map((c) => (
+            <Th key={c.field} align="right">
+              <span className="inline-flex items-center gap-1">
+                {c.label} <LoggedTag />
+              </span>
+            </Th>
+          ))}
+          <Th align="right">Cost per attendee</Th>
+          {isOwner && (
+            <Th className="w-px">
+              <span className="sr-only">Actions</span>
+            </Th>
+          )}
+        </Thead>
         <tbody>
           {events.length === 0 && (
-            <tr>
-              <Td muted colSpan={isOwner ? 11 : 10}>
-                No events logged yet.
-                {isOwner ? " Add the next one — the campaign code is what stops its leads landing as direct." : ""}
+            <tr className="ops-tbody-row">
+              <Td
+                muted
+                colSpan={isOwner ? 11 : 10}
+                title="The campaign code on each event is what stops its leads landing as direct."
+              >
+                No events logged
               </Td>
             </tr>
           )}
@@ -172,7 +178,7 @@ export function EventLog({
                 <Td>{e.format.replace("_", " ")}</Td>
                 <Td muted={!e.market}>{e.market || DASH}</Td>
                 <Td>{e.date}</Td>
-                <Td muted={!e.campaignCode} className={e.campaignCode ? "font-mono text-ops-label" : ""}>
+                <Td muted={!e.campaignCode} className={e.campaignCode ? "font-mono text-[12px]" : ""}>
                   {e.campaignCode || DASH}
                 </Td>
                 {COUNT_COLUMNS.map((c) => (
@@ -189,10 +195,12 @@ export function EventLog({
                   {cpa === null ? DASH : usd(cpa)}
                 </Td>
                 {isOwner && (
-                  <ActionsTd>
-                    <IconButton icon="edit" label={`Edit ${e.name}`} onClick={() => { setError(null); setForm(formFor(e)); }} />
-                    <IconButton icon="archive" label={`Archive ${e.name}`} onClick={() => setArchived(e.id, true, e.name)} />
-                  </ActionsTd>
+                  <Td align="right" className="w-px whitespace-nowrap">
+                    <span className="inline-flex items-center gap-0.5">
+                      <IconButton icon="edit" label={`Edit ${e.name}`} onClick={() => { setError(null); setForm(formFor(e)); }} />
+                      <IconButton icon="archive" label={`Archive ${e.name}`} onClick={() => setArchived(e.id, true, e.name)} />
+                    </span>
+                  </Td>
                 )}
               </Tr>
             );
