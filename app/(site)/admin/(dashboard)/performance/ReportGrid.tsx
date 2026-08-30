@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Drawer } from "@/app/(site)/admin/_ui/Drawer";
-import { Disclosure } from "@/app/(site)/admin/_ui/Disclosure";
 import { SegmentedControl } from "@/app/(site)/admin/_ui/SegmentedControl";
 import { OpsCard } from "@/app/(site)/admin/_ui/v2/OpsCard";
 
@@ -240,51 +239,30 @@ export function ReportGrid({
         </label>
       </div>
 
-      {/* PROSE BUDGET: the definitions, caveats and provenance all survive —
-          in a collapsed disclosure, not as paragraphs above the numbers. */}
-      <div className="mb-3 max-w-[860px]">
-        <Disclosure summary="Why these numbers?">
-          <p>
-            Each cell is {metricLabel} for that {rowDim === "market" ? "market" : "HSM"} from that
-            channel, by {modeLabel} attribution. {DEFINITIONS_LINE}
-          </p>
-          {emailSplit && (
-            <p>
-              The email split is a view resolved from the source webhook (ActiveCampaign = opt-in,
-              Instantly = cold), not a separate channel — those webhooks don&apos;t exist yet, so
-              the split columns render em-dashes.
-            </p>
-          )}
-          {metric === "revenue" && revenueUnattributed > 0 && (
-            <p>
-              Revenue is booked to the month it was <strong>won</strong>, not the month the lead
-              came in. {usd(revenueUnattributed)} of {usd(revenueTotal)} won in{" "}
-              {tfLabel} is missing from this grid: those sales rows carry no agent email, or none
-              that resolves to exactly one lead, so they cannot be placed in a market × channel
-              cell. The grid&apos;s total is therefore lower than booked revenue — Home shows the
-              full figure.
-            </p>
-          )}
-          {mode === "first" && (
-            <p>
-              The app&apos;s first-touch fields are empty (verified against its attribution
-              export), so first-touch views render em-dashes until the contact store exists.
-            </p>
-          )}
-          {rowDim === "market" && mode === "last" && (
-            <p>
-              Populated numbers cover {tfLabel}, Qualified-side only, from a one-time{" "}
-              {snapshotLabel} — a point-in-time export, not a live sync. Channel attribution is the
-              app&apos;s referral source, conservatively mapped; everything ambiguous is counted as
-              direct. Cell shading is proportional to the column&apos;s largest value; click any
-              cell for its breakdown.
-            </p>
-          )}
-        </Disclosure>
-      </div>
-
       {/* ── the grid ── */}
-      <OpsCard>
+      {/* The "Why these numbers?" disclosure is gone; every caveat it held is
+          a fact, and facts ride the title tooltip: provenance, the direct-last
+          rule, the revenue won-date gap when it applies, the first-touch and
+          email-split em-dash reasons when those views are on. */}
+      <OpsCard
+        title={`${metricLabel} by ${rowDim === "market" ? "market" : "HSM"}`}
+        titleTooltip={[
+          provenance,
+          "everything ambiguous counts as direct",
+          "click any cell for its breakdown",
+          metric === "revenue" && revenueUnattributed > 0
+            ? `revenue books to WON month; ${usd(revenueUnattributed)} of ${usd(revenueTotal)} won in ${tfLabel} joined no lead and is absent here — Home shows the full figure`
+            : null,
+          mode === "first"
+            ? "the app's first-touch fields are empty, so first-touch renders em-dashes until the contact store exists"
+            : null,
+          emailSplit
+            ? "the opt-in/cold split resolves from the ActiveCampaign and Instantly webhooks, which don't exist yet — split columns render em-dashes"
+            : null,
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+      >
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
@@ -316,10 +294,12 @@ export function ReportGrid({
                           {(() => {
                             const q = agg.qualifiedByMarketMonth[`${r.key}|${barMonth}`] ?? 0;
                             return (
-                              <OutlineBar
-                                fraction={q / QUALIFIED_TARGET_PER_MARKET_PER_MONTH}
-                                label={`${q} of ${QUALIFIED_TARGET_PER_MARKET_PER_MONTH} Qualified in ${monthShort(barMonth)} · snapshot`}
-                              />
+                              // The bar IS the caption. The exact reading
+                              // rides on hover; the sentence under every row
+                              // name is gone.
+                              <span title={`${q} of ${QUALIFIED_TARGET_PER_MARKET_PER_MONTH} Qualified in ${monthShort(barMonth)}`}>
+                                <OutlineBar fraction={q / QUALIFIED_TARGET_PER_MARKET_PER_MONTH} />
+                              </span>
                             );
                           })()}
                         </div>
