@@ -7,7 +7,7 @@ import {
   monthsFor,
   parseTimeframe,
   timeframeLabel,
-} from "@/app/(site)/marketing/(hub)/timeframe";
+} from "@/app/(site)/admin/_ui/timeframe";
 import { SurfaceHeader, SurfaceHealth } from "@/app/(site)/admin/_ui/v2/SurfaceHeader";
 import { UndocumentedCampaignsBanner } from "@/app/(site)/admin/_ui/UndocumentedCampaignsBanner";
 import { AttributionHealthPanel } from "./AttributionHealth";

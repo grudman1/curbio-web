@@ -34,7 +34,7 @@ import {
 } from "@/lib/adminLeads";
 import { computeUndocumentedCampaigns } from "@/lib/campaignOrphans";
 import { readRegistryLinks } from "@/lib/marketingLinksStore";
-import { paceRead } from "@/app/(site)/marketing/(hub)/pacing";
+import { paceRead } from "@/app/(site)/admin/_ui/pacing";
 import pkg from "@/package.json";
 
 // ─────────────────────────────────────────────────────────────────────────────

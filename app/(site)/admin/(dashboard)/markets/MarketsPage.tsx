@@ -20,15 +20,15 @@ import { Table, Thead, Th, Tr, Td } from "@/app/(site)/admin/_ui/v2/DataTable";
 import { SurfaceHeader, SurfaceHealth } from "@/app/(site)/admin/_ui/v2/SurfaceHeader";
 import { ownerSession } from "@/lib/adminGuards";
 import { readOpsNotes, type OpsNote } from "@/lib/opsNotes";
-import { NotesPanel } from "@/app/(site)/marketing/(hub)/notes/NotesPanel";
+import { NotesPanel } from "@/app/(site)/admin/_ui/notes/NotesPanel";
 import {
   monthsFor,
   parseAttribution,
   parseTimeframe,
   timeframeLabel,
   timeframeParam,
-} from "@/app/(site)/marketing/(hub)/timeframe";
-import { paceRead, paceSentence, type PaceState } from "@/app/(site)/marketing/(hub)/pacing";
+} from "@/app/(site)/admin/_ui/timeframe";
+import { paceRead, paceSentence, type PaceState } from "@/app/(site)/admin/_ui/pacing";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Markets — one row per market: trajectory against the target, close rate,

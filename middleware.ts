@@ -12,15 +12,16 @@ import {
   type OpenedSession,
 } from "./lib/adminSession";
 import { ACTIVE_EXPERIMENT, bucket } from "./lib/ctaVariant";
+import { execShareToken } from "./lib/execShare";
 
 // Five jobs, all on the edge, in order:
 //
 // 1. Internal-surface moves: /design-system → 301 /admin/design-system, and
-//    /admin/marketing/* → 301 /marketing/* (the Marketing Hub is its own
-//    control room now, not a Control Room tab; "monthly" became "executive").
-//    One auth gate covers both roots.
+//    every old /marketing/* (and /admin/marketing/*) hub URL → 301 its
+//    /admin home. TWO TREES: the public site, and /admin. There is no third
+//    internal root any more.
 //
-// 2. /admin AND /marketing GATE. Signed-session auth (see lib/adminSession.ts): middleware
+// 2. /admin GATE. Signed-session auth (see lib/adminSession.ts): middleware
 //    verifies the cookie's HMAC + idle expiry, then confirms the session
 //    record still exists in Redis — using the READ-ONLY token, so the edge
 //    can verify sessions but never mint or revoke one. Passwords are never
@@ -91,6 +92,46 @@ async function validSession(req: NextRequest): Promise<OpenedSession | null> {
   } catch {
     return null;
   }
+}
+
+// ── /marketing → /admin (the two-tree consolidation, 2026-08) ────────────────
+
+/**
+ * Where each old Marketing Hub path lives in the Control Room. Keyed on the
+ * path AFTER the /marketing prefix ("" is the hub landing). The executive
+ * entry keeps its trailing segment so a distributed share link
+ * /marketing/executive/<token> lands on /admin/executive/<token> with the
+ * token intact — those links are held by people outside this codebase and the
+ * redirect must outlive everyone's memory of the old URL.
+ */
+const HUB_TO_ADMIN: Record<string, string> = {
+  "": "/admin",
+  "/attribution": "/admin/attribution",
+  "/markets": "/admin/markets",
+  "/report": "/admin/performance",
+  "/links": "/admin/site/links",
+  "/forms": "/admin/site/forms",
+  "/settings": "/admin/settings",
+  "/channels": "/admin/channels/email",
+  "/contacts": "/admin/channels/email/database",
+  "/events": "/admin/channels/events",
+  "/outreach": "/admin/channels/partnerships/outreach",
+  "/partners": "/admin/channels/partnerships/call-plan",
+  "/executive": "/admin/executive",
+  // pre-hub name for the exec review, kept from the old 1b rule
+  "/monthly": "/admin/executive",
+};
+
+function marketingToAdmin(rest: string): string {
+  if (HUB_TO_ADMIN[rest]) return HUB_TO_ADMIN[rest];
+  // A sub-path under a known screen carries its tail: /executive/<token>,
+  // /monthly/<anything>. Unknown roots fall to /admin rather than 404 — the
+  // reader asked for an internal screen and Home is the index of them.
+  for (const key of ["/executive", "/monthly"]) {
+    if (rest.startsWith(`${key}/`)) return `/admin/executive${rest.slice(key.length)}`;
+  }
+  const root = "/" + (rest.split("/")[1] ?? "");
+  return HUB_TO_ADMIN[root] ?? "/admin";
 }
 
 function notFoundResponse(): NextResponse {
@@ -185,17 +226,22 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
-  // 1b. The Marketing Hub moved out of the Control Room: /admin/marketing/*
-  //     301s to /marketing/* so old links keep working. The one renamed
-  //     segment: monthly → executive. Must run before the /admin gate below,
-  //     because these paths match its prefix.
-  if (pathname === "/admin/marketing" || pathname.startsWith("/admin/marketing/")) {
-    const rest = pathname.slice("/admin/marketing".length);
+  // 1b. /marketing IS GONE — two trees now: the public site, and /admin.
+  //     The Marketing Hub's screens were consolidated into the Control Room
+  //     (2026-08), so every old hub URL 301s to where its screen lives today.
+  //     Bookmarks and the exec share links executives already hold must keep
+  //     working indefinitely — the share redirect preserves the token segment.
+  //     Also covers the even-older /admin/marketing/* prefix (pre-hub-split
+  //     links), which maps through the same table rather than chaining two
+  //     redirects.
+  const hubRest = pathname.startsWith("/marketing")
+    ? pathname.slice("/marketing".length)
+    : pathname.startsWith("/admin/marketing")
+      ? pathname.slice("/admin/marketing".length)
+      : null;
+  if (hubRest !== null && (hubRest === "" || hubRest.startsWith("/"))) {
     const url = req.nextUrl.clone();
-    url.pathname =
-      rest === "/monthly" || rest.startsWith("/monthly/")
-        ? `/marketing/executive${rest.slice("/monthly".length)}`
-        : `/marketing${rest}`;
+    url.pathname = marketingToAdmin(hubRest);
     return NextResponse.redirect(url, 301);
   }
 
@@ -207,7 +253,7 @@ export async function middleware(req: NextRequest) {
   //     THE COMPARISON IS CONSTANT-TIME, and this is the one that matters.
   //     A `===` here short-circuits on the first differing character, so
   //     response time leaks a prefix-match oracle — and because this check
-  //     runs BEFORE the /marketing gate below, it is the only comparison an
+  //     runs BEFORE the /admin gate below, it is the only comparison an
   //     unauthenticated caller can reach. The page's own timingSafeEqualStr
   //     never runs for them: a non-matching path falls through to the gate
   //     and redirects to login. Guessing the token one character at a time
@@ -217,8 +263,12 @@ export async function middleware(req: NextRequest) {
   //     The prefix is matched with startsWith and is NOT secret; only the
   //     token segment goes through the constant-time compare. That helper
   //     early-exits on length, which is documented as non-secret there.
-  const shareToken = process.env.MARKETING_EXEC_SHARE_TOKEN;
-  const SHARE_PREFIX = "/marketing/executive/";
+  //
+  //     This is the ONE unauthenticated path under /admin besides login and
+  //     signup — same shape as those two: a controlled entry, checked here,
+  //     re-checked by the page.
+  const shareToken = execShareToken();
+  const SHARE_PREFIX = "/admin/executive/";
   if (
     shareToken &&
     pathname.startsWith(SHARE_PREFIX) &&
@@ -235,13 +285,14 @@ export async function middleware(req: NextRequest) {
   //       /admin/attribution/links    → /admin/site/links       (Site owns it now)
   //       /admin/attribution/forms    → /admin/site/forms        (ditto)
   //       /admin/attribution/contacts → /admin/channels/email/database (it's email database data)
-  //       /admin/executive            → /admin                  (folded into Home)
   //       /admin/funnel               → /admin/performance       (renamed, same screen)
+  //     /admin/executive is NOT here any more: the two-tree consolidation
+  //     moved the exec review to that exact path, so the old "folded into
+  //     Home" redirect would have shadowed the real page.
   const ADMIN_NAV_REDIRECTS: Record<string, string> = {
     "/admin/attribution/links": "/admin/site/links",
     "/admin/attribution/forms": "/admin/site/forms",
     "/admin/attribution/contacts": "/admin/channels/email/database",
-    "/admin/executive": "/admin",
     "/admin/funnel": "/admin/performance",
   };
   if (ADMIN_NAV_REDIRECTS[pathname]) {
@@ -250,15 +301,9 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
-  // 2. /admin and /marketing gate — one session, one password, one place to
-  //    revoke. /marketing is the Marketing Hub; it authenticates exactly like
-  //    /admin and sends the signed-out to the same login.
-  if (
-    pathname === "/admin" ||
-    pathname.startsWith("/admin/") ||
-    pathname === "/marketing" ||
-    pathname.startsWith("/marketing/")
-  ) {
+  // 2. /admin gate — one session, one password, one place to revoke.
+  //    /marketing never reaches here: 1b has already redirected it.
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
     if (!adminEnvReady()) return notFoundResponse();
     const session = await validSession(req);
 

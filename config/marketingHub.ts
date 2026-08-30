@@ -399,10 +399,6 @@ export const HUB_SURFACE_BY_SLUG: Record<string, HubSurface> = Object.fromEntrie
   HUB_SURFACES.map((s) => [s.slug, s])
 );
 
-export function hubPath(slug: string): string {
-  return slug === "today" ? "/marketing" : `/marketing/${slug}`;
-}
-
 // ── Sidebar grouping ─────────────────────────────────────────────────────────
 //
 // The sidebar's four sections, in reading order: the screen that answers the

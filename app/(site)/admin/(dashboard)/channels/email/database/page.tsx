@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ContactsScreen } from "@/app/(site)/marketing/(hub)/contacts/ContactsScreen";
+import { ContactsScreen } from "@/app/(site)/admin/(dashboard)/channels/email/database/ContactsScreen";
 
 // Email › Database — moved from Attribution › Contacts (2026-08 nav
 // redesign): it fills from ActiveCampaign/Instantly, so it's email database
