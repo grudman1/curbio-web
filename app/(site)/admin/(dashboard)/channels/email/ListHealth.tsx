@@ -1,13 +1,12 @@
-// "List health by market" — the Email channel page's view of the Mailchimp
-// audience summary. NOT attribution: these numbers never join to leads or
-// Qualified counts (see config/emailListHealth.ts). Markets with no audience
-// (Seattle, Riverside) are listed as exactly that — absent, not zero.
+// "List health" — the Email channel page's view of the Mailchimp audience
+// summary. NOT attribution: these numbers never join to leads or Qualified
+// counts (see config/emailListHealth.ts).
 //
-// The paragraph that used to say both of those things is gone. The
-// engagement-not-attribution caveat rides on the card title's tooltip, and the
-// markets without an audience are a muted row of the table rather than a
-// sentence under it — they are data about the audience list, so they belong in
-// the list.
+// Everything that used to stand under or around the table is a title tooltip
+// now: scope and provenance (by market · lifetime · export date), the
+// engagement-not-attribution caveat, and which markets have no Mailchimp
+// audience at all (absent, not zero). The table shows only audiences that
+// exist.
 
 import { EMAIL_LIST_HEALTH, EMAIL_LIST_HEALTH_AS_OF } from "@/config/emailListHealth";
 import { REPORTING_MARKETS } from "@/config/market-map";
@@ -22,8 +21,12 @@ export function EmailListHealth() {
 
   return (
     <OpsCard
-      title="List health by market"
-      titleTooltip={`Lifetime · Mailchimp export ${EMAIL_LIST_HEALTH_AS_OF} · engagement, not attribution — never counts toward Qualified.`}
+      title="List health"
+      titleTooltip={`By market · lifetime · Mailchimp export ${EMAIL_LIST_HEALTH_AS_OF} · engagement, not attribution — never counts toward Qualified.${
+        noAudience.length > 0
+          ? ` No Mailchimp audience: ${noAudience.map((m) => m.label).join(", ")}.`
+          : ""
+      }`}
     >
       <Table>
         <Thead>
@@ -55,21 +58,6 @@ export function EmailListHealth() {
               </Td>
             </Tr>
           ))}
-          {noAudience.length > 0 && (
-            <Tr>
-              <Td
-                muted
-                colSpan={6}
-                className="cursor-help"
-                // Absent, not zero: no Mailchimp audience exists for these
-                // markets, so there is nothing to rate.
-              >
-                <span title="No Mailchimp audience exists for these markets — absent, not zero.">
-                  No audience · {noAudience.map((m) => m.label).join(" · ")}
-                </span>
-              </Td>
-            </Tr>
-          )}
         </tbody>
       </Table>
     </OpsCard>

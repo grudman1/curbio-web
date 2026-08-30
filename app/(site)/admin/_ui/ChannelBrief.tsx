@@ -82,6 +82,8 @@ export type ChannelMetric = {
   label: string;
   value: React.ReactNode;
   suffix?: React.ReactNode;
+  /** Qualification for the number, on hover — never as standing text. */
+  title?: string;
   /** No source behind the number: hollow dot, em-dash, no caption. */
   unwired?: { tooltip: string };
 };
@@ -106,13 +108,13 @@ export function ChannelBrief({
       {metrics && metrics.length > 0 && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 md:gap-6">
           {metrics.map((m) => (
-            <OpsMetric
-              key={m.label}
-              label={m.label}
-              value={m.value}
-              suffix={m.suffix}
-              unwired={m.unwired}
-            />
+            // OpsMetric has no title prop by design; a metric that needs
+            // qualifying carries it on a wrapping element instead. The
+            // [&>div]:h-full keeps the wrapped card as tall as its
+            // unwrapped grid neighbours.
+            <div key={m.label} title={m.title} className="h-full [&>div]:h-full">
+              <OpsMetric label={m.label} value={m.value} suffix={m.suffix} unwired={m.unwired} />
+            </div>
           ))}
         </div>
       )}

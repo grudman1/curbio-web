@@ -66,7 +66,6 @@ export async function ChannelScreen({
     <>
       <PageHeader
         title={plan.label}
-        subtitle={`${label} · ${MARKETS.length} markets`}
         badge={<ChannelTierBadge plan={plan} />}
         right={<ChannelChips plan={plan} />}
       />
@@ -76,13 +75,16 @@ export async function ChannelScreen({
           {
             label: "Qualified",
             value: qualified === null ? DASH : qualified.toLocaleString("en-US"),
-            suffix: qualified === null ? undefined : label.toLowerCase(),
+            // The window ("aug 2026") is stated by the timeframe picker; it
+            // does not repeat under the number.
+            title: qualified === null ? undefined : label,
             unwired: qualified === null ? { tooltip: notByChannel } : undefined,
           },
           {
             label: "Share of target",
             value: share === null ? DASH : `${(share * 100).toFixed(1)}%`,
-            suffix: `of ${companyTarget.toLocaleString("en-US")} target`,
+            // The company target rides on hover, not as a standing caption.
+            title: `Company target: ${companyTarget.toLocaleString("en-US")} Qualified · ${label}`,
             unwired: share === null ? { tooltip: notByChannel } : undefined,
           },
           {
