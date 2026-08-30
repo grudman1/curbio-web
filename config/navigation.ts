@@ -65,7 +65,7 @@ export const NAVIGATION: SiteNavigation = {
     // in the footer.
   ],
 
-  cta: { label: "Free quote", href: "/contact" },
+  cta: { label: "Free Estimate", href: "/contact" },
 
   footerColumns: [
     {
