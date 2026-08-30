@@ -209,7 +209,6 @@ export const CHANNEL_PLAN: ChannelPlan[] = [
     targets: [{ label: "Newsletter", value: "monthly, once the messaging platform exists" }],
     needs: [
       "Messaging platform / USP written down",
-      "Content calendar and freelancer pipeline",
       "Monthly newsletter shipping",
     ],
   },
