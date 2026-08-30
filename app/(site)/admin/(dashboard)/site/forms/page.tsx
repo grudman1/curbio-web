@@ -26,7 +26,10 @@ const UNWIRED = "No submission store behind this yet — /api/intake is not buil
 export default function FormsRegistryPage() {
   return (
     <>
-      <PageHeader title="Forms" subtitle={`${FORM_REGISTRY.length} form types`} />
+      <PageHeader
+        title="Forms"
+        badge={<span className="ops-subtle ops-tnum">{FORM_REGISTRY.length}</span>}
+      />
       <OpsCard>
         <Table>
           <Thead>
@@ -44,7 +47,9 @@ export default function FormsRegistryPage() {
                     {entry.label}
                   </Link>
                 </Td>
-                <Td muted>{entry.deliversAsset ? "delivers an asset on submit" : "none"}</Td>
+                <Td muted title={entry.deliversAsset ? "Delivers an asset on submit." : undefined}>
+                  {entry.deliversAsset ? "asset" : DASH}
+                </Td>
                 <Td align="right" numeric>
                   <span className="inline-flex items-center gap-1.5">
                     <HealthDot tooltip={UNWIRED} />
