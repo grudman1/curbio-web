@@ -1,18 +1,19 @@
 import type { Metadata } from "next";
 import { countsByState, maskEmail, maskName, readRecentWaitlist, type WaitlistEntry } from "@/lib/adminWaitlist";
-import { MUTED, Meta, Panel, SCAN, SUBTLE, Stat } from "../ui";
+import { PageHeader } from "../../_ui/v2/PageHeader";
+import { OpsCard, OpsMetric } from "../../_ui/v2/OpsCard";
+import { EmptyState } from "../../_ui/v2/EmptyState";
+import { StatusBadge } from "../../_ui/v2/HealthDot";
+import { Table, Thead, Th, Tr, Td } from "../../_ui/v2/DataTable";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Waitlist tab — out-of-area signups, the expansion-demand signal.
+// Waitlist — out-of-area signups, the expansion-demand signal.
 //
 // These never reach the CRM (app/api/lead/route.ts skips postToCrm() for
 // source: "waitlist" entirely — there is no market to route them to), so
-// this page is the only place they're visible at all. It answers one
-// question: where should Curbio expand next? Hence the state breakdown, not
-// a delivery/attribution audit like the Leads tab.
-//
-// Identities stay masked, same reasoning as Leads: this page is for spotting
-// demand clusters, not for looking someone up.
+// this page is the only place they're visible at all. State breakdown, not a
+// delivery/attribution audit like the Leads tab. Identities stay masked —
+// same reasoning as Leads. Every caveat is a tooltip, never a caption.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const metadata: Metadata = {
@@ -20,48 +21,30 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+const SCAN = 200;
+const DASH = "—";
+
 // "2026-08-07T14:03:22Z" → "Aug 7, 14:03" — same convention as the Leads tab.
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 function formatTime(iso: string | undefined): string {
-  if (!iso) return "—";
+  if (!iso) return DASH;
   const t = Date.parse(iso);
-  if (!Number.isFinite(t)) return "—";
+  if (!Number.isFinite(t)) return DASH;
   const d = new Date(t);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
 }
 
-const v = (x: string | null | undefined) => (x ? x : "—");
-
-const th: React.CSSProperties = {
-  fontFamily: "var(--font-family-sans)",
-  fontSize: "var(--text-micro)",
-  fontWeight: 700,
-  letterSpacing: "0.1em",
-  textTransform: "uppercase",
-  color: SUBTLE,
-  textAlign: "left",
-  padding: "0 16px 10px 0",
-  borderBottom: "1px solid var(--color-border-strong)",
-  whiteSpace: "nowrap",
-};
-
-const td: React.CSSProperties = {
-  padding: "11px 16px 11px 0",
-  borderBottom: "1px solid var(--color-border)",
-  fontSize: "var(--text-small)",
-  color: "var(--color-text)",
-  verticalAlign: "baseline",
-  whiteSpace: "nowrap",
-};
+const v = (x: string | null | undefined) => (x ? x : DASH);
 
 function detected(e: WaitlistEntry): string {
-  return [e.detectedCity, e.detectedRegion].filter(Boolean).join(", ") || "—";
+  return [e.detectedCity, e.detectedRegion].filter(Boolean).join(", ") || DASH;
 }
 
 export default async function WaitlistTab() {
   const result = await readRecentWaitlist(SCAN);
-  const entries = result.configured && !result.error ? result.entries : [];
+  const configured = result.configured;
+  const entries = configured && !result.error ? result.entries : [];
   const byState = countsByState(entries);
   const now = Date.now();
   const DAY = 86_400_000;
@@ -70,90 +53,116 @@ export default async function WaitlistTab() {
     return Number.isFinite(t) && now - t < DAY;
   }).length;
 
+  const NO_STORE = { tooltip: "Upstash is not configured in this environment." };
+
   return (
     <>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-          gap: "var(--space-4)",
-          marginBottom: "var(--space-4)",
-        }}
-      >
-        <Panel
-          title="Volume"
-          right={<Meta>{result.configured ? `${result.total} stored` : "no store"}</Meta>}
-        >
-          <div style={{ display: "flex", gap: 32 }}>
-            <Stat label="last 24 h" value={result.configured ? last24h : "—"} />
-            <Stat label={`scanned (last ${entries.length})`} value={result.configured ? entries.length : "—"} />
-            <Stat label="states represented" value={result.configured ? byState.length : "—"} />
-          </div>
-        </Panel>
+      <PageHeader
+        title="Waitlist"
+        badge={
+          configured ? (
+            <StatusBadge
+              status={`${result.total} stored`}
+              tone="neutral"
+              title="Out-of-area signups never reach the CRM — this page is the only place they are visible."
+            />
+          ) : undefined
+        }
+      />
+
+      <div className="mb-ops-gap grid grid-cols-2 gap-ops-gap lg:grid-cols-4">
+        <OpsMetric
+          label="Last 24 h"
+          value={configured ? last24h : DASH}
+          unwired={configured ? undefined : NO_STORE}
+        />
+        <OpsMetric
+          label="Scanned"
+          value={
+            configured ? (
+              <span title={`Newest ${entries.length} of the waitlist store.`}>{entries.length}</span>
+            ) : (
+              DASH
+            )
+          }
+          unwired={configured ? undefined : NO_STORE}
+        />
+        <OpsMetric
+          label="States"
+          value={
+            configured ? (
+              <span title="Distinct states across the scanned signups — where expansion demand is clustering.">
+                {byState.length}
+              </span>
+            ) : (
+              DASH
+            )
+          }
+          unwired={configured ? undefined : NO_STORE}
+        />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: "var(--space-4)", alignItems: "start" }}>
-        <Panel title="Waitlist signups" right={<Meta>newest {Math.min(entries.length, 50)}</Meta>}>
-          {!result.configured ? (
-            <p style={{ fontSize: "var(--text-small)", color: MUTED, margin: 0 }}>
-              Upstash not configured in this environment.
-            </p>
+      <div className="grid grid-cols-1 items-start gap-ops-gap lg:grid-cols-[1.6fr_1fr]">
+        <OpsCard
+          title="Signups"
+          titleTooltip="Identities stay masked — for spotting demand clusters, not for looking someone up."
+          control={
+            <span className="ops-subtle ops-tnum">newest {Math.min(entries.length, 50)}</span>
+          }
+          ruled
+        >
+          {!configured ? (
+            <EmptyState headline="No store" />
           ) : entries.length === 0 ? (
-            <p style={{ fontSize: "var(--text-small)", color: MUTED, margin: 0 }}>
-              No waitlist signups yet.
-            </p>
+            <EmptyState headline="No signups yet" />
           ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr>
-                    <th style={th}>Date</th>
-                    <th style={th}>Name</th>
-                    <th style={th}>Email</th>
-                    <th style={th}>ZIP</th>
-                    <th style={th}>Detected</th>
-                    <th style={{ ...th, paddingRight: 0 }}>First-touch channel</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {entries.slice(0, 50).map((e, i) => (
-                    <tr key={e.leadId ?? `row-${i}`}>
-                      <td style={{ ...td, color: MUTED }}>{formatTime(e.submittedAt)}</td>
-                      <td style={{ ...td, fontWeight: 600 }}>{maskName(e)}</td>
-                      <td style={td}>{maskEmail(e.email)}</td>
-                      <td style={td}>{v(e.zip)}</td>
-                      <td style={td}>{detected(e)}</td>
-                      <td style={{ ...td, paddingRight: 0, color: MUTED }}>{v(e.firstTouchChannel)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          <p style={{ fontSize: "var(--text-label)", color: SUBTLE, margin: "12px 0 0" }}>
-            Identities stay masked — this page is for spotting demand clusters, not for looking someone up.
-          </p>
-        </Panel>
-
-        <Panel title="By state" right={<Meta>expansion-demand signal</Meta>}>
-          {byState.length === 0 ? (
-            <p style={{ fontSize: "var(--text-small)", color: MUTED, margin: 0 }}>No data yet.</p>
-          ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <Table>
+              <Thead>
+                <Th>Date</Th>
+                <Th>Name</Th>
+                <Th>Email</Th>
+                <Th>ZIP</Th>
+                <Th>Detected</Th>
+                <Th>First-touch channel</Th>
+              </Thead>
               <tbody>
-                {byState.map((row) => (
-                  <tr key={row.state}>
-                    <td style={{ ...td, fontWeight: 600 }}>{row.state}</td>
-                    <td style={{ ...td, paddingRight: 0, textAlign: "right", color: MUTED }}>{row.count}</td>
-                  </tr>
+                {entries.slice(0, 50).map((e, i) => (
+                  <Tr key={e.leadId ?? `row-${i}`}>
+                    <Td muted>{formatTime(e.submittedAt)}</Td>
+                    <Td className="font-bold">{maskName(e)}</Td>
+                    <Td>{maskEmail(e.email)}</Td>
+                    <Td>{v(e.zip)}</Td>
+                    <Td>{detected(e)}</Td>
+                    <Td muted>{v(e.firstTouchChannel)}</Td>
+                  </Tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
           )}
-          <p style={{ fontSize: "var(--text-label)", color: SUBTLE, margin: "12px 0 0", lineHeight: 1.5 }}>
-            &ldquo;Unknown&rdquo; means Vercel&rsquo;s geo header was absent for that submission — not a state Curbio serves.
-          </p>
-        </Panel>
+        </OpsCard>
+
+        <OpsCard
+          title="By state"
+          titleTooltip={"“Unknown” means Vercel's geo header was absent for that submission — not a state Curbio serves."}
+          ruled
+        >
+          {byState.length === 0 ? (
+            <EmptyState headline={configured ? "No signups yet" : "No store"} />
+          ) : (
+            <Table>
+              <tbody>
+                {byState.map((row) => (
+                  <Tr key={row.state}>
+                    <Td className="font-bold">{row.state}</Td>
+                    <Td align="right" numeric muted>
+                      {row.count}
+                    </Td>
+                  </Tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </OpsCard>
       </div>
     </>
   );
