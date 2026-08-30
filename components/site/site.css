@@ -384,7 +384,7 @@
   line-height: 1.02; letter-spacing: -0.015em; color: var(--color-text-inverse);
   margin: 0; max-width: 13.5em; text-wrap: balance; text-shadow: none;
 }
-.c-hero h1 em { color: inherit; font-style: italic; }
+.c-hero h1 em { color: var(--color-accent); font-style: italic; }
 .c-hero-sub {
   font-family: var(--font-family-sans); font-weight: 450; font-size: 21px; line-height: 1.5;
   color: #fff; margin: 24px 0 0; max-width: 58ch; text-wrap: pretty; text-shadow: none;
