@@ -64,11 +64,12 @@ export function HomeHero() {
           <span aria-hidden="true">4.8/5 stars from 1,776 Featured Customers</span>
         </a>
         <h1>
-          The listing operations department you never had to <em>hire</em>.
+          Stop playing general contractor. Start <em>scaling</em> your listings.
         </h1>
         <p className="c-hero-sub">
-          Stop playing general contractor. Curbio preps, paints, stages, and repairs — paid at
-          close. You win the listing. We make it market-ready.
+          We are the pay-at-closing prep team for top agents and teams. We manage the fast
+          cosmetic updates, staging, and professional photography to get your listings
+          market-ready on time—with $0 due upfront from your sellers.
         </p>
         <div className="c-hero-form">
           <label className="c-hero-formlabel" htmlFor="c-zip">
