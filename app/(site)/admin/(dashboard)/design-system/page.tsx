@@ -9,6 +9,8 @@ import {
   TYPE_SCALE,
 } from "@/config/designTokens";
 import { TokenValue } from "./TokenValue";
+import { PageHeader } from "../../_ui/v2/PageHeader";
+import { StatusBadge } from "../../_ui/v2/HealthDot";
 
 // Internal QA surface for the Phase 2 → 3 migration. Never indexed.
 export const metadata: Metadata = {
@@ -30,6 +32,7 @@ function Section({
   return (
     <section id={id} style={{ marginBottom: "var(--space-16)" }}>
       <h2
+        title={note}
         style={{
           fontFamily: "var(--font-family-serif)",
           fontSize: 20,
@@ -43,19 +46,6 @@ function Section({
       >
         {title}
       </h2>
-      {note && (
-        <p
-          style={{
-            fontSize: "var(--text-small)",
-            color: "var(--color-text-muted)",
-            marginTop: 0,
-            marginBottom: "var(--space-6)",
-            maxWidth: "60ch",
-          }}
-        >
-          {note}
-        </p>
-      )}
       {children}
     </section>
   );
@@ -104,49 +94,23 @@ export default function DesignSystemPage() {
         padding: "var(--space-2) 0 var(--space-8)",
       }}
     >
-      <header style={{ marginBottom: "var(--space-12)" }}>
-        <h1
-          style={{
-            fontFamily: "var(--font-family-serif)",
-            fontSize: "var(--text-h2)",
-            fontWeight: "var(--weight-semibold)" as unknown as number,
-            color: "var(--color-text)",
-            margin: 0,
-          }}
-        >
-          Design system
-        </h1>
-        <p
-          style={{
-            fontSize: "var(--text-body)",
-            color: "var(--color-text-muted)",
-            maxWidth: "70ch",
-            marginTop: "var(--space-4)",
-          }}
-        >
-          Live reference for the semantic token layer. Every value below is read
-          from <code>app/tokens.css</code> at render time — if a token changes,
-          this page changes with it. Semantic tokens point at the primitive
-          palette shown at the bottom; a rebrand replaces the primitives and
-          everything here follows.
-        </p>
-        <p
-          style={{
-            fontSize: "var(--text-small)",
-            color: "var(--color-text-muted)",
-            background: "var(--color-accent-subtle)",
-            border: "1px solid var(--color-border-accent)",
-            borderRadius: "var(--radius-md)",
-            padding: "var(--space-4)",
-            maxWidth: "70ch",
-          }}
-        >
-          <strong>Two systems are live at once, deliberately.</strong> The legacy{" "}
-          <code>lp-*</code> rules that style sell.curbio.com consume the
-          primitives directly and are untouched until Phase 3. Everything new
-          consumes the semantic layer. See <code>DECISIONS.md</code>.
-        </p>
-      </header>
+      <PageHeader
+        title="Design system"
+        badge={
+          <>
+            <StatusBadge
+              status="app/tokens.css"
+              tone="neutral"
+              title="Live reference for the semantic token layer: every value is read from app/tokens.css at render time. Semantic tokens point at the primitive palette at the bottom; a rebrand replaces the primitives and everything here follows."
+            />
+            <StatusBadge
+              status="two systems"
+              tone="warning"
+              title="Two systems are live at once, deliberately. The legacy lp-* rules that style sell.curbio.com consume the primitives directly and are untouched until Phase 3; everything new consumes the semantic layer. See DECISIONS.md."
+            />
+          </>
+        }
+      />
 
       {COLOR_GROUPS.map((g) => (
         <Section key={g.title} id={`color-${g.title.toLowerCase()}`} title={`Color — ${g.title}`} note={g.note}>

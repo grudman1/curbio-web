@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ActionsTd, IconButton, Table, Td, Th, Tr } from "@/app/(site)/admin/_ui/DataTable";
+import { IconButton } from "@/app/(site)/admin/_ui/DataTable";
+import { Table, Td, Th, Thead, Tr } from "@/app/(site)/admin/_ui/v2/DataTable";
 import { InlineNumberCell, InlineSelectCell } from "@/app/(site)/admin/_ui/InlineCell";
 import { LoggedTag } from "@/app/(site)/admin/_ui/Logged";
 import { useToast } from "@/app/(site)/admin/_ui/Toast";
@@ -93,8 +94,8 @@ export function CadenceTable({
 
   return (
     <>
-      <div className="flex items-center gap-2 px-ops-panel pb-3">
-        <label htmlFor="cadence-week" className="font-sans text-ops-label font-semibold text-content-muted">
+      <div className="mb-3 flex items-center gap-2">
+        <label htmlFor="cadence-week" className="ops-muted text-[12px] font-semibold">
           Week of
         </label>
         <Select
@@ -112,16 +113,18 @@ export function CadenceTable({
       </div>
 
       <Table>
-        <thead>
-          <tr>
-            <Th>HSM</Th>
-            <Th>Mailings this week</Th>
-            <Th>Calls this week</Th>
-            <Th>Arm</Th>
-            <Th align="right">Meetings booked</Th>
-            {isOwner && <Th aria-label="Actions" />}
-          </tr>
-        </thead>
+        <Thead>
+          <Th>HSM</Th>
+          <Th>Mailings this week</Th>
+          <Th>Calls this week</Th>
+          <Th>Arm</Th>
+          <Th align="right">Meetings booked</Th>
+          {isOwner && (
+            <Th className="w-px">
+              <span className="sr-only">Actions</span>
+            </Th>
+          )}
+        </Thead>
         <tbody>
           {hsms.map((h) => {
             const e = byHsm.get(h.name) ?? null;
@@ -129,7 +132,7 @@ export function CadenceTable({
               <Tr key={h.name}>
                 <Td className="min-w-[180px]">
                   <div className="font-semibold">{h.name}</div>
-                  <div className="mt-px font-sans text-ops-label text-content-subtle">{h.covers}</div>
+                  <div className="ops-subtle mt-px text-[12px]">{h.covers}</div>
                 </Td>
                 <Td className="min-w-[170px]">
                   <span className="flex items-center gap-2.5">
@@ -182,9 +185,9 @@ export function CadenceTable({
                   />
                 </Td>
                 {isOwner && (
-                  <ActionsTd>
+                  <Td align="right" className="w-px whitespace-nowrap">
                     {e && <IconButton icon="archive" label={`Archive ${h.name}'s week`} onClick={() => archive(e)} />}
-                  </ActionsTd>
+                  </Td>
                 )}
               </Tr>
             );

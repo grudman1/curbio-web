@@ -4,6 +4,7 @@ import { FORM_REGISTRY, FORM_REGISTRY_BY_SLUG } from "@/config/formRegistry";
 import { PageHeader } from "@/app/(site)/admin/_ui/v2/PageHeader";
 import { OpsCard } from "@/app/(site)/admin/_ui/v2/OpsCard";
 import { Table, Thead, Th, Td } from "@/app/(site)/admin/_ui/v2/DataTable";
+import { StatusBadge } from "@/app/(site)/admin/_ui/v2/HealthDot";
 
 // A form's own submission table lives HERE, not on the registry index — one
 // form, one table, no duplicate global feed (Leads already owns that view).
@@ -35,7 +36,11 @@ export default async function FormDetailPage({ params }: { params: Promise<{ slu
     <>
       <PageHeader
         title={entry.label}
-        subtitle={entry.deliversAsset ? "delivers an asset on submit" : "no asset delivered"}
+        badge={
+          entry.deliversAsset ? (
+            <StatusBadge status="asset" tone="neutral" title="Delivers an asset on submit." />
+          ) : undefined
+        }
       />
       <OpsCard
         title="Submissions"
@@ -54,8 +59,8 @@ export default async function FormDetailPage({ params }: { params: Promise<{ slu
           </Thead>
           <tbody>
             <tr>
-              <Td muted colSpan={columns.length}>
-                No rows yet — fed by /api/intake.
+              <Td muted colSpan={columns.length} title="Fed by /api/intake.">
+                No rows yet
               </Td>
             </tr>
           </tbody>

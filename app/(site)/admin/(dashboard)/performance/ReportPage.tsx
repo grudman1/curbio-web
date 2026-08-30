@@ -85,11 +85,7 @@ export default async function ReportPage({
     <>
       {/* The nav calls this screen Performance; the config still calls the surface
           "Report". The title matches what the reader clicked. */}
-      <SurfaceHeader
-        surface={surface}
-        titleOverride="Performance"
-        subtitle={timeframeLabel(tf, SNAPSHOT_MONTHS)}
-      />
+      <SurfaceHeader surface={surface} titleOverride="Performance" />
       <ReportGrid
         markets={markets}
         hsms={hsms}

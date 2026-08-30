@@ -90,7 +90,7 @@ export function SpendEntryPanel({
       )}
       {!configured && (
         <p className="m-0 px-ops-panel pb-3 font-sans text-ops-label text-content-subtle">
-          Ops store not configured — entry disabled.
+          Ops store not configured
         </p>
       )}
 
@@ -112,9 +112,6 @@ export function SpendEntryPanel({
           {entries.length === 0 && (
             <tr>
               <Td muted colSpan={isOwner ? 5 : 4}>
-                {/* The consequence of an empty store is already visible as an
-                    em-dash on every CAC in the product; saying it again here
-                    is the coaching text this system does not carry. */}
                 No spend logged yet
               </Td>
             </tr>

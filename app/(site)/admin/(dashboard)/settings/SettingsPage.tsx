@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Table, Thead, Th, Tr, Td } from "@/app/(site)/admin/_ui/v2/DataTable";
-import { InfoPopover } from "@/app/(site)/admin/_ui/InfoPopover";
 import { OpsCard } from "@/app/(site)/admin/_ui/v2/OpsCard";
 import { HUB_SURFACE_BY_SLUG, SYNC_SURFACES } from "@/config/marketingHub";
 import { SNAPSHOT_AS_OF } from "@/config/appLeadsSnapshot";
@@ -39,20 +38,8 @@ export default async function SettingsPage() {
       <div className="mb-ops-gap grid grid-cols-1 gap-ops-gap xl:grid-cols-2">
         {/* ── spend — the store CAC and every cost-per number waits on ── */}
         <OpsCard
-         
           title="Spend"
-          control={
-            <span className="inline-flex items-center gap-1.5">
-              <span className="ops-card-meta">month × market × channel</span>
-              <InfoPopover label="Where spend numbers come from" align="right">
-                <p className="m-0">
-                  Spend is typed in from invoices, so it is logged, not measured — and every
-                  cost-per number derived from it inherits that. Without it, CAC and the cost-per
-                  numbers on the Funnel, Outreach and Events screens stay em-dashes.
-                </p>
-              </InfoPopover>
-            </span>
-          }
+          titleTooltip="Month × market × channel, typed in from invoices — logged, not measured. Feeds CAC and every cost-per number."
         >
           <SpendEntryPanel
             entries={spend}
@@ -68,19 +55,8 @@ export default async function SettingsPage() {
 
       {/* ── sync / webhook health ── */}
       <OpsCard
-       
         title="Sync & webhook health"
-        control={
-          <span className="inline-flex items-center gap-1.5">
-            <span className="ops-card-meta">the Hub&apos;s four inputs</span>
-            <InfoPopover label="Why this table matters" align="right">
-              <p className="m-0">
-                A silent Instantly webhook has no symptom beyond this table — positive replies
-                simply stop graduating contacts out of cold.
-              </p>
-            </InfoPopover>
-          </span>
-        }
+        titleTooltip="The Hub's four inputs. A silent Instantly webhook has no symptom beyond this table — positive replies stop graduating contacts out of cold."
       >
         <Table>
           <thead>

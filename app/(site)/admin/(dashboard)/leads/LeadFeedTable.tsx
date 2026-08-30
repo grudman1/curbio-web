@@ -29,6 +29,8 @@ export type FeedRow = {
   campaign: string;
   deliveryLabel: string;
   deliveryTone: "ok" | "warn" | "fail" | "unknown";
+  /** Why the delivery badge says what it says — hover only, never printed. */
+  deliveryTitle?: string;
   unverified: boolean;
   detail: FeedDetailSection[];
 };
@@ -141,8 +143,18 @@ function LeadRow({
         <Td muted>{r.campaign}</Td>
         <Td className="whitespace-nowrap">
           <span className="inline-flex gap-1.5">
-            <StatusBadge status={r.deliveryLabel} tone={BADGE_TONE[r.deliveryTone]} />
-            {r.unverified && <StatusBadge status="unverified" tone="warning" />}
+            <StatusBadge
+              status={r.deliveryLabel}
+              tone={BADGE_TONE[r.deliveryTone]}
+              title={r.deliveryTitle}
+            />
+            {r.unverified && (
+              <StatusBadge
+                status="unverified"
+                tone="warning"
+                title="Referral source tag present but not a recognised value."
+              />
+            )}
           </span>
         </Td>
       </Tr>

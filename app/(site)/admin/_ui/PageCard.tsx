@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { RegistryEntry } from "@/config/pageRegistry";
 import type { PageStat } from "@/lib/pageStats";
 import { DASH, Chip, Eyebrow, StatusDot } from "./primitives";
-import { InfoPopover } from "./InfoPopover";
 import { Sparkline } from "./Sparkline";
 import { PAGE_STATUS_TONE } from "./tone";
 
@@ -73,15 +72,8 @@ function Figure({
   );
 }
 
-const VIEW_SOURCES_NOTE = (
-  <>
-    <strong className="font-bold text-content">Vercel</strong> counts raw
-    pageviews server-side. <strong className="font-bold text-content">GA4</strong> models
-    visitors who denied consent under Consent Mode v2, so it usually reports fewer. They
-    are shown separately and never averaged — a single blended number would hide which
-    one you are looking at.
-  </>
-);
+const VIEW_SOURCES_NOTE =
+  "Vercel Web Analytics, counted server-side. GA4 (not yet wired) models consent-denied visitors under Consent Mode v2 and usually reports fewer; the two are never averaged.";
 
 export function PageCard({
   entry,
@@ -120,7 +112,10 @@ export function PageCard({
   const href = src ?? entry.path;
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-lg border border-app-border bg-app-card transition-colors duration-base ease-out focus-within:border-content hover:border-content">
+    <article
+      title={note}
+      className="group relative flex flex-col overflow-hidden rounded-lg border border-app-border bg-app-card transition-colors duration-base ease-out focus-within:border-content hover:border-content"
+    >
       {src ? (
         <Frame src={src} title={entry.title} />
       ) : (
@@ -149,6 +144,16 @@ export function PageCard({
             <p className="m-0 truncate font-mono text-ops-micro text-content-subtle">{entry.path}</p>
           </div>
           {variants !== undefined && <Chip tone="unknown">×{variants}</Chip>}
+          {truncated && (
+            <span title="The lead scan does not cover this whole timeframe.">
+              <Chip tone="unknown">partial</Chip>
+            </span>
+          )}
+          {stat?.mismatch && (
+            <span title="More leads than views on this path — the lead/route join is wrong here.">
+              <Chip tone="bad">join</Chip>
+            </span>
+          )}
         </div>
 
         {/* the strip — views · leads · CVR */}
@@ -157,6 +162,7 @@ export function PageCard({
             label="Views"
             value={views === null ? DASH : views.toLocaleString("en-US")}
             tone={views === null ? "muted" : "default"}
+            title={VIEW_SOURCES_NOTE}
           />
           <Figure
             label="Leads"
@@ -184,23 +190,6 @@ export function PageCard({
           )}
         </div>
 
-        {/* Source line. Views is already stated above, so this does NOT repeat
-            it — it names the source and holds the slot GA4 will fill, which is
-            the honesty requirement (two sources, labelled, never averaged)
-            without spending a second line on the same number. */}
-        {/* z-10: these sit above the stretched link so the ⓘ stays clickable. */}
-        <div className="relative z-10 flex items-center gap-1.5">
-          <span className="font-sans text-ops-micro text-content-subtle">
-            Views: Vercel · GA4 {DASH}
-          </span>
-          <InfoPopover label="How views are counted">{VIEW_SOURCES_NOTE}</InfoPopover>
-          <span className="ml-auto flex items-center gap-1">
-            {truncated && <Chip tone="unknown">partial</Chip>}
-            {stat?.mismatch && <Chip tone="bad">join</Chip>}
-          </span>
-        </div>
-
-        {note && <p className="m-0 truncate font-sans text-ops-micro text-content-subtle">{note}</p>}
       </div>
     </article>
   );

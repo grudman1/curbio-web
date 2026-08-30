@@ -9,7 +9,7 @@ import {
   timeframeLabel,
 } from "@/app/(site)/admin/_ui/timeframe";
 import { SurfaceHeader, SurfaceHealth } from "@/app/(site)/admin/_ui/v2/SurfaceHeader";
-import { UndocumentedCampaignsBanner } from "@/app/(site)/admin/_ui/UndocumentedCampaignsBanner";
+import { CampaignTagsCard } from "@/app/(site)/admin/_ui/v2/CampaignTagsCard";
 import { AttributionHealthPanel } from "./AttributionHealth";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -46,8 +46,8 @@ export default async function AttributionPage({
 
   return (
     <>
-      <SurfaceHeader surface={surface} subtitle={tfLabel} />
-      <UndocumentedCampaignsBanner
+      <SurfaceHeader surface={surface} />
+      <CampaignTagsCard
         orphans={orphans}
         autoDocumented={autoDocumented}
         testTags={testTags}

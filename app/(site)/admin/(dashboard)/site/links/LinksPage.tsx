@@ -7,6 +7,7 @@ import { computeUndocumentedCampaigns } from "@/lib/campaignOrphans";
 import { autoDocumentedLink } from "@/lib/campaignAutoDoc";
 import { SCAN } from "@/app/(site)/admin/(dashboard)/ui";
 import { SurfaceHeader, SurfaceHealth } from "@/app/(site)/admin/_ui/v2/SurfaceHeader";
+import { CampaignTagsCard } from "@/app/(site)/admin/_ui/v2/CampaignTagsCard";
 import { LinksTable, type LeadLite } from "./LinksTable";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -30,9 +31,9 @@ export default async function LinksPage() {
   const registryLinks = registry.configured && !registry.error ? registry.links : [];
   const rows = [...registryLinks, ...SEED_LINKS];
   const registryIssue = !registry.configured
-    ? "Link store not configured in this environment — rows created in the UI won't appear."
+    ? "Link store not configured in this environment."
     : registry.error
-      ? `Link store unreadable: ${registry.error} — seed rows shown; UI-created rows are temporarily missing.`
+      ? `Link store unreadable: ${registry.error}`
       : null;
 
   // ── join: estimate requests carrying each utm_campaign ────────────────────
@@ -72,16 +73,19 @@ export default async function LinksPage() {
   return (
     <>
       <SurfaceHeader surface={surface} />
-      <LinksTable
-        rows={[...rows, ...autoRows]}
+      <CampaignTagsCard
+        orphans={orphans}
         autoDocumented={autoDocumented}
         testTags={testTags}
+        leadWindow={SCAN}
+      />
+      <LinksTable
+        rows={[...rows, ...autoRows]}
         campaignLeads={campaignLeads}
         leadWindow={SCAN}
         leadJoinAvailable={leads.configured && !leads.error}
         seedExportedAt={LINK_SEED_EXPORTED_AT}
         registryIssue={registryIssue}
-        orphans={orphans}
       />
       <SurfaceHealth surface={surface} />
     </>

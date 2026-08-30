@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { MARKETS } from "@/config/markets";
-import { InfoPopover } from "@/app/(site)/admin/_ui/InfoPopover";
-import { DASH, Meta, Panel } from "@/app/(site)/admin/_ui/primitives";
+import { DASH } from "@/app/(site)/admin/_ui/primitives";
 import {
   COST_PER_MEETING_TARGET_USD,
   HUB_SURFACE_BY_SLUG,
@@ -12,7 +11,10 @@ import {
 import { ownerSession } from "@/lib/adminGuards";
 import { readOpsOutreach, weekStart, type OutreachEntry } from "@/lib/opsOutreach";
 import { LoggedTag } from "@/app/(site)/admin/_ui/Logged";
-import { HubPageHeader, NeedsBlock } from "@/app/(site)/admin/_ui/hubUi";
+import { OpsCard } from "@/app/(site)/admin/_ui/v2/OpsCard";
+import { SurfaceHeader, SurfaceHealth } from "@/app/(site)/admin/_ui/v2/SurfaceHeader";
+import { HealthDot } from "@/app/(site)/admin/_ui/v2/HealthDot";
+import { StatusBadge } from "@/app/(site)/admin/_ui/v2/HealthDot";
 import { CadenceTable } from "./CadenceTable";
 
 export const metadata: Metadata = {
@@ -52,20 +54,31 @@ function armTotals(entries: OutreachEntry[], arm: string) {
   return { mailed: sum((e) => e.mailingsSent), meetings: sum((e) => e.meetingsBooked) };
 }
 
-function ArmStat({ label, value, logged }: { label: string; value: number | null; logged?: boolean }) {
+/** label → number, nothing else. An unwired stat carries the hollow dot and
+ *  its tooltip says what would wire it — never a caption. */
+function ArmStat({
+  label,
+  value,
+  logged,
+  unwired,
+}: {
+  label: string;
+  value: number | null;
+  logged?: boolean;
+  unwired?: string;
+}) {
   return (
     <div className="min-w-[86px]">
-      <div className="flex items-baseline gap-1.5">
-        <span
-          className={`font-sans text-ops-metric font-semibold tabular-nums ${
-            value === null ? "text-content-subtle" : "text-content"
-          }`}
-        >
+      <div className="flex items-center gap-2">
+        <span className="ops-metric-label">{label}</span>
+        {unwired && <HealthDot tooltip={unwired} />}
+      </div>
+      <div className="mt-1 flex items-baseline gap-1.5">
+        <span className={`ops-tnum text-[20px] font-semibold ${value === null ? "ops-muted" : ""}`}>
           {value === null ? DASH : value.toLocaleString("en-US")}
         </span>
         {logged && value !== null && <LoggedTag />}
       </div>
-      <div className="mt-1 font-sans text-ops-label text-content-muted">{label}</div>
     </div>
   );
 }
@@ -89,54 +102,64 @@ export default async function OutreachPage() {
 
   return (
     <>
-      <HubPageHeader surface={surface} />
+      <SurfaceHeader surface={surface} />
 
       {/* ── the A/B: two arms side by side ── */}
-      <div className="mb-ops-gap grid grid-cols-1 gap-ops-gap md:grid-cols-2">
+      <div className="mb-4 grid grid-cols-1 gap-4 md:mb-6 md:grid-cols-2 md:gap-6">
         {OUTREACH_ARMS.map((arm) => {
           const totals = armTotals(entries, arm.key);
           return (
-            <Panel
+            <OpsCard
               key={arm.key}
               title={arm.label}
-              right={
-                <span className="inline-flex items-center gap-1.5">
-                  <Meta>vs. ${COST_PER_MEETING_TARGET_USD} per meeting</Meta>
-                  <InfoPopover label="How this A/B is scored" align="right">
-                    <p className="m-0">
-                      The conversion event is a meeting, not a quote — the A/B decides which arm
-                      books face time, and nothing downstream of the meeting is credited to it.
-                      Cost per meeting stays a dash until the spend store carries the card cost.
-                    </p>
-                  </InfoPopover>
-                </span>
+              titleTooltip="The conversion event is a meeting, not a quote — the A/B decides which arm books face time, and nothing downstream of the meeting is credited to it."
+              control={
+                <StatusBadge
+                  status={`$${COST_PER_MEETING_TARGET_USD} / meeting`}
+                  tone="neutral"
+                  title={`Target: $${COST_PER_MEETING_TARGET_USD} cost per meeting`}
+                />
               }
             >
               <div className="flex items-start gap-8">
                 <ArmStat label="Mailed" value={totals.mailed} logged />
                 <ArmStat label="Meetings" value={totals.meetings} logged />
-                <ArmStat label="Cost per meeting" value={null} />
+                <ArmStat
+                  label="Cost per meeting"
+                  value={null}
+                  unwired="Not wired — needs the spend store's card cost."
+                />
               </div>
-            </Panel>
+            </OpsCard>
           );
         })}
       </div>
 
       {/* ── per-HSM cadence ── */}
-      <Panel
-        flush
+      <OpsCard
         title="Weekly cadence by HSM"
-        right={
-          <Meta>
-            target: {OUTREACH_WEEKLY_MAILINGS_TARGET} mailings · {OUTREACH_WEEKLY_CALLS_TARGET} calls per week
-          </Meta>
+        control={
+          <span className="inline-flex items-center gap-1.5">
+            <StatusBadge
+              status={`${OUTREACH_WEEKLY_MAILINGS_TARGET} mailings / wk`}
+              tone="neutral"
+              title={`Target: ${OUTREACH_WEEKLY_MAILINGS_TARGET} mailings per HSM per week`}
+            />
+            <StatusBadge
+              status={`${OUTREACH_WEEKLY_CALLS_TARGET} calls / wk`}
+              tone="neutral"
+              title={`Target: ${OUTREACH_WEEKLY_CALLS_TARGET} calls per HSM per week`}
+            />
+            {!result.configured && (
+              <StatusBadge
+                status="read-only"
+                tone="neutral"
+                title="Ops store not configured — cadence is read-only."
+              />
+            )}
+          </span>
         }
       >
-        {!result.configured && (
-          <p className="m-0 px-ops-panel pb-3 font-sans text-ops-label text-content-subtle">
-            Ops store not configured — cadence is read-only.
-          </p>
-        )}
         <CadenceTable
           hsms={hsms}
           entries={entries}
@@ -147,9 +170,9 @@ export default async function OutreachPage() {
           callsTarget={OUTREACH_WEEKLY_CALLS_TARGET}
           isOwner={isOwner && result.configured}
         />
-      </Panel>
+      </OpsCard>
 
-      <NeedsBlock surface={surface} />
+      <SurfaceHealth surface={surface} />
     </>
   );
 }

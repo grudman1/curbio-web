@@ -1,5 +1,5 @@
-import { InfoPopover } from "@/app/(site)/admin/_ui/InfoPopover";
-import { Meta, Panel } from "@/app/(site)/admin/_ui/primitives";
+import { OpsCard } from "@/app/(site)/admin/_ui/v2/OpsCard";
+import { StatusBadge } from "@/app/(site)/admin/_ui/v2/HealthDot";
 import { ownerSession } from "@/lib/adminGuards";
 import { readOpsEvents, type OpsEvent } from "@/lib/opsEvents";
 import { EventLog } from "./EventLog";
@@ -16,37 +16,25 @@ export async function EventLogPanel() {
   const archived = all.filter((e) => e.archived);
 
   return (
-    <Panel
-      flush
+    <OpsCard
       title="Event log"
-      right={
+      titleTooltip="Invited → registered → attended → leads. Events without call tracking land as direct — the campaign code on each record is what ties the later, typed-in estimate request back to the room it started in. Attendance and RSVPs are Engaged; an estimate request that follows an event is Qualified."
+      control={
         <span className="inline-flex items-center gap-1.5">
-          <Meta>invited → registered → attended → leads</Meta>
-          <InfoPopover label="Why the campaign code matters" align="right">
-            <p className="m-0 mb-2">
-              Events without call tracking land as &ldquo;direct&rdquo; — the follow-up estimate
-              request happens days later, on a typed-in URL, and nothing connects it back to the
-              room it started in. The campaign code on each record is what closes that gap.
-            </p>
-            <p className="m-0">
-              Attendance and RSVPs are Engaged; an estimate request that follows an event is
-              Qualified.
-            </p>
-          </InfoPopover>
+          {!result.configured && (
+            <StatusBadge
+              status="read-only"
+              tone="neutral"
+              title="Ops store not configured — the log is read-only."
+            />
+          )}
+          {result.configured && result.error && (
+            <StatusBadge status="store error" tone="error" title={`Store read failed: ${result.error}`} />
+          )}
         </span>
       }
     >
-      {!result.configured && (
-        <p className="m-0 px-ops-panel pb-3 font-sans text-ops-label text-content-subtle">
-          Ops store not configured — the log is read-only.
-        </p>
-      )}
-      {result.configured && result.error && (
-        <p className="m-0 px-ops-panel pb-3 font-sans text-ops-label text-tone-bad" role="alert">
-          Store read failed: {result.error}
-        </p>
-      )}
       <EventLog events={events} archived={archived} isOwner={isOwner && result.configured} />
-    </Panel>
+    </OpsCard>
   );
 }

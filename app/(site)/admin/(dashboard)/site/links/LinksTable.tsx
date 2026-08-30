@@ -8,14 +8,12 @@ import { Button } from "@/app/(site)/admin/_ui/Button";
 import { Table, Thead, Th, Tr, Td } from "@/app/(site)/admin/_ui/v2/DataTable";
 import { Drawer } from "@/app/(site)/admin/_ui/Drawer";
 import { Field, FieldError, Input, Select } from "@/app/(site)/admin/_ui/Field";
-import { InfoPopover } from "@/app/(site)/admin/_ui/InfoPopover";
 import { OpsCard } from "@/app/(site)/admin/_ui/v2/OpsCard";
 import { StatusBadge } from "@/app/(site)/admin/_ui/v2/HealthDot";
 
 /** Em-dash for a value that does not exist. */
 const DASH = "\u2014";
 import { useToast } from "@/app/(site)/admin/_ui/Toast";
-import { UndocumentedCampaignsBanner } from "@/app/(site)/admin/_ui/UndocumentedCampaignsBanner";
 import { CHANNEL_FUNNEL_ORDER, CHANNEL_LABELS } from "@/config/marketingHub";
 import { MARKETS } from "@/config/markets";
 import {
@@ -28,7 +26,6 @@ import {
   type TrackedLink,
 } from "@/lib/marketingLinks";
 import { saveLinkAction, type SaveLinkInput } from "./actions";
-import type { AutoDocumentedCampaign } from "@/lib/campaignAutoDoc";
 
 // The registry table, its row drawer (QR preview + downloads, the leads a
 // campaign produced, notes), and the builder drawer that makes a wrong URL
@@ -44,8 +41,6 @@ export type LeadLite = {
   channel: string | null;
   firstTouchChannel: string | null;
 };
-
-type Orphan = { campaign: string; count: number };
 
 /** Link status -> ops badge tone. live is the only good state; retired is
  *  neutral rather than red — a retired link is finished, not broken. */
@@ -87,11 +82,7 @@ function QrBlock({ url, label }: { url: string; label: string }) {
   }, [url]);
 
   if (!url) {
-    return (
-      <p className="m-0 ops-subtle">
-        No tracked URL recorded — nothing to encode.
-      </p>
-    );
+    return <p className="m-0 ops-subtle">No tracked URL recorded.</p>;
   }
   if (!qr) return <span className="ops-card-meta">generating…</span>;
 
@@ -106,6 +97,7 @@ function QrBlock({ url, label }: { url: string; label: string }) {
       <div
         className="qr-box box-border h-[120px] w-[120px] flex-none overflow-hidden rounded-md border border-app-border bg-white p-1.5"
         aria-label={`QR code for ${url}`}
+        title="Encodes the tracked URL exactly as saved."
         role="img"
         dangerouslySetInnerHTML={{ __html: qr.svg }}
       />
@@ -116,12 +108,6 @@ function QrBlock({ url, label }: { url: string; label: string }) {
         <a href={svgHref} download={`${fileBase}.svg`} className="font-sans text-ops-label font-bold text-content hover:underline">
           Download SVG
         </a>
-        <p
-          title="Print only from a row whose destination is a redirect we control — a direct URL cannot be repointed later."
-          className="m-0 font-sans text-ops-micro leading-[1.5] text-content-subtle"
-        >
-          Encodes the tracked URL exactly as saved.
-        </p>
       </div>
     </div>
   );
@@ -227,13 +213,14 @@ function BuilderDrawer({
       width={520}
       footer={
         <>
-          <Button variant="primary" disabled={saving} onClick={save}>
-            {saving ? "Saving…" : "Save row"}
-          </Button>
+          <span title="Saves a row — publishes nothing.">
+            <Button variant="primary" disabled={saving} onClick={save}>
+              {saving ? "Saving…" : "Save row"}
+            </Button>
+          </span>
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <span className="ops-card-meta">saves a row — publishes nothing</span>
         </>
       }
     >
@@ -313,9 +300,8 @@ function BuilderDrawer({
             onChange={(e) => setReprint(e.target.checked)}
             className="accent-[var(--color-accent)]"
           />
-          <span>
-            The physical asset is being <strong>reprinted</strong> — unlock the URL fields. The
-            paper already in the world keeps the old URL forever.
+          <span title="The paper already in the world keeps the old URL forever.">
+            The physical asset is being <strong>reprinted</strong> — unlock the URL fields.
           </span>
         </label>
       )}
@@ -329,16 +315,22 @@ function BuilderDrawer({
         {preview ?? "— destination is not a valid URL —"}
       </p>
 
-      {directRisk && (
-        <p className="m-0 mt-2.5 font-sans text-ops-label font-bold leading-[1.5] text-tone-warn-text">
-          Printed links are permanent — this one points at sell.curbio.com directly and cannot be
-          repointed if the page moves. Point it at a curbio.com or go.curbio.com redirect instead.
-        </p>
-      )}
-      {duplicate && (
-        <p className="m-0 mt-2.5 font-sans text-ops-label font-bold leading-[1.5] text-tone-warn-text">
-          A row with this channel + medium + campaign already exists: &ldquo;{duplicate.label}&rdquo;. Two rows with
-          identical tags report as one line — reuse that row or change the campaign.
+      {(directRisk || duplicate) && (
+        <p className="m-0 mt-2.5 flex flex-wrap gap-1.5">
+          {directRisk && (
+            <StatusBadge
+              status="printed → direct"
+              tone="warning"
+              title="Points at sell.curbio.com directly and cannot be repointed if the page moves — use a curbio.com or go.curbio.com redirect."
+            />
+          )}
+          {duplicate && (
+            <StatusBadge
+              status="duplicate tags"
+              tone="warning"
+              title={`Same channel + medium + campaign as “${duplicate.label}” — two rows with identical tags report as one line.`}
+            />
+          )}
         </p>
       )}
       <FieldError>{serverError}</FieldError>
@@ -355,9 +347,6 @@ export function LinksTable({
   leadJoinAvailable,
   seedExportedAt,
   registryIssue,
-  orphans,
-  autoDocumented = [],
-  testTags = [],
 }: {
   rows: TrackedLink[];
   campaignLeads: Record<string, LeadLite[]>;
@@ -365,9 +354,6 @@ export function LinksTable({
   leadJoinAvailable: boolean;
   seedExportedAt: string;
   registryIssue: string | null;
-  orphans: Orphan[];
-  autoDocumented?: AutoDocumentedCampaign[];
-  testTags?: Orphan[];
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -427,14 +413,6 @@ export function LinksTable({
         </p>
       )}
 
-      {/* ── orphans: the wild vs the registry ── */}
-      <UndocumentedCampaignsBanner
-        orphans={orphans}
-        autoDocumented={autoDocumented}
-        testTags={testTags}
-        leadWindow={leadWindow}
-      />
-
       {/* ── filters ── */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Input
@@ -486,24 +464,8 @@ export function LinksTable({
 
       {/* ── the table ── */}
       <OpsCard
-       
         title={`${filtered.length} of ${rows.length} links`}
-        control={
-          <span className="inline-flex items-center gap-1.5">
-            <span className="ops-card-meta">Qualified = estimate requests carrying the campaign, last {leadWindow} leads</span>
-            <InfoPopover label="Where these rows come from" align="right">
-              <p className="m-0 mb-2">
-                Seed rows come from the redirect export of {seedExportedAt} plus the HSM business
-                cards. Seed redirects live in the WordPress Redirection plugin and must be
-                recreated at website cutover.
-              </p>
-              <p className="m-0">
-                A link with clicks and zero Qualified is worth seeing; so is a link with zero of
-                both.
-              </p>
-            </InfoPopover>
-          </span>
-        }
+        titleTooltip={`Seed rows: redirect export of ${seedExportedAt} plus the HSM business cards; seed redirects live in the WordPress Redirection plugin and must be recreated at website cutover. Rows created here live in Redis.`}
       >
         <Table>
           <thead>
@@ -516,7 +478,11 @@ export function LinksTable({
               <Th>Status</Th>
               <Th align="right">Clicks 30d</Th>
               <Th align="right">Lifetime</Th>
-              <Th align="right">Qualified</Th>
+              <Th align="right">
+                <span title={`Qualified = estimate requests carrying the campaign, last ${leadWindow} leads.`}>
+                  Qualified
+                </span>
+              </Th>
             </tr>
           </thead>
           <tbody>
@@ -629,7 +595,12 @@ export function LinksTable({
               Edit row
             </Button>
           ) : (
-            <span className="ops-card-meta">Seed row — corrections happen in git (config/linkRegistry.ts), where they are reviewable.</span>
+            <span
+              className="ops-card-meta"
+              title="Corrections happen in git (config/linkRegistry.ts), where they are reviewable."
+            >
+              Seed row
+            </span>
           )
         }
       >
@@ -638,14 +609,14 @@ export function LinksTable({
             <p className="m-0 flex flex-wrap items-center gap-1.5 ops-subtle">
               {typeLabel(selected.type)} · {selected.owner} · {selected.market}
               <StatusBadge status={selected.status} tone={OPS_STATUS_TONE[selected.status]} />
+              {printedDirectRisk(selected) && (
+                <StatusBadge
+                  status="printed → direct"
+                  tone="warning"
+                  title="Printed asset pointing straight at sell.curbio.com — it cannot be repointed if the page moves."
+                />
+              )}
             </p>
-
-            {printedDirectRisk(selected) && (
-              <p className="m-0 mt-3 font-sans text-ops-label font-bold leading-[1.5] text-tone-warn-text">
-                Printed links are permanent — this one points at sell.curbio.com directly and
-                cannot be repointed if the page moves.
-              </p>
-            )}
 
             <div className="mt-4">
               <span className="ops-eyebrow mb-2 block">QR</span>
@@ -662,8 +633,8 @@ export function LinksTable({
                   <CopyButton text={selected.trackedUrl} />
                 </div>
               ) : (
-                <p className="m-0 ops-subtle">
-                  Tracked URL unknown — recover it from the physical asset.
+                <p className="m-0 ops-subtle" title="Recoverable from the physical asset.">
+                  Tracked URL unknown
                 </p>
               )}
               {selected.shortLink && (
@@ -679,13 +650,15 @@ export function LinksTable({
               {selected.rawUtmSource &&
                 (deriveChannel(selected.rawUtmSource) === "direct" &&
                 selected.rawUtmSource.trim().toLowerCase() !== "direct" ? (
-                  <p className="m-0 mt-1.5 ops-subtle">
-                    carries utm_source={selected.rawUtmSource} — outside the nine channels, so its
-                    leads land as direct.
+                  <p
+                    className="m-0 mt-1.5 ops-subtle"
+                    title="Outside the nine channels — its leads land as direct."
+                  >
+                    utm_source={selected.rawUtmSource} → direct
                   </p>
                 ) : (
                   <p className="m-0 mt-1.5 ops-subtle">
-                    carries utm_source={selected.rawUtmSource} → {deriveChannel(selected.rawUtmSource)}
+                    utm_source={selected.rawUtmSource} → {deriveChannel(selected.rawUtmSource)}
                   </p>
                 ))}
             </div>
@@ -693,22 +666,27 @@ export function LinksTable({
             <div className="mt-5">
               <span className="ops-eyebrow mb-2 block">Clicks</span>
               <p className="m-0 font-sans text-ops-body leading-[1.6] text-content-muted">
-                30-day clicks: {DASH} — no click source exists for these redirects yet.
-                {selected.lifetimeHits != null &&
-                  ` Lifetime: ${selected.lifetimeHits.toLocaleString("en-US")} hits as of the ${seedExportedAt} export.`}
+                <span title="30-day clicks need a click source for the redirects — none exists yet.">
+                  30d: {DASH}
+                </span>
+                {selected.lifetimeHits != null && (
+                  <span title={`As of the ${seedExportedAt} export.`}>
+                    {" "}· lifetime: {selected.lifetimeHits.toLocaleString("en-US")}
+                  </span>
+                )}
               </p>
             </div>
 
             <div className="mt-5">
               <span className="ops-eyebrow mb-2 block">Qualified — last {leadWindow} leads</span>
               {!leadJoinAvailable ? (
-                <p className="m-0 ops-subtle">
-                  Lead store unavailable — the campaign join is off.
-                </p>
+                <p className="m-0 ops-subtle">Lead store unavailable</p>
               ) : !selected.campaign ? (
-                <p className="m-0 font-sans text-ops-label leading-[1.6] text-content-subtle">
-                  No campaign tag on this link — its leads cannot be joined back to it. That is
-                  exactly what the registry exists to fix.
+                <p
+                  className="m-0 ops-subtle"
+                  title="Without a campaign tag, leads cannot be joined back to this link."
+                >
+                  No campaign tag
                 </p>
               ) : selLeads.length === 0 ? (
                 <p className="m-0 ops-subtle">

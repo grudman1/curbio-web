@@ -25,29 +25,40 @@ const STATUS_TONE: Record<WiringStatus, "success" | "warning" | "error" | "neutr
   waiting: "neutral",
 };
 
+/** "50 Qualified per market per month" is a sentence; a chip is not. Condense
+ *  the common target phrasing; anything unrecognised rides in the tooltip and
+ *  the chip shows its leading number. */
+function targetChipText(target: string): string {
+  const condensed = target.replace(/Qualified per market per month/i, "Qualified / market / mo");
+  if (condensed !== target) return condensed;
+  const lead = target.match(/^[$\d][\w$,.%]*/)?.[0];
+  return lead ? `Target ${lead}` : "Target";
+}
+
 export function SurfaceHeader({
   surface,
   titleOverride,
-  subtitle,
   right,
 }: {
   surface: HubSurface;
   titleOverride?: string;
-  /** ONE line — the window this page is reading, or its provenance. */
-  subtitle?: React.ReactNode;
   right?: React.ReactNode;
 }) {
+  // No subtitle, by design: nothing sits beneath a page title except
+  // controls. The window is already stated by the header's timeframe picker,
+  // and provenance rides on card-title tooltips.
   return (
     <PageHeader
       title={titleOverride ?? surface.label}
-      subtitle={subtitle}
-      badge={<StatusBadge status={surface.status} tone={STATUS_TONE[surface.status]} />}
-      right={
+      badge={
         <>
-          {surface.target && <span className="ops-card-meta">Target: {surface.target}</span>}
-          {right}
+          <StatusBadge status={surface.status} tone={STATUS_TONE[surface.status]} />
+          {surface.target && (
+            <StatusBadge status={targetChipText(surface.target)} tone="neutral" title={`Target: ${surface.target}`} />
+          )}
         </>
       }
+      right={right}
     />
   );
 }
@@ -81,7 +92,7 @@ function shortLabel(need: string): string {
   const clause = need.split(/[—:(]/)[0].trim();
   const words = clause.split(/\s+/);
   const cut = words.length <= 5 ? words : words.slice(0, 5);
-  while (cut.length > 1 && /^(and|or|per|of|the|a|by|for|with|to|in|on|×|x|\+|&)$/i.test(cut[cut.length - 1])) {
+  while (cut.length > 1 && /^(and|or|per|of|the|a|an|by|for|with|to|in|on|from|into|at|via|×|x|\+|&)$/i.test(cut[cut.length - 1])) {
     cut.pop();
   }
   return cut.join(" ");

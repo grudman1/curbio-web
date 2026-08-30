@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { Meta, Panel } from "@/app/(site)/admin/_ui/primitives";
 import { ownerSession } from "@/lib/adminGuards";
 import { readOpsPartners, type Partner } from "@/lib/opsPartners";
 import { HUB_SURFACE_BY_SLUG, PARTNER_SEED } from "@/config/marketingHub";
-import { HubPageHeader, NeedsBlock } from "@/app/(site)/admin/_ui/hubUi";
+import { OpsCard } from "@/app/(site)/admin/_ui/v2/OpsCard";
+import { SurfaceHeader, SurfaceHealth } from "@/app/(site)/admin/_ui/v2/SurfaceHeader";
+import { StatusBadge } from "@/app/(site)/admin/_ui/v2/HealthDot";
 import { CallPlanTable, type PlanRow } from "./CallPlanTable";
 
 export const metadata: Metadata = {
@@ -19,7 +20,7 @@ export const dynamic = "force-dynamic";
 const surface = HUB_SURFACE_BY_SLUG.partners;
 
 /** Sorted by next step date — dated records first (soonest at the top, the
- *  Meta line's promise), then undated records, then unsaved seed rows. */
+ *  title tooltip's promise), then undated records, then unsaved seed rows. */
 function sortRows(records: Partner[], seeds: PlanRow[]): PlanRow[] {
   const dated = records.filter((p) => p.nextStepDate).sort((a, b) => a.nextStepDate.localeCompare(b.nextStepDate));
   const undated = records.filter((p) => !p.nextStepDate).sort((a, b) => a.name.localeCompare(b.name));
@@ -45,23 +46,30 @@ export default async function PartnersPage() {
 
   return (
     <>
-      <HubPageHeader surface={surface} />
+      <SurfaceHeader surface={surface} />
 
-      <Panel flush title="Call plan" right={<Meta>sorted by next step date</Meta>}>
-        {!result.configured && (
-          <p className="m-0 px-ops-panel pb-3 font-sans text-ops-label text-content-subtle">
-            Ops store not configured — showing the seed plan, read-only.
-          </p>
-        )}
-        {result.configured && result.error && (
-          <p className="m-0 px-ops-panel pb-3 font-sans text-ops-label text-tone-bad" role="alert">
-            Store read failed: {result.error}
-          </p>
-        )}
+      <OpsCard
+        title="Call plan"
+        titleTooltip="Sorted by next step date — soonest first, then undated, then unsaved seed rows."
+        control={
+          <span className="inline-flex items-center gap-1.5">
+            {!result.configured && (
+              <StatusBadge
+                status="seed · read-only"
+                tone="neutral"
+                title="Ops store not configured — showing the seed plan, read-only."
+              />
+            )}
+            {result.configured && result.error && (
+              <StatusBadge status="store error" tone="error" title={`Store read failed: ${result.error}`} />
+            )}
+          </span>
+        }
+      >
         <CallPlanTable rows={sortRows(active, seeds)} archived={archived} isOwner={isOwner && result.configured} />
-      </Panel>
+      </OpsCard>
 
-      <NeedsBlock surface={surface} />
+      <SurfaceHealth surface={surface} />
     </>
   );
 }
