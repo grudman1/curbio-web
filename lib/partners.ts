@@ -8,6 +8,21 @@ export type Partner = {
   /** Trusted Provider badge for light/white backgrounds (black ink). */
   badgePathDark: string | null;
   /**
+   * Partner mark for the HERO co-brand lockup, which sits on a light
+   * background — so this is the DARK-ink asset, the opposite of `logoPath`
+   * (white knockout, for the navy header).
+   *
+   * Optional, and only meaningful for a partner with no badge: a partner that
+   * has one shows the badge in this slot instead. It exists because a badgeless
+   * partner would otherwise appear above the fold as text alone, with their
+   * mark visible only in the 24px header — which reads as an afterthought when
+   * the whole page is built on their referral.
+   *
+   * A WORDMARK, not a seal: it renders at a fixed height with width auto, so
+   * a wide lockup is not squashed into the badge's square box.
+   */
+  lockupLogoPath?: string;
+  /**
    * Exact referralSourceId string for the CRM. Space and casing are load-bearing
    * (historical eXp leads carry "eXp realty" verbatim — never normalise this value).
    */
@@ -63,14 +78,13 @@ export const STAGING_DESIGN_DC_PARTNER: Partner = {
   logoPath: "/partners/staging-design-dc-white.png",
   badgePath: null,
   badgePathDark: null,
+  lockupLogoPath: "/partners/staging-design-dc-dark.png",
   referralSourceId: "Staging Design DC",
   coBrand: {
-    // This page resolves no market, so only `neutral` is ever rendered.
-    // `default` is kept coherent rather than left as a stub.
-    servingLine: {
-      default: "Staging by Staging Design DC",
-      neutral: "Staging by Staging Design DC",
-    },
+    // EMPTY on purpose. The wordmark above this text already says "Staging
+    // Design DC"; a serving line repeating it reads as a stutter. The title
+    // below is the only line that adds anything.
+    servingLine: { default: "", neutral: "" },
     title: "A Curbio\nPreferred Vendor",
     badgeAlt: "",
     logoAlt: "Staging Design DC",
