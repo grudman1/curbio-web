@@ -250,9 +250,18 @@ const STEPS = [
   },
 ];
 
-export function HowItWorks() {
+/**
+ * `onWhite` lifts this section to pure white.
+ *
+ * The page's bands normally alternate cloud-white → stone → cloud-white →
+ * navy, and the stone SOLD STRIP is what separates the hero from this section.
+ * A page with no verified listings renders no strip, so two cloud-white bands
+ * end up flush against each other and read as one undifferentiated block.
+ * Pure white restores the boundary without inventing a new band colour.
+ */
+export function HowItWorks({ onWhite = false }: { onWhite?: boolean }) {
   return (
-    <section className="lp-how" id="how">
+    <section className={"lp-how" + (onWhite ? " lp-how-white" : "")} id="how">
       <div className="lp-shell">
         <ol className="lp-how-steps">
           {STEPS.map((s) => (

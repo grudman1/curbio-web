@@ -322,6 +322,9 @@ em { font-style: normal; }
 
 /* ============================================================ HOW IT WORKS */
 .lp-how { background: var(--cloud-white); padding: 72px 0; }
+/* Lifted to pure white when the stone sold strip above is absent, so the hero
+   and this section do not merge into one cloud-white block. See HowItWorks. */
+.lp-how-white { background: var(--white); }
 .lp-how-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 36px; }
 .lp-how-step { margin: 0; }
 .lp-how-step-h { font-family: var(--font-serif); font-weight: 600; font-size: 20px; color: var(--navy); line-height: 1.2; margin: 16px 0 0; }
@@ -428,6 +431,13 @@ em { font-style: normal; }
 /* Hero: co-brand mark — large seal + text lockup */
 .exp-cobrand-mark { display: inline-flex; align-items: center; gap: 22px; margin-bottom: 28px; }
 .exp-cobrand-seal { height: 130px; width: 130px; display: block; flex-shrink: 0; }
+/* A badgeless partner shows its WORDMARK here instead of the square seal, so
+   this is sized by height with width auto — a 4:1 lockup in the seal's square
+   box would be squashed. Capped so a very wide mark cannot crowd the title. */
+.exp-cobrand-wordmark { height: 56px; width: auto; max-width: 260px; display: block; flex-shrink: 0; }
+/* Wordmark variant stacks: the mark gets its own line at full prominence and
+   the title keeps the column width it needs. */
+.exp-cobrand-mark-stacked { flex-direction: column; align-items: flex-start; gap: 18px; }
 .exp-cobrand-text { display: flex; flex-direction: column; gap: 6px; }
 .exp-cobrand-serving {
   font-family: var(--font-sans);
@@ -449,6 +459,7 @@ em { font-style: normal; }
 @media (max-width: 640px) {
   .exp-solutions-logo { height: 16px; }
   .exp-cobrand-seal { height: 90px; width: 90px; }
+  .exp-cobrand-wordmark { height: 40px; max-width: 180px; }
   .exp-cobrand-title { font-size: 22px; }
 }
 

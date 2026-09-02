@@ -40,8 +40,12 @@ import type { CampaignPage } from "@/config/campaigns/types";
  *
  * Not every partner can have a badge. eXp's is eXp certifying Curbio as a
  * Trusted Provider; a vendor partner where CURBIO does the certifying has no
- * equivalent asset and never will. So the badge renders when present and the
- * text lockup stands on its own when it isn't.
+ * equivalent asset and never will. So the badge renders when present, a
+ * badgeless partner's WORDMARK (`lockupLogoPath`) renders in its place, and
+ * the text lockup stands alone if neither exists.
+ *
+ * The two are mutually exclusive by construction — showing a badge and a
+ * wordmark side by side would put two partner marks in one lockup.
  */
 function CoBrandMark({
   partnerId,
@@ -58,9 +62,14 @@ function CoBrandMark({
     ? partner.coBrand.servingLine.neutral
     : interpolate(partner.coBrand.servingLine.default, { market: market.name });
 
+  // A wordmark sits ABOVE the text, not beside it. The seal is square and
+  // leaves the title its full column width; a 4:1 lockup in the same row eats
+  // most of it and wraps the title to three cramped lines.
+  const stacked = !partner.badgePathDark && !!partner.lockupLogoPath;
+
   return (
-    <div className="exp-cobrand-mark">
-      {partner.badgePathDark && (
+    <div className={"exp-cobrand-mark" + (stacked ? " exp-cobrand-mark-stacked" : "")}>
+      {partner.badgePathDark ? (
         <Image
           src={partner.badgePathDark}
           alt={partner.coBrand.badgeAlt}
@@ -69,6 +78,17 @@ function CoBrandMark({
           unoptimized
           className="exp-cobrand-seal"
         />
+      ) : (
+        partner.lockupLogoPath && (
+          <Image
+            src={partner.lockupLogoPath}
+            alt={partner.coBrand.logoAlt}
+            width={378}
+            height={86}
+            unoptimized
+            className="exp-cobrand-wordmark"
+          />
+        )
       )}
       <div className="exp-cobrand-text">
         <span className="exp-cobrand-serving">{serving}</span>
@@ -124,6 +144,11 @@ export default function CampaignShell({
   const marketName = neutral ? "" : market.name;
   const marketSlug = market.slug || "unknown";
   const fill = (t: string) => interpolate(t, { market: marketName });
+
+  // Whether the stone-coloured sold band renders at all. Read twice below —
+  // once to render it, once to decide the next band's colour.
+  const soldStripRenders =
+    !!page.sections.soldProof && !neutral && market.sold.length > 0;
 
   const partnerId = page.partner;
   const partner = partnerId ? PARTNERS[partnerId] : undefined;
@@ -185,7 +210,7 @@ export default function CampaignShell({
         {/* A market with no verified listings renders no strip at all, rather
             than an empty row under a "Prepped by Curbio" eyebrow. Gated on the
             DATA, not on a slug — see Market.placeholder in config/markets.ts. */}
-        {page.sections.soldProof && !neutral && market.sold.length > 0 && (
+        {soldStripRenders && (
           <SoldProofStrip
             market={market}
             soldByLine={
@@ -196,7 +221,10 @@ export default function CampaignShell({
           />
         )}
 
-        {page.sections.howItWorks && <HowItWorks />}
+        {/* Same condition as the sold strip above — when that band is absent,
+            this one goes white so the hero does not run into it. Derived from
+            the render condition, not restated, so the two cannot drift. */}
+        {page.sections.howItWorks && <HowItWorks onWhite={!soldStripRenders} />}
 
         {page.sections.closer !== false && (
           <Closer
