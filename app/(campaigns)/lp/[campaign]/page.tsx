@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import CampaignClient from "@/components/campaign/CampaignClient";
 import CampaignShell from "@/components/campaign/CampaignShell";
-import { getCampaignMarket } from "@/lib/campaignMarkets";
+import { getCampaignMarket, NEUTRAL_MARKET } from "@/lib/campaignMarkets";
 import { resolveMarket } from "@/lib/resolveMarket";
 import PageSkeleton from "@/components/PageSkeleton";
 import ExpPageSkeleton from "@/components/ExpPageSkeleton";
@@ -50,6 +50,13 @@ export default async function CampaignPage({
   const { campaign } = await params;
   const page = CAMPAIGN_BY_SLUG[campaign];
   if (!page) notFound();
+
+  // A page with NO market resolution also renders on the server, in the
+  // neutral state: no picker, no per-market variants, and `market: null` on
+  // the lead. The ZIP the visitor types is what the CRM parses instead.
+  if (page.market.mode === "none") {
+    return <CampaignShell page={page} market={NEUTRAL_MARKET} crmMarketName={null} neutral />;
+  }
 
   // A fixed-market page needs no client-side resolution, so it renders on the
   // server with real content instead of shipping a skeleton that resolves to
