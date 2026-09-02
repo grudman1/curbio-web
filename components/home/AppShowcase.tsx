@@ -9,7 +9,7 @@
 
 export function AppShowcase() {
   return (
-    <section data-dark="true" className="c-sect c-sect--inverse" id="app">
+    <section className="c-sect" id="app">
       <div className="c-container c-app-grid">
         <div>
           <p className="c-eyebrow">The Curbio app</p>

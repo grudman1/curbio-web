@@ -7,7 +7,7 @@
 
 export function AwardsStrip() {
   return (
-    <section data-dark="true" className="c-strip" aria-label="Awards, reviews, and press">
+    <section className="c-strip" aria-label="Awards, reviews, and press">
       <div className="c-container">
         <p className="c-strip-row">
           <b>[Award]</b>

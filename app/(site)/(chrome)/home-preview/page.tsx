@@ -59,28 +59,30 @@ export default function HomePreviewPage() {
   return (
     <>
       <HomeHero />
-      <ProofBand />
-      <HowItWorks />
-      <BeforeAfterProof />
-      <HomeResults />
-      <QualifyCard />
-      <DealTimeline />
-      <MoveInStats />
-      <StatBand
-        id="buyer-stats"
-        label="What buyers reward"
-        stats={BUYER_STATS}
-        footnote={
-          <>
-            <sup>1</sup> Sources being supplied separately.
-          </>
-        }
-      />
-      <AudienceRouter />
-      <OurWork />
-      <MarketsManagers />
-      <AppShowcase />
-      <AwardsStrip />
+      <div className="c-home-sections">
+        <ProofBand />
+        <HowItWorks />
+        <BeforeAfterProof />
+        <HomeResults />
+        <QualifyCard />
+        <DealTimeline />
+        <MoveInStats />
+        <StatBand
+          id="buyer-stats"
+          label="What buyers reward"
+          stats={BUYER_STATS}
+          footnote={
+            <>
+              <sup>1</sup> Sources being supplied separately.
+            </>
+          }
+        />
+        <AudienceRouter />
+        <OurWork />
+        <MarketsManagers />
+        <AppShowcase />
+        <AwardsStrip />
+      </div>
       <HomeCloser />
     </>
   );
