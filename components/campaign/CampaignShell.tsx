@@ -28,7 +28,21 @@ import type { CampaignPage } from "@/config/campaigns/types";
 // no campaign config can make a page indexable, which is the point.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Partner co-brand lockup — replaces the eyebrow on partner pages. */
+/**
+ * Partner co-brand lockup — replaces the eyebrow on partner pages.
+ *
+ * The badge is OPTIONAL. `Partner.badgePathDark` is typed `string | null`, but
+ * this used to bail out entirely when it was null — and because the lockup
+ * REPLACES the eyebrow rather than sitting beside it, a badge-less partner got
+ * a hero with an empty eyebrow slot: no lockup, no eyebrow, just a gap. The
+ * `??` fallback in Hero cannot catch it either, since `eyebrowContent` is a
+ * real element that happens to render null.
+ *
+ * Not every partner can have a badge. eXp's is eXp certifying Curbio as a
+ * Trusted Provider; a vendor partner where CURBIO does the certifying has no
+ * equivalent asset and never will. So the badge renders when present and the
+ * text lockup stands on its own when it isn't.
+ */
 function CoBrandMark({
   partnerId,
   market,
@@ -39,21 +53,23 @@ function CoBrandMark({
   neutral: boolean;
 }) {
   const partner = PARTNERS[partnerId];
-  if (!partner?.badgePathDark) return null;
+  if (!partner) return null;
   const serving = neutral
     ? partner.coBrand.servingLine.neutral
     : interpolate(partner.coBrand.servingLine.default, { market: market.name });
 
   return (
     <div className="exp-cobrand-mark">
-      <Image
-        src={partner.badgePathDark}
-        alt={partner.coBrand.badgeAlt}
-        width={500}
-        height={500}
-        unoptimized
-        className="exp-cobrand-seal"
-      />
+      {partner.badgePathDark && (
+        <Image
+          src={partner.badgePathDark}
+          alt={partner.coBrand.badgeAlt}
+          width={500}
+          height={500}
+          unoptimized
+          className="exp-cobrand-seal"
+        />
+      )}
       <div className="exp-cobrand-text">
         <span className="exp-cobrand-serving">{serving}</span>
         <span className="exp-cobrand-title">
