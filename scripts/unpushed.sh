@@ -62,36 +62,55 @@ if [ -n "$ahead" ]; then
   echo
 fi
 
-# Branches whose PR is ALREADY MERGED but which still carry commits whose
-# content is not on main. Pushing to one re-creates a finished branch and the
-# commit reaches nothing — the squash already ran. This is the state that lost
+# Commits sitting on a branch whose PR is ALREADY MERGED, which never reached
+# main. Pushing to such a branch re-creates a finished branch and the commit
+# reaches nothing — the squash already ran. This is the state that lost
 # hero.phone from #124.
 #
-# Keyed on MERGED PR STATE, not on the `: gone` upstream marker: pushing to a
-# merged branch RESURRECTS it on origin, which clears `gone` and hides exactly
-# the case this is here to catch.
+# Keyed on MERGED PR STATE, not the `: gone` marker: pushing to a merged branch
+# RESURRECTS it on origin, which clears `gone` and hides the very case this is
+# for.
 #
-# Uses git cherry (PATCH IDs, not SHAs). A squash-merge rewrites the SHA, so
-# `rev-list origin/main..branch` reports every merged branch as unmerged —
-# noise that would train you to ignore the warning.
+# Two filters, because the naive version cries wolf:
+#
+#   1. git cherry compares PATCH IDs, not SHAs — a squash rewrites the SHA, so
+#      rev-list reports every merged branch as unmerged.
+#   2. A patch-id ALSO fails to match when a MULTI-COMMIT PR is squashed: the
+#      combined commit matches none of its parts. So a commit is only reported
+#      when it was not in the merged PR's own commit list. Without this, every
+#      multi-commit PR in the repo's history looks stranded.
+#
+# What survives both filters still needs a human: the commit may have been
+# re-landed later by a different PR (a cherry-pick gets a new SHA, and if THAT
+# PR squashed more than one commit its patch-id will not match either). Verify
+# the content is genuinely absent from main before acting — check whether the
+# files it touched already look the way the commit leaves them.
 orphaned=""
 if command -v gh >/dev/null 2>&1; then
   for b in $(git for-each-ref --format='%(refname:short)' refs/heads/); do
     [ "$b" = "main" ] && continue
-    n=$(git cherry origin/main "$b" 2>/dev/null | grep -c '^+') || n=0
-    [ "$n" -eq 0 ] && continue
-    merged=$(gh pr list --head "$b" --state merged --json number --jq '.[0].number' 2>/dev/null)
-    [ -n "$merged" ] && orphaned="$orphaned$b|$n|$merged
+    cand=$(git cherry origin/main "$b" 2>/dev/null | grep '^+' | awk '{print $2}')
+    [ -z "$cand" ] && continue
+    pr=$(gh pr list --head "$b" --state merged --json number --jq '.[0].number' 2>/dev/null)
+    [ -z "$pr" ] && continue
+    inpr=$(gh pr view "$pr" --json commits --jq '.commits[].oid' 2>/dev/null)
+    n=0
+    for sha in $cand; do
+      echo "$inpr" | grep -q "^$sha$" || n=$((n + 1))
+    done
+    [ "$n" -gt 0 ] && orphaned="$orphaned$b|$n|$pr
 "
   done
 fi
 
 if [ -n "$orphaned" ]; then
-  echo "  ⚠  MERGED PR, but commits still not on main — do NOT push to these:"
+  echo "  ⚠  MERGED PR, commits possibly not on main — do NOT push to these:"
   printf '%s' "$orphaned" | while IFS='|' read -r b n pr; do
-    [ -n "$b" ] && printf '       %-34s %s commit(s) missing, PR #%s already merged\n' "$b" "$n" "$pr"
+    [ -n "$b" ] && printf '       %-34s %s commit(s), PR #%s already merged\n' "$b" "$n" "$pr"
   done
-  echo "       Cherry-pick onto a fresh branch from origin/main instead."
+  echo "       VERIFY the content is really absent from main before acting —"
+  echo "       it may have been re-landed by a later PR under a new SHA."
+  echo "       If genuinely missing: cherry-pick onto a fresh branch from main."
   echo
 fi
 
