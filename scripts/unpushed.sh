@@ -15,6 +15,18 @@ cd "$(git rev-parse --show-toplevel)"
 git fetch --prune origin >/dev/null 2>&1 || \
   echo "  (warning: could not reach origin — results may be stale)"
 
+# Worktrees first. A branch that owns a worktree must NEVER be bulk-deleted:
+# deleting it force-removes the directory and any uncommitted work inside it.
+# Branches here are off-limits to cleanup scripts, `[gone]` marker or not.
+echo
+echo "  WORKTREES — these branches own a directory; never bulk-delete them:"
+git worktree list --porcelain | awk '
+  /^worktree /  { dir=$2 }
+  /^branch /    { br=$2; sub("refs/heads/","",br);
+                  printf "       %-42s %s\n", dir, "[" br "]" }
+  /^detached$/  { printf "       %-42s %s\n", dir, "(detached HEAD)" }
+'
+
 no_upstream=""
 ahead=""
 
