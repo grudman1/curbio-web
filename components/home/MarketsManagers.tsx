@@ -76,7 +76,13 @@ export function MarketsManagers() {
                     alt={h.name}
                     width={96}
                     height={96}
-                    style={{ objectFit: "cover", objectPosition: "center top", display: "block" }}
+                    style={{
+                      width: 96,
+                      height: 96,
+                      objectFit: "cover",
+                      objectPosition: "center top",
+                      display: "block",
+                    }}
                   />
                 )}
                 <figcaption>
