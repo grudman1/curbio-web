@@ -41,7 +41,7 @@ export function SiteHeader() {
   const [tone, setTone] = useState<Tone>("scrolled");
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
-  const showAnnouncement = pathname !== "/home-preview";
+  const showAnnouncement = pathname !== "/" && pathname !== "/home-preview";
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {

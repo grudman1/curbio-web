@@ -31,6 +31,10 @@ export function FormCard({
   ctaCopy,
   prefillName = "",
   prefillEmail = "",
+  prefillZip = "",
+  prefillAddress = "",
+  locationLabel,
+  consumeMarketPrefill = false,
   referralSourceId,
   source,
   showZip = false,
@@ -46,6 +50,14 @@ export function FormCard({
   ctaCopy: string;
   prefillName?: string;
   prefillEmail?: string;
+  /** Private homepage handoff. These initialise existing payload fields but
+   *  stay hidden because the visitor already supplied the location. */
+  prefillZip?: string;
+  prefillAddress?: string;
+  /** Acknowledges that the homepage routing worked, without another field. */
+  locationLabel?: string;
+  /** Expire the short-lived homepage handoff once the form has hydrated. */
+  consumeMarketPrefill?: boolean;
   /** Default referralSourceId for this page. Overridden by ?referral_source_id= URL param if present. */
   referralSourceId?: string;
   /** Override the lead source string. Defaults to "email-campaign-<market-slug>". */
@@ -63,7 +75,13 @@ export function FormCard({
   /** Page-level FALLBACK utm_source. Never overrides a real one — see below. */
   defaultUtmSource?: string;
 }) {
-  const [f, setF] = useState({ name: prefillName, email: prefillEmail, phone: "", zip: "", address: "" });
+  const [f, setF] = useState({
+    name: prefillName,
+    email: prefillEmail,
+    phone: "",
+    zip: prefillZip,
+    address: prefillAddress,
+  });
   // Which fields were prefilled (via props, or via ?n=/?e= read on mount) —
   // drives the amber "prefilled" border until the visitor edits the field.
   const [prefilled, setPrefilled] = useState({ name: !!prefillName, email: !!prefillEmail });
@@ -123,7 +141,10 @@ export function FormCard({
       ? `${window.location.pathname}?market=${encodeURIComponent(marketSlug)}`
       : window.location.pathname;
     window.history.replaceState({}, "", cleanUrl);
-  }, []);
+    if (consumeMarketPrefill) {
+      document.cookie = "curbio_market_prefill=; path=/markets; max-age=0; samesite=lax";
+    }
+  }, [consumeMarketPrefill]);
 
   const onChange = useCallback(
     (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -270,6 +291,12 @@ export function FormCard({
 
   return (
     <form className="lp-fc" id="quote-form" onSubmit={submit} onFocusCapture={onFormFocus} noValidate>
+      {locationLabel && (
+        <div className="c-market-location" aria-label={`Estimate location: ${locationLabel}`}>
+          <span>Estimate for</span>
+          <strong>{locationLabel}</strong>
+        </div>
+      )}
       <div className="lp-fc-field">
         <label className="lp-fc-label" htmlFor="fc-name">Name</label>
         <input

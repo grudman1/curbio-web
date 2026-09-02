@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { CAMPAIGN_PREFIX, ROUTES } from "@/config/routes";
+import { HomePage } from "@/components/home/HomePage";
 
 // curbio.com homepage — PLACEHOLDER.
 //
@@ -15,43 +14,12 @@ import { CAMPAIGN_PREFIX, ROUTES } from "@/config/routes";
 //
 // Noindex — this is scaffolding, and curbio.com is still served by WordPress.
 export const metadata: Metadata = {
-  title: "Curbio",
+  title: "Curbio — Pre-listing home improvement, fully managed",
+  description:
+    "Curbio is the pre-listing home improvement partner real estate agents trust. Repairs, updates, and staging, fully managed with pay-at-closing for qualified sellers.",
   robots: { index: false, follow: false },
 };
 
 export default function SiteHome() {
-  return (
-    <div className="mx-auto max-w-container px-6 pb-16 pt-40">
-      <h1>Curbio — site group</h1>
-      <p style={{ color: "var(--fg-muted)", marginTop: 12 }}>
-        Phase 2 foundation. Marketing pages are not built yet. This placeholder
-        exists so the site group owns <code>/</code> and so preview deploys have
-        an entry point.
-      </p>
-
-      <h2 style={{ fontSize: 20, marginTop: 40 }}>QA links</h2>
-      <ul style={{ marginTop: 12, lineHeight: 2 }}>
-        {ROUTES.filter((r) => !r.publicPath.includes(":market") && !r.unlisted).map((r) => (
-          <li key={r.internalPath}>
-            <Link href={r.internalPath}>{r.internalPath}</Link>{" "}
-            <span style={{ color: "var(--fg-subtle)", fontSize: 13 }}>
-              — {r.tier} tier · serves <code>sell.curbio.com{r.publicPath}</code>
-            </span>
-          </li>
-        ))}
-        <li>
-          <Link href={`${CAMPAIGN_PREFIX}/m/atlanta`}>{CAMPAIGN_PREFIX}/m/atlanta</Link>{" "}
-          <span style={{ color: "var(--fg-subtle)", fontSize: 13 }}>
-            — per-market campaign page
-          </span>
-        </li>
-        <li>
-          <Link href="/exp/m/atlanta">/exp/m/atlanta</Link>{" "}
-          <span style={{ color: "var(--fg-subtle)", fontSize: 13 }}>
-            — per-market partner page
-          </span>
-        </li>
-      </ul>
-    </div>
-  );
+  return <HomePage />;
 }
