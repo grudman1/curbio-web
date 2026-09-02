@@ -91,7 +91,11 @@ function CoBrandMark({
         )
       )}
       <div className="exp-cobrand-text">
-        <span className="exp-cobrand-serving">{serving}</span>
+        {/* Omitted when empty. A partner showing its WORDMARK has already said
+            its name in the mark; repeating it as text directly underneath
+            stutters. Left as data rather than tied to `stacked` so a partner
+            can choose either independently. */}
+        {serving && <span className="exp-cobrand-serving">{serving}</span>}
         <span className="exp-cobrand-title">
           <RichText>{partner.coBrand.title}</RichText>
         </span>

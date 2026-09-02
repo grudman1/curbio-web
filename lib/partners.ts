@@ -81,12 +81,10 @@ export const STAGING_DESIGN_DC_PARTNER: Partner = {
   lockupLogoPath: "/partners/staging-design-dc-dark.png",
   referralSourceId: "Staging Design DC",
   coBrand: {
-    // This page resolves no market, so only `neutral` is ever rendered.
-    // `default` is kept coherent rather than left as a stub.
-    servingLine: {
-      default: "Staging by Staging Design DC",
-      neutral: "Staging by Staging Design DC",
-    },
+    // EMPTY on purpose. The wordmark above this text already says "Staging
+    // Design DC"; a serving line repeating it reads as a stutter. The title
+    // below is the only line that adds anything.
+    servingLine: { default: "", neutral: "" },
     title: "A Curbio\nPreferred Vendor",
     badgeAlt: "",
     logoAlt: "Staging Design DC",
