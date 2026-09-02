@@ -98,6 +98,17 @@ only — never pushed, three commits behind origin — and came within one routi
     one. Moving a cron route under `app/api/admin/` changes its URL and
     silently breaks the schedule: the deploy succeeds, the cron 404s, and
     nothing surfaces until the data it syncs goes stale.
+- **The minutes right after a merge are the danger window.** The moment you
+  are told a PR merged — or you merge one — STOP: `git checkout main`,
+  `git pull origin main`, then cut a fresh branch before doing anything else.
+  Do not finish the small thing you were mid-way through on the old branch
+  first. That is precisely when `hero.phone` was written: 23 minutes after
+  #124 merged, on a branch that no longer led anywhere.
+- **Delete the local branch immediately after its PR merges.** A merged branch
+  that still exists locally is a loaded gun: it is the thing you accidentally
+  commit to, and pushing it re-creates it on origin. Deleting it makes the
+  mistake impossible rather than merely discouraged, and costs nothing —
+  the content is on main and the SHA is in the reflog.
 - **Before pushing to an EXISTING branch, check it has not already been
   merged.** `git fetch --prune origin` then look for `: gone` on the branch.
   Pushing to a squash-merged branch RE-CREATES it on origin and the commit
@@ -110,7 +121,8 @@ only — never pushed, three commits behind origin — and came within one routi
   release — the squash was correct, the push was the error. Note that checking
   *after* a merge would not have caught it: the commit did not exist yet when
   the squash ran. **The check belongs before the push, not after the merge.**
-  `scripts/unpushed.sh` flags branches in this state.
+  `.githooks/pre-push` blocks the push outright, and `scripts/unpushed.sh`
+  flags branches already in this state.
 - **Channel is derived from `utm_source` at REQUEST time, never from page
   config.** `deriveChannel()` in `lib/channels.ts` maps `utm_source` onto a
   closed **ten**-value list, and anything absent or unrecognised becomes
