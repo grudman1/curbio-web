@@ -171,7 +171,7 @@ export const MARKETS: Market[] = [
     canonicalZip: "75201",
     coordinates: { lat: 32.7767, lng: -96.797 },
     cities: ["Dallas", "Plano", "Frisco", "Arlington", "Fort Worth"],
-    hsm: { name: "Miguel Picart", photo: "/hsm/miguel-picart.jpg" },
+    hsm: { name: "Ray Santibanez", photo: "/hsm/ray-santibanez.jpg" },
     brokerageLogos: [],
     legacySlugs: ["dallas-ft-worth"],
     sold: [

@@ -164,10 +164,10 @@ const TEAM: Record<string, TeamMember> = {
     title: "Home Services Manager",
     bio: "A top-5% lifetime-producing REALTOR® with $80M+ in recent sales, Christine leads design and home-improvement projects across metro Atlanta — managing vendors, timelines, budgets, and quality from the first walkthrough to closing.",
   },
-  "Miguel Picart": {
-    photo: "/hsm/miguel-picart.jpg",
+  "Ray Santibanez": {
+    photo: "/hsm/ray-santibanez.jpg",
     title: "Home Services Manager",
-    bio: "A REALTOR® of 10 years with a background in architecture, Miguel brings a sharp eye for design and buyer expectations. He takes a hands-on approach and communicates clearly, so the process stays smooth from first walkthrough to sold.",
+    bio: "With more than 20 years leading high-volume remodeling and construction operations, Ray brings deep experience in project management, field teams, vendors, budgets, scheduling, and quality. He builds accountable teams and practical processes that keep complex projects moving — on time, on budget, and ready for market.",
   },
   "Trevor Laramee": {
     photo: "/hsm/trevor-laramee.jpg",
