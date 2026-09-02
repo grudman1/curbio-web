@@ -1,0 +1,41 @@
+#!/bin/sh
+# Block commits made directly on main/master.
+#
+# A commit on local main has no upstream to push to and no PR to be reviewed
+# in. It is invisible to everyone, including the person who wrote it. That is
+# not hypothetical here: the email-platform-sync commit sat on local main for
+# days, three behind origin, and was nearly destroyed by a routine branch
+# cleanup. Branch first, always.
+#
+# Activate in a fresh clone with:
+#   git config core.hooksPath .githooks
+
+branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+
+# Detached HEAD (rebase, bisect, `git commit` on a raw SHA) — nothing to guard.
+[ -z "$branch" ] && exit 0
+
+case "$branch" in
+  main|master)
+    cat >&2 <<MSG
+
+  ✘ Commit blocked — you are on "$branch".
+
+    Commits on $branch are not pushable and not reviewable. Move this work to
+    a branch before committing:
+
+        git switch -c feat/your-branch-name
+
+    Nothing has been lost. Your staged changes are still staged, and the
+    command above carries them to the new branch untouched.
+
+    Genuinely need to bypass (rare — a hotfix you are about to push yourself):
+
+        git commit --no-verify
+
+MSG
+    exit 1
+    ;;
+esac
+
+exit 0
