@@ -207,6 +207,16 @@ function implementedPages(): RegistryEntry[] {
     derivedFrom: "app/(site)/admin/(dashboard)/waitlist",
     note: "out-of-area signups, kept out of the CRM and leads:v1 entirely — the expansion-demand signal",
   });
+  // stub until Gavin flips it — see AGENTS.md "Page registry".
+  out.push({
+    path: "/admin/channels/email/promotion",
+    group: "internal",
+    title: "Promotion queue",
+    status: "stub",
+    indexed: false,
+    derivedFrom: "app/(site)/admin/(dashboard)/channels/email/promotion",
+    note: "the cold-to-warm gate: Instantly Interested, not yet an active AC subscriber. Manual approval only",
+  });
   out.push({
     path: "/admin/experiments",
     group: "internal",
