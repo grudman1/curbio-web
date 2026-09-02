@@ -451,3 +451,10 @@ em { font-style: normal; }
   .exp-cobrand-seal { height: 90px; width: 90px; }
   .exp-cobrand-title { font-size: 22px; }
 }
+
+/* Optional "or call us" line under the hero trust row. Only campaign pages
+   that set `hero.phone` render it — see config/campaigns/types.ts. Campaign
+   copy cannot carry links, so a callable number has to be its own field. */
+.lp-hero-phone { margin: 14px 0 0; font-size: 14px; color: var(--fg-muted); }
+.lp-hero-phone a { color: var(--navy); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.lp-hero-phone a:hover { color: var(--amber); }

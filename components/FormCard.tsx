@@ -17,6 +17,13 @@ import type { CtaVariant } from "@/lib/ctaVariant";
  */
 const DEFAULT_ZIP_LABEL = "Property or Agent ZIP Code";
 
+/**
+ * Agent-facing email placeholder — same story as the ZIP label above.
+ * "you@brokerage.com" is right on an agent page and wrong on a homeowner one.
+ * Kept as the default so /exp and /lp/sell are unchanged.
+ */
+const DEFAULT_EMAIL_PLACEHOLDER = "you@brokerage.com";
+
 export function FormCard({
   market,
   crmMarketName = null,
@@ -28,6 +35,7 @@ export function FormCard({
   source,
   showZip = false,
   zipLabel = DEFAULT_ZIP_LABEL,
+  emailPlaceholder = DEFAULT_EMAIL_PLACEHOLDER,
   showAddress = false,
   partnerSlug,
   defaultUtmSource,
@@ -46,6 +54,8 @@ export function FormCard({
   showZip?: boolean;
   /** Label for that field. Copy — agent-facing by default, see the constant. */
   zipLabel?: string;
+  /** Email field placeholder. Copy — agent-facing by default. */
+  emailPlaceholder?: string;
   /** Show an optional address field labeled "Property Street Address." */
   showAddress?: boolean;
   /** Partner slug to carry through to the confirm page (e.g. "exp"). */
@@ -284,7 +294,7 @@ export function FormCard({
           type="email"
           value={f.email}
           onChange={onChange("email")}
-          placeholder="you@brokerage.com"
+          placeholder={emailPlaceholder}
           autoComplete="email"
           aria-invalid={!!errs.email}
           aria-describedby={errs.email ? "fc-email-err" : undefined}

@@ -75,11 +75,13 @@ export function Hero({
   eyebrowContent,
   headline,
   trust,
+  phone,
   heroSub,
   referralSourceId,
   source,
   showZip = false,
   zipLabel,
+  emailPlaceholder,
   partnerSlug,
   defaultUtmSource,
 }: {
@@ -96,6 +98,8 @@ export function Hero({
   headline?: React.ReactNode;
   /** Replaces the three trust-row items. Icons stay fixed per position. */
   trust?: [string, string, string];
+  /** Optional callable number under the trust row. Omit to render nothing. */
+  phone?: { display: string; tel: string };
   /** Replaces the default hero subheader paragraph. */
   heroSub?: React.ReactNode;
   /** Forwarded to FormCard — override referralSourceId for partner pages. */
@@ -106,6 +110,8 @@ export function Hero({
   showZip?: boolean;
   /** Forwarded to FormCard — label for that field. */
   zipLabel?: string;
+  /** Forwarded to FormCard — email placeholder copy. */
+  emailPlaceholder?: string;
   /** Forwarded to FormCard — carried to /confirm so partner branding shows there too. */
   partnerSlug?: string;
   /** Forwarded to FormCard — page-level fallback utm_source. */
@@ -151,6 +157,12 @@ export function Hero({
               {trust?.[2] ?? "Licensed & insured"}
             </span>
           </div>
+          {phone && (
+            <p className="lp-hero-phone">
+              Prefer to talk it through?{" "}
+              <a href={`tel:${phone.tel}`}>{phone.display}</a>
+            </p>
+          )}
         </div>
         <div className="lp-hero-form-col">
           <FormCard
@@ -164,6 +176,7 @@ export function Hero({
             source={source}
             showZip={showZip}
             zipLabel={zipLabel}
+            emailPlaceholder={emailPlaceholder}
             defaultUtmSource={defaultUtmSource}
             partnerSlug={partnerSlug}
           />

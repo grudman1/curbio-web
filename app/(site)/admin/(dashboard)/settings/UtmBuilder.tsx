@@ -35,7 +35,7 @@ export function UtmBuilder() {
       right={
         <span
           className="inline-flex items-center gap-1.5"
-          title="utm_source values outside the nine channels map back to direct at the boundary — the builder only offers the closed list."
+          title="utm_source values outside the ten channels map back to direct at the boundary — the builder only offers the closed list."
         >
           <Badge tone="good">live</Badge>
         </span>

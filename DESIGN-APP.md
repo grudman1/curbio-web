@@ -131,6 +131,6 @@ Numbers are always `tabular-nums`.
 
 ## What did not change
 
-Attribution semantics (first/last-touch, the nine-channel closed list), the
+Attribution semantics (first/last-touch, the ten-channel closed list), the
 grain rules, every data-honesty rule above, and the route structure. This
 system restyles the surface; it does not touch what the numbers mean.

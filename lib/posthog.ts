@@ -21,7 +21,7 @@
 //
 // ATTRIBUTION: super properties are read from lib/analytics.ts — the same
 // sessionStorage UTMs, the same write-once localStorage first-touch, and the
-// same closed nine-value channel derivation the lead payload uses. Nothing is
+// same closed ten-value channel derivation the lead payload uses. Nothing is
 // re-captured or re-derived here; a second attribution implementation would
 // drift from the one the CRM actually receives.
 // ─────────────────────────────────────────────────────────────────────────────

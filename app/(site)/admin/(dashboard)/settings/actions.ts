@@ -33,7 +33,7 @@ export async function saveSpendAction(input: SaveSpendInput): Promise<SaveSpendR
     return { ok: false, error: "Unknown market — use “all markets” for spend that is not market-specific." };
 
   if (!(VALID_CHANNELS as readonly string[]).includes(input.channel))
-    return { ok: false, error: "Channel must be one of the nine — anything else has no column to divide into." };
+    return { ok: false, error: "Channel must be one of the ten — anything else has no column to divide into." };
 
   const amount = parseMoney(input.amountUsd, "Amount");
   if (typeof amount === "object" && amount !== null) return { ok: false, error: amount.error };

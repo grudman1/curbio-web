@@ -171,11 +171,13 @@ export default function CampaignShell({
           eyebrowContent={eyebrow}
           headline={<RichText>{fill(page.hero.headline)}</RichText>}
           trust={page.hero.trust}
+          phone={page.hero.phone}
           heroSub={<RichText>{fill(page.hero.sub)}</RichText>}
           referralSourceId={page.attribution.referralSourceId ?? partner?.referralSourceId}
           partnerSlug={partnerId}
           showZip={page.showZip ?? false}
           zipLabel={page.zipLabel}
+          emailPlaceholder={page.emailPlaceholder}
           defaultUtmSource={page.attribution.defaultUtmSource}
           source={page.attribution.source.replace(/\{marketSlug\}/g, marketSlug)}
         />

@@ -43,6 +43,7 @@
 export const REFERRAL_SOURCE_IDS = [
   "landing page", // default for owned campaign pages
   "eXp realty", // partner: eXp. Casing verbatim — do not tidy.
+  "Staging Design DC", // partner: staging + event rentals vendor, DMV.
 ] as const;
 
 /** Values a CONFIG may set. Inbound URL params are deliberately not limited to
@@ -85,6 +86,17 @@ export type CampaignPage = {
     sub: RichLine;
     /** Trust row items. Icons are fixed per position by design. */
     trust: [string, string, string];
+    /**
+     * Optional "or call us" line under the trust row, rendered as a real
+     * `tel:` link.
+     *
+     * A field rather than copy because campaign copy cannot contain links —
+     * RichText renders `*emphasis*` and `\n`, nothing else, on purpose. A
+     * phone number written into `sub` would be dead text, and a homeowner on
+     * a phone would have to retype it. Pages that want a callable number get
+     * one; pages that omit this render nothing, as before.
+     */
+    phone?: { display: string; tel: string };
   };
 
   /** Overrides the cta-copy A/B variant. Omit to keep the running experiment. */
@@ -138,6 +150,13 @@ export type CampaignPage = {
    * it are unchanged.
    */
   zipLabel?: string;
+
+  /**
+   * Email field placeholder. Copy, same reasoning as `zipLabel` — the default
+   * "you@brokerage.com" is agent-facing and reads wrong to a homeowner.
+   * Defaults to the existing string so pages that don't set it are unchanged.
+   */
+  emailPlaceholder?: string;
 
   /**
    * Mobile sticky CTA bar. DEFAULT OFF on purpose: it is conversion-affecting,

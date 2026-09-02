@@ -98,6 +98,45 @@ only — never pushed, three commits behind origin — and came within one routi
     one. Moving a cron route under `app/api/admin/` changes its URL and
     silently breaks the schedule: the deploy succeeds, the cron 404s, and
     nothing surfaces until the data it syncs goes stale.
+- **Before pushing to an EXISTING branch, check it has not already been
+  merged.** `git fetch --prune origin` then look for `: gone` on the branch.
+  Pushing to a squash-merged branch RE-CREATES it on origin and the commit
+  lands nowhere: the squash already happened, so nothing carries it to `main`,
+  and the resurrected branch looks alive in the UI while holding work that is
+  not shipped.
+
+  This is not hypothetical. `hero.phone` was committed 23 minutes after #124
+  was squash-merged, pushed to that finished branch, and silently missed the
+  release — the squash was correct, the push was the error. Note that checking
+  *after* a merge would not have caught it: the commit did not exist yet when
+  the squash ran. **The check belongs before the push, not after the merge.**
+  `scripts/unpushed.sh` flags branches in this state.
+- **Channel is derived from `utm_source` at REQUEST time, never from page
+  config.** `deriveChannel()` in `lib/channels.ts` maps `utm_source` onto a
+  closed **ten**-value list, and anything absent or unrecognised becomes
+  `direct`. It runs twice from the same value — client-side in `FormCard` for
+  the GA event, server-side in `app/api/lead/route.ts` for the stored lead —
+  so they cannot disagree. A page's `attribution.source` is the lead payload's
+  `source` field and is *not* the channel. If leads from a page must land as
+  `partnership`, the inbound links have to carry `?utm_source=partnership`.
+
+  A page may set `attribution.defaultUtmSource` as a **fallback**, applied at
+  SEND TIME in `FormCard` at the single point the stored UTMs are read. Two
+  rules keep it a default and never an override, and both are load-bearing:
+
+  1. **Blank counts as absent.** `?utm_source=` yields `""` — falsy but not
+     nullish, so a bare `??` would keep the empty string while
+     `deriveChannel("")` returns `direct`. Use a trim check.
+  2. **Never persist it.** Not to `sessionStorage` (last-touch and
+     session-WIDE) nor to the first-touch record in `localStorage` (90-day
+     TTL). Writing it to either would leak one page's channel onto every later
+     page in the session, and could stamp a 90-day first touch of
+     `partnership` on a visitor whose real first touch was organic.
+
+  Known and accepted consequence: a visitor who already picked up a real
+  `utm_source` earlier in the session keeps it, so a default does **not** tag
+  all of that page's traffic. Undercounting a partner is the correct trade —
+  the alternative is overwriting genuine attribution.
 - **Verify against live systems, not docs.** Reporting what an API "should"
   return is not the same as calling it. Run the request, read the response, and
   quote what actually came back.

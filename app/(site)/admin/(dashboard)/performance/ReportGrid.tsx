@@ -24,7 +24,7 @@ import type { SnapshotAggregates, SourceBreakdownRow, CellAggregate } from "@/co
 import type { AttributionMode } from "@/app/(site)/admin/_ui/timeframe";
 import { OutlineBar } from "@/app/(site)/admin/_ui/hubUi";
 
-// The grid: rows × channel columns, ONE metric at a time — nine columns × six
+// The grid: rows × channel columns, ONE metric at a time — ten columns × six
 // numbers is a spreadsheet, not a view. Rows and metric are page-local
 // controls; the TIMEFRAME and ATTRIBUTION MODE arrive from the layout header,
 // which governs every Hub screen at once.

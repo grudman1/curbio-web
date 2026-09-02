@@ -7,9 +7,9 @@
 // funnel-position rather than A–Z.
 //
 // THIS IS NOT lib/channels.ts. That file is the MEASUREMENT taxonomy: a closed
-// nine-value list a lead can actually be tagged with at the boundary. The two
+// ten-value list a lead can actually be tagged with at the boundary. The two
 // do not map 1:1 and must not be collapsed — see DECISIONS.md → "The
-// Magnificent Seven and the nine channels are different axes".
+// Magnificent Seven and the ten channels are different axes".
 //
 //   Paid explodes into three measured channels.
 //   Events maps to NONE — it is attributed by campaign code.
@@ -219,7 +219,7 @@ export const CHANNEL_PLAN_BY_SLUG: Record<string, ChannelPlan> = Object.fromEntr
 );
 
 // Compile-time guard: every MEASURED channel that a Magnificent Seven channel
-// claims must exist in the closed nine-value list. Catches a typo turning into
+// claims must exist in the closed ten-value list. Catches a typo turning into
 // a phantom channel — the exact failure lib/channels.ts exists to prevent.
 type ClaimedChannel = (typeof CHANNEL_PLAN)[number]["channels"][number];
 const _claimedAreReal: ClaimedChannel extends Channel ? true : never = true;
