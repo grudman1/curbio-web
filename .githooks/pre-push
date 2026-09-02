@@ -1,0 +1,82 @@
+#!/bin/sh
+# Block a push to any branch whose PR has already been merged.
+#
+# THE FAILURE THIS PREVENTS
+#
+# A squash-merge puts the branch's content on main under a new SHA and GitHub
+# deletes the branch. Committing to that branch afterwards and pushing does two
+# damaging things at once: it RE-CREATES the deleted branch on origin, and it
+# strands the commit — the squash already ran, so nothing carries it to main.
+# The branch then looks alive in the UI while shipping nothing.
+#
+# This is not hypothetical. hero.phone was committed 23 minutes after #124 was
+# squash-merged, pushed to that finished branch, and missed the release. It was
+# noticed only because a later change happened to depend on it.
+#
+# scripts/unpushed.sh finds these AFTER the fact. This hook stops the push that
+# creates them.
+#
+# Activate in a fresh clone with:
+#   git config core.hooksPath .githooks
+#
+# Bypass (rare — and if you are bypassing this, the branch is finished and you
+# almost certainly want a fresh branch off main instead):
+#   git push --no-verify
+
+remote="$1"
+blocked=0
+
+# stdin: <local ref> <local sha> <remote ref> <remote sha>, one line per ref.
+while read -r local_ref local_sha remote_ref remote_sha; do
+  # Deleting a branch is how you CLEAN UP after a merge — always allow it.
+  case "$local_sha" in
+    *[!0]*) ;;          # a real sha — keep checking
+    *) continue ;;      # all zeros — this is a delete
+  esac
+
+  branch=${remote_ref#refs/heads/}
+  [ "$branch" = "$remote_ref" ] && continue   # not a branch push (tag, etc.)
+  [ "$branch" = "main" ] && continue          # main is protected server-side
+
+  if ! command -v gh >/dev/null 2>&1; then
+    echo "  ⚠  pre-push: gh not found — cannot check whether \"$branch\" is already merged." >&2
+    echo "     Allowing the push. Verify manually that this branch's PR is still open." >&2
+    continue
+  fi
+
+  pr=$(gh pr list --head "$branch" --state merged --json number --jq '.[0].number' 2>/dev/null)
+  if [ -z "$pr" ]; then
+    # Could be "no merged PR" or gh failing (offline, auth). Distinguish, so a
+    # network blip does not silently masquerade as a clean result.
+    if ! gh auth status >/dev/null 2>&1; then
+      echo "  ⚠  pre-push: gh is not authenticated — could not verify \"$branch\". Allowing." >&2
+    fi
+    continue
+  fi
+
+  cat >&2 <<MSG
+
+  ✘ Push blocked — "$branch" was already merged in PR #$pr.
+
+    That branch is finished. Its content reached main as a squash under a new
+    SHA, so anything you push here now lands on a re-created branch and
+    reaches main through nothing.
+
+    Move the work to a fresh branch instead:
+
+        git log origin/main..$branch          # what is stranded here
+        git checkout main && git pull origin main
+        git checkout -b <new-branch>
+        git cherry-pick <sha>                 # each commit from the list above
+
+    Deleting this branch is always allowed:
+
+        git push $remote --delete $branch
+
+    To override anyway: git push --no-verify
+
+MSG
+  blocked=1
+done
+
+exit $blocked
