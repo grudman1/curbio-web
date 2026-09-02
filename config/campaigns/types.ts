@@ -85,6 +85,17 @@ export type CampaignPage = {
     sub: RichLine;
     /** Trust row items. Icons are fixed per position by design. */
     trust: [string, string, string];
+    /**
+     * Optional "or call us" line under the trust row, rendered as a real
+     * `tel:` link.
+     *
+     * A field rather than copy because campaign copy cannot contain links —
+     * RichText renders `*emphasis*` and `\n`, nothing else, on purpose. A
+     * phone number written into `sub` would be dead text, and a homeowner on
+     * a phone would have to retype it. Pages that want a callable number get
+     * one; pages that omit this render nothing, as before.
+     */
+    phone?: { display: string; tel: string };
   };
 
   /** Overrides the cta-copy A/B variant. Omit to keep the running experiment. */
