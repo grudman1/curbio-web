@@ -281,7 +281,7 @@ export const MARKETS: Market[] = [
     slug: "seattle",
     name: "Seattle",
     displayName: "Seattle, WA",
-    coverage: "Puget Sound · King County",
+    coverage: "Seattle Metro · Puget Sound",
     operatorName: "Seattle",
     crmName: "Seattle",
     appMarketCodes: ["SEA"],
@@ -299,9 +299,13 @@ export const MARKETS: Market[] = [
     // /seattle rule lives in WordPress today and is a Phase 5 item; see the
     // README's open flags.
     legacySlugs: [],
-    // No verified Seattle sales yet. See `placeholder` above.
-    placeholder: true,
-    sold: [],
+    sold: [
+      { neighborhood: "Ravenna",  price: "$1,200,000", photo: "/sold/seattle/1016Ravenna_Ravenna.webp" },
+      { neighborhood: "Kirkland", price: "$1,405,000", photo: "/sold/seattle/14348_Kirkland.webp" },
+      { neighborhood: "Everett",  price: "$895,000",   photo: "/sold/seattle/15017_Everett.webp" },
+      { neighborhood: "Renton",   price: "$785,000",   photo: "/sold/seattle/135thPL_Renton.webp" },
+      { neighborhood: "Tacoma",   price: "$425,000",   photo: "/sold/seattle/S58th_Tacoma.webp" },
+    ],
   },
 ];
 
