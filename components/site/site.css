@@ -918,37 +918,7 @@
 @media (max-width:620px){.cs-grid{grid-template-columns:1fr}.cs-card{min-height:260px}}
 
 /* ── PORT: section shells (backgrounds + vertical rhythm) ────────────────── */
-/* THE FIELD PLAN (Aug 24), built on the roles DESIGN.md already assigns:
-
-     cloud   default page bg          every section unless named below
-     stone   strips and dividers      the trust strip under the hero
-     stone   the ONE call-out colour  the before/after (its only use as a
-                                      full section; elsewhere stone is
-                                      dividers, discs and thin strips)
-     white   cards, form card         the deal timeline — see below
-     navy    navy panels, footer      app -> awards -> closer -> footer
-
-   Four field changes over sixteen sections, each one earning it. The page
-   used to alternate at nearly every section (white, cloud, stone, white,
-   stone, white, stone, white, white, cloud, stone, cloud) which read as
-   stripes: no run was long enough to become the page's ground, so every
-   change was noise rather than punctuation.
-
-   The white beat is deliberate and single. White against cloud is a 3% step
-   — a lift, not a band — and it goes to the one section that is a document:
-   the deal record. It also keeps that section's authored card design intact,
-   where the cost card and the review are CLOUD insets on white.
-
-   --raised / --sunken are deleted rather than left unused. They were the
-   mechanism of the alternation, and a live modifier is an invitation to put
-   the stripes back one section at a time. */
 .c-sect { padding: 130px 0 140px; }
-/* ACCENT ONLY (Gavin, Aug 25). Stone is not a page background: DESIGN.md
-   scopes it to "quiet dividers, icon discs, sold-strip bg", and at full
-   section height it reads as a slab of grey between two light sections.
-   Page backgrounds alternate CLOUD (the default, no modifier) and WHITE
-   (.c-sect--white); this modifier stays for accent sections that genuinely
-   want the darker ground. */
 .c-sect--stone { background: var(--color-surface-sunken); }
 .c-sect--white { background: var(--color-surface-raised); }
 .c-sect--inverse { background: var(--color-surface-inverse); }
@@ -957,6 +927,22 @@
    component, so the homepage's approved field plan is untouched while
    /how-it-works keeps its cloud/white alternation. */
 .c-onwhite > .c-sect { background: var(--color-surface-raised); }
+
+/* Homepage field rhythm. Every standard content section between the two
+   full-bleed photographic bookends alternates white / cloud. Keeping this on
+   the route wrapper makes the sequence explicit and prevents a component's
+   reusable default background from silently breaking it when sections move. */
+.c-home-sections > section:nth-child(odd) {
+  background: var(--color-surface-raised);
+}
+.c-home-sections > section:nth-child(even) {
+  background: var(--color-surface);
+}
+/* The Notable estimator is the homepage's one full-section callout. Stone is
+   reserved for this emphasis; the white form card still lifts from the field. */
+.c-home-sections > #payatclose {
+  background: var(--color-surface-sunken);
+}
 .c-sect--work-gallery { padding: 130px 0 150px; overflow: hidden; }
 /* The hairline under markets is gone: navy opening beneath it is the break. */
 .c-sect--markets { padding: 140px 0 150px; }
@@ -1254,13 +1240,8 @@
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-text-muted); line-height: 2.2;
 }
 @media (max-width: 1024px) { .c-app-grid { grid-template-columns: 1fr; gap: 36px; } }
-/* FIELD CHANGE 4 of 4 — navy opens at the app panel and does not close: app,
-   awards, closer and footer are one block, so the page ends on ink rather
-   than trailing off. Compound selectors, because .c-eyebrow / .c-h2 /
-   .c-lede are declared later in this file and would otherwise win at equal
-   specificity — the same trap .c-proofvid hit.
-   The placeholder well stays navy with a hairline: a lighter navy step would
-   be a derived shade, and the palette in DESIGN.md is closed. */
+/* Inverse remains available to shared content surfaces that explicitly need
+   it. The homepage app panel now participates in the white/stone sequence. */
 .c-sect--inverse .c-eyebrow { color: rgba(255,255,255,0.72); }
 .c-sect--inverse .c-h2 { color: var(--color-text-inverse); }
 .c-sect--inverse .c-lede { color: rgba(255,255,255,0.78); }
@@ -1270,18 +1251,13 @@
 .c-sect--inverse .c-app-placeholder { color: rgba(255,255,255,0.62); }
 
 /* ── PORT v2: awards / reviews / press — thin, low emphasis ───────────────── */
-/* Navy, and no bottom rule. It sits between the app panel and the closer,
-   both navy: on cloud it would have cut the page's one navy block in half for
-   the sake of a thin line of low-emphasis text. Inverse colours follow the
-   .c-navyproof convention already established on navy here — white at alpha,
-   never navy-30, which DESIGN.md reserves for fine print on light. */
-.c-strip { background: var(--color-surface-inverse); padding: 26px 0; }
+.c-strip { background: var(--color-surface-raised); padding: 26px 0; }
 .c-strip-row {
   display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: 8px 0;
-  font-family: var(--font-family-sans); font-size: 13.5px; color: rgba(255,255,255,0.62);
+  font-family: var(--font-family-sans); font-size: 13.5px; color: var(--color-text-muted);
 }
-.c-strip-row b { color: rgba(255,255,255,0.86); font-weight: 700; }
-.c-strip .c-proof-sep { color: rgba(255,255,255,0.38); }
+.c-strip-row b { color: var(--color-text); font-weight: 700; }
+.c-strip .c-proof-sep { color: var(--color-text-subtle); }
 
 /* ── PORT: markets + managers ────────────────────────────────────────────── */
 .c-mkt-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 110px; }
