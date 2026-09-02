@@ -56,3 +56,30 @@ Leave both alone. The detailed rationale is in `fonts.ts`.
 ## Page registry
 
 Every new page gets a `stub` row in `config/pageRegistry.ts`. Only I flip it to `live`.
+
+## Working rules
+
+These exist because a commit wiring the email platform sync sat on local `main`
+only — never pushed, three commits behind origin — and came within one routine
+`git branch -D` sweep of being destroyed. Every rule below is that incident.
+
+- **Never commit while `main` or `master` is checked out. Create a branch
+  first.** A commit on local `main` has no upstream to push to and no PR to be
+  reviewed in. It is invisible to everyone including you. `.githooks/pre-commit`
+  enforces this.
+- **Push every branch to origin in the same session it's created.** Work that
+  exists only on this machine is work that can be lost — to a disk, a bad
+  `reset`, or a cleanup script that had no way to know the branch was precious.
+  Push before the work is finished; an unreviewed branch on origin costs
+  nothing.
+- **Before ending a session, run `git status` and `git log origin/main..HEAD`
+  and report anything unpushed.** `scripts/unpushed.sh` does both across every
+  branch at once.
+- **All admin dashboard changes stay within `app/(site)/admin/`,
+  `app/api/admin/`, and the config modules those read.** Boundary audit before
+  every commit: list your changed files and confirm each one belongs. Anything
+  outside that set is a shared file — see the list above — and needs to be
+  called out.
+- **Verify against live systems, not docs.** Reporting what an API "should"
+  return is not the same as calling it. Run the request, read the response, and
+  quote what actually came back.
