@@ -177,6 +177,7 @@ export default function CampaignShell({
           partnerSlug={partnerId}
           showZip={page.showZip ?? false}
           zipLabel={page.zipLabel}
+          emailPlaceholder={page.emailPlaceholder}
           defaultUtmSource={page.attribution.defaultUtmSource}
           source={page.attribution.source.replace(/\{marketSlug\}/g, marketSlug)}
         />

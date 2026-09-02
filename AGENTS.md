@@ -98,6 +98,19 @@ only — never pushed, three commits behind origin — and came within one routi
     one. Moving a cron route under `app/api/admin/` changes its URL and
     silently breaks the schedule: the deploy succeeds, the cron 404s, and
     nothing surfaces until the data it syncs goes stale.
+- **Before pushing to an EXISTING branch, check it has not already been
+  merged.** `git fetch --prune origin` then look for `: gone` on the branch.
+  Pushing to a squash-merged branch RE-CREATES it on origin and the commit
+  lands nowhere: the squash already happened, so nothing carries it to `main`,
+  and the resurrected branch looks alive in the UI while holding work that is
+  not shipped.
+
+  This is not hypothetical. `hero.phone` was committed 23 minutes after #124
+  was squash-merged, pushed to that finished branch, and silently missed the
+  release — the squash was correct, the push was the error. Note that checking
+  *after* a merge would not have caught it: the commit did not exist yet when
+  the squash ran. **The check belongs before the push, not after the merge.**
+  `scripts/unpushed.sh` flags branches in this state.
 - **Channel is derived from `utm_source` at REQUEST time, never from page
   config.** `deriveChannel()` in `lib/channels.ts` maps `utm_source` onto a
   closed **ten**-value list, and anything absent or unrecognised becomes

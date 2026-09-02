@@ -81,6 +81,7 @@ export function Hero({
   source,
   showZip = false,
   zipLabel,
+  emailPlaceholder,
   partnerSlug,
   defaultUtmSource,
 }: {
@@ -109,6 +110,8 @@ export function Hero({
   showZip?: boolean;
   /** Forwarded to FormCard — label for that field. */
   zipLabel?: string;
+  /** Forwarded to FormCard — email placeholder copy. */
+  emailPlaceholder?: string;
   /** Forwarded to FormCard — carried to /confirm so partner branding shows there too. */
   partnerSlug?: string;
   /** Forwarded to FormCard — page-level fallback utm_source. */
@@ -173,6 +176,7 @@ export function Hero({
             source={source}
             showZip={showZip}
             zipLabel={zipLabel}
+            emailPlaceholder={emailPlaceholder}
             defaultUtmSource={defaultUtmSource}
             partnerSlug={partnerSlug}
           />

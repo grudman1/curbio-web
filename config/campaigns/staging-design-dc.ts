@@ -67,6 +67,7 @@ export const stagingDesignDc: CampaignPage = {
 
   showZip: true,
   zipLabel: "Your home's ZIP code",
+  emailPlaceholder: "you@email.com",
 
   attribution: {
     // No {marketSlug} token: this is ONE campaign across the DMV, and the page

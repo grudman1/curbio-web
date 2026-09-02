@@ -152,6 +152,13 @@ export type CampaignPage = {
   zipLabel?: string;
 
   /**
+   * Email field placeholder. Copy, same reasoning as `zipLabel` — the default
+   * "you@brokerage.com" is agent-facing and reads wrong to a homeowner.
+   * Defaults to the existing string so pages that don't set it are unchanged.
+   */
+  emailPlaceholder?: string;
+
+  /**
    * Mobile sticky CTA bar. DEFAULT OFF on purpose: it is conversion-affecting,
    * so it stays available but unproven until a page that isn't already earning
    * has tested it.
