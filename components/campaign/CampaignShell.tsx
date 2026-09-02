@@ -132,6 +132,7 @@ export default function CampaignShell({
           neutral={neutral}
           initialPickerOpen={showPicker}
           basePath={base}
+          showMarketPicker={page.market.mode === "picker"}
         />
       ) : (
         <Header
@@ -157,6 +158,9 @@ export default function CampaignShell({
           heroSub={<RichText>{fill(page.hero.sub)}</RichText>}
           referralSourceId={page.attribution.referralSourceId ?? partner?.referralSourceId}
           partnerSlug={partnerId}
+          showZip={page.showZip ?? false}
+          zipLabel={page.zipLabel}
+          defaultUtmSource={page.attribution.defaultUtmSource}
           source={page.attribution.source.replace(/\{marketSlug\}/g, marketSlug)}
         />
 

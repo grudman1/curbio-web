@@ -17,12 +17,20 @@ export function PartnerHeader({
   neutral,
   initialPickerOpen,
   basePath,
+  showMarketPicker = true,
 }: {
   partnerId: string;
   market: CampaignMarket;
   neutral: boolean;
   initialPickerOpen: boolean;
   basePath: string;
+  /**
+   * Mirrors the same prop on Header. A page with no market resolution
+   * (`market: { mode: "none" }`) has nothing for the picker to set, and
+   * offering one would imply a market choice the page does not make.
+   * Defaults true so existing partner pages are unchanged.
+   */
+  showMarketPicker?: boolean;
 }) {
   const partner = PARTNERS[partnerId];
   return (
@@ -50,12 +58,14 @@ export function PartnerHeader({
             className="exp-solutions-logo"
           />
         </div>
-        <ZipModalTrigger
-          label={neutral ? "Choose your market" : market.name}
-          marketSlug={neutral ? null : market.slug}
-          initialOpen={initialPickerOpen}
-          basePath={basePath}
-        />
+        {showMarketPicker && (
+          <ZipModalTrigger
+            label={neutral ? "Choose your market" : market.name}
+            marketSlug={neutral ? null : market.slug}
+            initialOpen={initialPickerOpen}
+            basePath={basePath}
+          />
+        )}
       </div>
     </header>
   );

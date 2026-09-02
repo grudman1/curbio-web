@@ -109,12 +109,35 @@ export type CampaignPage = {
    *   fixed   one market, named here. No picker, no resolution, no per-market
    *           variants — and the page renders SERVER-side, so it is fully
    *           static with real content rather than a skeleton.
+   *   none    NO market at all. Not "several markets" — the page never
+   *           resolves one, shows no picker, and sends `market: null` on the
+   *           lead. For pages that collect a ZIP in the form and let the CRM
+   *           parse it to a market on its side, which is what curbio.com does
+   *           today. The sold-proof strip hides itself (it is gated on the
+   *           market having listings, and the neutral market has none), so a
+   *           `none` page must not rely on it.
    *
    * Modelled as a union so "no picker" cannot be expressed without saying which
    * market. The first draft had a boolean, and a page with `false` rendered the
    * neutral state forever — a landing page with no market and no form.
    */
-  market: { mode: "picker" } | { mode: "fixed"; slug: string };
+  market: { mode: "picker" } | { mode: "fixed"; slug: string } | { mode: "none" };
+
+  /**
+   * Show a ZIP field in the form. Pair with `market: { mode: "none" }`: the
+   * visitor types a ZIP, the CRM parses it to a market. The field itself,
+   * its validation, and the payload contract are unchanged — this only
+   * decides whether it renders.
+   */
+  showZip?: boolean;
+
+  /**
+   * Label for that ZIP field. Copy, like every other string here — the
+   * default is agent-facing ("Property or Agent ZIP Code") and reads wrong on
+   * a consumer page. Defaults to the existing string so pages that don't set
+   * it are unchanged.
+   */
+  zipLabel?: string;
 
   /**
    * Mobile sticky CTA bar. DEFAULT OFF on purpose: it is conversion-affecting,
@@ -138,6 +161,21 @@ export type CampaignPage = {
     source: string;
     /** Closed list. Defaults to "landing page". */
     referralSourceId?: ReferralSourceId;
+    /**
+     * FALLBACK utm_source for this page — a default, never an override.
+     *
+     * Channel is derived from utm_source at request time (lib/channels.ts),
+     * so a page whose visitors all arrive through one partner would otherwise
+     * report `direct` for anyone whose link lost its UTMs. This fills the gap
+     * ONLY when the visitor carries no utm_source of their own.
+     *
+     * Must be a value in VALID_CHANNELS — anything else derives to `direct`,
+     * which is the silent failure this exists to prevent.
+     *
+     * Applied at SEND TIME in FormCard and never persisted. See the comment
+     * there for why that distinction is load-bearing.
+     */
+    defaultUtmSource?: string;
   };
 
   /** Partner id from lib/partners.ts. Adds co-branding. Omit for owned pages. */

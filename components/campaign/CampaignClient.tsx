@@ -23,6 +23,14 @@ export default function CampaignClient({ page }: { page: CampaignPage }) {
   // matching skeleton. Purely a layout-stability concern.
   const Skeleton = page.partner ? ExpPageSkeleton : PageSkeleton;
 
+  // No market resolution on this page at all — render the neutral shell
+  // straight away. The hook above still runs (hooks cannot be conditional),
+  // but nothing reads its result, so no ZIP/geo lookup reaches the UI and an
+  // out-of-area visitor is never diverted to the waitlist.
+  if (page.market.mode === "none") {
+    return <CampaignShell page={page} market={NEUTRAL_MARKET} crmMarketName={null} neutral />;
+  }
+
   if (!res) return <Skeleton />;
 
   if (res.view === "waitlist") {

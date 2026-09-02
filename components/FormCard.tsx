@@ -10,6 +10,13 @@ import { campaignBaseFor, campaignHref } from "@/lib/campaignBase";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 import type { CtaVariant } from "@/lib/ctaVariant";
 
+/**
+ * Agent-facing ZIP label — the historical wording, kept as the default so
+ * every page that does not override it (/exp, /lp/sell) is unchanged. Consumer
+ * pages pass their own via the campaign config's `zipLabel`.
+ */
+const DEFAULT_ZIP_LABEL = "Property or Agent ZIP Code";
+
 export function FormCard({
   market,
   crmMarketName = null,
@@ -20,8 +27,10 @@ export function FormCard({
   referralSourceId,
   source,
   showZip = false,
+  zipLabel = DEFAULT_ZIP_LABEL,
   showAddress = false,
   partnerSlug,
+  defaultUtmSource,
 }: {
   market: CampaignMarket;
   crmMarketName?: string | null;
@@ -33,12 +42,16 @@ export function FormCard({
   referralSourceId?: string;
   /** Override the lead source string. Defaults to "email-campaign-<market-slug>". */
   source?: string;
-  /** Show a ZIP code field labeled "Property or Agent ZIP Code." */
+  /** Show a ZIP code field. */
   showZip?: boolean;
+  /** Label for that field. Copy — agent-facing by default, see the constant. */
+  zipLabel?: string;
   /** Show an optional address field labeled "Property Street Address." */
   showAddress?: boolean;
   /** Partner slug to carry through to the confirm page (e.g. "exp"). */
   partnerSlug?: string;
+  /** Page-level FALLBACK utm_source. Never overrides a real one — see below. */
+  defaultUtmSource?: string;
 }) {
   const [f, setF] = useState({ name: prefillName, email: prefillEmail, phone: "", zip: "", address: "" });
   // Which fields were prefilled (via props, or via ?n=/?e= read on mount) —
@@ -133,9 +146,37 @@ export function FormCard({
       setErrs({});
 
       const full = f.name.trim();
-      const utms = getStoredUtms();
+      // Page-level FALLBACK utm_source, applied HERE and nowhere else.
+      //
+      // Two rules make this a default rather than an override, and both are
+      // load-bearing:
+      //
+      //   1. Blank counts as absent. `?utm_source=` yields "", which is falsy
+      //      but NOT nullish — a bare `??` would keep the empty string and
+      //      skip the default, while deriveChannel("") returns "direct". Hence
+      //      the trim check instead of `??`.
+      //
+      //   2. NEVER persist it. getStoredUtms() reads sessionStorage, which is
+      //      last-touch and session-WIDE, and captureAttribution() writes a
+      //      90-day first-touch record to localStorage. Writing the default
+      //      into either would leak this page's channel onto every later page
+      //      in the session, and could stamp a 90-day first-touch of
+      //      "partnership" on a visitor whose real first touch was organic.
+      //      Applying it at send time only leaves both stores untouched.
+      //
+      // Consequence, accepted deliberately: a visitor who already picked up a
+      // real utm_source earlier in the session (say paid_search) keeps it, so
+      // this does NOT tag all partner traffic. Undercounting the partner beats
+      // overwriting genuine attribution.
+      const stored = getStoredUtms();
+      const utms =
+        stored.utm_source?.trim()
+          ? stored
+          : { ...stored, ...(defaultUtmSource ? { utm_source: defaultUtmSource } : {}) };
       // Closed-list channel from the shared taxonomy — "direct" when utm_source
-      // is absent or unrecognized (never null, never a phantom channel).
+      // is absent or unrecognized (never null, never a phantom channel). Derived
+      // from the SAME `utms` that goes into the payload below, so the GA event
+      // and the server-stored lead can never disagree about the channel.
       const derivedChannel = deriveChannel(utms.utm_source);
       const firstTouch = getFirstTouch();
 
@@ -269,7 +310,7 @@ export function FormCard({
 
       {showZip && (
         <div className="lp-fc-field">
-          <label className="lp-fc-label" htmlFor="fc-zip">Property or Agent ZIP Code</label>
+          <label className="lp-fc-label" htmlFor="fc-zip">{zipLabel}</label>
           <input
             id="fc-zip"
             className="lp-input"
