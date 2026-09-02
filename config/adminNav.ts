@@ -109,6 +109,7 @@ export const PARTNERSHIP_TABS = [
 export const EMAIL_TABS = [
   { href: "/admin/channels/email", label: "Overview" },
   { href: "/admin/channels/email/database", label: "Database" },
+  { href: "/admin/channels/email/promotion", label: "Promotion" },
 ];
 
 type FlatLeaf = { href: string; grain: Grain };
