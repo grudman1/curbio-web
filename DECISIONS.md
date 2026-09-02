@@ -104,12 +104,12 @@ problems, and it works on history.
 
 `marketSource` is persisted from now on.
 
-## The Magnificent Seven and the nine channels are different axes
+## The Magnificent Seven and the ten channels are different axes
 
 The CEO memo names seven channels. `lib/channels.ts` holds a closed list of
-nine. These are NOT the same taxonomy and collapsing them breaks both.
+ten. These are NOT the same taxonomy and collapsing them breaks both.
 
-| Magnificent Seven | nine-channel list |
+| Magnificent Seven | ten-channel list |
 |---|---|
 | 1. Direct Email | `email` (+ the opt-in/cold split, a VIEW not a channel) |
 | 2. Partnerships | `partnership` |
@@ -125,14 +125,14 @@ attribution effort exists to shrink — a structure spined only on the Seven
 orphans the most important measurement concept in the system.
 
 **The Seven is the PLANNING taxonomy** — tiers, owners, budgets, targets, the
-monthly review agenda. **The Nine is the MEASUREMENT taxonomy** — what a lead
+monthly review agenda. **The Ten is the MEASUREMENT taxonomy** — what a lead
 can actually be tagged with at the boundary. The strategy doc keeps them apart
 too: "the report that runs the budget" is sliced by *channel* × market, using
-the closed nine-value list, and `CHANNEL_FUNNEL_ORDER` is nine long for the
+the closed ten-value list, and `CHANNEL_FUNNEL_ORDER` is ten long for the
 same reason.
 
 So the admin navigation is grouped by the Seven (that is how the business is
-planned and reviewed) while every number underneath is computed on the Nine
+planned and reviewed) while every number underneath is computed on the Ten
 (that is what the data can honestly support). Two screens carry an explicit
 label saying their attribution does not work like the others:
 

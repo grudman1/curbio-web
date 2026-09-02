@@ -110,6 +110,15 @@ function implementedPages(): RegistryEntry[] {
     indexed: indexedFor("/exp"),
     derivedFrom: "config/campaigns/exp.ts",
   });
+  // stub until Gavin flips it — see AGENTS.md "Page registry".
+  out.push({
+    path: "/staging-design-dc",
+    group: "site",
+    title: "Staging Design DC Partner Page",
+    status: "stub",
+    indexed: indexedFor("/staging-design-dc"),
+    derivedFrom: "config/campaigns/staging-design-dc.ts",
+  });
   out.push({
     path: "/exp/m/:market",
     group: "site",

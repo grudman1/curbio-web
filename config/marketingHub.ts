@@ -252,7 +252,7 @@ export const HUB_SURFACES: HubSurface[] = [
     slug: "report",
     label: "Report",
     purpose:
-      "Markets or HSMs × the nine channels, one metric at a time — the operating view of what is producing Qualified leads.",
+      "Markets or HSMs × the ten channels, one metric at a time — the operating view of what is producing Qualified leads.",
     target: `${QUALIFIED_TARGET_PER_MARKET_PER_MONTH} Qualified per market per month`,
     status: "partial",
     needs: [

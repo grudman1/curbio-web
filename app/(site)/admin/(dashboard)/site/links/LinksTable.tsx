@@ -646,13 +646,13 @@ export function LinksTable({
                 </p>
               )}
               {/* CHECK, don't assume — deriveChannel() is the authority on
-                  whether a raw utm_source lands inside the nine. */}
+                  whether a raw utm_source lands inside the ten. */}
               {selected.rawUtmSource &&
                 (deriveChannel(selected.rawUtmSource) === "direct" &&
                 selected.rawUtmSource.trim().toLowerCase() !== "direct" ? (
                   <p
                     className="m-0 mt-1.5 ops-subtle"
-                    title="Outside the nine channels — its leads land as direct."
+                    title="Outside the ten channels — its leads land as direct."
                   >
                     utm_source={selected.rawUtmSource} → direct
                   </p>

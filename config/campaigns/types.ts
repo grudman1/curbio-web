@@ -43,6 +43,7 @@
 export const REFERRAL_SOURCE_IDS = [
   "landing page", // default for owned campaign pages
   "eXp realty", // partner: eXp. Casing verbatim — do not tidy.
+  "Staging Design DC", // partner: staging + event rentals vendor, DMV.
 ] as const;
 
 /** Values a CONFIG may set. Inbound URL params are deliberately not limited to

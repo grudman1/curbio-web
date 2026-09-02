@@ -21,7 +21,7 @@ export type SpendEntry = OpsRecord & {
   month: string;
   /** Market slug, or "all" for spend that is not market-specific. */
   market: string;
-  /** One of the nine channels (lib/channels.ts). */
+  /** One of the ten channels (lib/channels.ts). */
   channel: string;
   amountUsd: number;
 };

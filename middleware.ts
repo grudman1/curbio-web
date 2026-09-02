@@ -167,6 +167,7 @@ function servesCampaignRoot(host: string): boolean {
  *   /m/*         → per-market rewrite targets
  *   /confirm     → post-submit confirmation
  *   /exp*        → PARTNER tier — real path on purpose, indexable at cutover
+ *   /staging-design-dc*  → PARTNER tier, same as /exp
  *   /lp/*        → physical campaign paths, for QA links
  *
  * This replaced a fall-through rewrite list. The fall-through publicly served
@@ -180,6 +181,8 @@ function campaignAllowlist(pathname: string): string | null {
   if (pathname === "/confirm" || pathname.startsWith("/confirm/"))
     return `${CAMPAIGN_PREFIX}${pathname}`;
   if (pathname === "/exp" || pathname.startsWith("/exp/")) return pathname;
+  if (pathname === "/staging-design-dc" || pathname.startsWith("/staging-design-dc/"))
+    return pathname;
   if (pathname === "/lp" || pathname.startsWith("/lp/")) return pathname;
   return null;
 }

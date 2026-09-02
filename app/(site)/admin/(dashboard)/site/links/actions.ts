@@ -53,7 +53,7 @@ export async function saveLinkAction(input: SaveLinkInput): Promise<SaveLinkResu
   const type = input.type as LinkType;
 
   if (!(VALID_CHANNELS as readonly string[]).includes(input.channel))
-    return { ok: false, error: "utm_source must be one of the nine channels — anything else lands as direct." };
+    return { ok: false, error: "utm_source must be one of the ten channels — anything else lands as direct." };
   const channel = input.channel as Channel;
 
   const campErr = campaignError(input.campaign.trim());

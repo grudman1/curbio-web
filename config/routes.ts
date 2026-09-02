@@ -125,6 +125,14 @@ export const ROUTES: RouteEntry[] = [
     group: "site",
     indexed: false, // ← flip at cutover; canonical follows automatically
   },
+  {
+    publicPath: "/staging-design-dc",
+    internalPath: "/staging-design-dc",
+    cutoverPath: "/staging-design-dc",
+    tier: "partner",
+    group: "site",
+    indexed: false, // noindex at launch, same as /exp
+  },
   // ── site tier — curbio.com proper. noindex until DNS cutover, because
   // curbio.com is still served by WordPress and these must not compete with
   // the pages currently ranking. Flips with the partner tier.

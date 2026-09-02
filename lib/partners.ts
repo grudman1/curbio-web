@@ -41,9 +41,46 @@ export const EXP_PARTNER: Partner = {
   },
 };
 
+/**
+ * Staging Design DC — residential staging and event rentals across DC,
+ * Maryland and Virginia. Not a brokerage, and the relationship runs the
+ * opposite way to eXp's: CURBIO names THEM a Preferred Vendor and uses them
+ * for staging on DMV jobs, while they refer homeowners whose houses need work
+ * before they can be staged.
+ *
+ * `badgePath`/`badgePathDark` are null for exactly that reason. eXp's badge is
+ * eXp certifying Curbio; there is no equivalent artefact when the endorsement
+ * points the other way. CoBrandMark renders the text lockup alone.
+ *
+ * The logo is a white knockout because PartnerHeader paints it on the navy
+ * bar — their supplied wordmark is dark grey and would be invisible there.
+ * Cropped to the wordmark: their strapline sits ~2px tall at the header's
+ * 24px logo height and reads as noise.
+ */
+export const STAGING_DESIGN_DC_PARTNER: Partner = {
+  id: "staging-design-dc",
+  name: "Staging Design DC",
+  logoPath: "/partners/staging-design-dc-white.png",
+  badgePath: null,
+  badgePathDark: null,
+  referralSourceId: "Staging Design DC",
+  coBrand: {
+    // This page resolves no market, so only `neutral` is ever rendered.
+    // `default` is kept coherent rather than left as a stub.
+    servingLine: {
+      default: "Staging by Staging Design DC",
+      neutral: "Staging by Staging Design DC",
+    },
+    title: "A Curbio\nPreferred Vendor",
+    badgeAlt: "",
+    logoAlt: "Staging Design DC",
+  },
+};
+
 /** Partner registry, by id. Referenced from a campaign config's `partner`. */
 export const PARTNERS: Record<string, Partner> = {
   [EXP_PARTNER.id]: EXP_PARTNER,
+  [STAGING_DESIGN_DC_PARTNER.id]: STAGING_DESIGN_DC_PARTNER,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
