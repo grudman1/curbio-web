@@ -188,6 +188,10 @@ export default function ConfirmShell({
 
   const visitorFirstName = prefill.name?.trim().split(/\s+/)[0] || null;
   const hsmFirstName = hsm?.hsm.firstName || null;
+  // Ray's supplied headshot is portrait while this card's media frame is 4:3.
+  // Containing it preserves a comfortable amount of space around his face;
+  // landscape headshots retain the full-bleed treatment.
+  const hasPortraitHeadshot = hsm?.hsm.photo === "/hsm/ray-santibanez.jpg";
 
   const receipt = (
     <div className="lp-confirm-receipt">
@@ -209,14 +213,17 @@ export default function ConfirmShell({
       <p className="lp-confirm-eyebrow">Your local Curbio team</p>
       {hsm ? (
               <div className="lp-hsm">
-                <div className="lp-hsm-photo">
+                <div className={`lp-hsm-photo${hasPortraitHeadshot ? " lp-hsm-photo--portrait" : ""}`}>
                   {hsm.hsm.photo ? (
                     <Image
                       src={hsm.hsm.photo}
                       alt={`${hsm.hsm.name}, ${hsm.hsm.title}`}
                       fill
                       priority={false}
-                      style={{ objectFit: "cover", objectPosition: "center top" }}
+                      style={{
+                        objectFit: hasPortraitHeadshot ? "contain" : "cover",
+                        objectPosition: "center top",
+                      }}
                     />
                   ) : (
                     <div style={{ position: "absolute", inset: 0, background: "var(--stone)" }} />

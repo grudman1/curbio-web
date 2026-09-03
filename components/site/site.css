@@ -1830,6 +1830,7 @@
   background: var(--color-surface-raised); box-shadow: var(--elevation-card);
 }
 .c-market-hsm-photo { position: relative; min-height: 224px; height: 42%; background: var(--color-surface-sunken); }
+.c-market-hsm-photo--portrait { background: #d5d6cf; }
 .c-market-hsm-placeholder { position: absolute; inset: 0; background: var(--color-surface-sunken); }
 .c-market-hsm-body { padding: 24px 26px 26px; }
 .c-market-hsm-kicker {

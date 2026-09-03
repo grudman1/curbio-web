@@ -364,6 +364,7 @@ em { font-style: normal; }
 /* ============================================================ HSM CARD (used on confirm page + market chooser) */
 .lp-hsm { background: #fff; border: 1px solid var(--stone); border-radius: 20px; box-shadow: var(--shadow-lg); overflow: hidden; }
 .lp-hsm-photo { position: relative; aspect-ratio: 4/3; }
+.lp-hsm-photo--portrait { background: #d5d6cf; }
 .lp-hsm-badge { position: absolute; left: 14px; bottom: 14px; display: inline-flex; align-items: center; gap: 6px; background: rgba(13,37,77,0.82); backdrop-filter: blur(6px); color: #fff; font-size: 11.5px; font-weight: 700; letter-spacing: .02em; padding: 6px 12px; border-radius: 999px; }
 .lp-hsm-body { padding: 18px 20px 20px; }
 .lp-hsm-name { font-family: var(--font-serif); font-size: 23px; font-weight: 600; color: var(--navy); line-height: 1.1; }
