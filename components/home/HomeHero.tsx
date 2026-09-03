@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { HomeEstimateSearch } from "./HomeEstimateSearch";
 
 // Hero — full-bleed Curbio project photography with one primary action.
 // The photo is the LCP element, so next/image owns responsive AVIF/WebP output.
@@ -71,15 +72,7 @@ export function HomeHero() {
           cosmetic updates, staging, and professional photography to get your listings
           market-ready on time—with $0 due upfront from your sellers.
         </p>
-        <div className="c-hero-form">
-          <label className="c-hero-formlabel" htmlFor="c-zip">
-            Enter your ZIP, market, or address to reach your local manager
-          </label>
-          <div className="c-hero-search">
-            <input id="c-zip" type="text" placeholder="ZIP, market, or address" autoComplete="off" />
-            <button type="button">Get free estimate</button>
-          </div>
-        </div>
+        <HomeEstimateSearch />
       </div>
     </section>
   );

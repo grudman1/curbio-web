@@ -95,6 +95,9 @@ export type Market = {
   hsm: { name: string; photo: string | null };
   /** Brokerage partner logos. Empty everywhere — no assets, no permissions. */
   brokerageLogos: { name: string; src: string }[];
+  /** Human search terms accepted by the public estimate finder. The canonical
+   *  slug, names, and legacy slugs are included automatically. */
+  searchAliases: string[];
   /**
    * Every slug this market has been published under. Drives the 301s.
    * Append when a slug changes; never rename `slug` without adding the old one.
@@ -127,6 +130,7 @@ export const MARKETS: Market[] = [
     cities: ["Atlanta", "Marietta", "Alpharetta", "Decatur", "Sandy Springs"],
     hsm: { name: "Christine Harvey", photo: "/hsm/christine-harvey.jpg" },
     brokerageLogos: [],
+    searchAliases: ["Metro Atlanta", "Atlanta metro", "North Georgia"],
     legacySlugs: [],
     sold: [
       { neighborhood: "Intown Atlanta", price: "$665,000", photo: "/sold/atlanta/959Berne_Intown.jpeg" },
@@ -150,6 +154,7 @@ export const MARKETS: Market[] = [
     cities: ["Washington", "Georgetown", "Capitol Hill", "Navy Yard"],
     hsm: { name: "Joshua Collins", photo: "/hsm/joshua-collins.jpg" },
     brokerageLogos: [],
+    searchAliases: ["DC", "D.C.", "Washington", "District of Columbia"],
     legacySlugs: ["wdc"],
     sold: [
       { neighborhood: "Bellevue",    price: "$430,000",   photo: "/sold/washington-dc/303AtlanticStreet_Bellevue.jpg" },
@@ -173,6 +178,7 @@ export const MARKETS: Market[] = [
     cities: ["Dallas", "Plano", "Frisco", "Arlington", "Fort Worth"],
     hsm: { name: "Ray Santibanez", photo: "/hsm/ray-santibanez.jpg" },
     brokerageLogos: [],
+    searchAliases: ["DFW", "Dallas Fort Worth", "Fort Worth"],
     legacySlugs: ["dallas-ft-worth"],
     sold: [
       { neighborhood: "Dallas",         price: "$875,000",   photo: "/sold/dallas/221SEdgefield_Dallas.webp" },
@@ -199,6 +205,7 @@ export const MARKETS: Market[] = [
     // already routes every Maryland ZIP to him.
     hsm: { name: "Joshua Collins", photo: "/hsm/joshua-collins.jpg" },
     brokerageLogos: [],
+    searchAliases: ["DMV", "Maryland suburbs", "Baltimore", "Southern Maryland"],
     legacySlugs: ["dmv-maryland", "baltimore", "maryland-suburbs"],
     sold: [
       { neighborhood: "Bethesda",      price: "$1,075,000", photo: "/sold/baltimore/9213Cedarcrest_Bethesda.jpg" },
@@ -222,6 +229,7 @@ export const MARKETS: Market[] = [
     cities: ["Los Angeles", "Long Beach", "Pasadena", "Glendale", "Santa Monica"],
     hsm: { name: "Trevor Laramee", photo: "/hsm/trevor-laramee.jpg" },
     brokerageLogos: [],
+    searchAliases: ["LA", "L.A.", "Greater Los Angeles"],
     legacySlugs: ["la", "los-angeles-ca"],
     sold: [
       { neighborhood: "Hollywood Hills",  price: "$2,825,000", photo: "/sold/los-angeles/2276LaGranada_HollywoodHills.jpg" },
@@ -245,6 +253,7 @@ export const MARKETS: Market[] = [
     cities: ["Arlington", "Alexandria", "Fairfax", "Reston", "Vienna"],
     hsm: { name: "Joshua Collins", photo: "/hsm/joshua-collins.jpg" },
     brokerageLogos: [],
+    searchAliases: ["NOVA", "Northern VA"],
     legacySlugs: ["nova"],
     sold: [
       { neighborhood: "Woodbridge",    price: "$525,000",   photo: "/sold/northern-virginia/1257EverettAve_Woodbridge.jpg" },
@@ -268,6 +277,7 @@ export const MARKETS: Market[] = [
     cities: ["Riverside", "Corona", "Moreno Valley", "Temecula"],
     hsm: { name: "Trevor Laramee", photo: "/hsm/trevor-laramee.jpg" },
     brokerageLogos: [],
+    searchAliases: ["Inland Empire", "Riverside County"],
     legacySlugs: [],
     sold: [
       { neighborhood: "Rancho Mirage",   price: "$549,000", photo: "/sold/riverside/24KevinLeeLane_RanchMirage.jpg" },
@@ -291,6 +301,7 @@ export const MARKETS: Market[] = [
     cities: ["Seattle", "Bellevue", "Kirkland", "Renton", "Kent"],
     hsm: { name: "Bill Kirkland", photo: "/hsm/bill-kirkland.jpg" },
     brokerageLogos: [],
+    searchAliases: ["Seattle metro", "Puget Sound"],
     // EMPTY on purpose. The WordPress crawl carries one active Seattle rule:
     // /seattle → /markets/seattle/ (31 inlinks). That is a ROOT-level path,
     // and this field only models /markets/<old> → /markets/<new> — putting

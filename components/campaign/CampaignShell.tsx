@@ -12,6 +12,9 @@ import { CTA_COPY, readVariantFromCookie, type CtaVariant } from "@/lib/ctaVaria
 import { useCampaignBase } from "@/lib/campaignBase";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 import type { CampaignPage } from "@/config/campaigns/types";
+import { MarketEstimateExperience, type MarketLocationPrefill } from "@/components/market/MarketEstimateExperience";
+import type { PublishableMarketContent } from "@/components/market/marketContent";
+import type { ResolvedMarket } from "@/lib/markets";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE campaign template. Singular.
@@ -111,12 +114,21 @@ export default function CampaignShell({
   neutral = false,
   showPicker = false,
   variant: serverVariant,
+  marketExperience,
 }: {
   page: CampaignPage;
   market: CampaignMarket;
   crmMarketName?: string | null;
   neutral?: boolean;
   showPicker?: boolean;
+  /** Site-market mount of this same conversion spine. The site layout owns
+   *  chrome; this variant owns the market hero and local content around the
+   *  unchanged FormCard. */
+  marketExperience?: {
+    resolvedMarket: ResolvedMarket;
+    location: MarketLocationPrefill | null;
+    content: PublishableMarketContent | null;
+  };
   /**
    * EDGE PATH only. Set by the /v/<variant> routes, where middleware already
    * bucketed the visitor and served the matching prerendered HTML. Passing it
@@ -148,6 +160,21 @@ export default function CampaignShell({
   const marketName = neutral ? "" : market.name;
   const marketSlug = market.slug || "unknown";
   const fill = (t: string) => interpolate(t, { market: marketName });
+
+  if (marketExperience) {
+    return (
+      <MarketEstimateExperience
+        market={market}
+        resolvedMarket={marketExperience.resolvedMarket}
+        crmMarketName={crmMarketName}
+        location={marketExperience.location}
+        content={marketExperience.content}
+        variant={variant}
+        ctaCopy={ctaCopy}
+        source={page.attribution.source.replace(/\{marketSlug\}/g, marketSlug)}
+      />
+    );
+  }
 
   // Whether the stone-coloured sold band renders at all. Read twice below —
   // once to render it, once to decide the next band's colour.
