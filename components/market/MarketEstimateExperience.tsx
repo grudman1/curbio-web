@@ -72,6 +72,7 @@ export function MarketEstimateExperience({
   const phone = resolvedMarket.hsm.phoneRaw || "+18449442629";
   const phoneDisplay = resolvedMarket.hsm.phone || "(844) 944-2629";
   const localPosts = content ? [...content.localPosts, ...EVERGREEN_POSTS] : [];
+  const hasPortraitHeadshot = resolvedMarket.hsm.photo === "/hsm/ray-santibanez.jpg";
 
   return (
     <>
@@ -100,14 +101,17 @@ export function MarketEstimateExperience({
               />
             </div>
             <aside className="c-market-hsm" aria-label={`Your ${resolvedMarket.name} Curbio manager`}>
-              <div className="c-market-hsm-photo">
+              <div className={`c-market-hsm-photo${hasPortraitHeadshot ? " c-market-hsm-photo--portrait" : ""}`}>
                 {resolvedMarket.hsm.photo ? (
                   <Image
                     src={resolvedMarket.hsm.photo}
                     alt={`${resolvedMarket.hsm.name}, ${resolvedMarket.hsm.title}`}
                     fill
                     sizes="(max-width: 860px) 100vw, 430px"
-                    style={{ objectFit: "cover", objectPosition: "center top" }}
+                    style={{
+                      objectFit: hasPortraitHeadshot ? "contain" : "cover",
+                      objectPosition: "center top",
+                    }}
                   />
                 ) : (
                   <div className="c-market-hsm-placeholder" aria-hidden />
