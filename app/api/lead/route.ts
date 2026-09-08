@@ -275,6 +275,23 @@ export async function POST(req: Request) {
   const logCtx = leadLogContext(payload);
   const isWaitlist = payload.source === "waitlist";
 
+  // ── UNROUTABLE: no market AND no ZIP. ──────────────────────────────────────
+  //
+  // The CRM accepts these with a 200 and then cannot route them to anyone —
+  // which is worse than a rejection, because every delivery signal we have
+  // says success. One real lead (an eXp agent, 2026-09-05) sat unrouted with
+  // `Market: null, Zip: ""` and nothing anywhere reported a problem.
+  //
+  // We still POST it — a lead in the CRM, even a stranded one, beats a lead
+  // only in Redis — but we no longer let it pass silently. See the alert below.
+  //
+  // Waitlist leads are exempt by definition: they carry a ZIP, they are
+  // deliberately out-of-market, and they never reach the CRM at all.
+  const isUnroutable = !isWaitlist && !payload.market && !payload.zip;
+  if (isUnroutable) {
+    console.warn("[lead] UNROUTABLE — no market and no ZIP", logCtx);
+  }
+
   // ── 1. Durable persistence — FIRST, before any delivery. A lead that
   // reaches Redis is recoverable no matter what Resend/CRM do below.
   const redis = getRedis();
@@ -446,6 +463,39 @@ export async function POST(req: Request) {
     }
   }
 
+  // ── 3a. UNROUTABLE alert. Separate from the CRM-failure alert above and
+  // deliberately NOT folded into it: that one fires when delivery failed, and
+  // this fires when delivery SUCCEEDED but the record is useless. A lead can
+  // be both, in which case two emails go out — correct, they are two different
+  // problems and a human needs to act on each.
+  //
+  // Awaited, like the failure alert, so the serverless runtime cannot be
+  // frozen mid-send. Wrapped so a Resend hiccup can never turn a stored lead
+  // into an error for the visitor.
+  if (isUnroutable && resend) {
+    try {
+      await resend.emails.send({
+        from: "Curbio Leads <onboarding@resend.dev>",
+        to: resendTo,
+        subject: `⚠️ UNROUTABLE lead — no market, no ZIP — ${payload.firstName} ${payload.lastName}`.trim(),
+        text: [
+          "This lead reached the CRM with NO market and NO ZIP, so nothing can route it",
+          "to a Home Services Manager. The CRM will have accepted it with a 200.",
+          "",
+          "Someone needs to contact this person manually and set their market by hand.",
+          "",
+          `CRM accepted: ${crmOk ? "yes" : "no"}${crmStatus === null ? "" : ` (HTTP ${crmStatus})`}`,
+          `Persisted to Redis: ${persistOk ? "yes" : "NO — this email is the only copy"}`,
+          "",
+          JSON.stringify(payload, null, 2),
+        ].join("\n"),
+      });
+      console.log("[lead] unroutable alert sent", logCtx);
+    } catch (err) {
+      console.error("[lead] unroutable alert FAILED", logCtx, err instanceof Error ? err.message : String(err));
+    }
+  }
+
   // ── 3b. Delivery record — what actually happened to this lead, keyed by
   // leadId. Purely additive: leads:v1 and its write path are untouched. Runs
   // AFTER deliveries (their outcome is the point) but BEFORE the response, so
@@ -469,6 +519,10 @@ export async function POST(req: Request) {
           crmOk,
           crmStatus,
           crmError: crmOk ? null : crmBody,
+          // Delivered but unusable. The Control Room reads delivery outcomes
+          // from this hash, so the flag has to live here to be visible as
+          // anything other than a green "delivered".
+          unroutable: isUnroutable,
           recordedAt: new Date().toISOString(),
         }),
       });

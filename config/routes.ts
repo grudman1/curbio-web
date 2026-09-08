@@ -48,6 +48,28 @@ export const SITE_HOSTS = ["curbio.com", "www.curbio.com"] as const;
 /** Physical prefix for the campaign tier. Public URLs never show it. */
 export const CAMPAIGN_PREFIX = "/lp/sell";
 
+/**
+ * Mounts that have per-market prerendered twins at `<mount>/m/<slug>`, and are
+ * therefore the correct base for a MARKET link (`?market=`).
+ *
+ * This is NOT the same question as `campaignBaseFor()` answers. That one asks
+ * "where does /confirm live for this page", and for /exp the answer is the
+ * site root — there is no /exp/confirm. This one asks "where does a market
+ * switch land", and for /exp the answer must be /exp, or an eXp agent picking
+ * their market is dropped onto the generic homepage with the partner branding
+ * and the "eXp realty" referral source gone.
+ *
+ * Read by BOTH middleware.ts (to rewrite /exp/?market=x → /exp/m/x) and
+ * lib/campaignBase.ts (to build that link in the first place). They were two
+ * hand-kept lists that had already drifted: middleware had /exp, the link
+ * builder did not, so every eXp market pick left the partner page.
+ *
+ * Longest-first so a nested mount can never be shadowed by a shorter prefix.
+ */
+export const MARKET_LINK_BASES: readonly string[] = [CAMPAIGN_PREFIX, "/exp"]
+  .slice()
+  .sort((a, b) => b.length - a.length);
+
 export type Tier = "campaign" | "partner" | "site";
 
 export type RouteEntry = {

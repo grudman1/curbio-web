@@ -20,6 +20,7 @@ export function Header({
   logoHref = "/",
   basePath = "/",
   showMarketPicker = true,
+  requirePicker = false,
 }: {
   market: CampaignMarket;
   neutral?: boolean;
@@ -34,6 +35,8 @@ export function Header({
   /** False on fixed-market pages — they have one market and must not offer a
    *  switch that would navigate the visitor off the campaign they landed on. */
   showMarketPicker?: boolean;
+  /** Neutral state only — makes the auto-opened picker a gate. See ZipModal. */
+  requirePicker?: boolean;
 }) {
   const pillLabel = neutral ? "Choose your market" : market.name;
   return (
@@ -56,6 +59,7 @@ export function Header({
           marketSlug={neutral ? null : market.slug}
           initialOpen={initialPickerOpen}
           basePath={basePath}
+          required={requirePicker}
         />
         )}
       </div>
@@ -84,6 +88,7 @@ export function Hero({
   emailPlaceholder,
   partnerSlug,
   defaultUtmSource,
+  marketSource,
 }: {
   market: CampaignMarket;
   crmMarketName?: string | null;
@@ -116,6 +121,8 @@ export function Hero({
   partnerSlug?: string;
   /** Forwarded to FormCard — page-level fallback utm_source. */
   defaultUtmSource?: string;
+  /** Forwarded to FormCard — which signal decided the market. */
+  marketSource?: string | null;
 }) {
   return (
     <section className="lp-hero" id="hero">
@@ -178,6 +185,7 @@ export function Hero({
             zipLabel={zipLabel}
             emailPlaceholder={emailPlaceholder}
             defaultUtmSource={defaultUtmSource}
+            marketSource={marketSource}
             partnerSlug={partnerSlug}
           />
         </div>

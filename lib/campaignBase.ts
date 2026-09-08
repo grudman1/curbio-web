@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CAMPAIGN_PREFIX } from "@/config/routes";
+import { CAMPAIGN_PREFIX, MARKET_LINK_BASES } from "@/config/routes";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // One prerendered HTML, two URL shapes.
@@ -35,12 +35,41 @@ export function campaignBaseFor(pathname: string): string {
     : "/";
 }
 
+/**
+ * Base for MARKET links (`?market=`) — the page's OWN mount, which is not the
+ * same as the campaign base above.
+ *
+ * campaignBaseFor() answers "where is /confirm" and returns "/" for /exp,
+ * which is right: /exp/confirm does not exist. Reusing that answer for the
+ * market picker sent every eXp agent who chose a market to "/?market=x" — the
+ * generic homepage — losing the co-brand, the partner header, and the
+ * "eXp realty" referralSourceId. Middleware has always been ready for the
+ * correct link (MARKET_REWRITES maps "/exp" → "/exp/m"); nothing ever built it.
+ */
+export function marketBaseFor(pathname: string): string {
+  for (const mount of MARKET_LINK_BASES) {
+    if (pathname === mount || pathname.startsWith(`${mount}/`)) return mount;
+  }
+  return "/";
+}
+
 /** Base path for campaign-internal links. Always "/" on the server and on the
  *  first client render; corrected on mount when serving the QA shape. */
 export function useCampaignBase(): string {
   const [base, setBase] = useState("/");
   useEffect(() => {
     setBase(campaignBaseFor(window.location.pathname));
+  }, []);
+  return base;
+}
+
+/** Market-link base, resolved on mount for the same SSR-safety reason as
+ *  useCampaignBase: pathname differs between server and client under a
+ *  rewrite, so reading it during render is a hydration mismatch. */
+export function useMarketBase(): string {
+  const [base, setBase] = useState("/");
+  useEffect(() => {
+    setBase(marketBaseFor(window.location.pathname));
   }, []);
   return base;
 }

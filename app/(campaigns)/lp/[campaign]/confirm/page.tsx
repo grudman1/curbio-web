@@ -1,7 +1,7 @@
 import { cookies, headers } from "next/headers";
 import { getOperatorLead } from "@/lib/operator";
 import { buildResolvedMarket, canonicalZipForSlug } from "@/lib/markets";
-import { getCampaignMarket } from "@/lib/campaignMarkets";
+import { getCampaignMarket, NEUTRAL_MARKET } from "@/lib/campaignMarkets";
 import ConfirmShell from "@/components/ConfirmShell";
 import type { Metadata } from "next";
 import { routeMetadata } from "@/config/routes";
@@ -64,7 +64,19 @@ export default async function ConfirmPage({
     phone: phone ?? cookiePrefill.phone,
   };
 
-  const campaignMarket = getCampaignMarket(slug);
+  // ABSENT market → NEUTRAL, never a default.
+  //
+  // getCampaignMarket() falls back to Atlanta for an unrecognised slug, which
+  // is right for a TYPO (the visitor clearly meant a market; guessing the
+  // biggest one beats a blank page) and badly wrong for a market that was
+  // never supplied at all. A marketless lead used to land here and be shown
+  // Christine, the Atlanta HSM, complete with her Calendly — so a visitor we
+  // could not place was invited to book the wrong market's manager.
+  //
+  // Neutral yields hsm === null below, which ConfirmShell already renders as
+  // "Your local Curbio manager will be in touch shortly." That state existed
+  // and was simply unreachable from here.
+  const campaignMarket = slug ? getCampaignMarket(slug) : NEUTRAL_MARKET;
 
   // Resolve the live HSM data for this market via the operator API
   const zip = canonicalZipForSlug(campaignMarket.slug);

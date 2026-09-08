@@ -27,7 +27,11 @@ import { canonicalSlug } from "@/lib/markets";
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type Resolution =
-  | { view: "market"; slug: string; crmMarketName: string | null }
+  // `source` is WHICH SIGNAL decided the market — "param" | "zip" | "geo",
+  // straight from lib/resolveMarket.ts. /api/resolve has always returned it
+  // and this hook has always thrown it away, which is why no lead in Redis can
+  // say how its market was chosen. Carried through to FormCard now.
+  | { view: "market"; slug: string; crmMarketName: string | null; source: string }
   | { view: "neutral" }
   | { view: "waitlist"; outZip?: string; geoCity?: string; geoRegion?: string };
 
@@ -62,7 +66,7 @@ export function useMarketResolution(): Resolution | null {
       const slug = canonicalSlug(marketParam);
       // Recognized slug → static catalog content (crmMarketName null — the
       // operator-API fallback path). Unrecognized → neutral, never geo.
-      setRes(slug ? { view: "market", slug, crmMarketName: null } : { view: "neutral" });
+      setRes(slug ? { view: "market", slug, crmMarketName: null, source: "param" } : { view: "neutral" });
       return;
     }
 
@@ -85,7 +89,12 @@ export function useMarketResolution(): Resolution | null {
             geoRegion: data.geoRegion ?? undefined,
           });
         } else if (data?.slug) {
-          setRes({ view: "market", slug: data.slug, crmMarketName: data.crmMarketName ?? null });
+          setRes({
+            view: "market",
+            slug: data.slug,
+            crmMarketName: data.crmMarketName ?? null,
+            source: typeof data.source === "string" ? data.source : "none",
+          });
         } else {
           setRes({ view: "neutral" });
         }

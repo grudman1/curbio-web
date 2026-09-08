@@ -278,8 +278,8 @@ export default function ConfirmShell({
   return (
     <>
       {partner === "exp"
-        ? <PartnerHeader partnerId={partner!} market={market} neutral={false} initialPickerOpen={false} basePath={backHref} />
-        : <Header market={market} />
+        ? <PartnerHeader partnerId={partner!} market={market} neutral={!market.slug} initialPickerOpen={false} basePath={backHref} />
+        : <Header market={market} neutral={!market.slug} />
       }
 
       <main className="lp-confirm">

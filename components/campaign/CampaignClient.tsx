@@ -28,7 +28,9 @@ export default function CampaignClient({ page }: { page: CampaignPage }) {
   // but nothing reads its result, so no ZIP/geo lookup reaches the UI and an
   // out-of-area visitor is never diverted to the waitlist.
   if (page.market.mode === "none") {
-    return <CampaignShell page={page} market={NEUTRAL_MARKET} crmMarketName={null} neutral />;
+    return (
+      <CampaignShell page={page} market={NEUTRAL_MARKET} crmMarketName={null} neutral marketSource="none" />
+    );
   }
 
   if (!res) return <Skeleton />;
@@ -43,6 +45,7 @@ export default function CampaignClient({ page }: { page: CampaignPage }) {
         page={page}
         market={getCampaignMarket(res.slug)}
         crmMarketName={res.crmMarketName}
+        marketSource={res.source}
       />
     );
   }
@@ -55,6 +58,13 @@ export default function CampaignClient({ page }: { page: CampaignPage }) {
       neutral
       // Only auto-open the picker on pages that have one.
       showPicker={page.market.mode === "picker"}
+      // ...and LOCK it. This is the branch where we genuinely do not know
+      // where the visitor is: no ?market=, no ?zip=, and IP geo missed. The
+      // form behind this modal is fully functional, so a dismissible picker
+      // here is exactly how a lead reaches the CRM with Market: null and no
+      // ZIP — unroutable, and accepted with a 200 so nothing alerts.
+      requirePicker={page.market.mode === "picker"}
+      marketSource="none"
     />
   );
 }

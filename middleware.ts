@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { canonicalSlug } from "./lib/markets";
-import { CAMPAIGN_HOSTS, CAMPAIGN_PREFIX, SITE_HOSTS } from "./config/routes";
+import { CAMPAIGN_HOSTS, CAMPAIGN_PREFIX, MARKET_LINK_BASES, SITE_HOSTS } from "./config/routes";
 import { LEGACY_SLUG_REDIRECTS, marketPath } from "./config/markets";
 import {
   SESSION_COOKIE,
@@ -188,10 +188,12 @@ function campaignAllowlist(pathname: string): string | null {
 }
 
 // Base path (already physical) → its per-market prerendered directory.
-const MARKET_REWRITES: Record<string, string> = {
-  [CAMPAIGN_PREFIX]: `${CAMPAIGN_PREFIX}/m`,
-  "/exp": "/exp/m",
-};
+// Derived from the single MARKET_LINK_BASES list in config/routes.ts, which
+// lib/campaignBase.ts reads too — these were two hand-kept lists and they had
+// already drifted (this one had /exp, the link builder did not).
+const MARKET_REWRITES: Record<string, string> = Object.fromEntries(
+  MARKET_LINK_BASES.map((base) => [base, `${base}/m`])
+);
 
 // ── A/B edge path ────────────────────────────────────────────────────────────
 /**

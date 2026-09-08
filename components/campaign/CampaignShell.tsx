@@ -9,7 +9,7 @@ import { RichText, interpolate } from "./RichText";
 import { PartnerHeader } from "./PartnerHeader";
 import { PARTNERS } from "@/lib/partners";
 import { CTA_COPY, readVariantFromCookie, type CtaVariant } from "@/lib/ctaVariant";
-import { useCampaignBase } from "@/lib/campaignBase";
+import { useCampaignBase, useMarketBase } from "@/lib/campaignBase";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 import type { CampaignPage } from "@/config/campaigns/types";
 import { MarketEstimateExperience, type MarketLocationPrefill } from "@/components/market/MarketEstimateExperience";
@@ -113,6 +113,8 @@ export default function CampaignShell({
   crmMarketName = null,
   neutral = false,
   showPicker = false,
+  requirePicker = false,
+  marketSource = null,
   variant: serverVariant,
   marketExperience,
 }: {
@@ -121,6 +123,15 @@ export default function CampaignShell({
   crmMarketName?: string | null;
   neutral?: boolean;
   showPicker?: boolean;
+  /**
+   * Locks the auto-opened picker so it cannot be dismissed — set only on the
+   * NEUTRAL branch of CampaignClient, where the page behind it has no market
+   * and (on /exp and /lp/sell) no ZIP field either. See ZipModal for the
+   * incident this closes.
+   */
+  requirePicker?: boolean;
+  /** Which signal decided the market — forwarded to the lead payload. */
+  marketSource?: string | null;
   /** Site-market mount of this same conversion spine. The site layout owns
    *  chrome; this variant owns the market hero and local content around the
    *  unchanged FormCard. */
@@ -156,6 +167,10 @@ export default function CampaignShell({
 
   // "/" on the live host, the physical prefix only when served at the QA path.
   const base = useCampaignBase();
+  // The MARKET picker gets a different base — the page's own mount, so a market
+  // switch on /exp stays on /exp instead of dropping the visitor on the generic
+  // homepage. See lib/campaignBase.ts for why these two are not one value.
+  const marketBase = useMarketBase();
 
   const marketName = neutral ? "" : market.name;
   const marketSlug = market.slug || "unknown";
@@ -203,8 +218,9 @@ export default function CampaignShell({
           market={market}
           neutral={neutral}
           initialPickerOpen={showPicker}
-          basePath={base}
+          basePath={marketBase}
           showMarketPicker={page.market.mode === "picker"}
+          requirePicker={requirePicker}
         />
       ) : (
         <Header
@@ -212,8 +228,9 @@ export default function CampaignShell({
           neutral={neutral}
           initialPickerOpen={showPicker}
           logoHref={base}
-          basePath={base}
+          basePath={marketBase}
           showMarketPicker={page.market.mode === "picker"}
+          requirePicker={requirePicker}
         />
       )}
 
@@ -235,6 +252,7 @@ export default function CampaignShell({
           zipLabel={page.zipLabel}
           emailPlaceholder={page.emailPlaceholder}
           defaultUtmSource={page.attribution.defaultUtmSource}
+          marketSource={marketSource}
           source={page.attribution.source.replace(/\{marketSlug\}/g, marketSlug)}
         />
 
