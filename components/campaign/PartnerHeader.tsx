@@ -18,6 +18,7 @@ export function PartnerHeader({
   initialPickerOpen,
   basePath,
   showMarketPicker = true,
+  requirePicker = false,
 }: {
   partnerId: string;
   market: CampaignMarket;
@@ -31,6 +32,8 @@ export function PartnerHeader({
    * Defaults true so existing partner pages are unchanged.
    */
   showMarketPicker?: boolean;
+  /** Neutral state only — makes the auto-opened picker a gate. See ZipModal. */
+  requirePicker?: boolean;
 }) {
   const partner = PARTNERS[partnerId];
   return (
@@ -64,6 +67,7 @@ export function PartnerHeader({
             marketSlug={neutral ? null : market.slug}
             initialOpen={initialPickerOpen}
             basePath={basePath}
+            required={requirePicker}
           />
         )}
       </div>

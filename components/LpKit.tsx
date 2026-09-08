@@ -296,16 +296,33 @@ export function Modal({
   onClose,
   children,
   maxWidth = 520,
+  required = false,
 }: {
   open: boolean;
   onClose: () => void;
   children: ReactNode;
   maxWidth?: number;
+  /**
+   * REMOVES every dismissal affordance: no X, no backdrop close, no Escape.
+   * The only way out is an action inside the modal that resolves whatever the
+   * modal exists to collect.
+   *
+   * Added for the neutral market picker. A cold visitor on /exp got the picker
+   * auto-opened over a fully functional lead form — so closing it (X, Escape,
+   * or a stray backdrop click) left them on a page with no market, no ZIP
+   * field, and a working submit button. That produced a real lead the CRM
+   * accepted with `Market: null` and could not route to anyone.
+   *
+   * Use ONLY where every exit still yields a usable answer. The market picker
+   * qualifies: pick a market, enter a ZIP, or join the waitlist — three doors,
+   * all of them routable. A required modal with no such door is a trap.
+   */
+  required?: boolean;
 }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && !required) onClose();
     };
     document.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -313,14 +330,16 @@ export function Modal({
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [open, onClose]);
+  }, [open, onClose, required]);
   if (!open) return null;
   return (
-    <div className="lp-overlay" onMouseDown={onClose}>
+    <div className="lp-overlay" onMouseDown={required ? undefined : onClose}>
       <div className="lp-modal" style={{ maxWidth }} onMouseDown={(e) => e.stopPropagation()}>
-        <button className="lp-modal-x" onClick={onClose} aria-label="Close">
-          <Icon name="x" size={18} color="var(--navy)" />
-        </button>
+        {!required && (
+          <button className="lp-modal-x" onClick={onClose} aria-label="Close">
+            <Icon name="x" size={18} color="var(--navy)" />
+          </button>
+        )}
         {children}
       </div>
     </div>

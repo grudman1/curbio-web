@@ -43,6 +43,7 @@ export function FormCard({
   showAddress = false,
   partnerSlug,
   defaultUtmSource,
+  marketSource = null,
 }: {
   market: CampaignMarket;
   crmMarketName?: string | null;
@@ -74,6 +75,18 @@ export function FormCard({
   partnerSlug?: string;
   /** Page-level FALLBACK utm_source. Never overrides a real one — see below. */
   defaultUtmSource?: string;
+  /**
+   * WHICH SIGNAL decided `market` — "param" | "zip" | "geo" | "none", straight
+   * from lib/resolveMarket.ts via useMarketResolution.
+   *
+   * app/api/lead/route.ts has accepted, stored and surfaced this field since it
+   * shipped, and three admin surfaces read it — but nothing ever SENT it, so
+   * every lead in Redis reads "decided by: unknown". This is the missing
+   * producer. When the visitor supplies a ZIP in the form below it is
+   * overridden to "form-zip", which is the truth at send time regardless of
+   * what the page resolved to at render time.
+   */
+  marketSource?: string | null;
 }) {
   const [f, setF] = useState({
     name: prefillName,
@@ -87,7 +100,7 @@ export function FormCard({
   const [prefilled, setPrefilled] = useState({ name: !!prefillName, email: !!prefillEmail });
   const [nameEdited, setNameEdited] = useState(false);
   const [emailEdited, setEmailEdited] = useState(false);
-  const [errs, setErrs] = useState<{ name?: string; email?: string; server?: string }>({});
+  const [errs, setErrs] = useState<{ name?: string; email?: string; zip?: string; server?: string }>({});
   const [pending, setPending] = useState(false);
   const router = useRouter();
 
@@ -157,17 +170,38 @@ export function FormCard({
     []
   );
 
+  // ── THE MARKETLESS GUARD ───────────────────────────────────────────────────
+  //
+  // Belt and braces behind the locked picker. The picker is the real fix; this
+  // is what catches the cases the picker cannot: a JS error that leaves the
+  // modal unmounted, stale cached HTML from before the gate shipped, or a
+  // `mode: "none"` page whose ZIP field was merely optional.
+  //
+  // An empty `market.slug` means NEUTRAL_MARKET — nobody knows where this
+  // visitor is. In that state the ZIP field is forced visible and REQUIRED, so
+  // the form itself cannot produce a lead with neither market nor ZIP. That
+  // combination is the one the CRM accepts with a 200 and can route to no one.
+  const marketless = !market.slug;
+  const showZipField = showZip || marketless;
+  const zipRequired = marketless;
+
   const submit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       if (pending) return;
 
       // 1. Validate synchronously before any await
-      const next: { name?: string; email?: string } = {};
+      const next: { name?: string; email?: string; zip?: string } = {};
       if (!f.name.trim()) next.name = "Please enter your name.";
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim()))
         next.email = "Please enter a valid email address.";
-      if (next.name || next.email) {
+      // No market resolved → a ZIP is the only thing that can route this lead.
+      // Blocking here is safe because the field is force-shown in the same
+      // state (see the marketless guard above), so the visitor always has
+      // somewhere to put the answer we are asking for.
+      if (zipRequired && f.zip.replace(/\D/g, "").length !== 5)
+        next.zip = "Enter your 5-digit ZIP so we can route you to the right local manager.";
+      if (next.name || next.email || next.zip) {
         setErrs(next);
         return;
       }
@@ -234,6 +268,10 @@ export function FormCard({
               medium: utms.utm_medium ?? null,
               firstTouchChannel: firstTouch?.channel ?? null,
               firstTouchCampaign: firstTouch?.campaign ?? null,
+              // Which signal decided the market. A ZIP typed into this form
+              // outranks whatever the page resolved at render time — it is the
+              // most recent thing the visitor actually told us.
+              marketSource: f.zip.trim() ? "form-zip" : marketSource,
               // Spam tripwire — see the lead route.
               renderedAt: renderedAtRef.current,
               ...(f.zip && { zip: f.zip.replace(/\D/g, "").slice(0, 5) }),
@@ -286,7 +324,7 @@ export function FormCard({
         setPending(false);
       }
     },
-    [pending, f, market, crmMarketName, variant, source, partnerSlug, router]
+    [pending, f, market, crmMarketName, variant, source, partnerSlug, router, zipRequired, marketSource, defaultUtmSource]
   );
 
   return (
@@ -345,12 +383,15 @@ export function FormCard({
         />
       </div>
 
-      {showZip && (
+      {showZipField && (
         <div className="lp-fc-field">
-          <label className="lp-fc-label" htmlFor="fc-zip">{zipLabel}</label>
+          <label className="lp-fc-label" htmlFor="fc-zip">
+            {zipLabel}
+            {!zipRequired && <span className="lp-fc-optional"> (optional)</span>}
+          </label>
           <input
             id="fc-zip"
-            className="lp-input"
+            className={"lp-input" + (errs.zip ? " lp-input-err" : "")}
             type="text"
             inputMode="numeric"
             value={f.zip}
@@ -358,7 +399,10 @@ export function FormCard({
             placeholder="ZIP code"
             autoComplete="postal-code"
             maxLength={10}
+            aria-invalid={!!errs.zip}
+            aria-describedby={errs.zip ? "fc-zip-err" : undefined}
           />
+          {errs.zip && <span id="fc-zip-err" className="lp-fc-err" role="alert">{errs.zip}</span>}
         </div>
       )}
 

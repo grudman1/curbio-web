@@ -60,6 +60,11 @@ export type DeliveryRecord = {
   crmAttempted: boolean;
   crmOk: boolean;
   crmStatus: number | null;
+  /** Delivered, but with neither market nor ZIP — so the CRM accepted a record
+   *  it cannot route to any HSM. Written by app/api/lead/route.ts from
+   *  2026-09-08; absent on every earlier record, which is why the display
+   *  below treats only an explicit `true` as unroutable. */
+  unroutable?: boolean;
   crmError: string | null;
   recordedAt: string;
 };
@@ -279,14 +284,27 @@ export function deliveryState(
 ): {
   label: string;
   tone: "ok" | "warn" | "fail" | "unknown";
-  /** Present when tone is "unknown" because delivery was never going to
-   *  happen. One line, shown on hover. */
+  /** One line, shown on hover. Set when delivery was never going to happen
+   *  (tone "unknown"), and on the delivered-but-unroutable case below, where
+   *  the label alone does not explain what needs doing. */
   reason?: string;
 } {
   const expected = lead ? expectedNonDelivery(lead, d) : null;
   if (expected) return { label: "not delivered (expected)", tone: "unknown", reason: expected.reason };
 
   if (!d) return { label: "unknown", tone: "unknown" };
+  // Checked BEFORE the plain "delivered" case, which it would otherwise match.
+  // A 200 from the CRM is not success when the record has no market and no ZIP:
+  // it is stored where no one will ever be routed to it. Showing that as a
+  // green "delivered" is exactly how one sat unnoticed.
+  if (d.crmAttempted && d.crmOk && d.unroutable === true) {
+    return {
+      label: "delivered, UNROUTABLE",
+      tone: "fail",
+      reason:
+        "The CRM accepted this lead (HTTP 200) but it carries no market and no ZIP, so nothing can route it to a Home Services Manager. Needs manual contact and a market set by hand.",
+    };
+  }
   if (d.crmAttempted && d.crmOk) return { label: "delivered", tone: "ok" };
   if (d.crmAttempted && !d.crmOk) return { label: `CRM FAILED${d.crmStatus ? ` (${d.crmStatus})` : ""}`, tone: "fail" };
   if (!d.crmAttempted && d.persistOk) return { label: "stored, CRM not configured", tone: "warn" };

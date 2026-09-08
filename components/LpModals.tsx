@@ -16,6 +16,7 @@ export function ZipModal({
   onClose,
   current,
   basePath = "/",
+  required = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -25,6 +26,16 @@ export function ZipModal({
   /** Base path for market navigation. Use "/exp" on the eXp page so the picker
    *  stays within /exp when switching markets. Defaults to "/". */
   basePath?: string;
+  /**
+   * Neutral state only: the visitor has no market and the page behind this has
+   * no way to collect one, so the picker becomes a gate rather than a
+   * convenience. Removes every dismissal affordance (see Modal) and swaps the
+   * copy from "change your market" to "we need to know where you are".
+   *
+   * All three exits still resolve to something routable — a market card, a
+   * ZIP, or the waitlist — so this gate cannot strand anyone.
+   */
+  required?: boolean;
 }) {
   const router = useRouter();
   const [zip, setZip] = useState("");
@@ -54,7 +65,7 @@ export function ZipModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} maxWidth={820}>
+    <Modal open={open} onClose={onClose} maxWidth={820} required={required}>
       <Eyebrow amber>Find your market</Eyebrow>
       <h2
         style={{
@@ -66,10 +77,12 @@ export function ZipModal({
           lineHeight: 1.1,
         }}
       >
-        Choose your market
+        {required ? "Where are you listing?" : "Choose your market"}
       </h2>
       <p style={{ fontSize: 14, color: "var(--fg-muted)", margin: "0 0 18px", lineHeight: 1.5 }}>
-        Pick your area to meet the local Curbio Home Services Manager who will handle your listing.
+        {required
+          ? "We route every request to the local Curbio Home Services Manager who will handle your listing — so we need your area first."
+          : "Pick your area to meet the local Curbio Home Services Manager who will handle your listing."}
       </p>
 
       <div className="lp-mkt-grid">
