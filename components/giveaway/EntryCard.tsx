@@ -405,7 +405,11 @@ export function EntryCard() {
               <h2 className="text-[26px] leading-[1.15] sm:text-[30px]">
                 {closed ? copy.closed.formTitle : copy.form.title}
               </h2>
-              <p className="m-0 font-sans text-small text-content-muted">
+              {/* On a phone the open form's "takes 20 seconds" line repeats the
+                  sentence directly above the card, and costs a row of height
+                  exactly where the cookie notice sits on a first visit. With
+                  it gone the Name field clears the notice on an iPhone. */}
+              <p className={`m-0 font-sans text-small text-content-muted${closed ? "" : " hidden sm:block"}`}>
                 {closed ? copy.closed.formSub : copy.form.sub}
               </p>
             </div>
