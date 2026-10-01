@@ -188,11 +188,13 @@ drawing — nothing needs deleting there.
 At noon the page switches itself to "The giveaway has closed." The form keeps
 working as a contact form; anyone in a market who uses it goes to the app.
 
-1. **Check bookings.** In Calendly, export the invitees for Oct 5–9. On
-   `/admin/giveaway` → "Check bookings against Calendly": paste the export (or
-   just the emails) → **Check** → **Record**. Look at "Page says booked, not
-   in Calendly": those are bookings the page reported that Calendly has no
-   record of. Use "Remove bonus" on a row if it was not real.
+1. **Check bookings.** In Calendly, export the invitees for Oct 5–9 (each
+   manager has their own Calendly, so this is one export per manager, or one
+   from an organization admin). On `/admin/giveaway` → "Check bookings against
+   Calendly": paste the exports (or just the emails) → **Check** → **Record**.
+   Look at "Page says booked, not in Calendly": those are bookings the page
+   reported that Calendly has no record of. Use "Remove bonus" on a row if it
+   was not real.
 2. **Add any booth or written bonuses** that were earned before noon and not
    yet typed in. (After the close only an owner can add one.)
 3. **Run the official drawing.** It draws 5 winners in prize order and 10
