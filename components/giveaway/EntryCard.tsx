@@ -52,11 +52,34 @@ type Saved = {
   email: string;
   phone: string;
   marketSlug: string | null;
+  /** In the drawing — the server's verdict, fixed when they first entered. */
   inEntryPeriod: boolean;
+  /** The entry period had already ended when this was submitted, so it was the
+   *  contact form they used. Absent on confirmations saved before this field
+   *  existed, which reads as false. */
+  closedAtSubmit?: boolean;
   created: boolean;
   entries: number;
   booked: boolean;
 };
+
+/**
+ * A fetch timeout that works on every phone that can load the page.
+ *
+ * `AbortSignal.timeout()` arrived in Safari 16. On an iPhone or iPad still on
+ * iOS 15 it does not exist, and calling it threw — inside the submit's own
+ * try block, where the catch read it as "no connection". The form then said
+ * "check your connection and tap again" on every tap and never sent anything.
+ */
+function timeoutSignal(ms: number): AbortSignal | undefined {
+  if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function") {
+    return AbortSignal.timeout(ms);
+  }
+  if (typeof AbortController === "undefined") return undefined;
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), ms);
+  return controller.signal;
+}
 
 type Manager = {
   name: string;
@@ -133,6 +156,11 @@ export function EntryCard() {
   const refIdRef = useRef<string>(giveaway.attribution.referralSourceId);
   const formStartFired = useRef(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const thanksHeadingRef = useRef<HTMLHeadingElement>(null);
+  /** Set when the visitor has just DONE something (submitted, booked), so the
+   *  confirmation takes focus. Not set when a saved confirmation is merely
+   *  restored on load — moving focus then would be the page acting unasked. */
+  const announceThanks = useRef(false);
 
   useEffect(() => {
     renderedAtRef.current = Date.now();
@@ -158,7 +186,7 @@ export function EntryCard() {
   useEffect(() => {
     if (!marketSlug) return;
     let cancelled = false;
-    fetch(`/api/giveaway/manager?market=${encodeURIComponent(marketSlug)}`, { signal: AbortSignal.timeout(8000) })
+    fetch(`/api/giveaway/manager?market=${encodeURIComponent(marketSlug)}`, { signal: timeoutSignal(8000) })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!cancelled && data?.manager) setManager(data.manager as Manager);
@@ -216,7 +244,7 @@ export function EntryCard() {
       const res = await fetch("/api/giveaway/enter", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        signal: AbortSignal.timeout(25000),
+        signal: timeoutSignal(25000),
         body: JSON.stringify({
           giveaway: giveaway.slug,
           name: f.name.trim(),
@@ -249,12 +277,14 @@ export function EntryCard() {
         phone: f.phone.trim(),
         marketSlug: data.marketSlug ?? null,
         inEntryPeriod: !!data.inEntryPeriod,
+        closedAtSubmit: !!data.closed,
         created: !!data.created,
         entries: Number(data.entries) || 1,
         booked: false,
       };
       writeSaved(giveaway.slug, done);
       setSaved(done);
+      announceThanks.current = true;
       setView("thanks");
       setBurst((n) => n + 1);
       cardRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
@@ -271,7 +301,10 @@ export function EntryCard() {
         });
       }, 0);
     } catch (err) {
-      const offline = err instanceof TypeError || (err instanceof DOMException && err.name === "TimeoutError");
+      // A timeout is "TimeoutError" from AbortSignal.timeout and "AbortError"
+      // from the fallback in timeoutSignal — the same event either way.
+      const name = err instanceof Error ? err.name : "";
+      const offline = err instanceof TypeError || name === "TimeoutError" || name === "AbortError";
       setServerError(
         offline
           ? "We couldn't reach the server. Check your connection and tap again — you won't be entered twice."
@@ -293,10 +326,13 @@ export function EntryCard() {
       if (!saved) return;
       // Calendly has confirmed, so the call IS booked: show that at once and
       // let our own record catch up behind it.
+      // The bonus is shown at once only where it can still be earned; the
+      // server's answer below replaces this number either way.
+      const earnsBonus = saved.inEntryPeriod && !saved.closedAtSubmit && !closed;
       const booked: Saved = {
         ...saved,
         booked: true,
-        entries: saved.inEntryPeriod ? 1 + giveaway.bonusEntries : saved.entries,
+        entries: earnsBonus ? 1 + giveaway.bonusEntries : saved.entries,
       };
       writeSaved(giveaway.slug, booked);
       setSaved(booked);
@@ -306,7 +342,7 @@ export function EntryCard() {
           const res = await fetch("/api/giveaway/booked", {
             method: "POST",
             headers: { "content-type": "application/json" },
-            signal: AbortSignal.timeout(15000),
+            signal: timeoutSignal(15000),
             body: JSON.stringify({ giveaway: giveaway.slug, entryId: saved.entryId, eventUri }),
           });
           const data = await res.json().catch(() => ({}));
@@ -323,13 +359,13 @@ export function EntryCard() {
       }
       // Only OUR record of the booking failed. Say so plainly, and give them
       // the route to the same entries that does not depend on this request.
-      if (saved.inEntryPeriod) {
+      if (earnsBonus) {
         setBookingNote(
           `Your call is booked. We couldn't add your bonus entries automatically — show this screen at Booth #${giveaway.event.booth} and we'll add them.`
         );
       }
     },
-    [saved, giveaway.slug, giveaway.event.booth, giveaway.bonusEntries]
+    [saved, closed, giveaway.slug, giveaway.event.booth, giveaway.bonusEntries]
   );
 
   useEffect(() => {
@@ -342,6 +378,7 @@ export function EntryCard() {
       } else {
         trackEvent("booking_complete", { market: marketSlug ?? "unknown", form_id: `giveaway-${giveaway.slug}` });
         trackGiveaway("giveaway_booking", { giveaway: giveaway.slug, market: marketSlug ?? NOT_LISTED });
+        announceThanks.current = true;
         setView("thanks");
         setBurst((n) => n + 1);
         void reportBooking(msg.eventUri);
@@ -385,8 +422,31 @@ export function EntryCard() {
     setView("form");
   }
 
-  // The server's verdict on the entry, once there is one; the clock until then.
+  // After a submit or a booking, hand focus to the confirmation: the form that
+  // held it is gone, and a screen reader would otherwise be left on nothing.
+  useEffect(() => {
+    if (view !== "thanks" || !announceThanks.current) return;
+    announceThanks.current = false;
+    thanksHeadingRef.current?.focus({ preventScroll: true });
+  }, [view, saved]);
+
+  // ── What this card may say ─────────────────────────────────────────────────
+  // Three different facts, and the confirmation has to keep them apart:
+  //
+  //   inDrawing       this person is in the drawing. The SERVER's verdict once
+  //                   there is an entry; the clock until then.
+  //   contactRequest  what they just sent was the contact form — the entry
+  //                   period was over when it arrived — so the confirmation is
+  //                   "we'll be in touch", even for someone who is also in the
+  //                   drawing from days earlier.
+  //   canEarnBonus    the bonus can still be earned: in the drawing, and the
+  //                   entry period has not ended since. A confirmation restored
+  //                   after the deadline is still "you're in" — but offering
+  //                   five more entries then would be offering nothing.
   const inDrawing = saved ? saved.inEntryPeriod : !closed;
+  const contactRequest = !!saved && (!!saved.closedAtSubmit || !saved.inEntryPeriod);
+  const canEarnBonus = inDrawing && !contactRequest && !closed;
+  const gotBonus = !!saved && inDrawing && saved.entries > 1;
   const firstName = saved?.name.split(/\s+/)[0] ?? "";
 
   return (
@@ -568,7 +628,7 @@ export function EntryCard() {
       )}
 
       {view === "thanks" && saved && (
-        <div role="status" className="gw-rise relative flex flex-col gap-[22px] overflow-hidden p-6 sm:p-9">
+        <div className="gw-rise relative flex flex-col gap-[22px] overflow-hidden p-6 sm:p-9">
           <Burst key={burst} />
           <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-accent text-content">
             <GiveawayIcon name={saved.booked ? "calendar" : "check"} size={30} stroke={2.25} />
@@ -576,28 +636,37 @@ export function EntryCard() {
 
           <div className="relative flex flex-col gap-2.5">
             <p className="m-0 font-sans text-label font-black uppercase text-state-info">
-              {saved.booked ? "Booked" : inDrawing ? copy.thanks.eyebrow : "Received"}
+              {saved.booked ? "Booked" : contactRequest ? "Received" : copy.thanks.eyebrow}
             </p>
-            <h2 className="text-[clamp(38px,5vw,52px)] leading-[1.05]">
-              <RichText>{inDrawing ? copy.thanks.headline : copy.closed.thanksHeadline}</RichText>
+            <h2
+              ref={thanksHeadingRef}
+              tabIndex={-1}
+              className="text-[clamp(38px,5vw,52px)] leading-[1.05] outline-none"
+            >
+              <RichText>{contactRequest ? copy.closed.thanksHeadline : copy.thanks.headline}</RichText>
             </h2>
-            <p className="m-0 font-sans text-body text-content-muted">
-              {inDrawing ? copy.thanks.body : copy.closed.thanksBody}
-            </p>
-            {inDrawing && !saved.created && !saved.booked && (
+            {contactRequest ? (
+              // "Your manager will reach out" is only true where there is one.
+              saved.marketSlug && <p className="m-0 font-sans text-body text-content-muted">{copy.closed.thanksBody}</p>
+            ) : (
+              <p className="m-0 font-sans text-body text-content-muted">
+                {closed ? copy.closed.enteredBody : copy.thanks.body}
+              </p>
+            )}
+            {canEarnBonus && !saved.created && !saved.booked && (
               <p className="m-0 font-sans text-small font-semibold text-content">{copy.thanks.updated}</p>
             )}
           </div>
 
           {saved.booked ? (
             <div className="relative flex flex-col gap-2 rounded-[16px] bg-surface-accent p-[22px]">
-              {inDrawing && (
+              {gotBonus && (
                 <span className="self-start rounded-full bg-brand px-3 py-1.5 font-sans text-label font-black text-content-inverse">
                   {saved.entries} ENTRIES
                 </span>
               )}
               <p className="m-0 font-serif text-[22px] font-semibold leading-[1.25] text-content">
-                {inDrawing ? copy.thanks.booked : "Your call is booked."}
+                {gotBonus ? copy.thanks.booked : "Your call is booked."}
               </p>
               <p className="m-0 font-sans text-body text-content">
                 {bookingNote ??
@@ -606,13 +675,13 @@ export function EntryCard() {
             </div>
           ) : saved.marketSlug ? (
             <div className="relative flex flex-col gap-3.5 rounded-[16px] border-2 border-accent bg-accent-subtle p-[22px]">
-              {inDrawing && (
+              {canEarnBonus && (
                 <span className="self-start rounded-full bg-brand px-3 py-1.5 font-sans text-label font-black text-content-inverse">
                   +{giveaway.bonusEntries} ENTRIES
                 </span>
               )}
               <p className="m-0 font-serif text-[24px] font-semibold leading-[1.25] text-content">
-                {inDrawing ? copy.thanks.bonusHeadline : "Want to talk sooner?"}
+                {canEarnBonus ? copy.thanks.bonusHeadline : "Want to talk sooner?"}
               </p>
               {manager ? (
                 <div className="flex items-center gap-3">
@@ -639,23 +708,23 @@ export function EntryCard() {
                   onClick={openBooking}
                   className="flex min-h-14 w-full cursor-pointer items-center justify-center gap-2.5 rounded-full border-0 bg-accent font-sans text-[17px] font-black text-content transition-[background-color,box-shadow] duration-base ease-out hover:bg-accent-hover hover:shadow-accent"
                 >
-                  {inDrawing ? copy.thanks.bonusCta : copy.closed.bookingCta}
+                  {canEarnBonus ? copy.thanks.bonusCta : copy.closed.bookingCta}
                   <GiveawayIcon name="arrow" size={18} stroke={2.25} />
                 </button>
               )}
-              {inDrawing && (
+              {canEarnBonus && (
                 <p className="m-0 font-sans text-small text-content">{copy.thanks.bonusAlternative}</p>
               )}
             </div>
           ) : (
             <div className="relative flex flex-col gap-3 rounded-[16px] bg-surface-accent p-[22px]">
-              {inDrawing && (
+              {canEarnBonus && (
                 <span className="self-start rounded-full bg-brand px-3 py-1.5 font-sans text-label font-black text-content-inverse">
                   +{giveaway.bonusEntries} ENTRIES
                 </span>
               )}
               <p className="m-0 font-sans text-body text-content">
-                {inDrawing
+                {canEarnBonus
                   ? copy.thanks.notListed
                   : "We're not in your market yet, and we'll let you know when we are."}
               </p>
@@ -663,7 +732,7 @@ export function EntryCard() {
           )}
 
           <p className="relative m-0 font-sans text-[13px] text-content-muted">
-            {inDrawing ? "Entered" : "Sent"} as {firstName} · {saved.email}.{" "}
+            {contactRequest ? "Sent" : "Entered"} as {firstName} · {saved.email}.{" "}
             <button
               type="button"
               onClick={startOver}
@@ -704,7 +773,7 @@ export function EntryCard() {
               </p>
             </div>
           </div>
-          {inDrawing && (
+          {canEarnBonus && (
             <p className="m-0 rounded-lg bg-accent-subtle px-4 py-3 font-sans text-small font-semibold text-content">
               Your {giveaway.bonusEntries} bonus entries are added the moment the booking is confirmed.
             </p>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { GIVEAWAY_BY_SLUG } from "@/config/giveaways";
+import { giveawayBySlug } from "@/config/giveaways";
 import { recordBooking } from "@/lib/giveaway/service";
+import { safeError } from "@/lib/giveaway/store";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/giveaway/booked — the giveaway page saw Calendly confirm a booking.
@@ -16,7 +17,7 @@ import { recordBooking } from "@/lib/giveaway/service";
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   let body: Record<string, unknown>;
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
   }
 
-  const giveaway = GIVEAWAY_BY_SLUG[String(body?.giveaway ?? "")];
+  const giveaway = giveawayBySlug(body?.giveaway);
   const entryId = typeof body?.entryId === "string" ? body.entryId : "";
   if (!giveaway || !/^[0-9a-f-]{36}$/i.test(entryId)) {
     return NextResponse.json({ ok: false, error: "Unknown entry" }, { status: 404 });
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
     if (!outcome.ok) return NextResponse.json({ ok: false, error: outcome.error }, { status: outcome.status });
     return NextResponse.json({ ok: true, entries: outcome.entries });
   } catch (err) {
-    console.error("[giveaway] booked FAILED", giveaway.slug, err instanceof Error ? err.message : String(err));
+    console.error("[giveaway] booked FAILED", giveaway.slug, safeError(err));
     return NextResponse.json({ ok: false, error: "Something went wrong." }, { status: 500 });
   }
 }

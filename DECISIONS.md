@@ -486,11 +486,33 @@ was not edited to make room for it.
   branch in the lead route days before a conference. If `/api/lead` changes
   the stored record, the delivery record or the app payload, change both.
   After eXpcon the right fix is one shared delivery module.
-- **A failed hand-off is never retried automatically.** Same reason as the
-  dedupe note: a retry of a request that actually landed makes a second deal.
-  It is recorded, alerted, and retried by an owner from `/admin/giveaway`.
-  The retry re-uses the first attempt's lead id, so the person stays one row
-  in `leads:v1` and their delivery record flips from failed to delivered.
+- **One writer per person.** Every change to an entry is read → modify →
+  write of one JSON value, so each runs inside a per-email lock
+  (`withEntryLock`, a `SET NX PX`) and reads the entry after it holds the
+  lock. Without it, two overlapping requests for one person — a retry on bad
+  Wi-Fi, a booking landing mid-submit — both read "not sent yet" and both post
+  to the app. Six simultaneous submissions now produce one deal.
+- **A hand-off is written down before it is made.** The entry is saved as
+  `sending`, then posted, then saved as `sent` or `failed`. The app's intake
+  is given 8 seconds. A hand-off that failed, timed out, or was cut off
+  mid-flight is **never repeated automatically** — same reason as the dedupe
+  note: repeating a request that actually landed makes a second deal. It is
+  alerted, shown under "Needs attention", and retried by an owner from
+  `/admin/giveaway` after looking in the app. Every attempt for a person
+  re-uses one lead id, and the `leads:v1` row is written once per id, so the
+  person stays one row and their delivery record flips from failed to
+  delivered.
+- **No "New lead" email per entrant.** Those share a Resend account with
+  `/api/lead`'s alerts; a busy afternoon at a booth must not spend the
+  allowance that reports a real lead failing. The failure alert is always
+  sent. `leadEmails: "every-lead"` in the giveaway's settings turns the
+  per-lead email on.
+- **Who is never drawn is decided once, at creation.** Test names
+  (`ZZTEST …`, `Test …`) and Curbio addresses. Not re-evaluated on a
+  re-submission: the form is public, so otherwise anyone who knew a rival's
+  email could re-submit it as "Test" and remove them from the drawing. A
+  Curbio address is also not sent to the app (it rejects them with a 403) or
+  added to the email list.
 - **The 90-day answer travels in `workDetails`** (the app's "requested work"),
   behind a switch on the entries screen that is off until Rich confirms the
   field. Never `Message`.
@@ -516,6 +538,11 @@ not handed to the app is added to the opt-in list and tagged.
 - **A prior unsubscribe wins.** Anyone who has ever unsubscribed from, or
   bounced on, any list is left completely alone: not re-subscribed, not
   updated, not tagged. A notice line is not consent to undo an opt-out.
+- **An existing subscriber is only tagged.** The form is public — anyone can
+  type anyone's email — so for a contact already active on a list, nothing is
+  written but the three tags. Their name, phone, Market and list memberships
+  stay as they were. Only a contact new to ActiveCampaign is created from
+  what was typed.
 - **It runs after the response** (`after()`), because it is several calls to a
   rate-limited third party and must not sit between a tap and "You're in!".
   Its outcome is written back onto the entry, and the entries screen can
@@ -532,8 +559,14 @@ on a preview before it goes live, that is the wrong default.
 `VERCEL_ENV === "production"`. Everywhere else entries go under separate
 `:sandbox` keys, nothing is posted to the app, nothing is sent to
 ActiveCampaign, no notification is emailed, and each entry records what WOULD
-have happened. `GIVEAWAY_DELIVERY=live|sandbox` overrides it in either
-direction.
+have happened.
+
+`GIVEAWAY_DELIVERY` overrides the DELIVERY half only. `live` is for local runs
+against mock services. `sandbox` on production pauses deliveries without a
+deploy — and deliberately does not move the entries: someone who enters while
+it is set is still in the real drawing, shown as "(sandbox)", and is sent from
+the entries screen once it is lifted. A brake that diverted entrants into a
+different list would quietly remove them from a prize drawing.
 
 This applies to the giveaway only. `/api/lead` behaves on a preview exactly as
 it always has — which is still worth knowing before testing a lead form there.

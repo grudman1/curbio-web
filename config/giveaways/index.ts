@@ -18,6 +18,13 @@ export { ANSWER_LABEL, LISTING_ANSWERS, NOT_LISTED, publicGiveaway } from "./typ
 
 export const GIVEAWAYS: Giveaway[] = [expcon];
 
-export const GIVEAWAY_BY_SLUG: Record<string, Giveaway> = Object.fromEntries(
-  GIVEAWAYS.map((g) => [g.slug, g])
-);
+const GIVEAWAY_BY_SLUG: Record<string, Giveaway> = Object.fromEntries(GIVEAWAYS.map((g) => [g.slug, g]));
+
+/**
+ * The giveaway with this slug, or null. The only way in from a slug that came
+ * off a request: indexing the map directly would answer "constructor" or
+ * "toString" with a function, not a giveaway.
+ */
+export function giveawayBySlug(slug: unknown): Giveaway | null {
+  return typeof slug === "string" && Object.hasOwn(GIVEAWAY_BY_SLUG, slug) ? GIVEAWAY_BY_SLUG[slug] : null;
+}

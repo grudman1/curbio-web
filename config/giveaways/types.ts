@@ -156,6 +156,18 @@ export type Giveaway = {
    *  reads on the deal. `{answer}` interpolates. */
   dealNote: string;
 
+  /**
+   * Which emails this giveaway sends to the team (through the same Resend
+   * account as /api/lead's lead alerts).
+   *   "failures-only"  an alert when the app refuses a lead, nothing else
+   *   "every-lead"     also a "New lead" email for each entrant handed to an HSM
+   * The default for an event is "failures-only": a few hundred entrants in an
+   * afternoon would otherwise spend the allowance that the alerts for real
+   * leads — and for failures — depend on. The entries screen and the Leads
+   * screen show every one of them either way.
+   */
+  leadEmails: "failures-only" | "every-lead";
+
   rules: {
     path: string;
     /** `null` renders a marked placeholder on the rules page. */
@@ -216,6 +228,9 @@ export type Giveaway = {
       submit: string;
       thanksHeadline: string;
       thanksBody: string;
+      /** Under "You're in!" for someone who entered in time and is looking at
+       *  their confirmation after the deadline. */
+      enteredBody: string;
       bookingCta: string;
     };
   };

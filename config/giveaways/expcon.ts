@@ -92,6 +92,7 @@ export const expcon: Giveaway = {
   },
 
   dealNote: "eXpcon 2026 giveaway · Listing in next 90 days: {answer}",
+  leadEmails: "failures-only",
 
   rules: {
     path: "/expcon/rules",
@@ -179,6 +180,7 @@ export const expcon: Giveaway = {
       submit: "Send",
       thanksHeadline: "Thanks. We'll be *in touch.*",
       thanksBody: "Your local Curbio manager will reach out within one business day.",
+      enteredBody: "Entries closed Friday, Oct 9 at noon Mountain. Winners are notified by email and phone.",
       bookingCta: "Book 15 minutes now",
     },
   },

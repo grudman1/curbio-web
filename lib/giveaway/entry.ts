@@ -75,12 +75,16 @@ export type AppReason =
 export type AppRouting = {
   /**
    * none            never needed to go
+   * sending         a hand-off was started and has not reported back. Written
+   *                 BEFORE the request is made, so a request that dies midway
+   *                 leaves evidence: the app may or may not have this person,
+   *                 and only someone who can look should decide to resend.
    * sent            the app accepted it
    * failed          the app refused it, or could not be reached
    * not_configured  no CRM endpoint in this environment
    * sandbox         not production: nothing was sent, on purpose
    */
-  status: "none" | "sent" | "failed" | "not_configured" | "sandbox";
+  status: "none" | "sending" | "sent" | "failed" | "not_configured" | "sandbox";
   reason?: AppReason;
   at?: string;
   /** Join key into leads:v1 / leads:delivery:v1. */
@@ -145,7 +149,16 @@ export type GiveawayEntry = {
   revisions: number;
   /** Stored before the entry period closed. Fixed at creation. */
   inEntryPeriod: boolean;
-  /** ZZTEST and friends. Never drawn, always shown. */
+  /**
+   * When this person used the page AFTER the entry period — by then it is a
+   * plain contact form, so they were asking to be contacted. Null for anyone
+   * who has not. It is separate from `inEntryPeriod` because someone can be
+   * both: entered on Wednesday (in the drawing) and back on Saturday (wants a
+   * call). Absent on entries written before this field existed.
+   */
+  contactRequestedAt?: string | null;
+  /** One of ours — ZZTEST and friends, or a Curbio address. Never drawn,
+   *  always shown. Fixed at creation. */
   isTest: boolean;
   bonus: EntryBonus | null;
   booking: EntryBooking | null;
@@ -170,15 +183,38 @@ export function isUsablePhone(raw: string): boolean {
 }
 
 /**
- * Our own test submissions. Keyed on the NAME first — the convention we
- * control (DECISIONS.md: `ZZTEST <label>`, and the older `TEST <label>`) — and
- * on a `zztest` mailbox as a second net, because the person running a test on
- * a phone will fat-finger one or the other.
+ * Entries that are OURS, and so are never drawn.
+ *
+ * Test submissions: keyed on the NAME first — the convention we control
+ * (DECISIONS.md: `ZZTEST <label>`, and the older `TEST <label>`) — and on a
+ * `zztest` mailbox as a second net, because the person running a test on a
+ * phone will fat-finger one or the other.
+ *
+ * And anything from a Curbio address: the Official Rules exclude employees,
+ * and a manager demonstrating the form at the booth with their work email
+ * should not be able to win the AirPods by doing so.
+ *
+ * Decided ONCE, when the entry is created (see enterGiveaway). It is not
+ * re-evaluated on a re-submission: the form is public, so if it were, anyone
+ * who knew a rival's email could re-submit it under the name "Test" and take
+ * them out of the drawing.
  */
 export function isTestIdentity(name: string, email: string): boolean {
   const n = name.trim();
-  if (/^zztest\b/i.test(n) || /^test\s/i.test(n)) return true;
-  return /^zztest([+._-]|$)/i.test(normalizeEmail(email).split("@")[0] ?? "");
+  if (/^zztest\b/i.test(n) || /^test(\s|$)/i.test(n)) return true;
+  const [mailbox = ""] = normalizeEmail(email).split("@");
+  return /^zztest([+._-]|$)/i.test(mailbox) || isInternalAddress(email);
+}
+
+/**
+ * A Curbio address. Besides never being drawn, such an entry is not routed
+ * anywhere: the app rejects `@curbio.com` leads outright with a 403
+ * (DECISIONS.md → "Test leads must not use `@curbio.com` addresses"), so
+ * sending one would only raise a false delivery alarm, and a colleague trying
+ * the form does not belong on the marketing list either.
+ */
+export function isInternalAddress(email: string): boolean {
+  return normalizeEmail(email).split("@")[1] === "curbio.com";
 }
 
 // ── Input ────────────────────────────────────────────────────────────────────
@@ -195,6 +231,13 @@ export type EntryInput = {
 
 export type EntryField = "name" | "email" | "phone" | "market" | "zip" | "listing90";
 
+const MAX_NAME = 120;
+const MAX_PHONE = 40;
+/** The longest address the mail RFCs allow. */
+const MAX_EMAIL = 254;
+/** Cap for free-text attribution values (utm_*, referral source, first touch). */
+export const MAX_TAG = 200;
+
 /**
  * Validate what the form sent. The form checks the same things first; this is
  * the backstop, and it names the fields so the form can point at them.
@@ -206,18 +249,23 @@ export function parseEntryInput(body: Record<string, unknown>):
   | { ok: true; input: EntryInput }
   | { ok: false; fields: EntryField[] } {
   const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
-  const name = str(body.name);
+  // Lengths are capped rather than rejected: a real name that runs long is
+  // still a real entrant. The caps exist because this endpoint is public and
+  // every entry is read back in one piece by the entries screen, the export
+  // and the drawing — a few megabyte-long "names" would make all three crawl.
+  const name = str(body.name).slice(0, MAX_NAME);
   const email = normalizeEmail(str(body.email));
-  const phone = str(body.phone);
-  const market = str(body.market);
-  const zip = str(body.zip).replace(/\D/g, "").slice(0, 5);
-  const listing90 = str(body.listing90) as ListingAnswer;
+  const phone = str(body.phone).slice(0, MAX_PHONE);
+  const market = str(body.market).slice(0, 64);
+  const zip = str(body.zip).slice(0, 32).replace(/\D/g, "").slice(0, 5);
+  const listing90 = str(body.listing90).slice(0, 16) as ListingAnswer;
 
   const fields: EntryField[] = [];
   if (!name) fields.push("name");
-  if (!isUsableEmail(email)) fields.push("email");
+  if (email.length > MAX_EMAIL || !isUsableEmail(email)) fields.push("email");
   if (!isUsablePhone(phone)) fields.push("phone");
-  if (market !== NOT_LISTED && !MARKET_BY_SLUG[market]) fields.push("market");
+  // Object.hasOwn, not a bare lookup: `MARKET_BY_SLUG["constructor"]` is truthy.
+  if (market !== NOT_LISTED && !Object.hasOwn(MARKET_BY_SLUG, market)) fields.push("market");
   if (market === NOT_LISTED && zip.length !== 5) fields.push("zip");
   if (!LISTING_ANSWERS.includes(listing90)) fields.push("listing90");
 
@@ -252,9 +300,13 @@ export function hasBooked(entry: Pick<GiveawayEntry, "booking">): boolean {
  */
 export function appDecision(entry: GiveawayEntry, giveaway: Giveaway): AppReason | null {
   if (!entry.marketSlug) return null;
+  if (isInternalAddress(entry.email)) return null;
   if (hasBooked(entry)) return "booked";
   if (giveaway.routing.toApp.includes(entry.listing90)) return "answer";
-  if (!entry.inEntryPeriod && giveaway.routing.afterClose === "all-in-market") return "after_close";
+  // Anyone who used the page once it had become a contact form — whether that
+  // was their first visit or they had entered the drawing days earlier.
+  const usedContactForm = !entry.inEntryPeriod || !!entry.contactRequestedAt;
+  if (usedContactForm && giveaway.routing.afterClose === "all-in-market") return "after_close";
   return null;
 }
 
@@ -265,8 +317,27 @@ export function isInApp(entry: Pick<GiveawayEntry, "routing">): boolean {
   return entry.routing.app.status === "sent";
 }
 
+/**
+ * An earlier hand-off whose outcome is NOT "the app has them": it was refused,
+ * or it was started and never reported back. Neither is repeated by the code
+ * on its own — the app does not deduplicate, so repeating a request that did
+ * land makes a second deal. An owner looks, then retries from the entries
+ * screen.
+ */
+export function needsPersonToResend(entry: Pick<GiveawayEntry, "routing">): boolean {
+  return entry.routing.app.status === "failed" || entry.routing.app.status === "sending";
+}
+
+/** Due to be with an HSM, and not confirmed there. What the entries screen
+ *  counts as needing attention on the app side. */
+export function isAppOutstanding(entry: GiveawayEntry, giveaway: Giveaway): boolean {
+  if (entry.routing.app.status === "sandbox") return false;
+  return appDecision(entry, giveaway) !== null && !isInApp(entry);
+}
+
 /** Should this person be on the opt-in email list? */
 export function wantsEmailList(entry: GiveawayEntry, giveaway: Giveaway): boolean {
+  if (isInternalAddress(entry.email)) return false;
   if (giveaway.routing.emailList === "everyone") return true;
   return appDecision(entry, giveaway) === null;
 }

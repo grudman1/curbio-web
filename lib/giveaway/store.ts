@@ -13,6 +13,9 @@ import type { DrawTicket } from "./draw";
 //   giveaway:<slug>:draws      LIST   every drawing ever run, newest first
 //   giveaway:<slug>:draw:<id>  STRING the frozen list a drawing ran on
 //   giveaway:<slug>:settings   HASH   runtime switches
+//   giveaway:<slug>:leadrows   HASH   lead id → when its leads:v1 row was written
+//   giveaway:<slug>:lock:<email>      STRING  one writer per person (expires)
+//   giveaway:<slug>:synclock:<email>  STRING  one email-list sync per person (expires)
 //
 // ── Why a hash keyed by email ───────────────────────────────────────────────
 // "One entry per person" is then a property of the STORE, not of code that has
@@ -40,16 +43,42 @@ import type { DrawTicket } from "./draw";
 /** Change log cap. High: this is the audit trail for a prize drawing. */
 const LOG_MAX = 20000;
 
-function readWriteRedis(): Redis | null {
+// One client per credential for the life of the server instance, not one per
+// call. The SDK carries Upstash's read-your-writes token on the client, so a
+// fresh client for every command would throw that guarantee away on a database
+// with read replicas — "write the entry, read it back" is this file's whole job.
+const clients = new Map<string, Redis>();
+
+function client(token: string | undefined): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_KV_REST_API_URL;
-  const token = process.env.UPSTASH_REDIS_REST_KV_REST_API_TOKEN;
-  return url && token ? new Redis({ url, token }) : null;
+  if (!url || !token) return null;
+  const key = `${url}|${token}`;
+  let redis = clients.get(key);
+  if (!redis) {
+    redis = new Redis({ url, token });
+    clients.set(key, redis);
+  }
+  return redis;
+}
+
+function readWriteRedis(): Redis | null {
+  return client(process.env.UPSTASH_REDIS_REST_KV_REST_API_TOKEN);
 }
 
 function readOnlyRedis(): Redis | null {
-  const url = process.env.UPSTASH_REDIS_REST_KV_REST_API_URL;
-  const token = process.env.UPSTASH_REDIS_REST_KV_REST_API_READ_ONLY_TOKEN;
-  return url && token ? new Redis({ url, token }) : null;
+  return client(process.env.UPSTASH_REDIS_REST_KV_REST_API_READ_ONLY_TOKEN);
+}
+
+/**
+ * An error message that is safe to log or show.
+ *
+ * The Upstash SDK appends the failed command to its error text —
+ * "…, command was: [\"HSET\",…]" — and for an entry write that command IS the
+ * entry: name, email, phone. Everything from that marker on is dropped.
+ */
+export function safeError(err: unknown): string {
+  const message = err instanceof Error ? err.message : String(err);
+  return message.split(", command was:")[0].slice(0, 300);
 }
 
 export function storeConfigured(): boolean {
@@ -69,6 +98,9 @@ const K = {
   draws: (s: StoreScope) => `${prefix(s)}:draws`,
   drawSnapshot: (s: StoreScope, id: string) => `${prefix(s)}:draw:${id}`,
   settings: (s: StoreScope) => `${prefix(s)}:settings`,
+  leadRows: (s: StoreScope) => `${prefix(s)}:leadrows`,
+  lock: (s: StoreScope, email: string) => `${prefix(s)}:lock:${email}`,
+  syncLock: (s: StoreScope, email: string) => `${prefix(s)}:synclock:${email}`,
 };
 
 /** Upstash hands back a parsed object or a JSON string depending on how the
@@ -81,6 +113,89 @@ function parse<T>(v: T | string | null | undefined): T | null {
   } catch {
     return null;
   }
+}
+
+// ── One writer per person ────────────────────────────────────────────────────
+//
+// An entry is one JSON value, and every change to it is read → modify → write.
+// Two of those running at once for the same person is how a booth bonus gets
+// erased by the entrant's own in-flight submission, and — far worse — how one
+// person is posted to the app twice: both requests read "not sent yet", both
+// post, and the app makes two deals.
+//
+// So every operation that changes an entry runs inside this lock, keyed by the
+// person. The second request WAITS for the first and then reads what it wrote.
+// It is a plain `SET key NX PX`: atomic on the server, and it expires on its
+// own, so a request that is killed mid-flight cannot hold a person forever.
+//
+// The expiry is longer than the longest thing done under the lock (the app's
+// intake is given 8 seconds; see appDelivery.ts) and the wait is shorter than a
+// request is allowed to live, so a waiter either gets the lock or gives up
+// cleanly and tells the visitor to try again.
+
+const LOCK_TTL_MS = 30_000;
+const LOCK_WAIT_MS = 10_000;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Returned by withEntryLock when the person stayed locked for the whole wait. */
+export const LOCK_BUSY = Symbol("giveaway entry is busy");
+
+export function withEntryLock<T>(
+  scope: StoreScope,
+  email: string,
+  work: () => Promise<T>
+): Promise<T | typeof LOCK_BUSY> {
+  return withLock(K.lock(scope, email), work);
+}
+
+/**
+ * One email-list sync per person at a time. A SEPARATE lock from the entry's:
+ * the sync is several calls to ActiveCampaign and must not hold up the
+ * entrant's own next request while they run — it takes the entry lock only for
+ * the instant it writes its outcome back. What this one prevents is two syncs
+ * for the same contact interleaving their tag changes.
+ */
+export function withSyncLock<T>(
+  scope: StoreScope,
+  email: string,
+  work: () => Promise<T>
+): Promise<T | typeof LOCK_BUSY> {
+  return withLock(K.syncLock(scope, email), work);
+}
+
+async function withLock<T>(key: string, work: () => Promise<T>): Promise<T | typeof LOCK_BUSY> {
+  const redis = readWriteRedis();
+  if (!redis) throw new Error("giveaway store not configured");
+  const token = crypto.randomUUID();
+  const deadline = Date.now() + LOCK_WAIT_MS;
+  for (;;) {
+    if ((await redis.set(key, token, { nx: true, px: LOCK_TTL_MS })) === "OK") break;
+    if (Date.now() >= deadline) return LOCK_BUSY;
+    await sleep(120 + Math.floor(Math.random() * 120));
+  }
+  try {
+    return await work();
+  } finally {
+    try {
+      // Only release a lock that is still ours — if it expired and someone
+      // else holds it now, deleting it would let a third request in beside them.
+      if ((await redis.get<string>(key)) === token) await redis.del(key);
+    } catch {
+      // It expires by itself.
+    }
+  }
+}
+
+/**
+ * Has this lead already been given its leads:v1 row? True the FIRST time it is
+ * asked about an id and false ever after — atomically, so a retried hand-off
+ * re-uses the row it already has instead of adding a second one for the same
+ * person.
+ */
+export async function claimLeadRow(scope: StoreScope, leadId: string): Promise<boolean> {
+  const redis = readWriteRedis();
+  if (!redis) return false;
+  return (await redis.hsetnx(K.leadRows(scope), leadId, new Date().toISOString())) === 1;
 }
 
 // ── Entries ──────────────────────────────────────────────────────────────────
@@ -113,7 +228,8 @@ export async function createEntry(scope: StoreScope, entry: GiveawayEntry): Prom
 }
 
 /** Overwrite an existing entry. Callers read, change, and write the whole
- *  record; the id → email index never changes because neither half does. */
+ *  record — INSIDE withEntryLock, so nobody else's change is in between. The
+ *  id → email index never changes because neither half does. */
 export async function saveEntry(scope: StoreScope, entry: GiveawayEntry): Promise<void> {
   const redis = readWriteRedis();
   if (!redis) throw new Error("giveaway store not configured");
@@ -138,7 +254,7 @@ export async function readEntries(scope: StoreScope): Promise<EntriesRead> {
     entries.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     return { configured: true, entries, error: null };
   } catch (err) {
-    return { configured: true, entries: [], error: err instanceof Error ? err.message : String(err) };
+    return { configured: true, entries: [], error: safeError(err) };
   }
 }
 

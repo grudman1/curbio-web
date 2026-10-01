@@ -47,8 +47,12 @@ export type EntryRow = {
   afterClose: boolean;
   isTest: boolean;
   revisions: number;
+  /** The app status, or "due" for someone who should be with an HSM and has
+   *  no attempt on record. */
   app: string;
   appDetail: string;
+  /** In a market, not a Curbio address, and not already in the app. */
+  canSend: boolean;
   emailList: string;
   emailListDetail: string;
 };
@@ -56,6 +60,12 @@ export type EntryRow = {
 const APP_BADGE: Record<string, { label: string; tone: Tone; title: string }> = {
   sent: { label: "app", tone: "success", title: "Sent to the app — an HSM has it." },
   failed: { label: "app failed", tone: "error", title: "The app refused it. Not retried automatically." },
+  sending: {
+    label: "app unconfirmed",
+    tone: "error",
+    title: "A hand-off started and never reported back, so the app may or may not have this person. Look for them in the app, then use Retry.",
+  },
+  due: { label: "app pending", tone: "warning", title: "Should be with an HSM and has not been sent. Use Send to app." },
   sandbox: { label: "app (sandbox)", tone: "warning", title: "Would be sent to the app in production." },
   not_configured: { label: "app not configured", tone: "warning", title: "No app endpoint in this environment." },
 };
@@ -188,9 +198,9 @@ export function EntriesTable({ slug, rows, sandbox }: { slug: string; rows: Entr
   const shown = q ? rows.filter((r) => `${r.name} ${r.email} ${r.market}`.toLowerCase().includes(q)) : rows;
 
   function send(row: EntryRow) {
-    const retry = row.app === "failed";
+    const retry = row.app === "failed" || row.app === "sending";
     const question = retry
-      ? `Send ${row.name} to the app again?\n\nThe first attempt failed. If it actually reached the app, this makes a second deal — check the app first.`
+      ? `Send ${row.name} to the app again?\n\nThe first attempt ${row.app === "failed" ? "failed" : "never reported back"}. If it actually reached the app, this makes a second deal — check the app first.`
       : `Send ${row.name} to the app now?\n\nAn HSM is assigned, and ${row.name.split(" ")[0]} gets the HSM's welcome email.`;
     if (!window.confirm(question)) return;
     startTransition(async () => {
@@ -244,7 +254,9 @@ export function EntriesTable({ slug, rows, sandbox }: { slug: string; rows: Entr
                 <Td className="font-semibold">
                   <span className="inline-flex flex-wrap items-center gap-1.5">
                     {r.name}
-                    {r.isTest && <StatusBadge status="test" tone="neutral" title="One of our own tests. Never drawn." />}
+                    {r.isTest && (
+                      <StatusBadge status="ours" tone="neutral" title="One of ours — a test entry or a Curbio address. Never drawn." />
+                    )}
                     {r.afterClose && !r.isTest && (
                       <StatusBadge status="after close" tone="neutral" title="Submitted after the entry period ended. Not in the drawing." />
                     )}
@@ -285,9 +297,9 @@ export function EntriesTable({ slug, rows, sandbox }: { slug: string; rows: Entr
                   </span>
                 </Td>
                 <Td align="right" className="whitespace-nowrap">
-                  {r.inMarket && r.app !== "sent" && (
+                  {r.canSend && (
                     <button type="button" disabled={busy} onClick={() => send(r)} className={buttonClass("ghost", "sm")}>
-                      {r.app === "failed" ? "Retry app" : "Send to app"}
+                      {r.app === "failed" || r.app === "sending" ? "Retry app" : "Send to app"}
                     </button>
                   )}
                   {r.bonus && (
@@ -365,26 +377,40 @@ export function EmailListPanel({
 
   // The server works through a few entrants per call — each is several
   // requests to a rate-limited API — so the screen asks again until none are
-  // left, and stops the moment a batch makes no progress.
+  // left. Three things end the run: nothing left, a call that got nowhere, or
+  // an error. Each entrant is attempted ONCE per run (the server skips anyone
+  // tried since `runStartedAt`), so a contact that keeps failing cannot keep
+  // the run going or keep the people behind it waiting.
   async function syncAll() {
     setBusy(true);
-    let done = 0;
-    for (;;) {
-      const res = await syncEmailListAction(slug);
-      if (!res.ok) {
-        toast("error", res.error);
-        break;
+    const runStartedAt = new Date().toISOString();
+    let synced = 0;
+    let failed = 0;
+    try {
+      for (let call = 0; call < 1000; call++) {
+        const res = await syncEmailListAction(slug, runStartedAt);
+        if (!res.ok) {
+          toast("error", res.error);
+          return;
+        }
+        synced += res.synced;
+        failed += res.failed;
+        setProgress(`${synced} added${failed ? `, ${failed} failed` : ""}, ${res.remaining} to go`);
+        if (res.remaining === 0 || res.synced + res.failed === 0) break;
       }
-      done += res.processed;
-      setProgress(`${done} done, ${res.remaining} to go`);
-      if (res.remaining === 0 || res.processed === 0) {
-        toast("success", `Email list: ${done} processed.`);
-        break;
-      }
+      toast(
+        failed ? "error" : "success",
+        failed
+          ? `Email list: ${synced} added, ${failed} failed. The failures are under “Needs attention”.`
+          : `Email list: ${synced} added.`
+      );
+    } catch {
+      toast("error", "The sync was interrupted. Press Sync now to carry on where it stopped.");
+    } finally {
+      setBusy(false);
+      setProgress(null);
+      router.refresh();
     }
-    setBusy(false);
-    setProgress(null);
-    router.refresh();
   }
 
   return (
@@ -435,9 +461,15 @@ export function ReconcilePanel({ slug }: { slug: string }) {
         setError(res.error);
         return;
       }
+      // After a Record the report is re-read from the store, so it shows what
+      // is true now: anyone still under "not yet recorded" is still to do.
       setReport({ ...res.report, found: res.found });
       if (apply) {
-        toast("success", `${res.report.matched.length} booking${res.report.matched.length === 1 ? "" : "s"} recorded.`);
+        const left = res.report.matched.length;
+        toast(
+          "success",
+          `${res.recorded} booking${res.recorded === 1 ? "" : "s"} recorded.${left ? ` ${left} to go — press Record again.` : ""}`
+        );
         router.refresh();
       }
     });
@@ -445,6 +477,10 @@ export function ReconcilePanel({ slug }: { slug: string }) {
 
   return (
     <div className="flex flex-col gap-3">
+      <p className="m-0 font-sans text-ops-label text-content-muted">
+        Paste every manager&apos;s export together, in one go. Leave out cancelled meetings and anything booked after
+        the deadline — everyone in the paste who entered gets the bonus.
+      </p>
       <Field label="Paste Calendly's invitee list — a CSV export or just the emails">
         <Textarea
           value={pasted}
@@ -473,13 +509,14 @@ export function ReconcilePanel({ slug }: { slug: string }) {
           <ReportLine label="Already recorded as booked" emails={report.confirmed} />
           <ReportLine label="Booked, bonus not yet recorded" emails={report.matched} strong />
           <ReportLine label="Booked but never entered" emails={report.notEntered} />
-          <ReportLine label="Page says booked, not in Calendly" emails={report.unverified} warn />
+          <ReportLine label="Bonus rests on a booking that is not in this paste" emails={report.unverified} warn />
         </dl>
       )}
       {report && report.unverified.length > 0 && (
         <p className="m-0 font-sans text-ops-label text-content-muted">
-          An unverified booking may still be real — booked under a different email, say. Check, then use “Remove
-          bonus” on the row if it is not.
+          These people hold the bonus because the page reported a booking. It may still be real — booked under a
+          different email, or in an export that is not pasted here. Check, then use “Remove bonus” on the row if it is
+          not.
         </p>
       )}
     </div>

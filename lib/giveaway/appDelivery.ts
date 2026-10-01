@@ -4,6 +4,8 @@ import { ANSWER_LABEL, type Giveaway } from "@/config/giveaways";
 import { isKnownReferralSource } from "@/config/campaigns/types";
 import { crmNameForSlug } from "@/config/markets";
 import { dealNote, leadSource, type AppReason, type GiveawayEntry } from "./entry";
+import { storeScope } from "./mode";
+import { claimLeadRow, safeError } from "./store";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HANDING A GIVEAWAY ENTRANT TO THE APP — as a lead, in the lead store's own
@@ -39,21 +41,46 @@ import { dealNote, leadSource, type AppReason, type GiveawayEntry } from "./entr
 //   - Nothing here DEDUPES. The app does not either: for a lead with a market
 //     and no ZIP, every POST makes a new deal. One entry per email is what
 //     stops a double-tap becoming two deals, and that is enforced upstream.
-//   - A RETRY re-uses the first attempt's lead id (`retryLeadId`). The lead is
-//     already in leads:v1 and its alert already went out, so a retry only
-//     re-posts to the app and overwrites the delivery record under the same
-//     id — the Leads screen keeps one row for the person, and its failure
-//     banner clears when the retry lands instead of lingering for a day.
+//   - The caller chooses the LEAD ID and a retry passes the same one again.
+//     The leads:v1 row is written once per id (claimLeadRow), so a retry only
+//     re-posts to the app and overwrites the delivery record under that id —
+//     the Leads screen keeps one row for the person, and its failure banner
+//     clears when the retry lands instead of lingering for a day.
+//   - The app's intake is given 8 SECONDS. The lead route waits indefinitely;
+//     here a hang would hold the per-person lock (store.ts) and, worse, get
+//     the whole request killed before anything was recorded. A timeout turns
+//     "we do not know" into a recorded failure an owner can act on.
+//   - No "New lead" email per entrant by default. Those go through the same
+//     Resend account as /api/lead's alerts, and a busy afternoon at the booth
+//     must not spend the allowance that tells us a real lead failed. The
+//     FAILURE alert is always sent. `giveaway.leadEmails` is the switch.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const LEADS_KEY = "leads:v1";
 const LEADS_MAX = 5000;
 const DELIVERY_KEY = "leads:delivery:v1";
 
+/** How long the app's intake has to answer. See the header. */
+const CRM_TIMEOUT_MS = 8_000;
+/** How long an alert email may take before it is abandoned. */
+const EMAIL_TIMEOUT_MS = 5_000;
+
+let cachedRedis: Redis | null = null;
 function getRedis(): Redis | null {
   const url = process.env.UPSTASH_REDIS_REST_KV_REST_API_URL;
   const token = process.env.UPSTASH_REDIS_REST_KV_REST_API_TOKEN;
-  return url && token ? new Redis({ url, token }) : null;
+  if (!url || !token) return null;
+  cachedRedis ??= new Redis({ url, token });
+  return cachedRedis;
+}
+
+/** Give up on `work` after `ms`. The work itself is not cancelled — an email
+ *  that is merely slow may still arrive — but nothing waits on it. */
+function within<T>(ms: number, work: Promise<T>, what: string): Promise<T> {
+  return Promise.race([
+    work,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`${what} timed out after ${ms} ms`)), ms)),
+  ]);
 }
 
 /** Same rule as the lead route: a third-party error body may echo what was
@@ -79,14 +106,13 @@ export async function deliverToApp(
   giveaway: Giveaway,
   entry: GiveawayEntry,
   reason: AppReason,
-  options: { includeDealNote: boolean; retryLeadId?: string }
+  options: { includeDealNote: boolean; leadId: string }
 ): Promise<AppDeliveryResult> {
   const a = entry.attribution;
   const note = dealNote(giveaway, entry.listing90);
-  const isRetry = !!options.retryLeadId;
 
   const payload = {
-    leadId: options.retryLeadId ?? crypto.randomUUID(),
+    leadId: options.leadId,
     name: entry.name,
     firstName: entry.firstName,
     lastName: entry.lastName,
@@ -140,17 +166,21 @@ export async function deliverToApp(
   };
 
   // ── 1. Persist FIRST. A lead in Redis is recoverable whatever happens next.
-  //       Not on a retry: the first attempt stored it, under this same id.
+  //       Once per lead id: a retry finds the row its first attempt wrote.
   const redis = getRedis();
-  let persistOk = isRetry;
-  if (redis && !isRetry) {
+  let persistOk = false;
+  let firstAttempt = true;
+  if (redis) {
     try {
-      await redis.lpush(LEADS_KEY, JSON.stringify(payload));
-      await redis.ltrim(LEADS_KEY, 0, LEADS_MAX - 1);
+      firstAttempt = await claimLeadRow(storeScope(giveaway), payload.leadId);
+      if (firstAttempt) {
+        await redis.lpush(LEADS_KEY, JSON.stringify(payload));
+        await redis.ltrim(LEADS_KEY, 0, LEADS_MAX - 1);
+        console.log("[giveaway] lead persisted", logCtx);
+      }
       persistOk = true;
-      console.log("[giveaway] lead persisted", logCtx);
     } catch (err) {
-      console.error("[giveaway] lead persistence FAILED", logCtx, err instanceof Error ? err.message : String(err));
+      console.error("[giveaway] lead persistence FAILED", logCtx, safeError(err));
     }
   }
 
@@ -161,9 +191,11 @@ export async function deliverToApp(
   const resendTo = process.env.RESEND_TO_EMAIL || process.env.LEAD_NOTIFY_EMAIL || "grudman1@gmail.com";
   const resend = resendKey ? new Resend(resendKey) : null;
 
+  // Announce a lead once, and only when this giveaway asks for it.
+  const announce = !!resend && firstAttempt && giveaway.leadEmails === "every-lead";
+
   async function sendLeadNotification(): Promise<boolean> {
-    // A retry's lead was announced by its first attempt.
-    if (!resend || isRetry) return false;
+    if (!resend || !announce) return false;
     const text = [
       `Name:        ${payload.name}`,
       `Email:       ${payload.email}`,
@@ -186,12 +218,16 @@ export async function deliverToApp(
       `Submitted:   ${payload.submittedAt}`,
       `Source:      ${payload.source}`,
     ].join("\n");
-    const result = await resend.emails.send({
-      from: "Curbio Leads <onboarding@resend.dev>",
-      to: resendTo,
-      subject: `New Curbio Lead — ${payload.firstName} ${payload.lastName} — ${payload.market ?? "unknown market"}`.trim(),
-      text,
-    });
+    const result = await within(
+      EMAIL_TIMEOUT_MS,
+      resend.emails.send({
+        from: "Curbio Leads <onboarding@resend.dev>",
+        to: resendTo,
+        subject: `New Curbio Lead — ${payload.firstName} ${payload.lastName} — ${payload.market ?? "unknown market"}`.trim(),
+        text,
+      }),
+      "lead notification"
+    );
     if (result.error) throw new Error(result.error.message);
     return true;
   }
@@ -230,6 +266,7 @@ export async function deliverToApp(
         ...(process.env.CURBIO_CRM_API_KEY ? { authorization: `Bearer ${process.env.CURBIO_CRM_API_KEY}` } : {}),
       },
       body: JSON.stringify(crmPayload),
+      signal: AbortSignal.timeout(CRM_TIMEOUT_MS),
     });
     crmStatus = res.status;
     if (!res.ok) {
@@ -241,7 +278,7 @@ export async function deliverToApp(
   }
 
   const [resendResult, crmResult] = await Promise.allSettled([sendLeadNotification(), postToCrm()]);
-  const resendAttempted = !!resend && !isRetry;
+  const resendAttempted = announce;
   const crmAttempted = !!webhook;
   const resendOk = resendResult.status === "fulfilled" && resendResult.value;
   const crmOk = crmResult.status === "fulfilled" && crmResult.value;
@@ -249,26 +286,36 @@ export async function deliverToApp(
     console.error("[giveaway] lead notification FAILED", logCtx, String(resendResult.reason));
   }
   if (crmResult.status === "rejected") {
-    crmBody ??= crmResult.reason instanceof Error ? crmResult.reason.message.slice(0, 500) : String(crmResult.reason);
+    const timedOut = crmResult.reason instanceof Error && crmResult.reason.name === "TimeoutError";
+    crmBody ??= timedOut
+      ? `No answer from the app within ${CRM_TIMEOUT_MS / 1000} seconds — it may or may not have received this lead. Check the app before retrying.`
+      : crmResult.reason instanceof Error
+        ? crmResult.reason.message.slice(0, 500)
+        : String(crmResult.reason);
     console.error("[giveaway] CRM delivery FAILED", logCtx, crmBody);
   }
 
   // ── 3. Failure alert — the lead must be recoverable from Redis or an inbox.
   if (crmAttempted && !crmOk && resend) {
     try {
-      await resend.emails.send({
-        from: "Curbio Leads <onboarding@resend.dev>",
-        to: resendTo,
-        subject: "⚠️ CRM delivery FAILED — lead preserved",
-        text: [
-          `The CRM webhook rejected or failed for the ${giveaway.event.shortName} giveaway lead below.`,
-          `Persisted to Redis: ${persistOk ? "yes" : "NO — this email is the only copy"}`,
-          "It will NOT be retried automatically (a retry of a request that actually landed makes a duplicate deal).",
-          "Resend it from the giveaway entries screen once the app is healthy.",
-          "",
-          JSON.stringify(payload, null, 2),
-        ].join("\n"),
-      });
+      await within(
+        EMAIL_TIMEOUT_MS,
+        resend.emails.send({
+          from: "Curbio Leads <onboarding@resend.dev>",
+          to: resendTo,
+          subject: "⚠️ CRM delivery FAILED — lead preserved",
+          text: [
+            `The CRM webhook rejected or failed for the ${giveaway.event.shortName} giveaway lead below.`,
+            crmBody ? `What came back: ${crmBody}` : "",
+            `Persisted to Redis: ${persistOk ? "yes" : "NO — this email is the only copy"}`,
+            "It will NOT be retried automatically (a retry of a request that actually landed makes a duplicate deal).",
+            "Check the app for this person, then use Retry on the giveaway entries screen.",
+            "",
+            JSON.stringify(payload, null, 2),
+          ].join("\n"),
+        }),
+        "failure alert"
+      );
     } catch (err) {
       console.error("[giveaway] CRM-failure alert FAILED", logCtx, err instanceof Error ? err.message : String(err));
     }
@@ -293,7 +340,7 @@ export async function deliverToApp(
         }),
       });
     } catch (err) {
-      console.error("[giveaway] delivery-record write failed (lead itself is safe)", logCtx, err instanceof Error ? err.message : String(err));
+      console.error("[giveaway] delivery-record write failed (lead itself is safe)", logCtx, safeError(err));
     }
   }
 

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { GIVEAWAY_BY_SLUG, type Giveaway } from "@/config/giveaways";
+import { giveawayBySlug, type Giveaway } from "@/config/giveaways";
 import { requireAdminApiSession } from "@/lib/adminApiAuth";
 import { ownerSession } from "@/lib/adminGuards";
 import {
@@ -43,7 +43,7 @@ const PATH = "/admin/giveaway";
 type Fail = { ok: false; error: string };
 
 function giveawayFor(slug: string): Giveaway | null {
-  return GIVEAWAY_BY_SLUG[slug] ?? null;
+  return giveawayBySlug(slug);
 }
 
 // ── Any signed-in admin ──────────────────────────────────────────────────────
@@ -101,14 +101,23 @@ export async function sendToAppAction(slug: string, email: string): Promise<{ ok
   return result;
 }
 
+/**
+ * One batch of the email-list catch-up. The screen calls it repeatedly;
+ * `runStartedAt` is when the button was pressed, and is what stops an entry
+ * that keeps failing from being retried for ever within one run.
+ */
 export async function syncEmailListAction(
-  slug: string
-): Promise<{ ok: true; processed: number; remaining: number } | Fail> {
+  slug: string,
+  runStartedAt: string
+): Promise<{ ok: true; synced: number; failed: number; remaining: number } | Fail> {
   const session = await ownerSession();
   if (!session) return { ok: false, error: "Owner access required." };
   const giveaway = giveawayFor(slug);
   if (!giveaway) return { ok: false, error: "Unknown giveaway." };
-  const result = await syncEmailListBatch(giveaway, session.email);
+  if (typeof runStartedAt !== "string" || Number.isNaN(Date.parse(runStartedAt))) {
+    return { ok: false, error: "Bad request." };
+  }
+  const result = await syncEmailListBatch(giveaway, session.email, runStartedAt);
   if (result.ok && result.remaining === 0) revalidatePath(PATH);
   return result;
 }
@@ -117,11 +126,12 @@ export async function reconcileAction(
   slug: string,
   pasted: string,
   apply: boolean
-): Promise<{ ok: true; report: ReconcileReport; found: number } | Fail> {
+): Promise<{ ok: true; report: ReconcileReport; found: number; recorded: number } | Fail> {
   const session = await ownerSession();
   if (!session) return { ok: false, error: "Owner access required." };
   const giveaway = giveawayFor(slug);
   if (!giveaway) return { ok: false, error: "Unknown giveaway." };
+  if (typeof pasted !== "string" || pasted.length > 2_000_000) return { ok: false, error: "That paste is too large." };
   // Whatever was pasted — a CSV export, a column of addresses, an email thread
   // — the addresses are what matter. Deliberately a narrow pattern: anything
   // looser starts swallowing the punctuation BETWEEN two addresses and reports
@@ -131,7 +141,12 @@ export async function reconcileAction(
   const result = await reconcileBookings(giveaway, emails, session.email, apply);
   if (!result.ok) return result;
   if (apply) revalidatePath(PATH);
-  return { ok: true, report: result.report, found: new Set(emails.map((e) => e.toLowerCase())).size };
+  return {
+    ok: true,
+    report: result.report,
+    found: new Set(emails.map((e) => e.toLowerCase())).size,
+    recorded: result.recorded,
+  };
 }
 
 export async function setDealNoteAction(slug: string, on: boolean): Promise<{ ok: true } | Fail> {

@@ -1,5 +1,5 @@
 import { type NextRequest } from "next/server";
-import { GIVEAWAY_BY_SLUG } from "@/config/giveaways";
+import { giveawayBySlug } from "@/config/giveaways";
 import { requireAdminApiSession, unauthorized } from "@/lib/adminApiAuth";
 import { storeScope } from "@/lib/giveaway/mode";
 import { readDrawSnapshot, readDraws } from "@/lib/giveaway/store";
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const giveaway = GIVEAWAY_BY_SLUG[req.nextUrl.searchParams.get("giveaway") ?? ""];
+  const giveaway = giveawayBySlug(req.nextUrl.searchParams.get("giveaway"));
   const id = req.nextUrl.searchParams.get("id") ?? "";
   if (!giveaway) return new Response("Unknown giveaway", { status: 404 });
 

@@ -54,7 +54,7 @@ makes a second entry or a second deal.
 | **Market not listed** (any answer) | 1 | Never | Yes |
 | **Books a call** (any answer, in a market) | 1 + 5 | Yes, when they book | Stays on it if they were added when they entered |
 | Changes their answer to **Yes** later | still 1 | Yes, at that moment | Tags are updated |
-| Submits **after the drawing** (in a market) | not in the drawing | Yes | No |
+| Uses the page **after the drawing** (in a market) | not in the drawing, unless they entered before it | Yes | No |
 
 - **Email list** is ActiveCampaign. Each person goes on their market's list
   (Seattle and "not listed" go on the Master Contact List), with the `Market`
@@ -63,11 +63,20 @@ makes a second entry or a second deal.
 - Anyone who has **ever unsubscribed** from a Curbio list is left alone. They
   are still in the drawing.
 - "Not listed" plus a ZIP that Curbio does serve is treated as that market.
-- A failed hand-off to the app is **not retried automatically** (the app would
-  make a duplicate deal). It shows as "app failed" on the staff screen with a
-  "Retry app" button, and in the red banner on the Leads screen. Check the app
-  for the person first, then retry; a retry that lands clears the banner and
-  the Leads screen still shows one row for them.
+- A hand-off to the app that fails, times out (the app is given 8 seconds) or
+  is cut off is **not repeated automatically** — the app would make a
+  duplicate deal. It shows under "Needs attention" as "app failed" or "app
+  unconfirmed" with a "Retry app" button, and a failure is also in the red
+  banner on the Leads screen. Look for the person in the app first, then
+  retry; a retry that lands clears the banner and the Leads screen still shows
+  one row for them.
+- **Curbio addresses and test names are "ours"**: kept, shown, never drawn. A
+  `@curbio.com` entry is not sent to the app (it rejects them) or added to the
+  email list.
+- **No "New lead" email for each giveaway lead.** They would come out of the
+  same email allowance as the alerts for the main lead forms. A failure alert
+  is still sent. To get one per lead anyway: `leadEmails: "every-lead"` in the
+  settings file.
 
 Attribution on every lead sent to the app: Channel `event`, UtmSource `event`,
 UtmMedium `qr`, UtmCampaign `expcon-raffle-oct`, ReferralSourceId `eXp realty`,
@@ -114,7 +123,8 @@ Before merging:
       are left. Governing law and dispute terms are not drafted — that is for
       the reviewer.
 - [ ] Everyone working the booth has a `/admin` login (they see only the
-      bonus tool).
+      bonus tool). Staff who try the form themselves should know a
+      `@curbio.com` entry is kept but can never win.
 
 Going live:
 
@@ -191,11 +201,14 @@ working as a contact form; anyone in a market who uses it goes to the app.
 
 1. **Check bookings.** In Calendly, export the invitees for Oct 5–9 (each
    manager has their own Calendly, so this is one export per manager, or one
-   from an organization admin). On `/admin/giveaway` → "Check bookings against
-   Calendly": paste the exports (or just the emails) → **Check** → **Record**.
-   Look at "Page says booked, not in Calendly": those are bookings the page
-   reported that Calendly has no record of. Use "Remove bonus" on a row if it
-   was not real.
+   from an organization admin). Leave out cancelled meetings and anything
+   booked after noon. On `/admin/giveaway` → "Check bookings against
+   Calendly": paste **all** the exports together (or just the emails) →
+   **Check** → **Record** (it records eight at a time; press again while any
+   are left). Then look at "Bonus rests on a booking that is not in this
+   paste": those people hold the bonus only because the page reported a
+   booking, and Calendly's list does not have them. Use "Remove bonus" on a
+   row if the booking was not real.
 2. **Add any booth or written bonuses** that were earned before noon and not
    yet typed in. (After the close only an owner can add one.)
 3. **Run the official drawing.** It draws 5 winners in prize order and 10

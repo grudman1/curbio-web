@@ -3,8 +3,16 @@ import { ANSWER_LABEL, GIVEAWAYS } from "@/config/giveaways";
 import { MARKET_BY_SLUG } from "@/config/markets";
 import { maskPhone } from "@/lib/adminLeads";
 import { emailListConfigured } from "@/lib/giveaway/emailList";
-import { entryCount, isDrawable, wantsEmailList, type GiveawayEntry } from "@/lib/giveaway/entry";
+import {
+  entryCount,
+  isAppOutstanding,
+  isDrawable,
+  isInApp,
+  isInternalAddress,
+  type GiveawayEntry,
+} from "@/lib/giveaway/entry";
 import { deliveryMode, isClosed, storeScope } from "@/lib/giveaway/mode";
+import { isEmailListOutstanding } from "@/lib/giveaway/service";
 import { readDraws, readEntries, readLog, readSettings } from "@/lib/giveaway/store";
 import { PageHeader } from "../../_ui/v2/PageHeader";
 import { OpsCard } from "../../_ui/v2/OpsCard";
@@ -52,6 +60,11 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = "force-dynamic";
+// The actions behind this screen (actions.ts) run under this limit too. Two of
+// them work through a list — recording bookings, catching the email list up —
+// and each item can include a call to the app or to ActiveCampaign. They are
+// batched so no single call needs long, and this is the headroom above that.
+export const maxDuration = 60;
 
 // The event runs on Mountain time, so that is the clock this screen shows.
 const MT = new Intl.DateTimeFormat("en-US", {
@@ -82,14 +95,6 @@ function marketLabel(e: GiveawayEntry): string {
   return e.zip ? `Not listed · ${e.zip}` : "Not listed";
 }
 
-/** An entry that needs a person: the app refused it, or the email-list step
- *  is outstanding. */
-function needsAttention(e: GiveawayEntry): boolean {
-  return (
-    e.routing.app.status === "failed" ||
-    ["failed", "pending", "not_configured"].includes(e.routing.emailList.status)
-  );
-}
 
 type Filter = "all" | "app" | "list" | "attention" | "tests";
 
@@ -165,6 +170,13 @@ export default async function GiveawayAdminPage({
   const readable = read.configured && !read.error;
   const entries = readable ? read.entries : [];
 
+  // An entry that needs a person: it should be with an HSM and is not
+  // confirmed there (refused, never reported back, or never attempted), or its
+  // email-list step is still owed. Both are judged against where the entry
+  // SHOULD go now — someone since handed to an HSM no longer owes a list sync.
+  const needsAttention = (e: GiveawayEntry) =>
+    !sandbox && (isAppOutstanding(e, giveaway) || isEmailListOutstanding(e, giveaway));
+
   const drawable = entries.filter(isDrawable);
   const counts = {
     all: entries.length,
@@ -198,20 +210,19 @@ export default async function GiveawayAdminPage({
     afterClose: !e.inEntryPeriod,
     isTest: e.isTest,
     revisions: e.revisions,
-    app: e.routing.app.status,
+    app: e.routing.app.status === "none" && isAppOutstanding(e, giveaway) ? "due" : e.routing.app.status,
     appDetail:
       e.routing.app.status === "failed"
-        ? `The app refused it${e.routing.app.crmStatus ? ` (HTTP ${e.routing.app.crmStatus})` : ""}. ${e.routing.app.error ?? ""}`.trim()
+        ? `${e.routing.app.crmStatus ? `HTTP ${e.routing.app.crmStatus}. ` : ""}${e.routing.app.error ?? ""}`.trim()
         : e.routing.app.reason
           ? `Why: ${e.routing.app.reason.replace("_", " ")}`
           : "",
+    canSend: e.marketSlug !== null && !isInternalAddress(e.email) && !isInApp(e),
     emailList: e.routing.emailList.status,
     emailListDetail: e.routing.emailList.error ?? "",
   }));
 
-  const outstanding = entries.filter(
-    (e) => wantsEmailList(e, giveaway) && ["failed", "pending", "not_configured"].includes(e.routing.emailList.status)
-  ).length;
+  const outstanding = sandbox ? 0 : entries.filter((e) => isEmailListOutstanding(e, giveaway)).length;
 
   return (
     <>
@@ -247,9 +258,12 @@ export default async function GiveawayAdminPage({
             <Stat label="need attention" value={readable ? counts.attention : null} tone="bad" />
           </div>
         </OpsCard>
-        <OpsCard title="Not in the drawing" titleTooltip="Kept and routed like any other entry, but never drawn.">
+        <OpsCard
+          title="Not in the drawing"
+          titleTooltip="Kept, but never drawn: our own test entries and Curbio addresses, and anyone who first used the page after the entry period."
+        >
           <div className="flex flex-wrap gap-8">
-            <Stat label="tests" value={readable ? counts.tests : null} />
+            <Stat label="ours" value={readable ? counts.tests : null} />
             <Stat
               label="after close"
               value={readable ? entries.filter((e) => !e.isTest && !e.inEntryPeriod).length : null}
@@ -281,7 +295,7 @@ export default async function GiveawayAdminPage({
             { key: "app", label: "Sent to app", count: readable ? counts.app : null },
             { key: "list", label: "Email list", count: readable ? counts.list : null },
             { key: "attention", label: "Needs attention", count: readable ? counts.attention : null },
-            { key: "tests", label: "Tests", count: readable ? counts.tests : null },
+            { key: "tests", label: "Ours", count: readable ? counts.tests : null },
           ]}
         />
         <OpsCard title="Entries" control={<span className="ops-subtle">one row per person</span>} ruled>

@@ -1,5 +1,5 @@
 import { type NextRequest } from "next/server";
-import { ANSWER_LABEL, GIVEAWAY_BY_SLUG } from "@/config/giveaways";
+import { ANSWER_LABEL, giveawayBySlug } from "@/config/giveaways";
 import { MARKET_BY_SLUG } from "@/config/markets";
 import { requireAdminApiSession, unauthorized } from "@/lib/adminApiAuth";
 import { entryCount, isDrawable } from "@/lib/giveaway/entry";
@@ -43,6 +43,17 @@ function cell(value: string | number | boolean | null | undefined): string {
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
+/**
+ * "(404) 555-0100". Every stored number is ten digits (or eleven with a
+ * leading 1) however it was typed, and one shape makes the column sortable and
+ * diallable. It also keeps a number typed as "+1 404…" from starting with a
+ * "+", which `cell` would have to defuse with a visible apostrophe.
+ */
+function phone(raw: string): string {
+  const digits = raw.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "");
+  return digits.length === 10 ? `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}` : raw;
+}
+
 export async function GET(req: NextRequest) {
   const session = await requireAdminApiSession();
   if (!session) return unauthorized();
@@ -53,7 +64,7 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const giveaway = GIVEAWAY_BY_SLUG[req.nextUrl.searchParams.get("giveaway") ?? ""];
+  const giveaway = giveawayBySlug(req.nextUrl.searchParams.get("giveaway"));
   if (!giveaway) return new Response("Unknown giveaway", { status: 404 });
 
   const read = await readEntries(storeScope(giveaway));
@@ -77,6 +88,7 @@ export async function GET(req: NextRequest) {
     "in_drawing",
     "is_test",
     "after_close",
+    "contact_form_used_utc",
     "bonus",
     "bonus_added_by",
     "booked_call",
@@ -109,7 +121,7 @@ export async function GET(req: NextRequest) {
       e.firstName,
       e.lastName,
       e.email,
-      e.phone,
+      phone(e.phone),
       e.marketSlug ? (MARKET_BY_SLUG[e.marketSlug]?.name ?? e.marketSlug) : "Not listed",
       e.marketSlug ?? "",
       e.zip,
@@ -118,6 +130,7 @@ export async function GET(req: NextRequest) {
       isDrawable(e) ? "yes" : "no",
       e.isTest ? "yes" : "no",
       e.inEntryPeriod ? "no" : "yes",
+      e.contactRequestedAt ?? "",
       e.bonus?.source ?? "",
       e.bonus?.by ?? "",
       e.booking ? "yes" : "no",

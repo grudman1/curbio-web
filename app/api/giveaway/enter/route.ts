@@ -1,6 +1,7 @@
 import { after, NextResponse } from "next/server";
-import { GIVEAWAY_BY_SLUG } from "@/config/giveaways";
+import { giveawayBySlug } from "@/config/giveaways";
 import { enterGiveaway } from "@/lib/giveaway/service";
+import { safeError } from "@/lib/giveaway/store";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/giveaway/enter — the giveaway form's submit.
@@ -25,9 +26,10 @@ import { enterGiveaway } from "@/lib/giveaway/service";
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const runtime = "nodejs";
-// Room for the app's intake to answer and the email-list sync to finish. The
-// visitor is not waiting on most of it.
-export const maxDuration = 30;
+// Room for a wait on the per-person lock, the app's intake (8s at most) and
+// then the email-list sync after the response. The visitor is not waiting on
+// most of it. 60 is what the Ask route already runs at on this plan.
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   let body: Record<string, unknown>;
@@ -37,7 +39,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
   }
 
-  const giveaway = GIVEAWAY_BY_SLUG[String(body?.giveaway ?? "")];
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
+  }
+  const giveaway = giveawayBySlug(body.giveaway);
   if (!giveaway) return NextResponse.json({ ok: false, error: "Unknown giveaway" }, { status: 404 });
 
   try {
@@ -55,11 +60,13 @@ export async function POST(req: Request) {
       created: outcome.created,
       entries: outcome.entries,
       inEntryPeriod: outcome.inEntryPeriod,
+      closed: outcome.closed,
       marketSlug: outcome.marketSlug,
     });
   } catch (err) {
-    // No PII: the message of an unexpected error, never the body that caused it.
-    console.error("[giveaway] enter FAILED", giveaway.slug, err instanceof Error ? err.message : String(err));
+    // No PII: the message of an unexpected error, never the body that caused
+    // it — and not the part of a store error that quotes the failed command.
+    console.error("[giveaway] enter FAILED", giveaway.slug, safeError(err));
     return NextResponse.json(
       { ok: false, error: "Something went wrong. Please try again." },
       { status: 500 }

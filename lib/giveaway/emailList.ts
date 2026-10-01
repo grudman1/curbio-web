@@ -19,11 +19,20 @@ import type { EmailListRouting, GiveawayEntry } from "./entry";
 //      tagged. A notice line under a button is not the "affirmative consent"
 //      CAN-SPAM asks for before mailing someone who opted out, and it is not
 //      close.
-//   2. Create or update the contact, with the Market field when they are in a
-//      market.
-//   3. Put them on their market's list — or the Master Contact List when the
-//      market has none (config/emailLists.ts) — unless they are already on it.
+//   2. If they are NEW to ActiveCampaign, create the contact from what they
+//      typed, with the Market field when they are in a market.
+//   3. Put a new contact on their market's list — or the Master Contact List
+//      when the market has none (config/emailLists.ts).
 //   4. Tag them: the event, their market, their 90-day answer.
+//
+// ── Someone ActiveCampaign already knows is only TAGGED ─────────────────────
+// The form is public: anyone can type anyone's email. So for a contact who is
+// already an active subscriber, steps 2 and 3 are skipped entirely — their
+// name, phone, Market and list memberships stay exactly as they were. A form
+// submission can add three tags to an existing subscriber; it cannot rename
+// them, change the number we call them on, or move them between markets'
+// mailings. (A contact who exists but is on no list at all is added to one and
+// given a Market; their name and phone are still left alone.)
 //
 // Every step is idempotent, so a retry — or a re-submission with a changed
 // answer — converges on the right state instead of piling up duplicates. The
@@ -167,30 +176,41 @@ export async function syncEntrantToEmailList(giveaway: Giveaway, entry: Giveaway
       }
     }
 
-    // 2. Create or update the contact.
-    const synced = await json<{ contact?: { id?: string } }>(
-      await ac("/contact/sync", {
-        method: "POST",
-        body: {
-          contact: {
-            email: entry.email,
-            firstName: entry.firstName,
-            lastName: entry.lastName,
-            phone: entry.phone,
-            ...(target.marketValue
-              ? { fieldValues: [{ field: String(AC_MARKET_FIELD_ID), value: target.marketValue }] }
-              : {}),
+    // 2. The contact. See the header: an existing contact's own details are
+    //    never overwritten by what somebody typed into a public form.
+    const known = contactId !== null;
+    const subscribedSomewhere = memberships.some((m) => m.status === ACTIVE);
+    const marketField = target.marketValue
+      ? { fieldValues: [{ field: String(AC_MARKET_FIELD_ID), value: target.marketValue }] }
+      : {};
+    if (!known) {
+      const created = await json<{ contact?: { id?: string } }>(
+        await ac("/contact/sync", {
+          method: "POST",
+          body: {
+            contact: {
+              email: entry.email,
+              firstName: entry.firstName,
+              lastName: entry.lastName,
+              phone: entry.phone,
+              ...marketField,
+            },
           },
-        },
-      }),
-      "contact sync"
-    );
-    contactId = synced.contact?.id ?? contactId;
+        }),
+        "contact sync"
+      );
+      contactId = created.contact?.id ?? null;
+    } else if (!subscribedSomewhere && target.marketValue) {
+      // Known to ActiveCampaign but on no list: give them a Market, nothing else.
+      await json(
+        await ac("/contact/sync", { method: "POST", body: { contact: { email: entry.email, ...marketField } } }),
+        "contact sync"
+      );
+    }
     if (!contactId) throw new Error("contact sync returned no id");
 
-    // 3. The list — only if they are not already an active member of it.
-    const onTarget = memberships.some((m) => m.list === String(target.listId) && m.status === ACTIVE);
-    if (!onTarget) {
+    // 3. The list — for anyone who is not already an active subscriber.
+    if (!subscribedSomewhere) {
       await json(
         await ac("/contactLists", {
           method: "POST",
@@ -205,13 +225,24 @@ export async function syncEntrantToEmailList(giveaway: Giveaway, entry: Giveaway
     const wanted = [giveaway.emailList.tag, marketTag(giveaway, entry.marketSlug), answerTag(giveaway, entry.listing90)];
     if (entry.revisions > 0) await removeStaleTags(giveaway, contactId, new Set(wanted));
     for (const name of wanted) {
-      await json(
-        await ac("/contactTags", { method: "POST", body: { contactTag: { contact: contactId, tag: await tagId(name) } } }),
-        "tagging"
-      );
+      let res = await ac("/contactTags", { method: "POST", body: { contactTag: { contact: contactId, tag: await tagId(name) } } });
+      if (!res.ok && res.status < 500) {
+        // The remembered id may be for a tag someone has since deleted and
+        // re-made in ActiveCampaign. Forget it, look the name up again, once.
+        tagIds.delete(name);
+        res = await ac("/contactTags", { method: "POST", body: { contactTag: { contact: contactId, tag: await tagId(name) } } });
+      }
+      await json(res, "tagging");
     }
 
-    return { status: "synced", at, contactId, listId: target.listId, error: null };
+    return {
+      status: "synced",
+      at,
+      contactId,
+      // Only the list WE put them on. An existing subscriber was tagged where they are.
+      ...(subscribedSomewhere ? {} : { listId: target.listId }),
+      error: null,
+    };
   } catch (err) {
     return { status: "failed", at, error: err instanceof Error ? err.message : String(err) };
   }

@@ -20,21 +20,43 @@ import type { StoreScope } from "./store";
 //   - each entry records what WOULD have happened, so the preview still shows
 //     the routing working
 //
-// GIVEAWAY_DELIVERY overrides it in either direction — `live` to exercise the
-// real code paths against mock servers in local development, `sandbox` to
-// neutralise a production deployment in an emergency without a code change.
+// ── Two questions, answered separately ──────────────────────────────────────
+//
+//   WHERE do entries go?      storeScope()    the real list, or the sandbox one
+//   DOES anything leave?      deliveryMode()  the app + ActiveCampaign, or not
+//
+// GIVEAWAY_DELIVERY overrides the second in either direction:
+//
+//   live      exercise the real delivery code against mock servers in local
+//             development. Entries then go to the real keys of whatever store
+//             is configured, so a local run looks like production end to end.
+//   sandbox   stop deliveries on a production deployment without a code
+//             change. It does NOT move the entries: someone who enters while
+//             it is set is still in the real drawing, marked "(sandbox)" as
+//             not yet sent, and can be sent from the entries screen once it is
+//             lifted. An emergency brake must not quietly drop entrants out of
+//             a prize drawing.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type DeliveryMode = "live" | "sandbox";
 
+function override(): DeliveryMode | null {
+  const value = process.env.GIVEAWAY_DELIVERY;
+  return value === "live" || value === "sandbox" ? value : null;
+}
+
+function isProduction(): boolean {
+  return process.env.VERCEL_ENV === "production";
+}
+
 export function deliveryMode(): DeliveryMode {
-  const override = process.env.GIVEAWAY_DELIVERY;
-  if (override === "live" || override === "sandbox") return override;
-  return process.env.VERCEL_ENV === "production" ? "live" : "sandbox";
+  return override() ?? (isProduction() ? "live" : "sandbox");
 }
 
 export function storeScope(giveaway: Giveaway): StoreScope {
-  return { slug: giveaway.slug, sandbox: deliveryMode() === "sandbox" };
+  // Production always uses the real list, whatever the override says.
+  const real = isProduction() || override() === "live";
+  return { slug: giveaway.slug, sandbox: !real };
 }
 
 /** Has the entry period ended? The server's clock, never the visitor's. */
