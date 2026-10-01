@@ -154,6 +154,7 @@ Use names starting `ZZTEST` and emails like `zztest+yes1@gmail.com` (never an
 
 | # | Do this | Expect |
 | --- | --- | --- |
+| T0 | Open the page in a private window on a phone (so the cookie notice shows) | The notice sits at the bottom of the screen and the Name field is visible above it. Tap the field: the notice shrinks to about half that height. It only appears on the production site, so this is the first chance to see it. |
 | T1 | Scan the QR. Submit ZZTEST, your market, **Yes** | Staff screen: "app". Leads screen: channel Event, campaign `expcon-raffle-oct`, source `expcon-giveaway-<market>`. The HSM gets the new-lead email. In the app: a deal with ReferralSourceId `eXp realty`, LeadSource and FirstTouchCampaign filled. |
 | T2 | New email, **Maybe** | Staff screen: "email list". **No** deal, **no** HSM email. In ActiveCampaign: on the market's list, tagged `expcon-2026`, `expcon-2026-market-…`, `expcon-2026-listing-maybe`. |
 | T3 | New email, **Not yet** | Same as T2, tagged `…-listing-not-yet`. |
