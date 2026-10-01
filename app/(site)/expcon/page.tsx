@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { GiveawayPage } from "@/components/giveaway/GiveawayPage";
 import { expcon } from "@/config/giveaways/expcon";
 import { routeMetadata } from "@/config/routes";
+import { isClosed } from "@/lib/giveaway/mode";
 
 // EVENT tier — eXpcon Salt Lake City 2026. An event-themed sibling of /exp,
 // mounted beside it for the same reason /exp is not under /lp/: it lives at
@@ -20,10 +21,15 @@ import { routeMetadata } from "@/config/routes";
 // matters for a page reached from a conference hall's Wi-Fi.
 export const revalidate = 60;
 
-export const metadata: Metadata = {
-  ...expcon.meta,
-  ...routeMetadata(expcon.path),
-};
+// The title and link preview follow the page: once the entry period has ended
+// they stop inviting people to enter. Regenerated with the page, so they catch
+// up within the same minute.
+export function generateMetadata(): Metadata {
+  return {
+    ...(isClosed(expcon) ? expcon.metaClosed : expcon.meta),
+    ...routeMetadata(expcon.path),
+  };
+}
 
 export default function ExpconPage() {
   return <GiveawayPage giveaway={expcon} />;

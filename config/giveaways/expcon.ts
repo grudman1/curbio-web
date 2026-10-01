@@ -23,6 +23,12 @@ export const expcon: Giveaway = {
       "Visiting eXpcon Salt Lake City? Enter Curbio's giveaway in 20 seconds for AirPods, a $100 Amazon " +
       "gift card, or Curbio gear. Booth #9 in the Solutions Village. No purchase necessary.",
   },
+  metaClosed: {
+    title: "Curbio at eXpcon 2026",
+    description:
+      "Curbio's eXpcon Salt Lake City giveaway has closed. Curbio is the pre-listing home improvement " +
+      "partner real estate agents trust. Get in touch with your local Curbio manager.",
+  },
 
   event: {
     name: "eXpcon Salt Lake City",
@@ -156,12 +162,16 @@ export const expcon: Giveaway = {
       cta: "Enter to win",
       finePrint: "No purchase necessary.",
     },
+    // Shown from the closing INSTANT, which is minutes before anyone has run
+    // the drawing — and for weeks afterwards. So it says what is true at both
+    // moments: entries are closed, and winners hear by email and phone. It
+    // does not say the drawing has happened.
     closed: {
       headline: "The giveaway has *closed.*",
       sub:
-        "Winners were drawn Friday, Oct 9 at Booth #9 and are being notified by email and phone. " +
+        "Entries closed Friday, Oct 9 at noon Mountain. Winners are notified by email and phone. " +
         "Curbio is still here for your next listing.",
-      note: "The drawing was held Friday, Oct 9 at Booth #9.",
+      note: "Drawing: Friday, Oct 9 at Booth #9. Winners need not be present.",
       headerCta: "Get in touch",
       formEyebrow: "Talk to Curbio",
       formTitle: "Get in touch",

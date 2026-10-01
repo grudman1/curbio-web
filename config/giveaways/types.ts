@@ -61,6 +61,9 @@ export type Giveaway = {
   path: string;
 
   meta: { title: string; description: string };
+  /** The tab title and link preview once the entry period has ended. A link
+   *  shared after the drawing must not still invite people to enter it. */
+  metaClosed: { title: string; description: string };
 
   event: {
     /** "eXpcon Salt Lake City". */
