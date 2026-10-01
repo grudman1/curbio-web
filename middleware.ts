@@ -168,6 +168,8 @@ function servesCampaignRoot(host: string): boolean {
  *   /confirm     → post-submit confirmation
  *   /exp*        → PARTNER tier — real path on purpose, indexable at cutover
  *   /staging-design-dc*  → PARTNER tier, same as /exp
+ *   /expcon*     → EVENT tier — the eXpcon giveaway and its rules. Real path
+ *                  because curbio.com/expcon is printed; never indexed.
  *   /lp/*        → physical campaign paths, for QA links
  *
  * This replaced a fall-through rewrite list. The fall-through publicly served
@@ -183,6 +185,7 @@ function campaignAllowlist(pathname: string): string | null {
   if (pathname === "/exp" || pathname.startsWith("/exp/")) return pathname;
   if (pathname === "/staging-design-dc" || pathname.startsWith("/staging-design-dc/"))
     return pathname;
+  if (pathname === "/expcon" || pathname.startsWith("/expcon/")) return pathname;
   if (pathname === "/lp" || pathname.startsWith("/lp/")) return pathname;
   return null;
 }

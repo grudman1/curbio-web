@@ -17,6 +17,9 @@
 //                           other cards are real, but their URLs have not
 //                           been recovered from the printed cards; listing
 //                           them keeps the gap visible instead of forgotten.
+//   EVENT_LINKS below       QR codes printed for a show. Recorded here rather
+//                           than created in the UI so the row is in the
+//                           same pull request as the page it points at.
 //
 // Rows created in the UI live in Redis (lib/marketingLinksStore.ts), never
 // here. Seed rows are read-only in the UI — correcting one means correcting
@@ -104,7 +107,36 @@ const HSM_CARD_LINKS: TrackedLink[] = [
   },
 ];
 
+// The eXpcon booth QR encodes the SHORT LINK and nothing else — which is why
+// `trackedUrl` below is the short link too: the Links screen draws its QR from
+// that field, and it must reproduce the printed code, not a different one. The
+// tags are added by the WordPress redirect, so repointing after the show is a
+// redirect edit and never a reprint. The row carries the campaign so leads
+// tagged with it join back here.
+const EVENT_LINKS: TrackedLink[] = [
+  {
+    id: "event:expcon-2026",
+    label: "eXpcon 2026 · booth giveaway QR",
+    type: "qr",
+    owner: "Marketing",
+    channel: "event",
+    medium: "qr",
+    campaign: "expcon-raffle-oct",
+    market: "all",
+    destination: "https://curbio.com/expcon",
+    trackedUrl: "https://curbio.com/expcon",
+    shortLink: "curbio.com/expcon",
+    status: "printed",
+    createdAt: "2026-10-01",
+    printedAt: null,
+    origin: "seed",
+    notes:
+      "Booth #9 signage, eXpcon Salt Lake City, Oct 7–9 2026. The QR is only https://curbio.com/expcon; the WordPress redirect (302) adds utm_source=event, utm_medium=qr, utm_campaign=expcon-raffle-oct and referral_source_id=eXp realty, and lands on sell.curbio.com/expcon. Print files: docs/expcon/qr/. The redirect lives in WordPress — it has to be recreated at the website cutover.",
+  },
+];
+
 export const SEED_LINKS: TrackedLink[] = [
+  ...EVENT_LINKS,
   ...HSM_CARD_LINKS,
   ...(seed.rows as Omit<TrackedLink, "origin">[]).map(
     (r): TrackedLink => ({ ...r, origin: "seed" })

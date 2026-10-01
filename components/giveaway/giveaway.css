@@ -1,0 +1,138 @@
+/* ============================================================================
+   Giveaway page — the handful of rules Tailwind cannot say.
+
+   Everything here is scoped to a page that has announced itself: GiveawayShell
+   sets `data-giveaway` on <html> while it is mounted and removes it on the way
+   out. Next does not unload a route's stylesheet on client navigation, so an
+   unscoped rule in this file would follow the visitor onto every later page —
+   including /exp. Nothing below can match there.
+
+   No colour literals: every value is a token from globals.css / tokens.css.
+   ========================================================================== */
+
+/* ── Scroll offsets ──────────────────────────────────────────────────────────
+   The header is sticky, so an anchor jump or a focused field would land
+   underneath it without this. The bottom offset keeps a focused field clear of
+   the cookie notice, which is fixed to the bottom of the screen. */
+html[data-giveaway] {
+  scroll-padding-top: 84px;
+  scroll-padding-bottom: 160px;
+}
+html[data-giveaway][data-giveaway-engaged] {
+  scroll-padding-bottom: 92px;
+}
+
+/* ── Motion ──────────────────────────────────────────────────────────────────
+   globals.css zeroes every animation under prefers-reduced-motion, so none of
+   this needs its own guard. */
+@keyframes gw-rise {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes gw-float {
+  0%, 100% { transform: translateY(0) rotate(var(--gw-r, 0deg)); }
+  50% { transform: translateY(-6px) rotate(var(--gw-r, 0deg)); }
+}
+@keyframes gw-burst {
+  0% { transform: translate(0, 0) rotate(0); opacity: 1; }
+  100% { transform: translate(var(--gw-dx), var(--gw-dy)) rotate(var(--gw-rot)); opacity: 0; }
+}
+@keyframes gw-spin {
+  to { transform: rotate(360deg); }
+}
+
+.gw-rise { animation: gw-rise 420ms var(--easing-out) both; }
+.gw-spin { animation: gw-spin 0.7s linear infinite; }
+
+/* Confetti. Decorative, aria-hidden, never over a control. */
+.gw-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.gw-confetti > span { position: absolute; transform: rotate(var(--gw-r, 0deg)); }
+.gw-confetti > span[data-float] { animation: gw-float var(--gw-t, 6s) ease-in-out infinite; }
+.gw-burst { position: absolute; left: 64px; top: 64px; width: 0; height: 0; pointer-events: none; }
+.gw-burst > span {
+  position: absolute;
+  animation: gw-burst 1400ms cubic-bezier(0.15, 0.7, 0.3, 1) var(--gw-delay, 0ms) both;
+}
+
+/* ── The entry card's ticket edge ────────────────────────────────────────────
+   Two half-circles bitten out of the card's sides, in the page's own
+   background colour, with a dashed rule between them. */
+.gw-perforation { position: relative; height: 24px; }
+.gw-perforation::before,
+.gw-perforation::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--color-surface);
+}
+.gw-perforation::before { left: -12px; }
+.gw-perforation::after { right: -12px; }
+.gw-perforation > span {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  top: 11px;
+  border-top: 2px dashed var(--color-border);
+}
+
+/* Native select: our own chevron, so the control matches the inputs. */
+.gw-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%230d254d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 44px;
+}
+
+/* Sold-homes row: a horizontal strip that snaps, with the scrollbar tucked
+   away on touch devices where it only adds noise. */
+.gw-strip { scroll-snap-type: x mandatory; scrollbar-width: thin; }
+.gw-strip > li { scroll-snap-align: start; }
+
+/* ── The cookie notice ───────────────────────────────────────────────────────
+   CookieYes pins a notice to the bottom of the screen on a first visit. At its
+   stock size it is 226px tall on a phone — more than a quarter of the screen,
+   sitting exactly where this page's form is.
+
+   It is NOT removed, hidden or dismissed here. That notice is a privacy
+   disclosure and whether it shows is legal's decision, not a layout's. What
+   changes is its size, on phones, on this page only:
+
+     on arrival          the same notice set tighter (≈144px): every word, the
+                         opt-out link and the close button are all still there
+     once the form is    the paragraph folds away, leaving the title, the
+     being filled in     "Do Not Sell or Share" link and the close button
+                         (≈76px) — the visitor has had the full text in front
+                         of them, and the control that matters is still one tap
+
+   These selectors belong to a third party. If CookieYes renames a class the
+   rules simply stop matching and the notice returns to its stock size — it
+   degrades to today's behaviour, never to a missing notice.
+   Measured against the live banner on sell.curbio.com, 2026-10-01. */
+@media (max-width: 640px) {
+  html[data-giveaway] .cky-consent-container .cky-consent-bar { padding: 10px 0 !important; }
+  html[data-giveaway] .cky-consent-container .cky-title {
+    font-size: 14px !important;
+    line-height: 18px !important;
+    margin-bottom: 4px !important;
+    padding: 0 44px 0 16px !important;
+  }
+  html[data-giveaway] .cky-consent-container .cky-notice-des { padding: 0 16px !important; }
+  html[data-giveaway] .cky-consent-container .cky-notice-des p {
+    font-size: 12px !important;
+    line-height: 16px !important;
+  }
+  html[data-giveaway] .cky-consent-container .cky-notice-btn-wrapper { padding: 0 16px !important; }
+  html[data-giveaway] .cky-consent-container .cky-btn-do-not-sell {
+    font-size: 12px !important;
+    line-height: 16px !important;
+    padding: 4px 0 0 !important;
+  }
+  html[data-giveaway][data-giveaway-engaged] .cky-consent-container .cky-notice-des {
+    display: none !important;
+  }
+}

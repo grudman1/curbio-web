@@ -12,13 +12,20 @@
 // without the other, because doing exactly that on a duplicate-content
 // rewrite target is invisible until it costs rankings.
 //
-// ── The three tiers ──────────────────────────────────────────────────────────
+// ── The tiers ────────────────────────────────────────────────────────────────
 //
 //   campaign  Disposable, never indexed. Email/ad landing pages. Lives behind
 //             the /lp/ prefix so the prefix itself marks the tier.
 //   partner   Indexable, earns inbound links, long-lived. eXp is the first of
 //             ~50. Lives at a real path in the site group — NOT behind /lp/.
 //   site      The curbio.com website proper.
+//   event     A page for one event (eXpcon). Disposable like a campaign and
+//             NEVER indexed — but mounted at a real path like a partner page,
+//             because the path is PRINTED: curbio.com/expcon is on a booth
+//             sign and a stack of postcards. Living at that same path here
+//             means the ink still resolves after DNS cutover with no redirect
+//             for anyone to remember. Its own tier so that "flip the partner
+//             tier to indexed" at cutover cannot sweep it up.
 //
 // ── Why campaigns are physically prefixed and partners are not ───────────────
 //
@@ -70,7 +77,7 @@ export const MARKET_LINK_BASES: readonly string[] = [CAMPAIGN_PREFIX, "/exp"]
   .slice()
   .sort((a, b) => b.length - a.length);
 
-export type Tier = "campaign" | "partner" | "site";
+export type Tier = "campaign" | "partner" | "site" | "event";
 
 export type RouteEntry = {
   /** Path as visitors see it on sell.curbio.com today. `:market` is dynamic. */
@@ -88,6 +95,7 @@ export type RouteEntry = {
    *   with the real site for the same queries.
    * partner  — false until DNS cutover, then true. Flipping this one field
    *   removes the noindex AND emits the canonical, together (routeMetadata).
+   * event    — permanently false, same reasoning as campaign.
    */
   indexed: boolean;
   /**
@@ -155,6 +163,24 @@ export const ROUTES: RouteEntry[] = [
     group: "site",
     indexed: false, // noindex at launch, same as /exp
   },
+  // ── event tier — real paths, never indexed. See the header. ──
+  {
+    publicPath: "/expcon",
+    internalPath: "/expcon",
+    cutoverPath: "/expcon",
+    tier: "event",
+    group: "site",
+    indexed: false, // permanently — a prize drawing must not rank for anything
+  },
+  {
+    publicPath: "/expcon/rules",
+    internalPath: "/expcon/rules",
+    cutoverPath: "/expcon/rules",
+    tier: "event",
+    group: "site",
+    indexed: false,
+  },
+
   // ── site tier — curbio.com proper. noindex until DNS cutover, because
   // curbio.com is still served by WordPress and these must not compete with
   // the pages currently ranking. Flips with the partner tier.
