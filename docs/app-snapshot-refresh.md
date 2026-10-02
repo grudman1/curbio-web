@@ -26,22 +26,27 @@ Attribution report, Leads report, Sales report. They land in `~/Downloads` as
 cd ~/_source/curbio-web && git fetch --prune origin && git checkout -b data/app-snapshot-$(date +%F) origin/main
 ```
 
-**3. Strip the exports into `data/imports/`.** Pass the three newest files. Add
-`--exported YYYY-MM-DD` only if you downloaded them on an earlier day.
+**3. Copy the exports into `data/imports/`** under their fixed names, replacing
+last week's files:
 
 ```bash
-node scripts/prepare-app-export.mjs ~/Downloads/"reports_attributionreport (N).csv" ~/Downloads/"reports_leadsreport (N).csv" ~/Downloads/"reports_salesreport (N).csv"
+cp ~/Downloads/"reports_attributionreport (N).csv" data/imports/reports_attributionreport.csv
 ```
-
-This keeps only the columns the importer reads, replaces agent emails with a
-hashed key, drops names, addresses and deal titles, and writes `asOf` to
-`data/imports/app-export.json`. The raw downloads never go in the repo.
+```bash
+cp ~/Downloads/"reports_leadsreport (N).csv" data/imports/reports_leadsreport.csv
+```
+```bash
+cp ~/Downloads/"reports_salesreport (N).csv" data/imports/reports_salesreport.csv
+```
 
 **4. Build the snapshot.**
 
 ```bash
 npx tsx scripts/import-app-snapshot.ts
 ```
+
+Add `--exported YYYY-MM-DD` only if you downloaded the reports on an earlier
+day — the importer sets `asOf` to the day before it.
 
 Read the printed report. Stop and ask if `unknownMarketCodes` is not empty (a
 new app market needs a row in `config/market-map.ts`) or if
@@ -60,9 +65,8 @@ Every difference is printed with its likely reason; the usual ones are failed
 deliveries and `@curbio.com` tests (live only), and deals someone keyed into
 the app by hand as web_form (export only).
 
-**6. Commit and open a PR.** The commit is `config/appLeadsSnapshot.json`,
-`data/imports/app-*.csv`, `data/imports/app-export.json` and
-`data/imports/import-report.json`. Paste the step-5 output into the PR.
+**6. Commit and open a PR.** The commit is `config/appLeadsSnapshot.json`, the
+three `data/imports/reports_*.csv` files and `data/imports/import-report.json`. Paste the step-5 output into the PR.
 
 **Optional — Mailchimp.** Backfilled email leads are matched to a campaign by
 send time using `data/imports/mailchimp-campaigns.csv`. If that file is older

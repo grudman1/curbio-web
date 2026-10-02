@@ -1,18 +1,21 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Historical import: app snapshot CSVs → config/appLeadsSnapshot.json
 //
-//   npx tsx scripts/import-app-snapshot.ts
+//   npx tsx scripts/import-app-snapshot.ts [--exported YYYY-MM-DD]
 //
-// Weekly step 2 of 2 (step 1: scripts/prepare-app-export.mjs; the procedure is
-// docs/app-snapshot-refresh.md). Reads the STRIPPED CSVs under data/imports/
-// (app-attribution.csv, app-leads.csv, app-sales.csv) plus app-export.json's
-// `asOf`, and writes the enriched lead snapshot the whole dashboard reads.
-// IDEMPOTENT: rerunning replaces the snapshot wholesale — it never appends,
-// never duplicates.
+// Weekly snapshot from the company app + Mailchimp — the procedure is
+// docs/app-snapshot-refresh.md. Reads the committed raw exports under
+// data/imports/ (reports_attributionreport.csv, reports_leadsreport.csv,
+// reports_salesreport.csv) and writes the enriched lead snapshot the whole
+// dashboard reads.
 //
-// THE FENCE: deals created AFTER `asOf` (the export's own, partial day) are
-// dropped here. The live feed (lib/leadStore.ts) counts website leads strictly
-// after `asOf`, so every day belongs to exactly one source.
+// THE FENCE. --exported is the day the reports were downloaded (default: today,
+// UTC). That day is partial — anything created after the download is in
+// neither the export nor, for non-web leads, the live feed — so the snapshot
+// is cut at the LAST COMPLETE UTC DAY: asOf = exported − 1, and deals created
+// after asOf are dropped here. The live feed (lib/leadStore.ts) counts website
+// leads strictly after asOf, so every day belongs to exactly one source. IDEMPOTENT: rerunning replaces the
+// snapshot wholesale — it never appends, never duplicates.
 //
 // What it does, in order:
 //   1. Joins the three app reports. The attribution report is the spine (it
@@ -31,9 +34,9 @@
 //   4. Attaches won-project revenue (project + unambiguously-matched change
 //      orders) to won deals.
 //
-// PII: the prepare step already removed names, titles, addresses and
-// brokerages, and replaced agent email with a hashed "Agent key". The key is
-// used ONLY for the joins inside this process and never reaches the JSON. Deal IDs are kept: they are not PII, and they are the key
+// PII: agent name, agent email, deal title, and brokerage are used ONLY for
+// the joins inside this process and are dropped at the boundary — they never
+// reach the JSON. Deal IDs are kept: they are not PII, and they are the key
 // the live API supersedes these records on when it lands.
 //
 // The import report (join coverage, channel distribution before/after,
@@ -53,9 +56,12 @@ import { reportingMarketForAppCode } from "../config/market-map";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const IMPORTS = resolve(ROOT, "data/imports");
-/** Last complete UTC day of the export — written by prepare-app-export.mjs. */
-const SNAPSHOT_DATE: string = JSON.parse(readFileSync(resolve(IMPORTS, "app-export.json"), "utf8")).asOf;
-if (!/^\d{4}-\d{2}-\d{2}$/.test(SNAPSHOT_DATE)) throw new Error("data/imports/app-export.json has no valid asOf");
+const exportedArg = process.argv.indexOf("--exported");
+const EXPORTED: string =
+  exportedArg >= 0 ? process.argv[exportedArg + 1] : new Date().toISOString().slice(0, 10);
+if (!/^\d{4}-\d{2}-\d{2}$/.test(EXPORTED ?? "")) throw new Error("--exported must be YYYY-MM-DD");
+/** Last complete UTC day of the export. See the fence note above. */
+const SNAPSHOT_DATE = new Date(Date.parse(`${EXPORTED}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
 
 // ── CSV ──────────────────────────────────────────────────────────────────────
 
@@ -112,18 +118,19 @@ const salesRevenue = (s: string): number => {
 
 // ── Load the three app reports ───────────────────────────────────────────────
 
-const attrRows = loadCsv("app-attribution.csv");
-const A = indexer(attrRows[0]);
+const attrRows = loadCsv("reports_attributionreport.csv");
+// Row 0 is the section band (Identity/Funnel/Attribution/Agent); row 1 is the header.
+const A = indexer(attrRows[1]);
 // The fence: the export's own day is partial, so it is left to the live feed.
-const attrAll = attrRows.slice(1);
+const attrAll = attrRows.slice(2);
 const attr = attrAll.filter((r) => r[A("Created date")].slice(0, 10) <= SNAPSHOT_DATE);
 const droppedAfterAsOf = attrAll.length - attr.length;
 
-const leadRows = loadCsv("app-leads.csv");
+const leadRows = loadCsv("reports_leadsreport.csv");
 const L = indexer(leadRows[0]);
 const leads = leadRows.slice(1);
 
-const salesRows = loadCsv("app-sales.csv");
+const salesRows = loadCsv("reports_salesreport.csv");
 const S = indexer(salesRows[0]);
 const sales = salesRows.slice(1);
 
@@ -132,7 +139,7 @@ const sales = salesRows.slice(1);
 const leadByKey = new Map<string, string[]>();
 const leadKeyDupes: string[] = [];
 for (const r of leads) {
-  const key = `${r[L("Created date")]}|${r[L("Agent key")].trim().toLowerCase()}`;
+  const key = `${r[L("Created date")]}|${r[L("Agent email")].trim().toLowerCase()}`;
   if (leadByKey.has(key)) leadKeyDupes.push(key);
   leadByKey.set(key, r);
 }
@@ -144,7 +151,7 @@ type Joined = {
 const joined: Joined[] = [];
 const unjoinedAttr: { dealId: string; created: string; market: string }[] = [];
 for (const r of attr) {
-  const key = `${r[A("Created date")]}|${r[A("Agent key")].trim().toLowerCase()}`;
+  const key = `${r[A("Created date")]}|${r[A("Agent email")].trim().toLowerCase()}`;
   const lead = leadByKey.get(key) ?? null;
   if (!lead) {
     unjoinedAttr.push({
@@ -189,7 +196,7 @@ const attrByMinute = new Map<string, Joined>();
 const attrByDay = new Map<string, Joined[]>();
 for (const j of joined) {
   const created = j.attr[A("Created date")];
-  const email = j.attr[A("Agent key")];
+  const email = j.attr[A("Agent email")];
   attrByMinute.set(minuteKey(created, email), j);
   const dk = dayKey(created, email);
   attrByDay.set(dk, [...(attrByDay.get(dk) ?? []), j]);
@@ -218,7 +225,7 @@ const wonMonthOf = (r: string[]): string | null => {
 for (const r of sales) {
   const m = wonMonthOf(r);
   if (!m) {
-    salesRowsWithoutWonDate.push(r[S("Label")]);
+    salesRowsWithoutWonDate.push(r[S("Project")]);
     continue;
   }
   revenueByWonMonth.set(m, (revenueByWonMonth.get(m) ?? 0) + salesRevenue(r[S("Revenue")]));
@@ -249,7 +256,7 @@ for (const r of projects) {
 }
 
 for (const r of projects) {
-  const email = r[S("Agent key")].trim().toLowerCase();
+  const email = r[S("Agent email")].trim().toLowerCase();
   const created = r[S("Created date")];
   let hit = attrByMinute.get(minuteKey(created, email)) ?? null;
   if (!hit) {
@@ -257,10 +264,10 @@ for (const r of projects) {
     hit = candidates.length === 1 ? candidates[0] : null;
     if (!hit) {
       unjoinableSales.push({
-        project: r[S("Label")],
+        project: r[S("Project")],
         type: r[S("Deal type")],
         reason: !email
-          ? "no agent on the sales row"
+          ? "no agent email on the sales row"
           : candidates.length > 1
             ? `ambiguous: ${candidates.length} deals for this agent on this day`
             : "no deal for this agent at this created date (minute or day)",
@@ -278,11 +285,11 @@ for (const r of projects) {
 }
 
 for (const r of changeOrders) {
-  const email = r[S("Agent key")].trim().toLowerCase();
+  const email = r[S("Agent email")].trim().toLowerCase();
   const won = email ? wonProjectsByEmail.get(email) : undefined;
   if (!email || !won || won.size !== 1) {
     unjoinableSales.push({
-      project: r[S("Label")],
+      project: r[S("Project")],
       type: "Change order",
       reason: !email
         ? "no agent email on the change order"

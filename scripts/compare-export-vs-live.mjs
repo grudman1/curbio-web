@@ -12,21 +12,20 @@
 //   node scripts/compare-export-vs-live.mjs [--from 2026-08-29] [--to 2026-10-01]
 //
 // Window: strictly after --from, through --to (UTC dates). Defaults: --to is
-// data/imports/app-export.json's asOf (the export's last complete day); --from
+// the new snapshot's asOf (config/appLeadsSnapshot.json); --from
 // is required the first time you run it against a new export — pass the
 // PREVIOUS snapshot's asOf, so the window is exactly the days the live feed was
 // covering on its own.
 //
-// Run it BEFORE committing a refresh: it reads the stripped export in
-// data/imports/ (scripts/prepare-app-export.mjs), whose agent emails are
-// hashed — Redis emails are hashed the same way to match.
+// Run it BEFORE committing a refresh: it reads the raw attribution export in
+// data/imports/ and matches on agent email. Emails are compared in memory and
+// never printed.
 //
 // Matching: same agent, created within 3 days of submission, closest first.
 // An unmatched row is reported with the most likely reason, so a difference is
 // an explanation, not just a number.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -35,7 +34,7 @@ import { Redis } from "@upstash/redis";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
 const arg = (name) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : undefined; };
-const meta = JSON.parse(readFileSync(resolve(ROOT, "data/imports/app-export.json"), "utf8"));
+const meta = JSON.parse(readFileSync(resolve(ROOT, "config/appLeadsSnapshot.json"), "utf8"));
 const FROM = arg("--from");
 const TO = arg("--to") ?? meta.asOf;
 if (!FROM) {
@@ -70,7 +69,8 @@ function parseCsv(text) {
   if (f !== "" || row.length) { row.push(f); rows.push(row); }
   return rows;
 }
-const [header, ...attrRows] = parseCsv(readFileSync(resolve(ROOT, "data/imports/app-attribution.csv"), "utf8"));
+// Row 0 is the section band (Identity/Funnel/…); row 1 is the header.
+const [, header, ...attrRows] = parseCsv(readFileSync(resolve(ROOT, "data/imports/reports_attributionreport.csv"), "utf8").replace(/^\uFEFF/, ""));
 const col = (n) => header.indexOf(n);
 const inWindow = (day) => day > FROM && day <= TO;
 const exportWeb = attrRows
@@ -81,17 +81,13 @@ const exportWeb = attrRows
     market: CODE_TO_CRM[r[col("Market code")]] ?? r[col("Market code")],
     origin: r[col("Origin")],
     referral: r[col("Referral source")],
-    key: r[col("Agent key")],
+    key: (r[col("Agent email")] ?? "").trim().toLowerCase(),
   }))
   .filter((r) => inWindow(r.day));
 const exportAllInWindow = exportWeb.length;
 const exportWebOnly = exportWeb.filter((r) => r.origin === "web_form");
 
 // ── the live side (READ-ONLY token) ──────────────────────────────────────────
-const agentKey = (email) => {
-  const e = (email ?? "").trim().toLowerCase();
-  return e ? createHash("sha256").update(e).digest("hex").slice(0, 16) : "";
-};
 const parse = (v) => { if (typeof v !== "string") return v; try { return JSON.parse(v); } catch { return null; } };
 const redis = new Redis({ url, token });
 const [rawLeads, rawDeliv] = await Promise.all([
@@ -116,7 +112,7 @@ const live = rawLeads
       market: l.market ?? "(no market)",
       source: l.giveaway ? `giveaway:${l.giveaway}` : l.source ?? "quote",
       internal: /@curbio\.com\s*$/i.test(l.email ?? ""),
-      key: agentKey(l.email),
+      key: (l.email ?? "").trim().toLowerCase(),
       status,
     };
   })
