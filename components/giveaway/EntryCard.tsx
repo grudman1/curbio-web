@@ -14,6 +14,7 @@ import { RichText } from "@/components/campaign/RichText";
 import { calendlyIframeSrc, readCalendlyMessage } from "./calendly";
 import { markFormEngaged, useGiveaway } from "./GiveawayShell";
 import { GiveawayIcon } from "./icons";
+import { PRIVACY_URL } from "./links";
 import { trackGiveaway } from "./track";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -100,8 +101,6 @@ const ERROR_TEXT: Record<FieldKey, string> = {
   listing90: "Please choose one.",
 };
 
-const PRIVACY_URL = "https://curbio.com/privacy-policy";
-
 // Alphabetical, unlike the market picker's interleaved order: this is a list
 // someone scans for their own city, not a set of cards.
 const MARKET_OPTIONS = [...MARKETS]
@@ -150,6 +149,9 @@ export function EntryCard() {
   const [saved, setSaved] = useState<Saved | null>(null);
   const [view, setView] = useState<"form" | "thanks" | "booking">("form");
   const [manager, setManager] = useState<Manager | null>(null);
+  /** Counts the moments worth a pop of confetti: "You're in!", and a booking
+   *  that earned the bonus. Nothing else raises it — a confirmation merely
+   *  restored on load, or a contact form sent after the close, stays quiet. */
   const [burst, setBurst] = useState(0);
 
   const renderedAtRef = useRef(0);
@@ -157,6 +159,7 @@ export function EntryCard() {
   const formStartFired = useRef(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const thanksHeadingRef = useRef<HTMLHeadingElement>(null);
+  const thanksIconRef = useRef<HTMLSpanElement>(null);
   /** Set when the visitor has just DONE something (submitted, booked), so the
    *  confirmation takes focus. Not set when a saved confirmation is merely
    *  restored on load — moving focus then would be the page acting unasked. */
@@ -286,7 +289,8 @@ export function EntryCard() {
       setSaved(done);
       announceThanks.current = true;
       setView("thanks");
-      setBurst((n) => n + 1);
+      // "You're in!" only — not the contact form's "we'll be in touch".
+      if (done.inEntryPeriod && !done.closedAtSubmit) setBurst((n) => n + 1);
       cardRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
 
       setTimeout(() => {
@@ -380,13 +384,31 @@ export function EntryCard() {
         trackGiveaway("giveaway_booking", { giveaway: giveaway.slug, market: marketSlug ?? NOT_LISTED });
         announceThanks.current = true;
         setView("thanks");
-        setBurst((n) => n + 1);
+        // A booking that earns the entries is worth a pop; one made after the
+        // close is just a booking.
+        if (saved?.inEntryPeriod && !saved.closedAtSubmit && !closed) setBurst((n) => n + 1);
         void reportBooking(msg.eventUri);
       }
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [view, marketSlug, giveaway.slug, reportBooking]);
+  }, [view, marketSlug, giveaway.slug, reportBooking, saved, closed]);
+
+  // The small confetti on the confirmation. It waits for the card's own scroll
+  // into view to settle, so the pop starts at the check mark where it ended up
+  // rather than where it was mid-scroll. The engine is fetched only now; it
+  // does nothing under prefers-reduced-motion.
+  useEffect(() => {
+    if (burst === 0) return;
+    const timer = window.setTimeout(() => {
+      import("./confetti")
+        .then((m) => m.fireThanks(thanksIconRef.current))
+        .catch(() => {
+          // Decoration only.
+        });
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [burst]);
 
   const iframeSrc = useMemo(() => {
     if (view !== "booking" || !manager?.calendlyUrl || !saved) return null;
@@ -465,13 +487,12 @@ export function EntryCard() {
               <h2 className="text-[26px] leading-[1.15] sm:text-[30px]">
                 {closed ? copy.closed.formTitle : copy.form.title}
               </h2>
-              {/* On a phone the open form's "takes 20 seconds" line repeats the
-                  sentence directly above the card, and costs a row of height
-                  exactly where the cookie notice sits on a first visit. With
-                  it gone the Name field clears the notice on an iPhone. */}
-              <p className={`m-0 font-sans text-small text-content-muted${closed ? "" : " hidden sm:block"}`}>
-                {closed ? copy.closed.formSub : copy.form.sub}
-              </p>
+              {/* The open form has no sub-line: "Enter in 20 seconds" is said
+                  once, in the hero above, and repeating it here cost a row of
+                  height exactly where the cookie notice sits on a first
+                  visit. The contact form has its own, which says something
+                  different. */}
+              {closed && <p className="m-0 font-sans text-small text-content-muted">{copy.closed.formSub}</p>}
             </div>
             <span className="flex h-12 w-12 flex-none items-center justify-center rounded-full bg-accent text-content sm:h-14 sm:w-14">
               <GiveawayIcon name="ticket" size={26} />
@@ -605,32 +626,38 @@ export function EntryCard() {
             </button>
 
             {/* The email line stands on its own, directly under the button —
-                it is a consent a visitor should not have to find. */}
-            <p className="m-0 font-sans text-[13px] font-semibold leading-[1.5] text-content">{copy.form.emailOptIn}</p>
-            <p className="m-0 font-sans text-label font-normal normal-case leading-[1.55] tracking-normal text-content-muted">
-              {!closed && (
-                <>
-                  No purchase necessary. Must be {giveaway.rules.minAge}+. See{" "}
-                  <a href={giveaway.rules.path} className="text-content underline">
-                    Official Rules
-                  </a>
-                  .{" "}
-                </>
-              )}
-              By {closed ? "submitting" : "entering"}, you agree to our{" "}
-              <a href={PRIVACY_URL} target="_blank" rel="noreferrer noopener" className="text-content underline">
-                Privacy Policy
-              </a>{" "}
-              and consent to calls and texts from Curbio. Reply STOP to opt out.
-            </p>
+                it is a consent a visitor should not have to find. The fine
+                print below it is set as plain 13px body text with a real
+                line height (the `text-label` size token it used before
+                carries a tight line height and wide letter-spacing, both of
+                which had to be undone), and it sits in its own block with
+                room above and below so nothing can crowd it at 320px. */}
+            <div className="flex flex-col gap-3.5 pt-1">
+              <p className="m-0 font-sans text-[13px] font-semibold leading-[1.55] text-content">{copy.form.emailOptIn}</p>
+              <p className="m-0 font-sans text-[13px] font-normal leading-[1.65] text-content-muted [&_a]:font-semibold [&_a]:text-content [&_a]:underline [&_a]:underline-offset-2">
+                {!closed && (
+                  <>
+                    No purchase necessary. Must be {giveaway.rules.minAge}+. See{" "}
+                    <a href={giveaway.rules.path}>Official Rules</a>.{" "}
+                  </>
+                )}
+                By {closed ? "submitting" : "entering"}, you agree to our{" "}
+                <a href={PRIVACY_URL} target="_blank" rel="noreferrer noopener">
+                  Privacy Policy
+                </a>{" "}
+                and consent to calls and texts from Curbio. Reply STOP to opt out.
+              </p>
+            </div>
           </div>
         </form>
       )}
 
       {view === "thanks" && saved && (
         <div className="gw-rise relative flex flex-col gap-[22px] overflow-hidden p-6 sm:p-9">
-          <Burst key={burst} />
-          <span className="relative flex h-16 w-16 items-center justify-center rounded-full bg-accent text-content">
+          <span
+            ref={thanksIconRef}
+            className="relative flex h-16 w-16 items-center justify-center rounded-full bg-accent text-content"
+          >
             <GiveawayIcon name={saved.booked ? "calendar" : "check"} size={30} stroke={2.25} />
           </span>
 
@@ -884,56 +911,5 @@ function ListingQuestion({
         </p>
       )}
     </fieldset>
-  );
-}
-
-// ── Confetti burst ───────────────────────────────────────────────────────────
-// Generated once from a fixed seed, so the server and the client would agree
-// on every piece if this were ever rendered on both. It is not — it only
-// mounts after a submit — but a seeded list also means the burst looks the
-// same every time rather than occasionally clumping.
-const BURST_COLORS = ["var(--amber)", "var(--amber-30)", "var(--teal)", "var(--sage)", "var(--navy)", "var(--stone)"];
-const BURST_PIECES = (() => {
-  let seed = 7;
-  const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
-  return Array.from({ length: 34 }, (_, i) => {
-    const angle = rnd() * Math.PI * 2;
-    const distance = 140 + rnd() * 220;
-    return {
-      color: BURST_COLORS[i % BURST_COLORS.length],
-      dx: Math.cos(angle) * distance,
-      dy: Math.sin(angle) * distance * 0.8 + 120,
-      rot: Math.floor(rnd() * 720 - 360),
-      w: 6 + rnd() * 6,
-      h: rnd() > 0.5 ? 6 + rnd() * 4 : 12 + rnd() * 8,
-      round: rnd() > 0.7,
-      delay: rnd() * 120,
-    };
-  });
-})();
-
-function Burst() {
-  return (
-    <div className="gw-burst" aria-hidden>
-      {BURST_PIECES.map((p, i) => (
-        <span
-          key={i}
-          style={
-            {
-              left: -p.w / 2,
-              top: -p.h / 2,
-              width: p.w,
-              height: p.h,
-              background: p.color,
-              borderRadius: p.round ? 999 : 2,
-              "--gw-dx": `${p.dx}px`,
-              "--gw-dy": `${p.dy}px`,
-              "--gw-rot": `${p.rot}deg`,
-              "--gw-delay": `${p.delay}ms`,
-            } as React.CSSProperties
-          }
-        />
-      ))}
-    </div>
   );
 }

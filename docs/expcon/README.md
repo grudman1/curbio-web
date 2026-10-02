@@ -6,7 +6,7 @@ go live, the test script, what to do on drawing day, and what is still open.
 The page is `sell.curbio.com/expcon`. The Official Rules are at
 `/expcon/rules`. The staff screen is `/admin/giveaway`.
 
-Settings (dates, booth, prizes, copy, tags, routing) are in one file:
+Settings (dates, booth, the kit, copy, tags, routing) are in one file:
 `config/giveaways/expcon.ts`.
 
 ---
@@ -127,16 +127,19 @@ Before merging:
       checked 2026-10-01). Name it exactly **Engaged**, or tell the developer
       the name and `AC_ENGAGED_LIST_NAME` changes. Until it exists, entries are
       kept and flagged "Needs attention"; **Sync now** completes them.
-- [ ] **Written requests.** The rules tell people to email the address in
-      `rules.requestEmail` (`config/giveaways/expcon.ts`) for the free bonus
-      entries and the winners list. It is still `team@curbio.com` — the inbox
-      to use has not been named yet. Someone has to read it during the show.
-- [ ] **Official Rules.** Sponsor legal name, sponsor address and four prize
-      values are marked in amber on `/expcon/rules`. Fill them in
-      `config/giveaways/expcon.ts` (`rules.sponsorName`, `rules.sponsorAddress`,
-      each prize's `approxValue`). The amber draft notice disappears when none
-      are left. Governing law and dispute terms are not drafted — that is for
-      the reviewer.
+- [ ] **Written requests.** The rules tell people to email
+      **team@curbio.com** (`rules.requestEmail`, confirmed 2026-10-02) for the
+      free bonus entries and the winners list. Someone has to read that inbox
+      during the show.
+- [x] **Official Rules — filled in 2026-10-02 by the reviewer.** Sponsor
+      Curbio, Inc., 3030 Greenmount Ave, Ste 300, Baltimore, MD 21218; five
+      identical Listing-Ready Kits, about $500 each and $2,500 in total;
+      governed by the laws of the State of Maryland. No amber markers and no
+      draft notice remain. **Not drafted, because it was not supplied:** venue,
+      arbitration and other dispute terms. **Still the reviewer's call:**
+      Section 2 limits entry to real estate professionals (licensed agents and
+      brokers), as the first draft did — drop that clause if anyone 18+ in the
+      U.S. should be able to enter.
 - [ ] Everyone working the booth has a `/admin` login (they see only the
       bonus tool). Staff who try the form themselves should know a
       `@curbio.com` entry is kept but can never win.
@@ -166,20 +169,20 @@ Use names starting `ZZTEST` and emails like `zztest+yes1@gmail.com` (never an
 
 | # | Do this | Expect |
 | --- | --- | --- |
-| P1 | Open the page on a phone | Name, Email and Phone are on the first screen. The header button jumps to the form. |
+| P1 | Open the page on a phone | Confetti plays once, for about three seconds, and clears (none if the phone has "Reduce motion" on). Name, Email and Phone are on the first screen. The countdown shows seconds and ticks. The header button glides to the form and puts the cursor in the Name field. |
 | P2 | Submit: Atlanta, **Yes** | "You're in!" with the manager and the booking offer. Staff screen: **both** "app (sandbox)" and "email list (sandbox)". |
 | P3 | Submit a new email: Dallas, **Maybe** | Staff screen: "email list (sandbox)", no app badge. |
 | P4 | Submit a new email: **My market isn't listed**, ZIP 59718 | Thank-you points to Booth #9, no booking offer. Staff screen: "email list (sandbox)", market "Not listed". |
 | P5 | Submit P3's email again with **Yes** | "You were already in" message. Still one row (shown ×2), now "app (sandbox)" as well as "email list (sandbox)". |
 | P6 | Staff screen → Add bonus entries → P4's email → "+5 · visited the booth" | Row shows 6 entries. |
-| P7 | Enter a few made-up names **without** the ZZTEST prefix (the drawing skips ZZTEST; sandbox entries never touch the real list). Then staff screen → Practice drawing → Verify | Names drawn in prize order, then alternates, and "Verified". No ZZTEST names among them. |
-| P8 | Open `/expcon/rules` | Rules read correctly; amber markers on what legal still owes. |
+| P7 | Enter a few made-up names **without** the ZZTEST prefix (the drawing skips ZZTEST; sandbox entries never touch the real list). Then staff screen → Practice drawing → Verify | Five winners ("Winner 1–5", all getting the same whole kit — there is no prize column), then ten alternates, and "Verified". No ZZTEST names among them. |
+| P8 | Open `/expcon/rules` | Rules read correctly: sponsor Curbio, Inc.; five identical Listing-Ready Kits with every item listed, $500 each and $2,500 in total; Maryland law. No amber markers, no draft notice. |
 
 **On production, Mon Oct 5 (real routing):**
 
 | # | Do this | Expect |
 | --- | --- | --- |
-| T0 | Open the page in a private window on a phone (so the cookie notice shows) | The notice sits at the bottom of the screen and the Name field is visible above it. Tap the field: the notice shrinks to about half that height. It only appears on the production site, so this is the first chance to see it. |
+| T0 | Open the page in a private window on a phone (so the cookie notice shows) | The notice sits at the bottom of the screen. On a 390×844 phone (iPhone 12–15) the Name field is visible above it; on a shorter phone it may be partly covered until you scroll or tap "Enter to win" — the hero copy is longer than it was, so the form starts about 40px lower. Tap the field: the notice shrinks to about half its height. It only appears on the production site, so this is the first chance to see it. |
 | T1 | Scan the QR. Submit ZZTEST, your market, **Yes** | **A "Yes" lead lands in BOTH systems.** Staff screen: "app" **and** "email list". In the app: a deal with ReferralSourceId `eXp realty`, LeadSource and FirstTouchCampaign filled; the HSM gets the new-lead email. Leads screen: channel Event, campaign `expcon-giveaway-oct`, source `expcon-giveaway-<market>`. In ActiveCampaign: the contact is on the market's list **and** the Engaged list, with the Market field set and tags `expcon-2026`, `expcon-2026-market-…`, `expcon-2026-listing-yes`. |
 | T2 | New email, **Maybe** | Staff screen: "email list" only. **No** deal, **no** HSM email. In ActiveCampaign: on the market's list and the Engaged list, tagged `expcon-2026`, `expcon-2026-market-…`, `expcon-2026-listing-maybe`. |
 | T3 | New email, **Not yet** | Same as T2, tagged `…-listing-not-yet`. |
@@ -229,14 +232,16 @@ like every entrant, to ActiveCampaign).
    row if the booking was not real.
 2. **Add any booth or written bonuses** that were earned before noon and not
    yet typed in. (After the close only an owner can add one.)
-3. **Run the official drawing.** It draws 5 winners in prize order and 10
-   alternates, from a frozen copy of the list, weighted 1 or 6 entries, and
-   records the seed, the list's fingerprint, who ran it and when. ZZTEST
-   entries and anything submitted after noon are excluded. One win per person.
+3. **Run the official drawing.** It draws 5 winners and 10 alternates, from a
+   frozen copy of the list, weighted 1 or 6 entries, and records the seed, the
+   list's fingerprint, who ran it and when. **All five winners get the same
+   whole Listing-Ready Kit** — the order they were drawn in assigns nothing,
+   and no prize is recorded against any name. ZZTEST entries and anything
+   submitted after noon are excluded. One win per person.
 4. **Download record** and keep the file. **Verify** re-runs the same seed
    over the frozen list and confirms it gives the same names.
 5. **Notify** each winner by email and phone within 48 hours. A winner has 7
-   days to respond; after that the prize goes to the next alternate, in order.
+   days to respond; after that the kit goes to the next alternate, in order.
 
 A second official drawing is possible but asks for a written reason, and both
 stay on record.
@@ -252,9 +257,11 @@ All in `config/giveaways/expcon.ts` unless it says otherwise:
 | To change | Edit |
 | --- | --- |
 | The headline | `copy.hero.headline` (`*…*` is the amber word). The tab title and link preview are `meta.title`. |
-| Rick's stage time | `stage.time`: `null` → `"2:15pm"`. Until then the page shows "Thursday, Oct 8 · eXpo Live Stage" with no placeholder. |
-| A prize photo | Put the image under `public/` and add `photo: "/path.jpg"` to that prize. Without one the icon shows. |
-| Prize values, sponsor name and address | `approxValue`, `rules.sponsorName`, `rules.sponsorAddress`. |
+| Rick's talk | `stage` (`speaker`, `role`, `day`, `time`, `place`). The page reads "Hear Rick Rudman, Curbio CEO" over "Thursday, Oct 8 · 11:30am MT" over "eXpo Live Stage". A `null` time is left out, never shown as a placeholder. |
+| What is in the kit, and how many winners | `kit.items` and `kit.winners`. The rules, the kit section's "5 kits. 5 winners." line and the drawing all read `kit.winners`; the hero sentence says "Five agents" in words, so search `copy.hero.sub` for it. |
+| A photo of a kit item | Put the image under `public/` and add `photo: "/path.jpg"` to that item in `kit.items`. Without one the icon shows. |
+| Retail value, sponsor name and address, governing law | `kit.approxValueUsd` (per kit; the rules multiply it by the winners), `rules.sponsorName`, `rules.sponsorAddress`, `rules.governingLaw`. |
+| The confetti | `components/giveaway/confetti.ts` (colours come from the site's tokens; it is skipped under "Reduce motion"). |
 | Where written requests go | `rules.requestEmail`. The Official Rules follow. |
 | The Calendly event booked | `booking.eventSlug`. The page promises no call length, so the event's length does not matter to the copy. |
 | Keep people sent to the app OFF the email list | `routing.emailList`: `"everyone"` → `"not-sent-to-app"`. |

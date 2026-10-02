@@ -1,4 +1,4 @@
-import type { PrizeIcon } from "@/config/giveaways";
+import type { KitIcon } from "@/config/giveaways";
 
 // Stroke icons for the giveaway page — the same Lucide-style line set the
 // approved design drew with (1.75 stroke, round caps), so they sit beside the
@@ -8,7 +8,7 @@ import type { PrizeIcon } from "@/config/giveaways";
 // they are all aria-hidden and none carries a label of its own.
 
 const PATHS = {
-  // prizes
+  // the kit's items
   airpods: [
     "M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3",
   ],
@@ -66,7 +66,7 @@ const PATHS = {
   calendar: ["M8 2v4", "M16 2v4", "M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z", "M3 10h18", "m9 16 2 2 4-4"],
 } as const;
 
-export type GiveawayIconName = keyof typeof PATHS | PrizeIcon;
+export type GiveawayIconName = keyof typeof PATHS | KitIcon;
 
 export function GiveawayIcon({
   name,

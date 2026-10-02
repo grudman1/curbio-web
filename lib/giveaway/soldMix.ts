@@ -22,9 +22,11 @@ import { MARKETS } from "@/config/markets";
 
 export type SoldMixHome = {
   marketSlug: string;
-  /** "Atlanta" — the market's short name, shown under the neighbourhood. */
+  /** "Atlanta", "Washington, DC" — the market's `name` in config/markets.ts,
+   *  and the card's only label. The neighbourhood is deliberately not carried:
+   *  at a national event the market is what an agent scans for, and a street
+   *  name from another city is noise. */
   market: string;
-  neighborhood: string;
   price: string;
   photo: string;
 };
@@ -37,7 +39,6 @@ export function nationalSoldMix(): SoldMixHome[] {
     homes.push({
       marketSlug: m.slug,
       market: m.name,
-      neighborhood: listing.neighborhood,
       price: listing.price,
       photo: listing.photo,
     });

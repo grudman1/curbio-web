@@ -21,12 +21,22 @@ import { isClosed } from "@/lib/giveaway/mode";
 // matters for a page reached from a conference hall's Wi-Fi.
 export const revalidate = 60;
 
-// The title and link preview follow the page: once the entry period has ended
-// they stop inviting people to enter. Regenerated with the page, so they catch
-// up within the same minute.
+// The tab title and the link preview follow the page: once the entry period has
+// ended they stop inviting people to enter. Regenerated with the page, so they
+// catch up within the same minute.
+//
+// The link preview is set EXPLICITLY. The root layout declares Open Graph and
+// Twitter tags for the whole site, and a page that sets only `title` inherits
+// them — so a shared link read "Curbio — Get your home market-ready" whatever
+// the tab said. (Found 2026-10-02: the first version of this page relied on the
+// title alone.)
 export function generateMetadata(): Metadata {
+  const { title, description } = isClosed(expcon) ? expcon.metaClosed : expcon.meta;
   return {
-    ...(isClosed(expcon) ? expcon.metaClosed : expcon.meta),
+    title,
+    description,
+    openGraph: { title, description, type: "website" },
+    twitter: { card: "summary", title, description },
     ...routeMetadata(expcon.path),
   };
 }

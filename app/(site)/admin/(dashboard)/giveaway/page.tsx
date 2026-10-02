@@ -339,10 +339,11 @@ export default async function GiveawayAdminPage({
           <DrawPanel
             slug={giveaway.slug}
             closed={closed}
-            prizes={giveaway.prizes.map((p) => p.name)}
+            winners={giveaway.kit.winners}
+            kitName={giveaway.kit.name}
             draws={draws}
             eligiblePeople={drawable.length}
-            notify={`Notify by email and phone within ${giveaway.rules.notifyWithinHours} hours. A winner has ${giveaway.rules.respondWithinDays} days to respond before the next alternate takes the prize.`}
+            notify={`Notify by email and phone within ${giveaway.rules.notifyWithinHours} hours. A winner has ${giveaway.rules.respondWithinDays} days to respond before the next alternate takes the kit.`}
           />
         </OpsCard>
       </div>

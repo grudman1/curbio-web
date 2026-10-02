@@ -604,3 +604,45 @@ client components also receive `publicGiveaway()`
 (`config/giveaways/types.ts`), which leaves the routing rules and tags out, so
 none of them is in the page source either. The server applies the tag when a
 visitor arrives without one.
+
+## The giveaway has one prize — the whole kit — and five winners
+
+Decided 2026-10-02. Each of the five winners receives the **entire Listing-Ready
+Kit**: AirPods, a $100 Amazon gift card, and the Curbio duffel, tumbler and
+notepad. The first version had five different prizes, one per winner, drawn "in
+this order"; that is gone from the page, the Official Rules and the drawing.
+
+- **Settings.** `config/giveaways/expcon.ts` has a `kit` (name, `winners`,
+  `items`, `approxValueUsd`), not a list of prizes. Nothing in the settings
+  can say "the first name drawn gets item 1".
+- **The drawing records no prize.** `lib/giveaway/service.ts` draws
+  `kit.winners` + 10 alternates in one pass; a `DrawRecord`'s winners are
+  people with their entry counts, and nothing else. The order they were drawn
+  in is still stored, because the recorded seed reproduces the names in exactly
+  that order and Verify depends on it — but it is labelled on the staff screen
+  as assigning nothing. One win per person comes from drawing without
+  replacement and is unchanged. A drawing recorded before this change may carry
+  stale `position` and `prize` fields; they are ignored.
+- **The rules say it plainly.** Five identical kits, every item listed, about
+  $500 each and $2,500 in total (`kit.approxValueUsd` × `kit.winners`), and a
+  limit of one kit per person.
+- **Still a judgement for the rules' reviewer:** the eligibility clause limits
+  entry to real estate professionals, as the first draft did.
+
+## Confetti is our own canvas, and link previews are set per page
+
+Decided 2026-10-02. The page's confetti (`components/giveaway/confetti.ts`) is
+about 4 KB (under 2 KB compressed) of canvas code, not a library: the audience is on a phone on
+conference Wi-Fi, a dependency means a `package.json` and lockfile change (shared
+files) for a page that lives a week, and the behaviour that matters is ours to
+guarantee — gone within about three seconds on the wall clock, never takes a
+tap, half the pieces on a phone, nothing at all under `prefers-reduced-motion`,
+colours read from the site's tokens. It is fetched only after the page is
+interactive.
+
+Found in the same pass: the root layout declares Open Graph and Twitter tags
+for the whole site, and a page that sets only `title` inherits them, so a shared
+`/expcon` link read "Curbio — Get your home market-ready" whatever the tab said.
+`app/(site)/expcon/page.tsx` now sets `openGraph` and `twitter` from the same
+settings as the title, and follows the closed state too. Any other page that
+wants its own link preview has to do the same.

@@ -1,6 +1,8 @@
 import Image from "next/image";
 import type { Giveaway } from "@/config/giveaways";
 import { PARTNERS } from "@/lib/partners";
+import { CurbioLogoLink } from "./CurbioLogoLink";
+import { PRIVACY_URL } from "./links";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // OFFICIAL RULES for a giveaway — generated from its settings file, so the
@@ -8,18 +10,17 @@ import { PARTNERS } from "@/lib/partners";
 // or three different prize lists.
 //
 // What is written here is STRUCTURE and the terms marketing set: who may
-// enter, when, how, what the bonus is and what the free routes to it are, how
-// winners are drawn and notified. It is a draft for a reviewer, not legal
-// advice, and three things are deliberately left for them:
+// enter, when, how, what the bonus is and what the free routes to it are, what
+// is won, how winners are drawn and notified. It is a draft for a reviewer, not
+// legal advice. The reviewer supplied, for this event: the sponsor's name and
+// address, the kit's approximate retail value, and the governing law. Venue,
+// arbitration and other dispute terms were NOT supplied and are not drafted —
+// rather than guessed.
 //
-//   - the sponsor's legal name and address
-//   - each prize's approximate retail value
-//   - anything jurisdictional (governing law, dispute terms) — not drafted at
-//     all, rather than guessed
-//
-// A missing value renders as an amber MARKER and puts a draft notice at the
-// top of the page. That is on purpose: rules with a quietly empty field look
-// finished, and rules that look finished get published.
+// A missing sponsor name or address still renders as an amber MARKER and puts
+// a draft notice at the top of the page. That is on purpose: rules with a
+// quietly empty field look finished, and rules that look finished get
+// published. With both set — as they are now — the page shows neither.
 //
 // The word "raffle" appears nowhere. Utah prohibits raffles; a free prize
 // drawing is a different thing, and the rules must not call it the wrong one.
@@ -33,7 +34,6 @@ function Pending({ children }: { children: string }) {
   );
 }
 
-const ORDINAL = ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth"];
 const NUMBER_WORD = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
 
 /** "five (5)" — the form rules are written in. */
@@ -41,29 +41,29 @@ function count(n: number): string {
   return `${NUMBER_WORD[n] ?? n} (${n})`;
 }
 
+const capitalise = (s: string) => s.replace(/^./, (c) => c.toUpperCase());
+const dollars = (n: number) => `$${n.toLocaleString("en-US")}`;
+
 export function GiveawayRules({ giveaway }: { giveaway: Giveaway }) {
-  const { event, rules, prizes, bonusEntries, drawing } = giveaway;
+  const { event, rules, kit, bonusEntries, drawing } = giveaway;
   const exp = PARTNERS.exp;
   const publicUrl = `curbio.com${giveaway.path}`;
-  const sponsor = rules.sponsorName ?? null;
-  const isDraft = !rules.sponsorName || !rules.sponsorAddress || prizes.some((p) => !p.approxValue);
+  const isDraft = !rules.sponsorName || !rules.sponsorAddress;
   const title = `Curbio ${event.shortName} Giveaway`;
   const maxEntries = 1 + bonusEntries;
+  const totalValue = kit.approxValueUsd * kit.winners;
+
+  // Section numbers are counted as they render, so adding or moving a section
+  // can never leave a stale number — or a stale "see Section 7".
+  let n = 0;
+  const next = () => ++n;
 
   return (
     <div className="min-h-screen bg-surface font-sans text-content">
       <header className="bg-surface-inverse">
         <div className="mx-auto flex w-full max-w-[1200px] items-center justify-between gap-4 px-5 py-3.5 sm:px-8 lg:px-10">
-          <a href={giveaway.path} className="flex min-w-0 items-center gap-2 sm:gap-3.5" aria-label="Back to the giveaway">
-            <Image
-              src="/logo/curbio-white.svg"
-              alt="Curbio"
-              width={500}
-              height={130}
-              priority
-              unoptimized
-              className="block h-5 w-auto flex-none sm:h-7"
-            />
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3.5">
+            <CurbioLogoLink className="h-5 sm:h-7" priority />
             <span className="h-6 w-px flex-none bg-white/40" aria-hidden />
             <Image
               src={exp.logoPath}
@@ -73,7 +73,7 @@ export function GiveawayRules({ giveaway }: { giveaway: Giveaway }) {
               unoptimized
               className="block h-[18px] w-auto min-w-0 sm:h-[26px]"
             />
-          </a>
+          </div>
           <a href={giveaway.path} className="flex-none font-sans text-small font-bold text-content-inverse underline">
             Back to the giveaway
           </a>
@@ -96,15 +96,15 @@ export function GiveawayRules({ giveaway }: { giveaway: Giveaway }) {
           WINNING. VOID WHERE PROHIBITED.
         </p>
 
-        <Section n={1} title="Sponsor">
+        <Section n={next()} title="Sponsor">
           <p>
             The {title} (the &ldquo;Giveaway&rdquo;) is sponsored by{" "}
-            {sponsor ?? <Pending>SPONSOR LEGAL NAME</Pending>},{" "}
+            {rules.sponsorName ?? <Pending>SPONSOR LEGAL NAME</Pending>},{" "}
             {rules.sponsorAddress ?? <Pending>SPONSOR ADDRESS</Pending>} (&ldquo;Sponsor&rdquo;).
           </p>
         </Section>
 
-        <Section n={2} title="Eligibility">
+        <Section n={next()} title="Eligibility">
           <p>
             The Giveaway is open to legal residents of the United States, including the District of Columbia, who are
             at least {rules.minAge} years old at the time of entry and who are real estate professionals, such as
@@ -116,7 +116,7 @@ export function GiveawayRules({ giveaway }: { giveaway: Giveaway }) {
           </p>
         </Section>
 
-        <Section n={3} title="Entry period">
+        <Section n={next()} title="Entry period">
           <p>
             The Giveaway begins when the entry page at {publicUrl} is published, on or about {giveaway.opens}, and ends
             on {drawing.rulesDate} at {drawing.rulesTime} (the &ldquo;Entry Period&rdquo;). Sponsor&rsquo;s computer is
@@ -124,11 +124,11 @@ export function GiveawayRules({ giveaway }: { giveaway: Giveaway }) {
           </p>
         </Section>
 
-        <Section n={4} title="How to enter">
+        <Section n={next()} title="How to enter">
           <p>
-            During the Entry Period, visit {publicUrl} and complete and submit the entry form with your name, email
-            address, phone number, market and your answer to the question about upcoming listings. You will receive{" "}
-            {count(1)} entry.
+            No purchase or payment of any kind is necessary to enter or win. During the Entry Period, visit {publicUrl}{" "}
+            and complete and submit the entry form with your name, email address, phone number, market and your answer
+            to the question about upcoming listings. You will receive {count(1)} entry.
           </p>
           <p>
             Limit {count(1)} entry per person and per email address. If you submit the form more than once, your
@@ -137,10 +137,11 @@ export function GiveawayRules({ giveaway }: { giveaway: Giveaway }) {
           </p>
         </Section>
 
-        <Section n={5} title="Bonus entries">
+        <Section n={next()} title="Bonus entries">
           <p>
             After you have entered, you can receive {count(bonusEntries)} additional entries, once, in any one of the
-            following ways. Each way carries the same weight.
+            following ways. Each way earns the same {count(bonusEntries)} bonus entries; the free ways count exactly as
+            much as booking a call.
           </p>
           <ul>
             <li>
@@ -165,12 +166,13 @@ export function GiveawayRules({ giveaway }: { giveaway: Giveaway }) {
           </p>
         </Section>
 
-        <Section n={6} title="Drawing and odds">
+        <Section n={next()} title="Drawing and odds">
           <p>
             On or about {drawing.rulesDate} at {drawing.rulesTime}, at Booth #{event.booth}, Sponsor will select{" "}
-            {count(prizes.length)} potential winners in a random drawing from all eligible entries received during the
-            Entry Period. Prizes are assigned in the order the names are drawn, as listed in Section 7. Limit{" "}
-            {count(1)} prize per person.
+            {count(kit.winners)} potential winners in a random drawing from all eligible entries received during the
+            Entry Period, and will draw alternates, in order, at the same time. Each potential winner receives one{" "}
+            {count(1)} Kit (see Section {n + 1}). Limit {count(1)} Kit per person: a person can win only once,
+            however many entries they hold.
           </p>
           <p>
             The odds of winning depend on the number of eligible entries received. You do not need to be present to
@@ -178,40 +180,41 @@ export function GiveawayRules({ giveaway }: { giveaway: Giveaway }) {
           </p>
         </Section>
 
-        <Section n={7} title="Prizes">
+        <Section n={next()} title="Prize">
           <p>
-            {count(prizes.length).replace(/^./, (c) => c.toUpperCase())} prizes will be awarded, one to each winner,
-            in this order:
+            {capitalise(count(kit.winners))} identical {kit.name}s (each a &ldquo;Kit&rdquo;) will be awarded, one Kit
+            to each winner. Every winner receives the entire Kit. Each Kit contains all of the following:
           </p>
-          <ol>
-            {prizes.map((prize, i) => (
-              <li key={prize.name}>
-                <strong>{ORDINAL[i] ?? `#${i + 1}`} name drawn:</strong> {prize.name}. Approximate retail value:{" "}
-                {prize.approxValue ?? <Pending>APPROX. VALUE</Pending>}.
-              </li>
+          <ul>
+            {kit.items.map((item) => (
+              <li key={item.name}>{item.name}</li>
             ))}
-          </ol>
+          </ul>
           <p>
-            Prizes cannot be transferred or exchanged for cash. Sponsor may substitute a prize of equal or greater
-            value if a prize becomes unavailable. Gift cards are subject to the issuer&rsquo;s terms. Each winner is
-            responsible for any taxes on their prize.
+            Approximate retail value: {dollars(kit.approxValueUsd)} per Kit, {dollars(totalValue)} in total for all{" "}
+            {count(kit.winners)} Kits.
+          </p>
+          <p>
+            Prizes cannot be transferred or exchanged for cash. Sponsor may substitute an item of equal or greater
+            value if an item becomes unavailable. The gift card is subject to the issuer&rsquo;s terms. Each winner is
+            responsible for any taxes on their Kit.
           </p>
         </Section>
 
-        <Section n={8} title="Notifying winners">
+        <Section n={next()} title="Notifying winners">
           <p>
             Sponsor will attempt to notify each potential winner by email and by phone, using the details on their
-            entry, within {rules.notifyWithinHours} hours after the drawing. Prizes will be handed over at the booth
-            or sent to an address in the United States at Sponsor&rsquo;s expense.
+            entry, within {rules.notifyWithinHours} hours after the drawing. Kits will be handed over at the booth or
+            sent to an address in the United States at Sponsor&rsquo;s expense.
           </p>
           <p>
-            A potential winner who does not respond within {rules.respondWithinDays} days of the first attempt, who
-            is not eligible, or who declines the prize forfeits it. The prize will then be awarded to an alternate
-            selected at random from the remaining eligible entries.
+            A potential winner who does not respond within {rules.respondWithinDays} days of the first attempt, who is
+            not eligible, or who declines the Kit forfeits it. The Kit will then be awarded to the next alternate
+            winner drawn, in the order the alternates were drawn.
           </p>
         </Section>
 
-        <Section n={9} title="General conditions">
+        <Section n={next()} title="General conditions">
           <p>
             By entering, you agree to these Official Rules and to Sponsor&rsquo;s decisions, which are final. Sponsor
             may disqualify anyone who tampers with the entry process or breaks these rules.
@@ -224,7 +227,7 @@ export function GiveawayRules({ giveaway }: { giveaway: Giveaway }) {
           </p>
         </Section>
 
-        <Section n={10} title="Release">
+        <Section n={next()} title="Release">
           <p>
             By taking part, you release Sponsor and its officers, employees and agents from any liability arising
             from your participation in the Giveaway or from the acceptance, use or misuse of a prize, to the extent
@@ -232,10 +235,14 @@ export function GiveawayRules({ giveaway }: { giveaway: Giveaway }) {
           </p>
         </Section>
 
-        <Section n={11} title="Privacy and communications">
+        <Section n={next()} title="Governing law">
+          <p>These Official Rules and the Giveaway are governed by the laws of the {rules.governingLaw}.</p>
+        </Section>
+
+        <Section n={next()} title="Privacy and communications">
           <p>
             Information you submit is used as described in Curbio&rsquo;s{" "}
-            <a href="https://curbio.com/privacy-policy" target="_blank" rel="noreferrer noopener">
+            <a href={PRIVACY_URL} target="_blank" rel="noreferrer noopener">
               Privacy Policy
             </a>
             . As stated on the entry form, by entering you consent to calls and texts from Curbio (reply STOP to opt
@@ -244,7 +251,7 @@ export function GiveawayRules({ giveaway }: { giveaway: Giveaway }) {
           </p>
         </Section>
 
-        <Section n={12} title="No affiliation">
+        <Section n={next()} title="No affiliation">
           <p>
             This Giveaway is run by Sponsor alone. It is not sponsored, endorsed or administered by, or associated
             with, eXp Realty, eXp World Holdings, Inc., Apple Inc. or Amazon.com, Inc. Apple and AirPods are
@@ -252,7 +259,7 @@ export function GiveawayRules({ giveaway }: { giveaway: Giveaway }) {
           </p>
         </Section>
 
-        <Section n={13} title="Winners list">
+        <Section n={next()} title="Winners list">
           <p>
             For the names of the winners, email <a href={`mailto:${rules.requestEmail}`}>{rules.requestEmail}</a> with
             the subject line &ldquo;{event.shortName} Giveaway winners&rdquo; within 60 days after the Entry Period

@@ -128,7 +128,7 @@ function implementedPages(): RegistryEntry[] {
     status: "stub",
     indexed: indexedFor("/expcon"),
     derivedFrom: "config/giveaways/expcon.ts",
-    note: "stub until the go-live test passes and the rules are reviewed — prize photos and Rick's stage time still to come",
+    note: "stub until the go-live test passes on production — kit photos are optional (icons show without them)",
   });
   out.push({
     path: "/expcon/rules",
@@ -137,7 +137,7 @@ function implementedPages(): RegistryEntry[] {
     status: "stub",
     indexed: indexedFor("/expcon/rules"),
     derivedFrom: "config/giveaways/expcon.ts",
-    note: "stub until legal fills the sponsor name, address and prize values (marked in amber on the page)",
+    note: "stub until the go-live test passes — sponsor, kit value and Maryland governing law are filled in; dispute terms are not drafted",
   });
   out.push({
     path: "/exp/m/:market",

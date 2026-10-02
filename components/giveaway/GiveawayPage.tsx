@@ -4,10 +4,13 @@ import { RichText } from "@/components/campaign/RichText";
 import { isClosed } from "@/lib/giveaway/mode";
 import { nationalSoldMix } from "@/lib/giveaway/soldMix";
 import { PARTNERS } from "@/lib/partners";
+import { ConfettiOnLoad } from "./ConfettiOnLoad";
+import { CurbioLogoLink } from "./CurbioLogoLink";
 import { GiveawayHero } from "./GiveawayHero";
-import { CloserSection, HeaderCta, PrizeSection } from "./GiveawayParts";
+import { CloserSection, HeaderCta, KitSection } from "./GiveawayParts";
 import { GiveawayShell } from "./GiveawayShell";
 import { GiveawayIcon } from "./icons";
+import { PRIVACY_URL } from "./links";
 import "./giveaway.css";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -49,6 +52,8 @@ const STEPS = [
 const SHELL = "mx-auto w-full max-w-[1200px] px-5 sm:px-8 lg:px-10";
 const EYEBROW = "m-0 font-sans text-label font-black uppercase text-state-info";
 const RULE = "block h-[3px] w-14 rounded-[2px] bg-accent";
+const FOOT_LINK =
+  "inline-flex min-h-11 items-center font-sans text-[13px] font-semibold text-content-inverse underline underline-offset-[3px]";
 
 export function GiveawayPage({ giveaway }: { giveaway: Giveaway }) {
   const { copy } = giveaway;
@@ -57,6 +62,7 @@ export function GiveawayPage({ giveaway }: { giveaway: Giveaway }) {
 
   return (
     <GiveawayShell giveaway={publicGiveaway(giveaway)} initialClosed={isClosed(giveaway)}>
+      <ConfettiOnLoad />
       <div className="bg-surface font-sans text-content">
         <p className="m-0 flex items-center justify-center gap-2.5 bg-surface-sunken px-5 py-2.5 text-center font-sans text-[13px] font-semibold leading-[1.4] text-content">
           <span className="h-2 w-2 flex-none rounded-full bg-accent" aria-hidden />
@@ -67,15 +73,7 @@ export function GiveawayPage({ giveaway }: { giveaway: Giveaway }) {
         <header className="sticky top-0 z-header bg-surface-inverse">
           <div className={`${SHELL} flex items-center justify-between gap-4 py-2.5 sm:py-3.5`}>
             <div className="flex min-w-0 items-center gap-2 sm:gap-3.5">
-              <Image
-                src="/logo/curbio-white.svg"
-                alt="Curbio"
-                width={500}
-                height={130}
-                priority
-                unoptimized
-                className="block h-5 w-auto flex-none sm:h-7"
-              />
+              <CurbioLogoLink className="h-5 sm:h-7" priority />
               <span className="h-6 w-px flex-none bg-white/40" aria-hidden />
               <Image
                 src={exp.logoPath}
@@ -92,7 +90,7 @@ export function GiveawayPage({ giveaway }: { giveaway: Giveaway }) {
 
         <main>
           <GiveawayHero />
-          <PrizeSection />
+          <KitSection />
 
           <section className="bg-surface-accent py-14 lg:py-[104px]">
             <div className={`${SHELL} flex flex-col gap-7 lg:gap-12`}>
@@ -146,7 +144,8 @@ export function GiveawayPage({ giveaway }: { giveaway: Giveaway }) {
                 </div>
                 {/* A swipeable row on a phone, a plain grid from tablet up. The
                     scroll padding matches the row's own padding: without it,
-                    snapping pulls the first card flush to the screen edge. */}
+                    snapping pulls the first card flush to the screen edge.
+                    One label per card — the market — and the price. */}
                 <ul className="gw-strip -mx-5 my-0 grid list-none auto-cols-[minmax(220px,78%)] grid-flow-col gap-4 overflow-x-auto scroll-px-5 px-5 pb-2 sm:mx-0 sm:grid-flow-row sm:auto-cols-auto sm:grid-cols-2 sm:overflow-visible sm:p-0 lg:grid-cols-4">
                   {homes.map((home) => (
                     <li
@@ -156,7 +155,7 @@ export function GiveawayPage({ giveaway }: { giveaway: Giveaway }) {
                       <div className="relative aspect-[4/3] overflow-hidden rounded-md bg-surface-sunken">
                         <Image
                           src={home.photo}
-                          alt={`${home.neighborhood} home prepped by Curbio`}
+                          alt={`A ${home.market} home prepped by Curbio`}
                           fill
                           sizes="(max-width: 640px) 70vw, 260px"
                           className="object-cover"
@@ -165,12 +164,9 @@ export function GiveawayPage({ giveaway }: { giveaway: Giveaway }) {
                           Sold
                         </span>
                       </div>
-                      <div className="flex items-baseline justify-between gap-2 px-1.5 pb-1.5">
-                        <div className="min-w-0">
-                          <div className="truncate font-sans text-[15px] font-bold text-content">{home.neighborhood}</div>
-                          <div className="font-sans text-[13px] text-content-muted">{home.market}</div>
-                        </div>
-                        <div className="font-serif text-[17px] font-semibold text-content">{home.price}</div>
+                      <div className="flex items-baseline justify-between gap-3 px-1.5 pb-1.5">
+                        <div className="min-w-0 font-sans text-[16px] font-bold leading-[1.3] text-content">{home.market}</div>
+                        <div className="flex-none font-serif text-[17px] font-semibold text-content">{home.price}</div>
                       </div>
                     </li>
                   ))}
@@ -183,16 +179,19 @@ export function GiveawayPage({ giveaway }: { giveaway: Giveaway }) {
         </main>
 
         <footer className="border-t border-white/[0.18] bg-surface-inverse">
-          <div className={`${SHELL} flex flex-wrap items-center justify-between gap-x-6 gap-y-3 py-[22px]`}>
-            <Image
-              src="/logo/curbio-white.svg"
-              alt="Curbio"
-              width={500}
-              height={130}
-              unoptimized
-              className="block h-6 w-auto"
-            />
-            <p className="m-0 font-sans text-[13px] text-content-inverse">The pre-listing home improvement experts.</p>
+          <div className={`${SHELL} flex flex-col gap-3 py-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-8`}>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+              <CurbioLogoLink className="h-6" />
+              <p className="m-0 font-sans text-[13px] text-content-inverse">The pre-listing home improvement experts.</p>
+            </div>
+            <nav aria-label="Giveaway information" className="flex flex-wrap items-center gap-x-6">
+              <a href={giveaway.rules.path} className={FOOT_LINK}>
+                Official Rules
+              </a>
+              <a href={PRIVACY_URL} target="_blank" rel="noreferrer noopener" className={FOOT_LINK}>
+                Privacy Policy
+              </a>
+            </nav>
           </div>
         </footer>
       </div>

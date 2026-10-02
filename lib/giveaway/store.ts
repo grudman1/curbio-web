@@ -323,9 +323,16 @@ export type DrawRecord = {
   eligiblePeople: number;
   totalEntries: number;
   excluded: { tests: number; afterClose: number };
-  winners: (DrawPerson & { position: number; prize: string })[];
+  /** The winners, in the order drawn. Every one receives the SAME whole kit:
+   *  the order assigns nothing, and no prize is recorded against any name. It
+   *  is kept because the recorded seed reproduces the list in exactly this
+   *  order, which is what Verify re-runs.
+   *
+   *  (A drawing run before 2026-10-02 may carry extra `position` and `prize`
+   *  fields from when each winner was to get one item. They are ignored.) */
+  winners: DrawPerson[];
   /** In order. If a winner cannot be reached, the next name here takes the
-   *  prize — no second drawing, and no new randomness. */
+   *  kit — no second drawing, and no new randomness. */
   alternates: (DrawPerson & { order: number })[];
   /** Required for any official drawing after the first. */
   note: string;

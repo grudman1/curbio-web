@@ -730,7 +730,7 @@ export async function syncEmailListBatch(
 
 // ── The drawing ──────────────────────────────────────────────────────────────
 
-/** Names drawn beyond the prizes, in order — the alternates. */
+/** Names drawn beyond the winners, in order — the alternates. */
 const ALTERNATES = 10;
 
 export async function runDrawing(
@@ -756,7 +756,10 @@ export async function runDrawing(
 
   const tickets: DrawTicket[] = drawable.map((e) => ({ key: e.email, weight: entryCount(e, giveaway) }));
   const seed = newSeed();
-  const result = runDraw(tickets, seed, giveaway.prizes.length + ALTERNATES);
+  // One draw produces everyone: the winners first, then the alternates. Each
+  // winner gets the SAME whole kit, so nothing below ties a name to a prize.
+  const winners = giveaway.kit.winners;
+  const result = runDraw(tickets, seed, winners + ALTERNATES);
 
   const byEmail = new Map(drawable.map((e) => [e.email, e]));
   const person = (email: string) => {
@@ -780,12 +783,8 @@ export async function runDrawing(
       tests: read.entries.filter((e) => e.isTest).length,
       afterClose: read.entries.filter((e) => !e.isTest && !e.inEntryPeriod).length,
     },
-    winners: result.order.slice(0, giveaway.prizes.length).map((email, i) => ({
-      position: i + 1,
-      prize: giveaway.prizes[i].name,
-      ...person(email),
-    })),
-    alternates: result.order.slice(giveaway.prizes.length).map((email, i) => ({ order: i + 1, ...person(email) })),
+    winners: result.order.slice(0, winners).map(person),
+    alternates: result.order.slice(winners).map((email, i) => ({ order: i + 1, ...person(email) })),
     note: note.trim(),
   };
 
