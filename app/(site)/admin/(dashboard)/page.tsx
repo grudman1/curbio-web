@@ -648,8 +648,8 @@ export default async function HomeScreen({
                   : `Snapshot only · through ${formatFreshness(SNAPSHOT_AS_OF)} · live feed unavailable`}
               </div>
               <div>
-                Website leads only after Aug 29. Phone and manual leads not included until the app
-                connection is live.
+                Website leads only after {formatFreshness(SNAPSHOT_AS_OF)}. Phone and manual leads not
+                included until the app connection is live.
               </div>
             </>
           }

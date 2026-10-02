@@ -20,10 +20,11 @@
 // UTC — correct, because the snapshot's Aug 29 is a UTC day. Live rows carry no
 // Deal ID to key on, so the date is the only dedupe there is.
 //
-// The snapshot's newest record is 2026-08-29T01:55Z, so the last ~22 hours of
-// Aug 29 UTC are in neither source if the export was taken early that day;
-// scripts/report-live-leads.mjs counts the Redis leads on that day so the
-// exposure is a number, not a guess.
+// An export's own day is partial, so the refresh pipeline sets asOf to the day
+// BEFORE the export and drops that day's deals (scripts/prepare-app-export.mjs,
+// docs/app-snapshot-refresh.md). The 2026-08-29 snapshot predates that rule:
+// its last record is 01:55Z that day, so the rest of Aug 29 UTC was in neither
+// source until it was replaced.
 //
 // Live rows arrive with their channel derived from utm_source at submission —
 // measured attribution, entryPoint web_form, stage Lead / status Open. When
