@@ -4,10 +4,10 @@ import { deriveChannel } from "@/lib/channels";
 import { buildResolvedMarket } from "@/lib/markets";
 import { getOperatorLead } from "@/lib/operator";
 import { deliverToApp } from "./appDelivery";
+import { attributionFrom } from "./attribution";
 import { DRAW_ALGORITHM, newSeed, runDraw, verifyDraw, type DrawTicket } from "./draw";
 import { emailListConfigured, syncEntrantToEmailList } from "./emailList";
 import {
-  MAX_TAG,
   appDecision,
   entryCount,
   isDrawable,
@@ -22,7 +22,6 @@ import {
   type AppReason,
   type BonusSource,
   type EmailListRouting,
-  type EntryAttribution,
   type EntryField,
   type GiveawayEntry,
 } from "./entry";
@@ -88,57 +87,6 @@ const ENTRANT = "entrant";
 const TRY_AGAIN = "We couldn't save your entry. Please try again in a moment.";
 /** What staff are told when someone else's change to the same entry is in flight. */
 const STAFF_BUSY = "That entry is being updated right now. Try again in a few seconds.";
-
-/** A non-empty string, trimmed and capped — or null. */
-function trimmed(v: unknown): string | null {
-  return typeof v === "string" && v.trim() ? v.trim().slice(0, MAX_TAG) : null;
-}
-
-/**
- * Attribution for a new entry.
- *
- * The form sends exactly what it captured from the URL — possibly nothing.
- * The page defaults are applied HERE, in one place, for two reasons: the
- * `defaulted` flag is then true precisely when a default was used, and the
- * safety net does not depend on which JavaScript bundle a phone happens to
- * have cached. The net exists for the day the redirect loses its tags
- * (curbio.com/exp already has). Blank counts as absent — `?utm_source=` must
- * not beat the default.
- *
- * All three defaults apply together or not at all: a visitor carrying a real
- * utm_source keeps their own medium and campaign, even if those are empty,
- * rather than being given half of ours.
- *
- * First touch falls back to THIS submission only when the browser reported no
- * earlier one. That is what "first touch" means for someone we have never
- * seen; it is computed at send time and written nowhere but the entry — never
- * to the visitor's browser (AGENTS.md, rule 2).
- */
-function attributionFrom(body: Record<string, unknown>, giveaway: Giveaway): EntryAttribution {
-  const d = giveaway.attribution.defaults;
-  const supplied = trimmed(body.utm_source);
-  const defaulted = supplied === null;
-
-  const utm_source = supplied ?? d.utm_source;
-  const utm_medium = defaulted ? d.utm_medium : trimmed(body.utm_medium);
-  const utm_campaign = defaulted ? d.utm_campaign : trimmed(body.utm_campaign);
-  const channel = deriveChannel(utm_source);
-
-  const firstTouchChannel = trimmed(body.firstTouchChannel);
-  return {
-    utm_source,
-    utm_medium,
-    utm_campaign,
-    utm_content: trimmed(body.utm_content),
-    utm_term: trimmed(body.utm_term),
-    channel,
-    referralSourceId: trimmed(body.referralSourceId) ?? giveaway.attribution.referralSourceId,
-    entryPoint: "web_form",
-    firstTouchChannel: firstTouchChannel ?? channel,
-    firstTouchCampaign: firstTouchChannel ? trimmed(body.firstTouchCampaign) : utm_campaign,
-    defaulted,
-  };
-}
 
 /**
  * "My market isn't listed" plus a ZIP we DO serve is a market — an agent in

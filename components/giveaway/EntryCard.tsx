@@ -28,8 +28,10 @@ import { trackGiveaway } from "./track";
 // ── What it shares with FormCard, and what it does not ──────────────────────
 // Shared, by importing the same functions: attribution capture before the URL
 // strip (the ORDER in the mount effect is load-bearing, exactly as there), the
-// channel rule, the first-touch read, and the referral-source convention
-// (a `referral_source_id` in the URL beats the page's default).
+// channel rule and the first-touch read. NOT the referral-source convention:
+// this page's referral is always the giveaway's own ("eXp realty"), whatever
+// the URL says — it is only promoted to eXp agents, and the server enforces it
+// (lib/giveaway/attribution.ts).
 //
 // Not shared: the fields, the endpoint and what happens afterwards. FormCard
 // cannot grow a market dropdown and a 90-day question without changing the
@@ -171,9 +173,6 @@ export function EntryCard() {
     // utm_* from the live URL, persists them and queues the GA4 page_view —
     // synchronously — BEFORE the strip below wipes the query string.
     captureAttribution();
-    const params = new URLSearchParams(window.location.search);
-    const urlRefId = params.get("referral_source_id");
-    if (urlRefId) refIdRef.current = urlRefId;
     window.history.replaceState({}, "", window.location.pathname);
 
     const previous = readSaved(giveaway.slug);

@@ -40,7 +40,7 @@ import { GiveawayIcon } from "./icons";
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function GiveawayHero() {
-  const { giveaway, closed } = useGiveaway();
+  const { giveaway, closed, inPerson } = useGiveaway();
   const { copy, event, stage } = giveaway;
   // Names, titles and "11:30am MT" never break in the middle: on a 320px phone
   // a balanced wrap would otherwise put "Rick" and "Rudman" on different lines.
@@ -74,7 +74,7 @@ export function GiveawayHero() {
                 {copy.hero.sub.full}
               </p>
               <p className="m-0 font-sans text-[14px] leading-[1.45] text-content-muted sm:text-[clamp(16px,1.6vw,18px)] sm:leading-[1.5]">
-                {copy.hero.body}
+                {inPerson ? copy.hero.body : copy.hero.bodyRemote}
               </p>
             </div>
           )}

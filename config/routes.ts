@@ -21,10 +21,9 @@
 //   site      The curbio.com website proper.
 //   event     A page for one event (eXpcon). Disposable like a campaign and
 //             NEVER indexed — but mounted at a real path like a partner page,
-//             because the path is PRINTED: curbio.com/expcon is on a booth
-//             sign and a stack of postcards. Living at that same path here
-//             means the ink still resolves after DNS cutover with no redirect
-//             for anyone to remember. Its own tier so that "flip the partner
+//             because the path is PRINTED: sell.curbio.com/expcon is what
+//             the booth QR code encodes. Keeping that path means the ink
+//             keeps resolving, through DNS cutover too. Its own tier so that "flip the partner
 //             tier to indexed" at cutover cannot sweep it up.
 //
 // ── Why campaigns are physically prefixed and partners are not ───────────────

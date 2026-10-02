@@ -1,6 +1,6 @@
 # eXpcon 2026 giveaway — runbook
 
-Everything a person needs to run the eXpcon giveaway: the short link, how to
+Everything a person needs to run the eXpcon giveaway: the QR code, how to
 go live, the test script, what to do on drawing day, and what is still open.
 
 The page is `sell.curbio.com/expcon`. The Official Rules are at
@@ -11,33 +11,54 @@ Settings (dates, booth, the kit, copy, tags, routing) are in one file:
 
 ---
 
-## 1. The short link and the QR code
+## 1. The QR code and the links
 
-The printed QR code encodes **`https://curbio.com/expcon`** and nothing else.
-Print files are in `docs/expcon/qr/` (PNG and SVG, high error correction).
+The printed QR code encodes **`https://sell.curbio.com/expcon`** and nothing
+else — no short link, no WordPress redirect, no tags in the URL (decided
+2026-10-02, before anything was printed). Print files are in `docs/expcon/qr/`
+(SVG for the printer, 2419px PNG; level-H error correction, so a thumb over a
+corner or glare still scans). They were read back with the operating system's
+own QR detector at full size, 300px, 120px and from the SVG.
 
-The tags live in the WordPress redirect, not in the ink, so the destination can
-change without a reprint.
+A visitor with no tags in the URL gets the page's own defaults: Channel
+`event`, UtmSource `event`, UtmMedium `qr`, UtmCampaign `expcon-giveaway-oct`,
+first touch written once. The entry is marked "defaulted" so it can be told
+apart from a measured arrival.
 
-WordPress redirect settings: **302**, ignore case, ignore trailing slash.
+Every other way the page is promoted has a row on the **Links screen**
+(`/admin/site/links`, the rows labelled "eXpcon 2026 ·"), so nobody types a UTM by hand:
 
-| When | Paste this as the destination |
-| --- | --- |
-| Now, until `/expcon` is live | `https://sell.curbio.com/exp?utm_source=event&utm_medium=qr&utm_campaign=expcon-giveaway-oct&referral_source_id=eXp%20realty` |
-| At go-live (Mon Oct 5) and after | `https://sell.curbio.com/expcon?utm_source=event&utm_medium=qr&utm_campaign=expcon-giveaway-oct&referral_source_id=eXp%20realty` |
+| Link | Tags | Lands as |
+| --- | --- | --- |
+| Email (opt-in) | `utm_source=email&utm_medium=e&utm_campaign=nurture-expcon-oct` | Email |
+| Email (cold) | `utm_source=email&utm_medium=e&utm_campaign=cold-expcon-oct` | Email |
+| Curbio LinkedIn / Instagram / Facebook | `utm_source=organic&utm_medium=social&utm_campaign=social-expcon-oct&utm_content=linkedin` (or `instagram`, `facebook`) | Organic |
+| HSM personal LinkedIn | `utm_source=hsm_field&utm_medium=social&utm_campaign=social-expcon-oct&utm_content=linkedin` | HSM field |
+| Paid social (only if used) | `utm_source=paid_social&utm_medium=social&utm_campaign=paid-expcon-oct&utm_content=<platform>` (rows for LinkedIn, Instagram, Facebook) | Paid social |
 
-Separate fix, unrelated to eXpcon: `curbio.com/exp` lost its tags. Restore its
-destination to
-`https://sell.curbio.com/exp?utm_source=partnership&utm_campaign=exp-partner-landingpage&referral_source_id=eXp%20realty`.
+Rules the page follows (Attribution Spec v3.3):
 
-If the redirect ever loses its tags again, the page fills them in itself
-(Channel = event, medium = qr, campaign = expcon-giveaway-oct, eXp referral), and
-marks the entry as "defaulted" so it can be told apart.
+1. **No tags** → the full defaults above.
+2. **Real tags always win** over the page's channel and campaign defaults.
+3. **The eXp referral is never optional.** Every entry carries
+   ReferralSourceId `eXp realty`, whatever the URL says, because this page is
+   only promoted to eXp agents. A `referral_source_id` in the URL is ignored
+   rather than trusted. (`lib/giveaway/attribution.ts`; checked by
+   `node scripts/test-giveaway-attribution.mjs`.)
+4. **Copy follows the tags.** A visitor with no `utm_source` (the booth QR) sees
+   "Enjoying your Dirty Soda? That one's on Curbio. Enter in 20 seconds."
+   Anyone who arrived through a tagged link sees "Can't make it to Salt Lake?
+   You can still enter." (`copy.hero.body` / `bodyRemote`.) The prerendered page
+   says the Dirty Soda line, so a tagged visitor sees it swap in the first
+   moment after the page loads.
+
+`curbio.com/exp` losing its tags is **not** fixed in WordPress. It is fixed in
+code after the show (section 9).
 
 To regenerate the QR files:
 
 ```
-node scripts/make-qr.mjs https://curbio.com/expcon docs/expcon/qr/curbio-expcon-qr
+node scripts/make-qr.mjs https://sell.curbio.com/expcon docs/expcon/qr/curbio-expcon-qr
 ```
 
 ---
@@ -92,9 +113,10 @@ makes a second entry or a second deal.
   is still sent. To get one per lead anyway: `leadEmails: "every-lead"` in the
   settings file.
 
-Attribution on every lead sent to the app: Channel `event`, UtmSource `event`,
-UtmMedium `qr`, UtmCampaign `expcon-giveaway-oct`, ReferralSourceId `eXp realty`,
-Origin `web_form`, first touch write-once. Lead `source` is
+Attribution on every lead sent to the app: ReferralSourceId `eXp realty` always;
+Channel, UtmSource, UtmMedium and UtmCampaign from the link's real tags, or
+`event` / `event` / `qr` / `expcon-giveaway-oct` when there are none (section 1);
+Origin `web_form`; first touch write-once. Lead `source` is
 `expcon-giveaway-<market>`.
 
 ---
@@ -148,9 +170,9 @@ Going live:
 
 1. Merge the pull request in GitHub. Production deploys from `main`.
 2. Run the test script in section 5 on `sell.curbio.com/expcon`.
-3. Repoint the WordPress redirect to the go-live URL in section 1.
-4. Scan the printed QR with a phone and confirm it lands on the giveaway.
-5. Flip `/expcon`, `/expcon/rules` and `/admin/giveaway` from `stub` to `live`
+3. Scan `docs/expcon/qr/curbio-expcon-qr.png` from a screen with a phone and
+   confirm it lands on the giveaway. **Then** send the QR files to print.
+4. Flip `/expcon`, `/expcon/rules` and `/admin/giveaway` from `stub` to `live`
    in `config/pageRegistry.ts`.
 
 Optional, any time: when Rich confirms the app's "requested work" field can
@@ -178,7 +200,7 @@ Use names starting `ZZTEST` and emails like `zztest+yes1@gmail.com` (never an
 | P7 | Enter a few made-up names **without** the ZZTEST prefix (the drawing skips ZZTEST; sandbox entries never touch the real list). Then staff screen → Practice drawing → Verify | Five winners ("Winner 1–5", all getting the same whole kit — there is no prize column), then ten alternates, and "Verified". No ZZTEST names among them. |
 | P8 | Open `/expcon/rules` | Rules read correctly: sponsor Curbio, Inc.; five identical Listing-Ready Kits with every item listed, $500 each and $2,500 in total; Maryland law. No amber markers, no draft notice. |
 
-**On production, Mon Oct 5 (real routing):**
+**On production, once the ActiveCampaign keys and the Engaged list are in (real routing):**
 
 | # | Do this | Expect |
 | --- | --- | --- |
@@ -190,8 +212,11 @@ Use names starting `ZZTEST` and emails like `zztest+yes1@gmail.com` (never an
 | T5 | Submit T2's email again, **Yes** | One row, now "app" and "email list". ActiveCampaign: the answer tag changes to `…-listing-yes`; the lists stay as they were. Exactly one deal. |
 | T6 | Submit T1's email again, unchanged | No second deal; ActiveCampaign unchanged. |
 | T7 | New email, **My market isn't listed**, a ZIP outside every market | "email list" only: on the Master Contact List and the Engaged list. No deal. |
-| T8 | Open `sell.curbio.com/expcon` directly (no tags) and submit **Yes** | Lead still lands as channel Event with the campaign and eXp referral. |
+| T8 | Open `sell.curbio.com/expcon` directly (no tags) and submit **Yes** — *attribution case 1, no tag* | The line under the headline is the Dirty Soda one. The lead lands as channel **Event**, medium `qr`, campaign `expcon-giveaway-oct`, ReferralSourceId **`eXp realty`**, marked defaulted. Check it in the app and on the Leads screen. |
 | T9 | Load `sell.curbio.com/exp` and `sell.curbio.com/` | Unchanged. |
+| T11 | Open the **Email (opt-in)** link from the Links screen — `…/expcon?utm_source=email&utm_medium=e&utm_campaign=nurture-expcon-oct` — and submit **Yes** (new ZZTEST address) — *attribution case 2, email tag* | The line under the headline is "Can't make it to Salt Lake? You can still enter." The lead lands as channel **Email**, medium `e`, campaign `nurture-expcon-oct`, ReferralSourceId **`eXp realty`** (not "defaulted"). |
+| T12 | Open the **Curbio LinkedIn** link — `…/expcon?utm_source=organic&utm_medium=social&utm_campaign=social-expcon-oct&utm_content=linkedin` — and submit **Yes** (new ZZTEST address) — *attribution case 3, LinkedIn tag* | Same "Can't make it" line. The lead lands as channel **Organic**, medium `social`, campaign `social-expcon-oct`, content `linkedin`, ReferralSourceId **`eXp realty`**. |
+| T13 | Open the email link again with `&referral_source_id=Somebody%20Else` added, and submit **Yes** (new ZZTEST address) | ReferralSourceId is still **`eXp realty`**: a referral in the URL cannot change it. |
 | T10 | *(Optional)* Submit an address that has unsubscribed in ActiveCampaign | Entry accepted; the staff screen shows "unsubscribed"; the contact is **not** added to any list or tagged. If they answer **Yes** they still go to the HSM. |
 
 Clean up after testing: ask Rich to delete the ZZTEST deals; delete the
@@ -277,8 +302,6 @@ working name.
 
 ## 9. After the show
 
-- **Short link.** Leave `curbio.com/expcon` pointing at `/expcon`. The closed
-  page keeps collecting contacts with the eXpcon tags.
 - **Badge-scan import.** To be built when the sample Cvent export arrives:
   dry run → review → approve, same routing rules (only "Yes" or confirmed
   interest goes to the app; everyone goes to ActiveCampaign only if they
@@ -290,9 +313,17 @@ working name.
     to the app (answered Yes, booked a call, or submitted after the close)
   - `expcon-booth-<market>` — the badge-scan import, later
 
-  To count them as Qualified, add `expcon.attribution.source` from
+  **Decided 2026-10-02:** expcon entries that reach the app (said Yes or booked
+  a call) count as Qualified in `lib/leadSource.ts`, and badge-scan imports
+  follow the same rule. To do that, add `expcon.attribution.source` from
   `config/giveaways/expcon.ts` to the `TEMPLATES` list in that file. Left
   alone, they count as Engaged.
+- **Attribution backend (week of Oct 12).** Implement the partnership
+  derivation from the spec in the live lead route: a lead with a
+  ReferralSourceId and no real `utm_source` gets Channel `partnership` and the
+  partner name as its campaign; real UTMs always win. Confirm `/exp` leads come
+  through as `partnership`, with tests. This is what repairs `curbio.com/exp`
+  — **not** a WordPress edit.
 - **One delivery module.** `lib/giveaway/appDelivery.ts` is a deliberate copy
   of the delivery code in `app/api/lead/route.ts`, so that file did not have
   to change the week of the conference. If `/api/lead` changes its stored

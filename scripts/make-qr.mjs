@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Print-ready QR for a SHORT LINK — never for a tracked URL.
 //
-//   node scripts/make-qr.mjs https://curbio.com/expcon docs/expcon/qr/curbio-expcon-qr
+//   node scripts/make-qr.mjs https://sell.curbio.com/expcon docs/expcon/qr/curbio-expcon-qr
 //
 // Writes <out>.svg (vector, for the printer) and <out>.png (raster, for slides
 // and screens), then prints what it encoded so the output can be read back

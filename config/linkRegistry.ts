@@ -107,12 +107,52 @@ const HSM_CARD_LINKS: TrackedLink[] = [
   },
 ];
 
-// The eXpcon booth QR encodes the SHORT LINK and nothing else — which is why
-// `trackedUrl` below is the short link too: the Links screen draws its QR from
-// that field, and it must reproduce the printed code, not a different one. The
-// tags are added by the WordPress redirect, so repointing after the show is a
-// redirect edit and never a reprint. The row carries the campaign so leads
-// tagged with it join back here.
+// ── eXpcon 2026 ──────────────────────────────────────────────────────────────
+// The booth QR encodes https://sell.curbio.com/expcon and nothing else — no
+// redirect and no tags in the URL (decided 2026-10-02; the QR had not been
+// printed, so the WordPress short link was dropped). A visitor with no tags gets
+// the page's own defaults (Channel event, medium qr, campaign
+// expcon-giveaway-oct), which is exactly what this row records. The printed-
+// permanence flag this row raises on the Links screen is deliberate: if
+// /expcon ever moves, the page must keep answering at that path.
+//
+// Every OTHER way /expcon is promoted is a row below, so nobody types a UTM by
+// hand. All of them carry the eXp referral automatically — the page adds it
+// itself and ignores a referral in the URL — and a real tag always beats the
+// page's defaults.
+const EXPCON = "https://sell.curbio.com/expcon";
+const expconTag = (source: string, medium: string, campaign: string, content?: string) =>
+  `${EXPCON}?utm_source=${source}&utm_medium=${medium}&utm_campaign=${campaign}${content ? `&utm_content=${content}` : ""}`;
+
+const expconRow = (
+  id: string,
+  label: string,
+  type: TrackedLink["type"],
+  owner: string,
+  channel: TrackedLink["channel"],
+  medium: string,
+  campaign: string,
+  content: string | undefined,
+  notes: string
+): TrackedLink => ({
+  id: `event:expcon-2026:${id}`,
+  label,
+  type,
+  owner,
+  channel,
+  medium,
+  campaign,
+  market: "all",
+  destination: EXPCON,
+  trackedUrl: expconTag(channel, medium, campaign, content),
+  shortLink: "",
+  status: "draft",
+  createdAt: "2026-10-02",
+  printedAt: null,
+  origin: "seed",
+  notes,
+});
+
 const EVENT_LINKS: TrackedLink[] = [
   {
     id: "event:expcon-2026",
@@ -123,16 +163,26 @@ const EVENT_LINKS: TrackedLink[] = [
     medium: "qr",
     campaign: "expcon-giveaway-oct",
     market: "all",
-    destination: "https://curbio.com/expcon",
-    trackedUrl: "https://curbio.com/expcon",
-    shortLink: "curbio.com/expcon",
-    status: "printed",
+    destination: EXPCON,
+    // The QR carries NO tags: this is the address that is printed.
+    trackedUrl: EXPCON,
+    shortLink: "",
+    status: "draft",
     createdAt: "2026-10-01",
     printedAt: null,
     origin: "seed",
     notes:
-      "Booth #9 signage, eXpcon Salt Lake City, Oct 7–9 2026. The QR is only https://curbio.com/expcon; the WordPress redirect (302) adds utm_source=event, utm_medium=qr, utm_campaign=expcon-giveaway-oct and referral_source_id=eXp realty, and lands on sell.curbio.com/expcon. Print files: docs/expcon/qr/. The redirect lives in WordPress — it has to be recreated at the website cutover.",
+      "Booth #9 signage, eXpcon Salt Lake City, Oct 7–9 2026. The QR is only https://sell.curbio.com/expcon — no redirect, no tags. The page fills in Channel event, medium qr, campaign expcon-giveaway-oct and the eXp referral itself. Print files: docs/expcon/qr/ (level-H QR; scan-checked). Goes to print after the production test passes — set status to printed then. The printed-direct warning on this row is deliberate.",
   },
+  expconRow("email-optin", "eXpcon 2026 · email (opt-in)", "email", "Marketing", "email", "e", "nurture-expcon-oct", undefined, "Opted-in list: nurture sends."),
+  expconRow("email-cold", "eXpcon 2026 · email (cold)", "email", "Marketing", "email", "e", "cold-expcon-oct", undefined, "Cold outreach sends."),
+  expconRow("linkedin", "eXpcon 2026 · Curbio LinkedIn", "social_bio", "Marketing", "organic", "social", "social-expcon-oct", "linkedin", "Curbio's own LinkedIn posts."),
+  expconRow("instagram", "eXpcon 2026 · Curbio Instagram", "social_bio", "Marketing", "organic", "social", "social-expcon-oct", "instagram", "Curbio's own Instagram posts and bio."),
+  expconRow("facebook", "eXpcon 2026 · Curbio Facebook", "social_bio", "Marketing", "organic", "social", "social-expcon-oct", "facebook", "Curbio's own Facebook posts."),
+  expconRow("hsm-linkedin", "eXpcon 2026 · HSM personal LinkedIn", "social_bio", "HSMs", "hsm_field", "social", "social-expcon-oct", "linkedin", "For HSMs to post from their own LinkedIn. utm_source=hsm_field."),
+  expconRow("paid-linkedin", "eXpcon 2026 · paid social · LinkedIn", "paid_ad", "Marketing", "paid_social", "social", "paid-expcon-oct", "linkedin", "Only if paid social is used. Swap utm_content for another platform by adding a row."),
+  expconRow("paid-instagram", "eXpcon 2026 · paid social · Instagram", "paid_ad", "Marketing", "paid_social", "social", "paid-expcon-oct", "instagram", "Only if paid social is used."),
+  expconRow("paid-facebook", "eXpcon 2026 · paid social · Facebook", "paid_ad", "Marketing", "paid_social", "social", "paid-expcon-oct", "facebook", "Only if paid social is used."),
 ];
 
 export const SEED_LINKS: TrackedLink[] = [

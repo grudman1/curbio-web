@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { getStoredUtms } from "@/lib/analytics";
 import type { PublicGiveaway } from "@/config/giveaways";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -29,7 +30,14 @@ import type { PublicGiveaway } from "@/config/giveaways";
 // removed on unmount, so the rules cannot follow a visitor to another route.
 // ─────────────────────────────────────────────────────────────────────────────
 
-type GiveawayContext = { giveaway: PublicGiveaway; closed: boolean };
+type GiveawayContext = {
+  giveaway: PublicGiveaway;
+  closed: boolean;
+  /** Arrived with no tags — the booth QR, or the address typed in. Starts true
+   *  (that is what the prerendered HTML says) and drops to false after mount
+   *  for anyone carrying a utm_source. */
+  inPerson: boolean;
+};
 
 const Ctx = createContext<GiveawayContext | null>(null);
 
@@ -54,6 +62,16 @@ export function GiveawayShell({
   children: ReactNode;
 }) {
   const [closed, setClosed] = useState(initialClosed);
+  const [inPerson, setInPerson] = useState(true);
+
+  // Who is reading: the page is static, so "did they come through a tagged
+  // link" can only be asked in the browser. EntryCard's mount effect captures
+  // the URL's tags into session storage before stripping them, and child
+  // effects run before this one, so by now they are there. Only a tagged
+  // visitor sees the page change — and only one line of it.
+  useEffect(() => {
+    if (getStoredUtms().utm_source?.trim()) setInPerson(false);
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -87,7 +105,7 @@ export function GiveawayShell({
     };
   }, [giveaway.closesAt]);
 
-  return <Ctx.Provider value={{ giveaway, closed }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ giveaway, closed, inPerson }}>{children}</Ctx.Provider>;
 }
 
 /** Fold the cookie notice down once the visitor is filling the form in. Called
