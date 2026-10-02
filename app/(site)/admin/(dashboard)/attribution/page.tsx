@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { HUB_SURFACE_BY_SLUG } from "@/config/marketingHub";
-import { SNAPSHOT_MONTHS } from "@/config/appLeadsSnapshot";
+import { hubMonths } from "@/lib/leadStore";
 import { computeUndocumentedCampaigns } from "@/lib/campaignOrphans";
 import { SCAN } from "@/app/(site)/admin/(dashboard)/ui";
 import {
@@ -35,9 +35,10 @@ export default async function AttributionPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const sp = await searchParams;
-  const tf = parseTimeframe(sp.t, SNAPSHOT_MONTHS);
-  const months = monthsFor(tf, SNAPSHOT_MONTHS);
-  const tfLabel = timeframeLabel(tf, SNAPSHOT_MONTHS);
+  const allMonths = hubMonths();
+  const tf = parseTimeframe(sp.t, allMonths);
+  const months = monthsFor(tf, allMonths);
+  const tfLabel = timeframeLabel(tf, allMonths);
   // Provenance filter: measured (real UTM signal) / inferred (spec-§8
   // backfill) / all. Anything unrecognised falls to "all".
   const f = sp.f === "measured" || sp.f === "inferred" ? sp.f : "all";

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { timingSafeEqualStr } from "@/lib/adminSession";
 import { execShareToken } from "@/lib/execShare";
-import { SNAPSHOT_MONTHS } from "@/config/appLeadsSnapshot";
+import { hubMonths } from "@/lib/leadStore";
 import { readExecNotes } from "@/lib/marketingExecNotes";
 import { ExecutiveReview } from "@/app/(site)/admin/(dashboard)/executive/ExecutiveReview";
 
@@ -34,10 +34,11 @@ export default async function SharedExecutivePage({
 
   const sp = await searchParams;
   const requested = typeof sp.month === "string" ? sp.month : undefined;
+  const allMonths = hubMonths();
   const month =
-    requested && SNAPSHOT_MONTHS.includes(requested)
+    requested && allMonths.includes(requested)
       ? requested
-      : SNAPSHOT_MONTHS[SNAPSHOT_MONTHS.length - 1];
+      : allMonths[allMonths.length - 1];
   if (!month) notFound();
 
   const notes = await readExecNotes(month);

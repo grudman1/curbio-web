@@ -11,13 +11,11 @@ import {
   aggregateSnapshot,
   OTHER_MARKETS_KEY,
   OTHER_MARKETS_LABEL,
-  SNAPSHOT_AS_OF,
-  SNAPSHOT_LABEL,
-  SNAPSHOT_MONTHS,
 } from "@/config/appLeadsSnapshot";
 import { OpsCard } from "@/app/(site)/admin/_ui/v2/OpsCard";
 import { Table, Thead, Th, Tr, Td } from "@/app/(site)/admin/_ui/v2/DataTable";
 import { SurfaceHeader, SurfaceHealth } from "@/app/(site)/admin/_ui/v2/SurfaceHeader";
+import { feedLabel, hubMonths, leadFeed } from "@/lib/leadStore";
 import { ownerSession } from "@/lib/adminGuards";
 import { readOpsNotes, type OpsNote } from "@/lib/opsNotes";
 import { NotesPanel } from "@/app/(site)/admin/_ui/notes/NotesPanel";
@@ -81,11 +79,14 @@ export default async function MarketsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const sp = await searchParams;
-  const tf = parseTimeframe(sp.t, SNAPSHOT_MONTHS);
+  const allMonths = hubMonths();
+  const tf = parseTimeframe(sp.t, allMonths);
   const mode = parseAttribution(sp.a);
-  const months = monthsFor(tf, SNAPSHOT_MONTHS);
-  const tfLabel = timeframeLabel(tf, SNAPSHOT_MONTHS);
-  const agg = aggregateSnapshot(new Set(months));
+  const months = monthsFor(tf, allMonths);
+  const tfLabel = timeframeLabel(tf, allMonths);
+  // The merged store (import + post-snapshot live leads) — same read as Home.
+  const feed = await leadFeed();
+  const agg = aggregateSnapshot(new Set(months), "all", feed.deals);
   const target = QUALIFIED_TARGET_PER_MARKET_PER_MONTH * months.length;
   const firstTouch = mode === "first";
   const linkQuery = `t=${timeframeParam(tf)}${firstTouch ? "&a=first" : ""}`;
@@ -129,7 +130,7 @@ export default async function MarketsPage({
     const pace =
       r.key === OTHER_MARKETS_KEY
         ? null
-        : paceRead(qualified, months, SNAPSHOT_AS_OF, QUALIFIED_TARGET_PER_MARKET_PER_MONTH);
+        : paceRead(qualified, months, feed.asOf, QUALIFIED_TARGET_PER_MARKET_PER_MONTH);
     return { ...r, qualified, closed, revenue, mix, pace };
   });
 
@@ -139,7 +140,7 @@ export default async function MarketsPage({
 
       <OpsCard
         title={`Markets vs ${target || QUALIFIED_TARGET_PER_MARKET_PER_MONTH} Qualified`}
-        titleTooltip={`${tfLabel} · ${SNAPSHOT_LABEL} · ${
+        titleTooltip={`${tfLabel} · ${feedLabel(feed)} · ${
           firstTouch ? "first touch (unavailable)" : "channel mix is last touch"
         }`}
       >

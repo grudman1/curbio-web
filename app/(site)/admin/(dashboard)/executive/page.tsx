@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { HUB_SURFACE_BY_SLUG } from "@/config/marketingHub";
-import { SNAPSHOT_MONTHS } from "@/config/appLeadsSnapshot";
+import { hubMonths } from "@/lib/leadStore";
 import { readExecNotes } from "@/lib/marketingExecNotes";
 import { execShareToken } from "@/lib/execShare";
 import { monthLabel, parseTimeframe } from "@/app/(site)/admin/_ui/timeframe";
@@ -29,10 +29,11 @@ export default async function ExecutivePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const sp = await searchParams;
-  const tf = parseTimeframe(sp.t, SNAPSHOT_MONTHS);
+  const allMonths = hubMonths();
+  const tf = parseTimeframe(sp.t, allMonths);
   // A monthly review needs a month: ranges coerce to their latest month.
   const month =
-    tf.kind === "month" ? tf.ym : SNAPSHOT_MONTHS[SNAPSHOT_MONTHS.length - 1] ?? "";
+    tf.kind === "month" ? tf.ym : allMonths[allMonths.length - 1] ?? "";
   const notes = month ? await readExecNotes(month) : null;
 
   const shareToken = execShareToken();
