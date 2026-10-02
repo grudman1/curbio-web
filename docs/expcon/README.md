@@ -169,7 +169,7 @@ Use names starting `ZZTEST` and emails like `zztest+yes1@gmail.com` (never an
 
 | # | Do this | Expect |
 | --- | --- | --- |
-| P1 | Open the page on a phone | Confetti plays once, for about three seconds, and clears (none if the phone has "Reduce motion" on). Name, Email and Phone are on the first screen. The countdown shows seconds and ticks. The header button glides to the form and puts the cursor in the Name field. |
+| P1 | Open the page on a phone | Confetti covers the whole hero once, for about three and a half seconds, and clears (none if the phone has "Reduce motion" on). Name, Email and Phone are on the first screen. The countdown shows seconds and ticks. The header button glides to the form and puts the cursor in the Name field. |
 | P2 | Submit: Atlanta, **Yes** | "You're in!" with the manager and the booking offer. Staff screen: **both** "app (sandbox)" and "email list (sandbox)". |
 | P3 | Submit a new email: Dallas, **Maybe** | Staff screen: "email list (sandbox)", no app badge. |
 | P4 | Submit a new email: **My market isn't listed**, ZIP 59718 | Thank-you points to Booth #9, no booking offer. Staff screen: "email list (sandbox)", market "Not listed". |

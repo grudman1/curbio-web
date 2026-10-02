@@ -632,10 +632,10 @@ this order"; that is gone from the page, the Official Rules and the drawing.
 ## Confetti is our own canvas, and link previews are set per page
 
 Decided 2026-10-02. The page's confetti (`components/giveaway/confetti.ts`) is
-about 4 KB (under 2 KB compressed) of canvas code, not a library: the audience is on a phone on
+about 5 KB (about 2 KB compressed) of canvas code, not a library: the audience is on a phone on
 conference Wi-Fi, a dependency means a `package.json` and lockfile change (shared
 files) for a page that lives a week, and the behaviour that matters is ours to
-guarantee — gone within about three seconds on the wall clock, never takes a
+guarantee — gone within about three and a half seconds on the wall clock, never takes a
 tap, half the pieces on a phone, nothing at all under `prefers-reduced-motion`,
 colours read from the site's tokens. It is fetched only after the page is
 interactive.
@@ -646,3 +646,12 @@ for the whole site, and a page that sets only `title` inherits them, so a shared
 `app/(site)/expcon/page.tsx` now sets `openGraph` and `twitter` from the same
 settings as the title, and follows the closed state too. Any other page that
 wants its own link preview has to do the same.
+
+**Confetti, round two (2026-10-02).** The first version read as three separate
+clumps — two side poppers and a top spray of 7–12px pieces. It is now built like
+a poster: a full-width curtain from above the screen, a radial burst from behind
+the headline and another from the form (so the right-hand column is covered
+too), poppers at each side as accents, and pieces roughly twice the size
+(12–22px, with 30–52px streamers). About 460 pieces on a desktop, about 185 on a
+phone, ~3.5 s. Measured on the live canvas: no region of a 4×3 grid of the
+screen stays empty. The headline is briefly hidden at peak — that is the moment.

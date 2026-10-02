@@ -1,8 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// CONFETTI — paper pieces on one transparent canvas, about three seconds long.
+// CONFETTI — paper pieces on one transparent canvas, about three and a half seconds long.
 //
 // Written here rather than pulled from a library: the people reading this page
-// are on a phone on conference Wi-Fi, this is about 4 KB (under 2 KB compressed), it is fetched only after
+// are on a phone on conference Wi-Fi, this is about 5 KB (about 2 KB compressed), it is fetched only after
 // the page is interactive, and it adds nothing to package.json (a shared file,
 // and a dependency to keep patched for a page that lives one week).
 //
@@ -12,7 +12,7 @@
 //                                aria-hidden, and is taken OUT of the page when
 //                                the last piece is gone — it is never left
 //                                sitting over the form
-//   gone in about 3 seconds      every piece has an end time on the WALL clock,
+//   gone in about 3.5 seconds    every piece has an end time on the WALL clock,
 //                                not a frame count, so a slow phone fades them
 //                                out on schedule instead of running long; a
 //                                timer removes the canvas regardless
@@ -58,6 +58,11 @@ type Piece = {
 type Burst = {
   x: number;
   y: number;
+  /** Start each piece at a random point in this box (viewport px) instead of at
+   *  x, y — how a curtain of confetti is made out of one burst. */
+  area?: { x0: number; x1: number; y0: number; y1: number };
+  /** Piece size multiplier. */
+  scale?: number;
   /** Direction in radians on the canvas: 0 is right, −π/2 is straight up. */
   angle: number;
   spread: number;
@@ -70,11 +75,11 @@ type Burst = {
   life: [number, number];
 };
 
-const GRAVITY = 1000; // px/s², down
-const DRAG = 3; // 1/s — with gravity, a terminal fall of ~330 px/s: paper, not stones
-const FADE_MS = 550;
+const GRAVITY = 900; // px/s², down
+const DRAG = 2.2; // 1/s — with gravity, a terminal fall of ~400 px/s: paper, not stones
+const FADE_MS = 650;
 /** Nothing outlives this, whatever the frame rate did. */
-const HARD_STOP_MS = 3200;
+const HARD_STOP_MS = 3900;
 
 let canvas: HTMLCanvasElement | null = null;
 let ctx: CanvasRenderingContext2D | null = null;
@@ -154,6 +159,9 @@ function stop(): void {
 function spawn(b: Burst): void {
   const colors = palette();
   const born = performance.now();
+  // Designed for a desktop hero; a phone's is a third the area, so smaller.
+  const k = (b.scale ?? 1) * (isPhone() ? 0.8 : 1);
+  const rand = (a: number, z: number) => a + Math.random() * (z - a);
   for (let i = 0; i < b.count; i++) {
     const angle = b.angle + (Math.random() - 0.5) * b.spread;
     const speed = b.speed[0] + Math.random() * (b.speed[1] - b.speed[0]);
@@ -161,15 +169,17 @@ function spawn(b: Burst): void {
     const ribbon = shape < 0.18;
     const round = shape > 0.85;
     const pick = colors[(Math.random() * colors.length) | 0];
-    const w = ribbon ? 4 + Math.random() * 2 : round ? 6 + Math.random() * 3 : 7 + Math.random() * 5;
+    // Big enough to read across a room: 12–22px squares, 10–17px dots, thin
+    // 30–52px streamers.
+    const w = k * (ribbon ? rand(6, 9) : round ? rand(10, 17) : rand(12, 22));
     const start = b.delay[0] + Math.random() * (b.delay[1] - b.delay[0]);
     pieces.push({
-      x: b.x,
-      y: b.y,
+      x: b.area ? rand(b.area.x0, b.area.x1) : b.x,
+      y: b.area ? rand(b.area.y0, b.area.y1) : b.y,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
       w,
-      h: ribbon ? 16 + Math.random() * 10 : round ? w : 10 + Math.random() * 7,
+      h: ribbon ? k * rand(30, 52) : round ? w : k * rand(16, 28),
       rot: Math.random() * Math.PI * 2,
       vrot: (Math.random() - 0.5) * 14,
       tilt: Math.random() * Math.PI * 2,
@@ -275,9 +285,11 @@ function whenVisible(fn: () => void): void {
 }
 
 /**
- * The opening burst: a popper from each side, low on the screen and aimed up
- * and inward, and a light shower from the top. Pieces rise, turn over, and
- * fall.
+ * The opening burst, built like a poster rather than a few poppers: a CURTAIN
+ * across the whole width of the screen so no part of the hero is bare, a big
+ * radial burst from behind the headline and another from the form so the right
+ * column is covered too, and a popper at each side as an accent. Everything
+ * rises or falls through the hero, turns over, and is gone in about 3.5 s.
  */
 export function fireWelcome(): void {
   if (calm()) return;
@@ -285,49 +297,83 @@ export function fireWelcome(): void {
     const w = window.innerWidth;
     const h = window.innerHeight;
     const phone = isPhone();
-    // Enough speed to carry from the edge toward the middle of the screen.
-    const reach = Math.max(380, w * 0.42);
+    const centre = (selector: string, fallback: { x: number; y: number }) => {
+      const r = document.querySelector(selector)?.getBoundingClientRect();
+      return r && r.width > 0 ? { x: r.left + r.width / 2, y: Math.min(h * 0.6, Math.max(60, r.top + r.height / 2)) } : fallback;
+    };
+    const headline = centre("h1", { x: w * 0.3, y: h * 0.3 });
+    const card = centre("#enter", { x: w * 0.75, y: h * 0.35 });
+    const reach = Math.max(420, w * 0.45);
     const v = reach * DRAG;
-    const side = phone ? 22 : 46;
-    launch([
+    const bursts: Burst[] = [
+      {
+        // The curtain: starts above the screen across its whole width, with
+        // some sideways drift, entering over the first second.
+        x: 0,
+        y: 0,
+        area: { x0: -30, x1: w + 30, y0: -320, y1: -20 },
+        angle: Math.PI / 2,
+        spread: 0.9,
+        count: phone ? 100 : 230,
+        speed: [250, 750],
+        delay: [0, 1000],
+        life: [2900, 3500],
+      },
+      {
+        // From behind the headline, in every direction.
+        x: headline.x,
+        y: headline.y,
+        angle: -Math.PI / 2,
+        spread: Math.PI * 2,
+        count: phone ? 60 : 100,
+        speed: [v * 0.35, v * 1.0],
+        delay: [0, 140],
+        life: [2800, 3500],
+        scale: 1.1,
+      },
+      {
+        // From the form's top edge, so the right-hand column is not left out.
+        x: card.x,
+        y: card.y,
+        angle: -Math.PI / 2,
+        spread: Math.PI * 2,
+        count: phone ? 0 : 80,
+        speed: [v * 0.3, v * 0.9],
+        delay: [180, 360],
+        life: [2800, 3500],
+        scale: 1.1,
+      },
       {
         x: -6,
-        y: h * 0.72,
-        angle: (-52 * Math.PI) / 180,
-        spread: 0.75,
-        count: side,
-        speed: [v * 0.55, v * 0.95],
-        delay: [0, 160],
-        life: [2300, 2900],
+        y: h * 0.75,
+        angle: (-50 * Math.PI) / 180,
+        spread: 0.8,
+        count: phone ? 24 : 50,
+        speed: [v * 0.6, v * 1.1],
+        delay: [0, 200],
+        life: [2800, 3400],
+        scale: 1.2,
       },
       {
         x: w + 6,
-        y: h * 0.72,
-        angle: (-128 * Math.PI) / 180,
-        spread: 0.75,
-        count: side,
-        speed: [v * 0.55, v * 0.95],
-        delay: [0, 160],
-        life: [2300, 2900],
+        y: h * 0.75,
+        angle: (-130 * Math.PI) / 180,
+        spread: 0.8,
+        count: phone ? 24 : 50,
+        speed: [v * 0.6, v * 1.1],
+        delay: [0, 200],
+        life: [2800, 3400],
+        scale: 1.2,
       },
-      {
-        // From above the top edge, so it reads as falling in, not appearing.
-        x: w / 2,
-        y: -24,
-        angle: Math.PI / 2,
-        spread: Math.PI * 1.1,
-        count: phone ? 18 : 36,
-        speed: [60, 260],
-        delay: [0, 650],
-        life: [2200, 2800],
-      },
-    ]);
+    ];
+    launch(bursts.filter((b) => b.count > 0));
   });
 }
 
 /**
- * The small one, for "You're in!": a fan straight up from the check mark.
- * `origin` is that element; with none, it pops from just above the middle.
+ * The small one, for "You're in!": a fan up from the check mark, with the same
+ * larger pieces. `origin` is that element; with none, it pops from just above
+ * the middle.
  */
 export function fireThanks(origin: HTMLElement | null): void {
   if (calm()) return;
@@ -346,11 +392,12 @@ export function fireThanks(origin: HTMLElement | null): void {
         x,
         y,
         angle: -Math.PI / 2,
-        spread: 1.9,
-        count: isPhone() ? 24 : 38,
-        speed: [650, 1250],
+        spread: 2.2,
+        count: isPhone() ? 40 : 64,
+        speed: [700, 1400],
         delay: [0, 120],
-        life: [1800, 2300],
+        life: [2000, 2600],
+        scale: 1.15,
       },
     ]);
   });
