@@ -1,11 +1,20 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Historical import: app snapshot CSVs → config/appLeadsSnapshot.json
 //
-//   npx tsx scripts/import-app-snapshot.ts
+//   npx tsx scripts/import-app-snapshot.ts [--exported YYYY-MM-DD]
 //
-// One-time snapshot from the company app + Mailchimp, exported 2026-08-29.
-// Reads the committed CSVs under data/imports/ and writes the enriched lead
-// snapshot the whole dashboard reads. IDEMPOTENT: rerunning replaces the
+// Weekly snapshot from the company app + Mailchimp — the procedure is
+// docs/app-snapshot-refresh.md. Reads the committed raw exports under
+// data/imports/ (reports_attributionreport.csv, reports_leadsreport.csv,
+// reports_salesreport.csv) and writes the enriched lead snapshot the whole
+// dashboard reads.
+//
+// THE FENCE. --exported is the day the reports were downloaded (default: today,
+// UTC). That day is partial — anything created after the download is in
+// neither the export nor, for non-web leads, the live feed — so the snapshot
+// is cut at the LAST COMPLETE UTC DAY: asOf = exported − 1, and deals created
+// after asOf are dropped here. The live feed (lib/leadStore.ts) counts website
+// leads strictly after asOf, so every day belongs to exactly one source. IDEMPOTENT: rerunning replaces the
 // snapshot wholesale — it never appends, never duplicates.
 //
 // What it does, in order:
@@ -47,7 +56,12 @@ import { reportingMarketForAppCode } from "../config/market-map";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const IMPORTS = resolve(ROOT, "data/imports");
-const SNAPSHOT_DATE = "2026-08-29";
+const exportedArg = process.argv.indexOf("--exported");
+const EXPORTED: string =
+  exportedArg >= 0 ? process.argv[exportedArg + 1] : new Date().toISOString().slice(0, 10);
+if (!/^\d{4}-\d{2}-\d{2}$/.test(EXPORTED ?? "")) throw new Error("--exported must be YYYY-MM-DD");
+/** Last complete UTC day of the export. See the fence note above. */
+const SNAPSHOT_DATE = new Date(Date.parse(`${EXPORTED}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
 
 // ── CSV ──────────────────────────────────────────────────────────────────────
 
@@ -104,16 +118,19 @@ const salesRevenue = (s: string): number => {
 
 // ── Load the three app reports ───────────────────────────────────────────────
 
-const attrRows = loadCsv("reports_attributionreport__10_.csv");
+const attrRows = loadCsv("reports_attributionreport.csv");
 // Row 0 is the section band (Identity/Funnel/Attribution/Agent); row 1 is the header.
 const A = indexer(attrRows[1]);
-const attr = attrRows.slice(2);
+// The fence: the export's own day is partial, so it is left to the live feed.
+const attrAll = attrRows.slice(2);
+const attr = attrAll.filter((r) => r[A("Created date")].slice(0, 10) <= SNAPSHOT_DATE);
+const droppedAfterAsOf = attrAll.length - attr.length;
 
-const leadRows = loadCsv("reports_leadsreport__3_.csv");
+const leadRows = loadCsv("reports_leadsreport.csv");
 const L = indexer(leadRows[0]);
 const leads = leadRows.slice(1);
 
-const salesRows = loadCsv("reports_salesreport__1_.csv");
+const salesRows = loadCsv("reports_salesreport.csv");
 const S = indexer(salesRows[0]);
 const sales = salesRows.slice(1);
 
@@ -581,6 +598,7 @@ const report = {
   rowsImported: deals.length,
   join: {
     attributionRows: attr.length,
+    droppedAfterAsOf,
     leadsRows: leads.length,
     leadsJoined: joined.filter((j) => j.lead).length,
     attrRowsWithoutLeadsRow: unjoinedAttr,

@@ -52,7 +52,7 @@ West CO #02,ATL,Matt Mitchell,Aaron Glines,"3,468.76",2026-03-23T18:27:30.805121
 Change Order,ATL,Christine Harvey,Aaron Glines,650,2026-03-30T23:14:12.0654906+00:00,2026-03-31T22:18:25.3927085+00:00,Sarah Panetta,spanetta@kw.com,,Change order
 Sunardi / Hall CO#01,BAL,Lisa Tucker,Aaron Glines,"5,038.28",2026-04-01T13:04:55.5750708+00:00,2026-04-20T17:21:38.239052+00:00,Julie Hall,juliehalldc@gmail.com,HomeSmart,Change order
 "Ricketts / Wagner - 38 Golden Star, Irvine, CA 92604",LA,Trevor Laramee,Aaron Glines,"26,757.58",2026-04-02T01:50:04.24652+00:00,2026-06-03T01:20:34.8408733+00:00,Rosie Wagner,rosiewagner@live.com,,Seller
-"Graham / NA - 12474 Silver Rock Rd, Pinon Hills, CA 92372",RS,Aaron Glines,Aaron Glines,"16,972",2026-04-03T16:18:57.9798625+00:00,2026-04-03T16:36:41.4882652+00:00,NA,,,Seller
+"Graham / NA - 12474 Silver Rock Rd, Pinon Hills, CA 92372",RS,Trevor Laramee,Aaron Glines,"16,972",2026-04-03T16:18:57.9798625+00:00,2026-04-03T16:36:41.4882652+00:00,NA,,,Seller
 Duke / Brewington CO #01,RS,Aaron Glines,Aaron Glines,629.9,2026-04-03T16:57:35.0292607+00:00,2026-04-06T19:31:09.1107913+00:00,Jamerson Brewington,thebrewingtongroup@gmail.com,Keller Williams Main Line,Change order
 Change Order,ATL,Matt Mitchell,Aaron Glines,"1,019.37",2026-04-03T17:12:13.4868463+00:00,2026-04-06T21:04:30.3767129+00:00,TBD,,,Change order
 "Turkel / Mullen - 10735 Bloomfield St, Unit 5, North Hollywood, CA 91602",LA,Trevor Laramee,Aaron Glines,"15,806.61",2026-04-08T14:10:35.4822074+00:00,2026-04-22T22:08:49.0861714+00:00,Laura Mullen,laura.mullen@sothebys.realty,Sotheby's International Realty,Seller
@@ -108,7 +108,7 @@ Change Order,LA,Trevor Laramee,Aaron Glines,"5,093.2",2026-06-26T19:44:08.923673
 Life / Gardner Change Order #4,NVA,Joshua Collins,Aaron Glines,857.04,2026-06-30T21:30:42.1344817+00:00,2026-06-30T21:41:40.4535008+00:00,Steve Gardner,steve@thegardnerteam.com,,Change order
 "Stewart / Jagielo - 2916 Hermance Drive NE Brookhaven, GA 30319",ATL,Christine Harvey,Aaron Glines,"10,292",2026-07-02T12:30:02.8730282+00:00,2026-07-06T15:19:26.1991483+00:00,Jen Jagielo,jen.jagielo@bhhsgeorgia.com,BHHS Georgia Properties,Seller
 Poms / Vanderhyde Change Order #1,NVA,Joshua Collins,Aaron Glines,"3,651.66",2026-07-02T16:38:55.6037479+00:00,2026-07-02T17:21:17.7464461+00:00,Christine Vanderhyde,cvanderhyde@lnf.com,,Change order
-"Chatmon / Galloway - 1025 Rays Road, Stone Mountain, 30084",ATL,Christine Harvey,Aaron Glines,"42,998.79",2026-07-06T17:45:02.418157+00:00,2026-07-28T23:11:42.1690525+00:00,Mark Galloway,mark.galloway@galyangrouprealty.com,,Seller
+"Chatmon / Galloway - 1025 Rays Road, Stone Mountain, GA 30084",ATL,Christine Harvey,Aaron Glines,"42,998.79",2026-07-06T17:45:02.418157+00:00,2026-07-28T23:11:42.1690525+00:00,Mark Galloway,mark.galloway@galyangrouprealty.com,,Seller
 "Devero / Mago - 3225 Old Hickory Trail, Forrest Hill, TX 76140",DAL,Miguel Picart,Aaron Glines,"24,895.63",2026-07-07T03:31:59.3326002+00:00,2026-08-15T17:36:33.3455158+00:00,Zen Mago,zen@zenmago.com,eXp Realty,Seller
 "Fortune / Crook - 10425 myrna street, 91601",LA,Trevor Laramee,Aaron Glines,"32,339.13",2026-07-07T14:40:06.8020621+00:00,2026-07-27T19:45:46.855822+00:00,Felipe Crook,felipe@felipecrook.com,,Seller
 Change Order,ATL,Christine Harvey,Aaron Glines,409.53,2026-07-09T02:58:54.8411316+00:00,2026-07-09T15:05:39.1176862+00:00,Cheneil Lowe,cheneil.lowe@metrobrokers.com,Metro Brokers,Change order
@@ -118,12 +118,24 @@ Change Order,LA,Trevor Laramee,Aaron Glines,"40,527.02",2026-07-14T16:49:23.6647
 Hawkins / Nordlinger Line Item Change #1,NVA,Joshua Collins,Aaron Glines,"'-435.8",2026-07-14T18:35:29.3832451+00:00,2026-07-16T17:17:14.2503098+00:00,Lorraine Barclay Nordlinger,lnordlinger@ttrsir.com,,Change order
 Hawkins / Nordlinger Line Item Change #2,NVA,Joshua Collins,Aaron Glines,"'-1,573.96",2026-07-14T18:53:56.2249986+00:00,2026-07-16T17:17:22.6739768+00:00,Lorraine Barclay Nordlinger,lnordlinger@ttrsir.com,,Change order
 Hawkins / Nordlinger Change Order #1 ( new work) ,NVA,Joshua Collins,Aaron Glines,"3,098.89",2026-07-14T19:17:34.8547435+00:00,2026-07-16T17:17:31.8448819+00:00,Lorraine Barclay Nordlinger,lnordlinger@ttrsir.com,,Change order
+"CRUNK / CRUNK - 13257 POPPY HILL LN, FORT WORTH, TX 76244",DAL,Ray Santibanez,Aaron Glines,"19,891.31",2026-07-15T20:00:05.9705914+00:00,2026-09-01T20:19:19.3906394+00:00,SHANNA CRUNK,corona.crunk@yahoo.com,,Seller
 Change Order,ATL,Christine Harvey,Aaron Glines,"'-100",2026-07-20T21:59:54.4877454+00:00,2026-07-21T22:47:12.5741705+00:00,Cheneil Lowe,cheneil.lowe@metrobrokers.com,Metro Brokers,Change order
 Robinson / Zadareky - 200 Pine St in Alexandria VA 22305,NVA,Joshua Collins,Aaron Glines,"16,000",2026-07-24T13:58:22.3600495+00:00,2026-08-17T19:54:43.8814522+00:00,David Zadareky,david.zadareky@compass.com,Compass,Seller
 Leonard / Glauner Change Order #1,NVA,Joshua Collins,Aaron Glines,"1,823.38",2026-07-24T17:33:54.0558893+00:00,2026-07-24T21:33:55.1246812+00:00,Brandy Glauner,brandy.glauner@c21nm.com,,Change order
 Change Order,LA,Trevor Laramee,Aaron Glines,"15,523.71",2026-07-28T21:04:18.0140725+00:00,2026-08-05T13:40:26.7973613+00:00,Juliana Maziarz,juliana@thegirlandthehome.com,,Change order
 "Balfour / O'Neill - 390 Colony Cove, 30022",ATL,Christine Harvey,Aaron Glines,"35,536.44",2026-07-28T21:10:06.0951663+00:00,2026-08-11T21:13:54.003001+00:00,Ann O'Neill,anno9245@gmail.com,,Seller
 "Lintz / Lintz - 2800 Paseo Cancun, West Covina, CA 91792",LA,Trevor Laramee,Aaron Glines,"24,831.46",2026-07-29T18:17:03.4741436+00:00,2026-08-01T05:07:40.0052217+00:00,Sonia Lintz,a.sonialintz@gmail.com,,Seller
+"Arthurs / Wichmann - 2945 Saddlebrook Glen Drive, Cumming, GA 30041",ATL,Christine Harvey,Aaron Glines,"67,661.53",2026-07-30T15:35:02.9269297+00:00,2026-09-11T01:22:06.0009087+00:00,Cher Wichmann,cher.wichmann@cbrealty.com,KELLER WILLIAMNS,Seller
+"Enderle / Turrentine - 2044 Via Esperanza, San Dimas, CA 91773",LA,Trevor Laramee,Aaron Glines,"43,083.89",2026-08-04T13:44:59.799732+00:00,2026-09-01T21:13:35.8352419+00:00,Stephanie Turrentine,hello@yourdesertlife.org,,Seller
 "Zierten / Zierten - 15211 NE 6th pl, Bellevue Wa 98007",SEA,Bill Kirkland,Aaron Glines,"15,266.33",2026-08-10T18:05:44.1752926+00:00,2026-08-11T20:26:29.4127948+00:00,Thomas Zierten,,,Seller
 Final Credits,BAL,Lisa Tucker,Aaron Glines,"'-4,650.67",2026-08-11T14:50:29.3451088+00:00,2026-08-11T15:48:02.2935702+00:00,LaKeta Burgess,laketa@nexthomeforward.com,,Change order
+Change Order,LA,Trevor Laramee,Aaron Glines,"2,792.36",2026-08-13T19:31:15.4402258+00:00,2026-09-04T21:42:16.1817258+00:00,Sonia Lintz,a.sonialintz@gmail.com,,Change order
 Change Order,LA,Aaron Glines,Aaron Glines,"'-500",2026-08-13T20:23:41.342354+00:00,2026-08-13T21:58:11.9709274+00:00,Adonis Curammeng,adonis.curammeng@exprealty.com,eXp Realty,Change order
+"Denning / Howell - 504 Blanco DR, Mesquite, TX 75150",DAL,Ray Santibanez,Aaron Glines,"14,960.2",2026-08-20T16:05:20.4506874+00:00,2026-09-22T19:39:27.2981753+00:00,Keith Howell,keith.howell@realtyofamerica.com,Realty of America,Seller
+"Berry / Odegaard-Fox - 3132 187th pl se, bothell",SEA,Bill Kirkland,Aaron Glines,"33,033.02",2026-08-20T22:30:03.3550828+00:00,2026-09-10T04:02:55.1828114+00:00,Sarah Odegaard-Fox,sarahodegaardfox@gmail.com,,Seller
+Kaul / Russel - 4716 Dane Ridge Circle VA,NVA,Joshua Collins,Aaron Glines,"5,506.38",2026-08-22T17:33:16.3358346+00:00,2026-09-03T23:49:48.9727858+00:00,Jared Russel,jared@dmvliving.com,,Seller
+"Stratton / Garner - 120 Newport Way Nw #4, Issiquah Wa ",SEA,Bill Kirkland,Aaron Glines,"17,136.83",2026-08-26T00:51:34.742617+00:00,2026-09-09T19:31:43.3786893+00:00,Mindy Garner,mindy@eldermove.com,Coldwell Banker Bain,Seller
+"Zierten / TBD - 15211 NE 6th Pl, Bellevue, WA 98007",SEA,Bill Kirkland,Aaron Glines,714.74,2026-09-03T18:59:25.0029966+00:00,2026-09-16T18:43:40.629405+00:00,TBD,,,Seller
+Change Order,LA,Trevor Laramee,Aaron Glines,"3,853.95",2026-09-09T22:01:38.0116898+00:00,2026-09-30T19:37:48.3266328+00:00,Stephanie Turrentine,hello@yourdesertlife.org,,Change order
+Privette / Carmical - 9652 Thackery Square fairfax va ,NVA,Joshua Collins,Aaron Glines,"25,541.72",2026-09-11T13:11:32.3133965+00:00,2026-09-23T16:02:05.7109972+00:00,Jillian Carmical ,jillian@jilliancarmical.com,,Seller
+Change Order#2,LA,Trevor Laramee,Aaron Glines,"3,222.1",2026-09-28T22:56:00.9179849+00:00,2026-09-30T16:56:07.5219178+00:00,Felipe Crook,felipe@felipecrook.com,,Change order

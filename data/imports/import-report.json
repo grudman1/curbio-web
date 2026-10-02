@@ -1,16 +1,17 @@
 {
-  "snapshotDate": "2026-08-29",
+  "snapshotDate": "2026-10-01",
   "mappingVersion": "1.0.0",
-  "rowsImported": 852,
+  "rowsImported": 952,
   "join": {
-    "attributionRows": 852,
-    "leadsRows": 852,
-    "leadsJoined": 852,
+    "attributionRows": 952,
+    "droppedAfterAsOf": 3,
+    "leadsRows": 955,
+    "leadsJoined": 952,
     "attrRowsWithoutLeadsRow": [],
     "leadKeyDuplicates": [],
-    "salesRows": 128,
-    "salesProjects": 57,
-    "salesChangeOrders": 71,
+    "salesRows": 140,
+    "salesProjects": 66,
+    "salesChangeOrders": 74,
     "salesUnjoinable": [
       {
         "project": "Trust / Maziarz - 10208 Olney St El Monte, 91731",
@@ -103,7 +104,7 @@
         "reason": "no agent email on the change order"
       }
     ],
-    "wonDealsWithRevenue": 52,
+    "wonDealsWithRevenue": 61,
     "salesRowsWithoutWonDate": []
   },
   "revenue": {
@@ -115,7 +116,8 @@
       "2026-05": 185811.63,
       "2026-06": 369364.31,
       "2026-07": 243256.44,
-      "2026-08": 126902.9
+      "2026-08": 126902.9,
+      "2026-09": 237398.03
     },
     "attributedByWonMonth": {
       "2026-01": 5536.85,
@@ -125,7 +127,8 @@
       "2026-05": 183712.43,
       "2026-06": 369364.31,
       "2026-07": 243256.44,
-      "2026-08": 126902.9
+      "2026-08": 126902.9,
+      "2026-09": 237398.03
     },
     "unattributedByWonMonth": {
       "2026-01": 37303.19,
@@ -135,25 +138,26 @@
       "2026-05": 2099.2,
       "2026-06": 0,
       "2026-07": 0,
-      "2026-08": 0
+      "2026-08": 0,
+      "2026-09": 0
     },
-    "total": 1684702.1,
+    "total": 1922100.13,
     "negativeRows": 12
   },
   "attribution": {
-    "measured": 55,
-    "inferred": 758,
+    "measured": 78,
+    "inferred": 835,
     "inferredByDate": 39,
     "channelBefore": {
-      "(none)": 796,
-      "email": 46,
+      "(none)": 870,
+      "email": 69,
       "partnership": 7,
-      "direct": 3
+      "direct": 6
     },
     "channelAfter": {
-      "direct": 639,
-      "partnership": 123,
-      "email": 90
+      "direct": 693,
+      "partnership": 134,
+      "email": 125
     },
     "utmWhitespaceTrimmed": 7,
     "unknownMarketCodes": []
@@ -161,22 +165,22 @@
   "correlation": {
     "logicalCampaigns": 385,
     "collapsedDuplicateSends": 198,
-    "emailLeadsEligible": 41,
+    "emailLeadsEligible": 53,
     "matched": 39,
     "ambiguous": 15,
     "preSendDataLeads": 0,
     "topCampaigns": [
       [
         "lonewolf",
-        45
+        48
+      ],
+      [
+        "KWOfferings",
+        33
       ],
       [
         "Long&FosterLift",
         32
-      ],
-      [
-        "KWOfferings",
-        26
       ],
       [
         "Exp",
@@ -187,11 +191,15 @@
         9
       ],
       [
-        "easytip-jul",
-        7
+        "nottoomuch-sep",
+        8
       ],
       [
         "exp-partner-landingpage",
+        7
+      ],
+      [
+        "easytip-jul",
         7
       ],
       [
@@ -199,19 +207,19 @@
         6
       ],
       [
-        "price-jul",
-        5
-      ],
-      [
         "phototax-aug",
         5
       ],
       [
-        "july4th-jul",
+        "price-jul",
+        5
+      ],
+      [
+        "closethegap-sep",
         4
       ],
       [
-        "3changes-aug",
+        "summerend-aug",
         4
       ],
       [
@@ -219,12 +227,8 @@
         4
       ],
       [
-        "agent-won",
-        3
-      ],
-      [
-        "quick-tip",
-        3
+        "july4th-jul",
+        4
       ]
     ]
   }

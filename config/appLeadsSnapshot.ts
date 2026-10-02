@@ -3,7 +3,8 @@
 //
 // appLeadsSnapshot.json is a one-time, PII-stripped export of every estimate
 // request in app.curbio.com YTD, joined and CHANNEL-BACKFILLED at import by
-// scripts/import-app-snapshot.ts (source: "app-import", snapshot 2026-08-29).
+// scripts/import-app-snapshot.ts (source: "app-import"; `asOf` in the JSON —
+// refreshed from each app export, see docs/app-snapshot-refresh.md).
 // Every deal in it is QUALIFIED by definition — a request for an estimate,
 // nothing else. It contains no Engaged data, no spend, and no first-touch
 // history, so those metrics stay em-dashes; this file never invents them.
