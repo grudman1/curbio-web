@@ -69,6 +69,10 @@ export const ADMIN_NAV: NavTopItem[] = [
       { href: "/admin/site/forms", label: "Forms", grain: "day" },
       { href: "/admin/site/links", label: "Links", grain: "day" },
       { href: "/admin/leads", label: "Leads", grain: "day" },
+      // Event prize drawings (eXpcon). Beside Leads because that is what it
+      // is next to: entries are Engaged, and the ones handed to an HSM show
+      // up on the Leads screen as well.
+      { href: "/admin/giveaway", label: "Giveaway", grain: "day" },
     ],
   },
   {

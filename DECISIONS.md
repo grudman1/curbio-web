@@ -456,3 +456,151 @@ DoNotWork" / `testcampaign-lasttouch-v2`). Detection keys on the NAME prefix
 first — campaign values also arrive from real links, name is the convention
 we control. This is what lets the admin exclude test leads from every count
 by rule instead of by patching per-lead patterns after each intake test.
+
+## A giveaway entry is not a lead
+
+The eXpcon prize drawing (`/expcon`, `config/giveaways/`) has its own form, its
+own endpoints (`/api/giveaway/*`) and its own store (`giveaway:<slug>:*` keys,
+`lib/giveaway/store.ts`). It does **not** post to `/api/lead`, and that route
+was not edited to make room for it.
+
+- **Why not a campaign page.** The campaign template deliberately cannot vary
+  the form or the `/api/lead` contract — that is what keeps `/exp` and
+  `/lp/sell` from drifting. A drawing needs a market dropdown, a 90-day
+  question, an in-place confirmation and a closing time. Building it beside
+  the template, sharing only the plumbing (attribution capture, channel rules,
+  markets, HSM lookup), means the two pages that earn every week changed by
+  zero bytes.
+- **One entry per email.** The store is a hash keyed by the normalised
+  address, written with `HSETNX`. A second submission updates the first; it
+  cannot become a second entry or a second deal. This matters because the app
+  does not deduplicate a lead with a market and no ZIP — every POST is a deal.
+- **Most entrants never reach the app.** Only an in-market entrant who answers
+  "Yes", or who books a call, is handed to an HSM (plus anyone in a market who
+  uses the form after the drawing, when it is a plain contact form). Everyone
+  else is an entry and an email-list contact — and since 2026-10-01 the ones
+  handed to an HSM are email-list contacts too (see the next section). An
+  entrant handed over is ALSO written to `leads:v1` / `leads:delivery:v1` in
+  the existing shapes, so the Leads screen and the CRM-failure banner see it
+  like any other lead.
+- **`lib/giveaway/appDelivery.ts` duplicates `/api/lead`'s delivery, on
+  purpose.** The alternative was a new optional field and a skip-the-CRM
+  branch in the lead route days before a conference. If `/api/lead` changes
+  the stored record, the delivery record or the app payload, change both.
+  After eXpcon the right fix is one shared delivery module.
+- **One writer per person.** Every change to an entry is read → modify →
+  write of one JSON value, so each runs inside a per-email lock
+  (`withEntryLock`, a `SET NX PX`) and reads the entry after it holds the
+  lock. Without it, two overlapping requests for one person — a retry on bad
+  Wi-Fi, a booking landing mid-submit — both read "not sent yet" and both post
+  to the app. Six simultaneous submissions now produce one deal.
+- **A hand-off is written down before it is made.** The entry is saved as
+  `sending`, then posted, then saved as `sent` or `failed`. The app's intake
+  is given 8 seconds. A hand-off that failed, timed out, or was cut off
+  mid-flight is **never repeated automatically** — same reason as the dedupe
+  note: repeating a request that actually landed makes a second deal. It is
+  alerted, shown under "Needs attention", and retried by an owner from
+  `/admin/giveaway` after looking in the app. Every attempt for a person
+  re-uses one lead id, and the `leads:v1` row is written once per id, so the
+  person stays one row and their delivery record flips from failed to
+  delivered.
+- **No "New lead" email per entrant.** Those share a Resend account with
+  `/api/lead`'s alerts; a busy afternoon at a booth must not spend the
+  allowance that reports a real lead failing. The failure alert is always
+  sent. `leadEmails: "every-lead"` in the giveaway's settings turns the
+  per-lead email on.
+- **Who is never drawn is decided once, at creation.** Test names
+  (`ZZTEST …`, `Test …`) and Curbio addresses. Not re-evaluated on a
+  re-submission: the form is public, so otherwise anyone who knew a rival's
+  email could re-submit it as "Test" and remove them from the drawing. A
+  Curbio address is also not sent to the app (it rejects them with a 403) or
+  added to ActiveCampaign.
+- **The 90-day answer travels in `workDetails`** (the app's "requested work"),
+  behind a switch on the entries screen that is off until Rich confirms the
+  field. Never `Message`.
+
+## The giveaway writes to ActiveCampaign
+
+Until now this app only read ActiveCampaign (the contact mirror, the email
+sync crons). `lib/giveaway/emailList.ts` is the first write: an entrant is
+added to the opt-in lists and tagged.
+
+- **Everyone, including "Yes" leads (decided 2026-10-01).** Every entrant
+  goes to ActiveCampaign, and the ones an HSM is also working go to both. The
+  app is where a person is worked; the list is where they are nurtured; the
+  answer tag (`expcon-2026-listing-yes`) is what lets Marketing's automations
+  treat the two differently. The first version left the "Yes" leads off the
+  list; `routing.emailList` is the one-line switch between the two. Only a
+  Curbio address is skipped.
+- **Where.** Two lists per contact. Their market's list, with the `Market`
+  field set (`config/emailLists.ts`, checked against the live account
+  2026-10-01; Seattle has no list, and an out-of-area agent has no market, so
+  both go to the Master Contact List) — and the **Engaged** list, every
+  entrant, in every market.
+- **The Engaged list is found by name, and the sync fails closed without it.**
+  The list did not exist on 2026-10-01 (only lists 3–9), so there was no id to
+  write down. `AC_ENGAGED_LIST_NAME` names it; ActiveCampaign's name filter is
+  a substring match, so the match is exact in code. If it cannot be found, the
+  sync writes NOTHING for that entry — no contact, no market list, no tags —
+  rather than leaving people on a market list and off Engaged. The entry is
+  kept, marked failed with the reason, and "Sync now" completes it once the
+  list exists. Pin an id in place of the name if the list is ever renamed
+  during an event.
+- **Tags.** `expcon-2026`, `expcon-2026-market-<slug>`,
+  `expcon-2026-listing-<yes|maybe|not-yet>`. A changed answer swaps the tag.
+- **Consent.** A notice line under the submit button ("You'll also receive
+  occasional emails from Curbio. Unsubscribe anytime."), not a checkbox.
+  CAN-SPAM is an opt-out law and does not ask for a checkbox, and the drawing
+  is US-only by its rules — an engineering reading, not legal advice; the
+  rules reviewer confirms it. A page aimed outside the US would need the
+  checkbox.
+- **A prior unsubscribe wins.** Anyone who has ever unsubscribed from, or
+  bounced on, any list is left completely alone: not re-subscribed, not
+  updated, not tagged. A notice line is not consent to undo an opt-out.
+- **An existing subscriber keeps their own record.** The form is public —
+  anyone can type anyone's email — so for a contact already active on a list,
+  the only writes are the three tags and the Engaged list. Their name, phone,
+  Market and market-list memberships stay as they were. Only a contact new to
+  ActiveCampaign is created from what was typed.
+- **It runs after the response** (`after()`), because it is several calls to a
+  rate-limited third party and must not sit between a tap and "You're in!".
+  Its outcome is written back onto the entry, and the entries screen can
+  re-run whatever failed.
+
+## A giveaway is live only on Production
+
+Vercel's Preview environment shares Production's Upstash, Resend key and CRM
+webhook (`vercel env ls`, 2026-10-01), so a form submitted on a preview link
+is by default a real submission. For a page that exists to be clicked through
+on a preview before it goes live, that is the wrong default.
+
+`lib/giveaway/mode.ts` therefore makes delivery live only when
+`VERCEL_ENV === "production"`. Everywhere else entries go under separate
+`:sandbox` keys, nothing is posted to the app, nothing is sent to
+ActiveCampaign, no notification is emailed, and each entry records what WOULD
+have happened.
+
+`GIVEAWAY_DELIVERY` overrides the DELIVERY half only. `live` is for local runs
+against mock services. `sandbox` on production pauses deliveries without a
+deploy — and deliberately does not move the entries: someone who enters while
+it is set is still in the real drawing, shown as "(sandbox)", and is sent from
+the entries screen once it is lifted. A brake that diverted entrants into a
+different list would quietly remove them from a prize drawing.
+
+This applies to the giveaway only. `/api/lead` behaves on a preview exactly as
+it always has — which is still worth knowing before testing a lead form there.
+
+## "Giveaway", never "raffle"
+
+Utah prohibits gambling, raffles included, and eXpcon 2026 is in Salt Lake
+City. Every string a visitor can read — page, buttons, confirmation, Official
+Rules — says "giveaway" or "drawing".
+
+The internal campaign tag began as `expcon-raffle-oct`, because the redirect
+was being set up with it before the wording was settled. It was renamed
+**`expcon-giveaway-oct`** (2026-10-01) before launch: the tag sits in the
+address bar for a moment after a QR scan, so it is visible after all. The page's
+client components also receive `publicGiveaway()`
+(`config/giveaways/types.ts`), which leaves the routing rules and tags out, so
+none of them is in the page source either. The server applies the tag when a
+visitor arrives without one.

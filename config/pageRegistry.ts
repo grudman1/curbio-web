@@ -119,6 +119,26 @@ function implementedPages(): RegistryEntry[] {
     indexed: indexedFor("/staging-design-dc"),
     derivedFrom: "config/campaigns/staging-design-dc.ts",
   });
+  // stub until Gavin flips it — see AGENTS.md "Page registry". An event page:
+  // never indexed, and not the campaign template (config/giveaways/).
+  out.push({
+    path: "/expcon",
+    group: "site",
+    title: "eXpcon 2026 Giveaway",
+    status: "stub",
+    indexed: indexedFor("/expcon"),
+    derivedFrom: "config/giveaways/expcon.ts",
+    note: "stub until the go-live test passes and the rules are reviewed — prize photos and Rick's stage time still to come",
+  });
+  out.push({
+    path: "/expcon/rules",
+    group: "site",
+    title: "eXpcon 2026 Giveaway — Official Rules",
+    status: "stub",
+    indexed: indexedFor("/expcon/rules"),
+    derivedFrom: "config/giveaways/expcon.ts",
+    note: "stub until legal fills the sponsor name, address and prize values (marked in amber on the page)",
+  });
   out.push({
     path: "/exp/m/:market",
     group: "site",
@@ -216,6 +236,16 @@ function implementedPages(): RegistryEntry[] {
     indexed: false,
     derivedFrom: "app/(site)/admin/(dashboard)/channels/email/promotion",
     note: "the cold-to-warm gate: Instantly Interested, not yet an active AC subscriber. Manual approval only",
+  });
+  // stub until Gavin flips it — see AGENTS.md "Page registry".
+  out.push({
+    path: "/admin/giveaway",
+    group: "internal",
+    title: "Giveaway entries",
+    status: "stub",
+    indexed: false,
+    derivedFrom: "app/(site)/admin/(dashboard)/giveaway",
+    note: "owner-only: entries, routing, booth bonus, CSV export and the drawing. Booth staff see the bonus tool only",
   });
   out.push({
     path: "/admin/experiments",
