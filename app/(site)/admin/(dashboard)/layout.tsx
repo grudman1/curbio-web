@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { readRecentLeads, recentCrmFailures, type LeadRow } from "@/lib/adminLeads";
 import { listPendingUsers, type AdminUser } from "@/lib/adminAuth";
-import { SNAPSHOT_MONTHS } from "@/config/appLeadsSnapshot";
+import { hubMonths } from "@/lib/leadStore";
 import { logout } from "../login/actions";
 import { approveUserAction, denyUserAction } from "../actions";
 import { AlertBanner, type AlertEntry } from "./AlertBanner";
@@ -105,7 +105,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     // root — admin's names, applied inside admin. The marketing site's global
     // --font-serif / --font-sans stay exactly as app/layout.tsx sets them.
     <OpsShell
-      months={SNAPSHOT_MONTHS}
+      months={hubMonths()}
       user={me}
       leadCount={rows.length || undefined}
       signOut={logout}

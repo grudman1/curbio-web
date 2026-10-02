@@ -4,12 +4,12 @@ import { MARKETS } from "@/config/markets";
 import {
   REVENUE_BY_WON_MONTH,
   SNAPSHOT_AS_OF,
-  SNAPSHOT_MONTHS,
   aggregateSnapshot,
   channelForDeal,
   funnelOrdinal,
   isClosed,
   marketKeyForCode,
+  OTHER_MARKETS_KEY,
   revenueForMonths,
   wonProjectsForMonths,
   type SnapshotDeal,
@@ -20,8 +20,8 @@ import {
   QUALIFIED_TARGET_PER_MARKET_PER_MONTH,
 } from "@/config/marketingHub";
 import { CHANNEL_PLAN } from "@/config/channelPlan";
-import { readRecentLeads, recentCrmFailures } from "@/lib/adminLeads";
-import { mergedSnapshotDeals } from "@/lib/leadStore";
+import { readRecentLeads } from "@/lib/adminLeads";
+import { hubMonths, leadFeed } from "@/lib/leadStore";
 import { computeUndocumentedCampaigns } from "@/lib/campaignOrphans";
 import type { Channel } from "@/lib/channels";
 import { paceRead } from "@/app/(site)/admin/_ui/pacing";
@@ -105,6 +105,12 @@ export const dynamic = "force-dynamic";
 /** How many recent leads to scan for delivery outcomes and campaign tags. */
 const SCAN = 200;
 
+/** A deal-month is "still maturing" until this many days after it ends. From
+ *  the app export: 52 won deals took a median 19 days to first win and 90%
+ *  were won inside 52, so a cohort is not readable until roughly 60 days past
+ *  its last day. Before that its close rate is a floor, not a rate. */
+const MATURITY_DAYS = 60;
+
 /** A snapshot older than this stops being "current" and says so. */
 const STALE_AFTER_DAYS = 10;
 
@@ -155,16 +161,17 @@ function cutWindow(
 
 /** The N months immediately before `monthSet`, for a like-for-like comparison
  *  window. Shorter than N near the start of the snapshot; empty at the start. */
-function priorWindow(monthSet: readonly string[]): string[] {
-  const firstIdx = SNAPSHOT_MONTHS.indexOf(monthSet[0]);
+function priorWindow(monthSet: readonly string[], all: readonly string[]): string[] {
+  const firstIdx = all.indexOf(monthSet[0]);
   if (firstIdx <= 0) return [];
-  return SNAPSHOT_MONTHS.slice(Math.max(0, firstIdx - monthSet.length), firstIdx);
+  return all.slice(Math.max(0, firstIdx - monthSet.length), firstIdx);
 }
 
 /** Qualified per month across the whole snapshot, for KPI sparklines. */
 function monthlySeries(
   pick: (deals: SnapshotDeal[]) => number,
-  deals: SnapshotDeal[]
+  deals: SnapshotDeal[],
+  allMonths: readonly string[]
 ): SparkPoint[] {
   const byMonth = new Map<string, SnapshotDeal[]>();
   for (const d of deals) {
@@ -172,7 +179,7 @@ function monthlySeries(
     list.push(d);
     byMonth.set(d.month, list);
   }
-  return SNAPSHOT_MONTHS.map((ym) => ({ t: ym, v: pick(byMonth.get(ym) ?? []) }));
+  return allMonths.map((ym) => ({ t: ym, v: pick(byMonth.get(ym) ?? []) }));
 }
 
 const DASH = "—";
@@ -201,8 +208,10 @@ export default async function HomeScreen({
   searchParams: Promise<{ t?: string; a?: string }>;
 }) {
   const sp = await searchParams;
-  const tf = parseTimeframe(sp.t, SNAPSHOT_MONTHS, "month");
-  const months = monthsFor(tf, SNAPSHOT_MONTHS);
+  // Snapshot months through the CURRENT month, so the picker opens on now.
+  const allMonths = hubMonths();
+  const tf = parseTimeframe(sp.t, allMonths, "month");
+  const months = monthsFor(tf, allMonths);
 
   // cache()d in session.ts — the layout reads this in the same request, so
   // this is a shared Redis hit rather than a second one.
@@ -211,9 +220,13 @@ export default async function HomeScreen({
 
   // The merged store: channel-backfilled import + post-snapshot live leads —
   // the same read Attribution, the Email page and Performance make.
-  const deals = await mergedSnapshotDeals();
+  const feed = await leadFeed();
+  const deals = feed.deals;
+  // How far the data is good for: today while the live read is healthy, else
+  // the snapshot date. Pace, partial-month cuts and freshness all read this.
+  const dataAsOf = feed.asOf;
   const agg = aggregateSnapshot(new Set(months), "all", deals);
-  const asOfDay = Number(SNAPSHOT_AS_OF.slice(8, 10));
+  const asOfDay = Number(dataAsOf.slice(8, 10));
 
   // ── company pace over the selected window ────────────────────────────────
   const qualified = MARKETS.reduce(
@@ -232,9 +245,9 @@ export default async function HomeScreen({
   // count, the company EXPECTATION is defined the same way: round once, per
   // market, then multiply. Nothing else may compute an expectation.
   const expectedPerMarket =
-    paceRead(0, months, SNAPSHOT_AS_OF, QUALIFIED_TARGET_PER_MARKET_PER_MONTH)?.expected ?? 0;
+    paceRead(0, months, dataAsOf, QUALIFIED_TARGET_PER_MARKET_PER_MONTH)?.expected ?? 0;
   const companyExpected = expectedPerMarket * MARKETS.length;
-  const paceBase = paceRead(qualified, months, SNAPSHOT_AS_OF, companyTargetPerMonth);
+  const paceBase = paceRead(qualified, months, dataAsOf, companyTargetPerMonth);
   // state and coverage come from paceRead unchanged — only the expectation is
   // re-derived, so the thresholds stay defined in exactly one place.
   const pace = paceBase && {
@@ -249,9 +262,9 @@ export default async function HomeScreen({
   // to be measured over that window or the title is wrong.
   const latestMonth = months[months.length - 1] ?? null;
   // The as-of day truncates only the as-of month; earlier months are complete.
-  const isPartial = latestMonth === SNAPSHOT_AS_OF.slice(0, 7);
+  const isPartial = latestMonth === dataAsOf.slice(0, 7);
   const cutDay = isPartial ? asOfDay : 31;
-  const priorMonths = priorWindow(months);
+  const priorMonths = priorWindow(months, allMonths);
   const latest = months.length ? cutWindow(months, cutDay, deals) : null;
   const prior = priorMonths.length ? cutWindow(priorMonths, cutDay, deals) : null;
   const priorLabel = priorMonths.length
@@ -261,7 +274,12 @@ export default async function HomeScreen({
     : null;
 
   // ── KPI row ──────────────────────────────────────────────────────────────
-  const closed = Object.values(agg.cells).reduce((s, c) => s + c.closed, 0);
+  // Active markets only, like `qualified` above — closed markets (San Diego)
+  // aggregate under OTHER_MARKETS_KEY and never count toward the headline.
+  const closed = Object.entries(agg.cells).reduce(
+    (s, [key, c]) => (key.startsWith(`${OTHER_MARKETS_KEY}|`) ? s : s + c.closed),
+    0
+  );
   // Booked revenue reads the authoritative won-date series, NOT the sum of the
   // market × channel cells. The cells hold only revenue that joined to a lead;
   // the series counts every sales row, including credits and the ones with no
@@ -269,15 +287,27 @@ export default async function HomeScreen({
   const revenue = revenueForMonths(new Set(months));
   const wonProjects = wonProjectsForMonths(new Set(months));
   const closeRate = qualified > 0 ? closed / qualified : null;
+  // Close rate is by lead-created month: of the leads that ARRIVED in the
+  // window, how many won. That reads low until the cohort has had time to
+  // close, so a window containing any month younger than MATURITY_DAYS says so.
+  // (Chosen over "by month the deal closed": that divides wins from older
+  // leads by this month's leads — a rate whose numerator and denominator are
+  // different people, which can pass 100% in a small market.)
+  const maturing = months.some((ym) => {
+    const [y, m] = ym.split("-").map(Number);
+    const monthEnd = Date.UTC(y, m, 0);
+    return Date.parse(dataAsOf) - monthEnd < MATURITY_DAYS * 86_400_000;
+  });
 
-  const qualifiedSpark = monthlySeries((d) => d.length, deals);
+  const qualifiedSpark = monthlySeries((d) => d.length, deals, allMonths);
   const closeRateSpark = monthlySeries(
     (d) => (d.length ? d.filter(isClosed).length / d.length : 0),
-    deals
+    deals,
+    allMonths
   );
   // Won-date series, straight through — a month's bar is the money booked in
   // that month, not the value of the leads created in it.
-  const revenueSpark: SparkPoint[] = SNAPSHOT_MONTHS.map((ym) => ({
+  const revenueSpark: SparkPoint[] = allMonths.map((ym) => ({
     t: ym,
     v: REVENUE_BY_WON_MONTH[ym] ?? 0,
   }));
@@ -315,7 +345,7 @@ export default async function HomeScreen({
   // screen. One control, in the header — and the chart shows where that
   // selection sits in the trend rather than hiding the rest of it.
   const inWindow = new Set(months);
-  const trendMonths: TrendMonth[] = SNAPSHOT_MONTHS.slice(-12).map((ym) => {
+  const trendMonths: TrendMonth[] = allMonths.slice(-12).map((ym) => {
     const cut = cutWindow([ym], 31, deals);
     return {
       ym,
@@ -362,8 +392,6 @@ export default async function HomeScreen({
     readRecentLeads(SCAN),
     computeUndocumentedCampaigns(SCAN),
   ]);
-  const leadRows = leads.configured && !leads.error ? leads.rows : [];
-  const crmFailures = recentCrmFailures(leadRows);
   const storeError = leads.configured && leads.error ? leads.error : null;
 
   const callouts: Callout[] = [];
@@ -383,29 +411,49 @@ export default async function HomeScreen({
     });
   }
 
-  if (crmFailures.length > 0) {
+  // Qualified website leads the app has not confirmed. They ARE counted in the
+  // Qualified card — the person asked for an estimate — so this is the list of
+  // ones to chase, not ones missing from the number. `crmFailures` (the last
+  // 24 hours, newest 200) is a subset and still drives the banner.
+  const attention = feed.attention;
+  if (attention.length > 0) {
+    const by = (s: string) => attention.filter((a) => a.status === s).length;
+    const parts = [
+      by("failed") && `${by("failed")} failed`,
+      by("unroutable") && `${by("unroutable")} with no market or ZIP`,
+      by("unconfirmed") && `${by("unconfirmed")} unconfirmed`,
+      by("not-sent") && `${by("not-sent")} not sent`,
+    ].filter(Boolean);
     callouts.push({
-      key: "crm-failures",
+      key: "needs-attention",
       severity: "error",
-      title: `${crmFailures.length} lead${crmFailures.length === 1 ? "" : "s"} failed CRM delivery in the last 24 hours`,
-      delta: -crmFailures.length,
+      title: `${attention.length} Qualified lead${attention.length === 1 ? "" : "s"} need attention — ${parts.join(", ")}`,
+      delta: -attention.length,
       goodDirection: "up",
       href: "/admin/leads",
       linkLabel: "Leads",
-      atStake: crmFailures.length,
+      atStake: attention.length,
     });
   }
 
-  if (latest && latest.total > 0) {
-    const unattributed = latest.byChannel.direct ?? 0;
+  // THE SAME COUNT AS THE CARD. This used `latest.total` — a window truncated
+  // at the as-of day and spanning every market incl. closed ones — beside a
+  // card counting whole months of active markets, so the page said 123 and
+  // "74 of 122". Both now read `qualified`; the unattributed numerator is the
+  // `direct` cells of the same aggregate.
+  if (latest && qualified > 0) {
+    const unattributed = Object.entries(agg.cells).reduce(
+      (n, [key, cell]) => (key.split("|")[1] === "direct" && !key.startsWith(`${OTHER_MARKETS_KEY}|`) ? n + cell.qualified : n),
+      0
+    );
     if (unattributed > 0) {
-      const share = unattributed / latest.total;
+      const share = unattributed / qualified;
       const priorShare =
         prior && prior.total > 0 ? (prior.byChannel.direct ?? 0) / prior.total : null;
       callouts.push({
         key: "unattributed",
         severity: share >= 0.5 ? "error" : "warning",
-        title: `${unattributed} of ${latest.total} qualified leads have no known channel`,
+        title: `${unattributed} of ${qualified} qualified leads have no known channel`,
         delta: priorShare === null ? null : Math.round((share - priorShare) * 100),
         deltaUnit: "pts",
         goodDirection: "down",
@@ -438,7 +486,10 @@ export default async function HomeScreen({
   const snapshotAge = Math.round(
     (Date.parse(new Date().toISOString().slice(0, 10)) - Date.parse(SNAPSHOT_AS_OF)) / 86_400_000
   );
-  if (Number.isFinite(snapshotAge) && snapshotAge > STALE_AFTER_DAYS) {
+  // Only when the live Redis feed is NOT covering the gap: with it healthy the
+  // snapshot's age is expected, and the card's "Live through" note is the
+  // staleness signal.
+  if (feed.live !== "ok" && Number.isFinite(snapshotAge) && snapshotAge > STALE_AFTER_DAYS) {
     callouts.push({
       key: "snapshot-age",
       severity: "warning",
@@ -494,7 +545,7 @@ export default async function HomeScreen({
       // and the colour was answering the wrong one. The gap's growth is what
       // matters here, and a growing gap is bad, so goodDirection is "down".
       const priorExpectedPerMarket = priorMonths.length
-        ? (paceRead(0, priorMonths, SNAPSHOT_AS_OF, QUALIFIED_TARGET_PER_MARKET_PER_MONTH)
+        ? (paceRead(0, priorMonths, dataAsOf, QUALIFIED_TARGET_PER_MARKET_PER_MONTH)
             ?.expected ?? 0)
         : 0;
       const priorShort =
@@ -548,7 +599,7 @@ export default async function HomeScreen({
     .slice(0, 5);
 
   // ── hero context ─────────────────────────────────────────────────────────
-  const windowLabel = timeframeLabel(tf, SNAPSHOT_MONTHS);
+  const windowLabel = timeframeLabel(tf, allMonths);
 
   // One chip per capability the assistant actually has: diagnosis, copy
   // generation, data Q&A, site/tech. They are the page's statement of what it
@@ -587,6 +638,22 @@ export default async function HomeScreen({
         <OpsMetric
           label="Qualified leads"
           value={qualified.toLocaleString("en-US")}
+          note={
+            <>
+              <div>
+                {feed.live === "ok"
+                  ? feed.liveThrough
+                    ? `Live through ${formatFreshness(feed.liveThrough)}`
+                    : `Live · no new leads since ${formatFreshness(SNAPSHOT_AS_OF)}`
+                  : `Snapshot only · through ${formatFreshness(SNAPSHOT_AS_OF)} · live feed unavailable`}
+              </div>
+              <div>
+                {/* Temporary — until the new website and the CRM API connection are live. */}
+                sell.curbio.com leads only after {formatFreshness(SNAPSHOT_AS_OF)}. curbio.com, phone and
+                manual leads are added at each app export.
+              </div>
+            </>
+          }
           // No "/ 400" here. The Pace card owns the target and shows it against
           // expected-to-date, which is the reading that means something; a bare
           // "122 / 400" invited comparison against the full-year target on a
@@ -605,6 +672,7 @@ export default async function HomeScreen({
         <OpsMetric
           label="Close rate"
           value={closeRate === null ? DASH : `${(closeRate * 100).toFixed(1)}%`}
+          note={maturing ? "Still maturing — recent leads are still being worked" : undefined}
           sparkline={<Sparkline points={closeRateSpark} tone="var(--ops-brand)" />}
           badge={
             priorLabel ? (
@@ -645,7 +713,7 @@ export default async function HomeScreen({
           <div className="col-span-12 xl:col-span-5">
             <OpsCard
               title="Pace"
-              titleTooltip={`Through ${formatFreshness(SNAPSHOT_AS_OF)}`}
+              titleTooltip={`Through ${formatFreshness(dataAsOf)}`}
               fill
               ruled
             >

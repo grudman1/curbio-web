@@ -8,11 +8,9 @@ import {
   OTHER_MARKETS_LABEL,
   revenueAttribution,
   SNAPSHOT_AS_OF,
-  SNAPSHOT_LABEL,
-  SNAPSHOT_MONTHS,
 } from "@/config/appLeadsSnapshot";
 import { REPORT_METRICS, type ReportMetricKey } from "@/config/marketingHub";
-import { mergedSnapshotDeals } from "@/lib/leadStore";
+import { feedLabel, hubMonths, leadFeed } from "@/lib/leadStore";
 
 import { monthsFor, parseAttribution, parseTimeframe, timeframeLabel } from "@/app/(site)/admin/_ui/timeframe";
 import { SurfaceHeader, SurfaceHealth } from "@/app/(site)/admin/_ui/v2/SurfaceHeader";
@@ -39,9 +37,10 @@ export default async function ReportPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const sp = await searchParams;
-  const tf = parseTimeframe(sp.t, SNAPSHOT_MONTHS);
+  const allMonths = hubMonths();
+  const tf = parseTimeframe(sp.t, allMonths);
   const mode = parseAttribution(sp.a);
-  const months = monthsFor(tf, SNAPSHOT_MONTHS);
+  const months = monthsFor(tf, allMonths);
   // ?m= preselects the metric — how funnel-stage clicks land on the grid.
   const initialMetric = REPORT_METRICS.find((m) => m.key === sp.m)?.key as
     | ReportMetricKey
@@ -69,7 +68,8 @@ export default async function ReportPage({
   // only — the same read Home, Attribution and the Email page make. Closed
   // markets (SD) aggregate under one labeled row rather than pretending to
   // be markets.
-  const deals = await mergedSnapshotDeals();
+  const feed = await leadFeed();
+  const deals = feed.deals;
   const agg = aggregateSnapshot(new Set(months), "all", deals);
   // Revenue booked in these months vs. the slice that can be placed in a cell.
   const revenueSplit = revenueAttribution(new Set(months));
@@ -90,15 +90,15 @@ export default async function ReportPage({
         markets={markets}
         hsms={hsms}
         agg={agg}
-        snapshotLabel={SNAPSHOT_LABEL}
+        snapshotLabel={feedLabel(feed)}
         mode={mode}
-        tfLabel={timeframeLabel(tf, SNAPSHOT_MONTHS)}
+        tfLabel={timeframeLabel(tf, allMonths)}
         barMonth={tf.kind === "month" ? tf.ym : null}
         initialMetric={initialMetric}
         sourceBreakdowns={cellSourceBreakdowns(new Set(months), deals)}
         revenueTotal={revenueSplit.total}
         revenueUnattributed={revenueSplit.unattributed}
-        stale={Date.now() - Date.parse(`${SNAPSHOT_AS_OF}T00:00:00Z`) > 7 * 86_400_000}
+        stale={feed.live !== "ok" && Date.now() - Date.parse(`${SNAPSHOT_AS_OF}T00:00:00Z`) > 7 * 86_400_000}
       />
       <SurfaceHealth surface={surface} />
     </>
