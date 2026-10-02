@@ -48,9 +48,10 @@ Rules the page follows (Attribution Spec v3.3):
 4. **Copy follows the tags.** A visitor with no `utm_source` (the booth QR) sees
    "Enjoying your Dirty Soda? That one's on Curbio. Enter in 20 seconds."
    Anyone who arrived through a tagged link sees "Can't make it to Salt Lake?
-   You can still enter." (`copy.hero.body` / `bodyRemote`.) The prerendered page
-   says the Dirty Soda line, so a tagged visitor sees it swap in the first
-   moment after the page loads.
+   You can still enter. Enter in 20 seconds." (`copy.hero.body` /
+   `bodyRemote`.) The line is invisible until the browser has looked at the
+   URL's tags, then fades in — so nobody sees the wrong one flash. Without
+   JavaScript it stays hidden.
 
 `curbio.com/exp` losing its tags is **not** fixed in WordPress. It is fixed in
 code after the show (section 9).
@@ -214,7 +215,7 @@ Use names starting `ZZTEST` and emails like `zztest+yes1@gmail.com` (never an
 | T7 | New email, **My market isn't listed**, a ZIP outside every market | "email list" only: on the Master Contact List and the Engaged list. No deal. |
 | T8 | Open `sell.curbio.com/expcon` directly (no tags) and submit **Yes** — *attribution case 1, no tag* | The line under the headline is the Dirty Soda one. The lead lands as channel **Event**, medium `qr`, campaign `expcon-giveaway-oct`, ReferralSourceId **`eXp realty`**, marked defaulted. Check it in the app and on the Leads screen. |
 | T9 | Load `sell.curbio.com/exp` and `sell.curbio.com/` | Unchanged. |
-| T11 | Open the **Email (opt-in)** link from the Links screen — `…/expcon?utm_source=email&utm_medium=e&utm_campaign=nurture-expcon-oct` — and submit **Yes** (new ZZTEST address) — *attribution case 2, email tag* | The line under the headline is "Can't make it to Salt Lake? You can still enter." The lead lands as channel **Email**, medium `e`, campaign `nurture-expcon-oct`, ReferralSourceId **`eXp realty`** (not "defaulted"). |
+| T11 | Open the **Email (opt-in)** link from the Links screen — `…/expcon?utm_source=email&utm_medium=e&utm_campaign=nurture-expcon-oct` — and submit **Yes** (new ZZTEST address) — *attribution case 2, email tag* | The line under the headline is "Can't make it to Salt Lake? You can still enter. Enter in 20 seconds." The lead lands as channel **Email**, medium `e`, campaign `nurture-expcon-oct`, ReferralSourceId **`eXp realty`** (not "defaulted"). |
 | T12 | Open the **Curbio LinkedIn** link — `…/expcon?utm_source=organic&utm_medium=social&utm_campaign=social-expcon-oct&utm_content=linkedin` — and submit **Yes** (new ZZTEST address) — *attribution case 3, LinkedIn tag* | Same "Can't make it" line. The lead lands as channel **Organic**, medium `social`, campaign `social-expcon-oct`, content `linkedin`, ReferralSourceId **`eXp realty`**. |
 | T13 | Open the email link again with `&referral_source_id=Somebody%20Else` added, and submit **Yes** (new ZZTEST address) | ReferralSourceId is still **`eXp realty`**: a referral in the URL cannot change it. |
 | T10 | *(Optional)* Submit an address that has unsubscribed in ActiveCampaign | Entry accepted; the staff screen shows "unsubscribed"; the contact is **not** added to any list or tagged. If they answer **Yes** they still go to the HSM. |

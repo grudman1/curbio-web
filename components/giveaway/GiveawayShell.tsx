@@ -33,10 +33,11 @@ import type { PublicGiveaway } from "@/config/giveaways";
 type GiveawayContext = {
   giveaway: PublicGiveaway;
   closed: boolean;
-  /** Arrived with no tags — the booth QR, or the address typed in. Starts true
-   *  (that is what the prerendered HTML says) and drops to false after mount
-   *  for anyone carrying a utm_source. */
-  inPerson: boolean;
+  /** Arrived with no tags — the booth QR, or the address typed in. `null` until
+   *  the browser has looked at the URL's tags (a moment after load); then true
+   *  or false. Anything that differs between the two must stay hidden while it
+   *  is null, so nobody sees the wrong version flash. */
+  inPerson: boolean | null;
 };
 
 const Ctx = createContext<GiveawayContext | null>(null);
@@ -62,15 +63,15 @@ export function GiveawayShell({
   children: ReactNode;
 }) {
   const [closed, setClosed] = useState(initialClosed);
-  const [inPerson, setInPerson] = useState(true);
+  const [inPerson, setInPerson] = useState<boolean | null>(null);
 
   // Who is reading: the page is static, so "did they come through a tagged
   // link" can only be asked in the browser. EntryCard's mount effect captures
   // the URL's tags into session storage before stripping them, and child
   // effects run before this one, so by now they are there. Only a tagged
-  // visitor sees the page change — and only one line of it.
+  // visitor sees one line differ, and it is not shown until this has decided.
   useEffect(() => {
-    if (getStoredUtms().utm_source?.trim()) setInPerson(false);
+    setInPerson(!getStoredUtms().utm_source?.trim());
   }, []);
 
   useEffect(() => {

@@ -678,6 +678,7 @@ row on the Links screen so nobody types a UTM by hand.
 
 The "Enjoying your Dirty Soda?" line is shown only to visitors with no
 `utm_source`; everyone else sees "Can't make it to Salt Lake? You can still
-enter." The prerendered HTML says the Dirty Soda line, so a tagged visitor sees
-it swap in the first moment after load — chosen over hiding the line for
-everyone until the browser has looked at the URL.
+enter. Enter in 20 seconds." The line is kept invisible (its space reserved)
+until the browser has looked at the URL's tags, then faded in, so nobody sees
+the wrong version flash. (First version swapped the text after load; changed
+the same day.)

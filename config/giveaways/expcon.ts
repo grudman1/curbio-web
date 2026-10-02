@@ -147,7 +147,7 @@ export const expcon: Giveaway = {
       body: "Enjoying your Dirty Soda? That one's on Curbio. Enter in 20 seconds.",
       // Anyone who arrived with a utm_source (email, social, a colleague's
       // link) is not holding a Dirty Soda; they see this instead.
-      bodyRemote: "Can't make it to Salt Lake? You can still enter.",
+      bodyRemote: "Can't make it to Salt Lake? You can still enter. Enter in 20 seconds.",
     },
     countdown: {
       eyebrow: "Until the drawing",
