@@ -7,6 +7,31 @@ Newest first.
 
 ---
 
+## Qualified = the website sent it to the app — not a list of sources
+
+The Hub's Qualified count is every lead the website handed to the app (CRM),
+decided from the delivery record in `leads:delivery:v1` (`lib/leadSource.ts`).
+`source` is a label for breakdowns and is never a rule: an allowlist of sources
+was tried first and was wrong both ways — it dropped a new campaign's leads
+until someone listed it, and said nothing about whether the app got them.
+
+- A delivery that FAILED or is unconfirmed still counts (the person asked for an
+  estimate) and is listed under "needs attention" on Home. Never silently
+  counted as fine, never dropped.
+- Never in `leads:v1`, so never Qualified: waitlist (`waitlist:leads`), toolkit
+  and webinar signups, and eXpcon entrants who were not handed to an HSM (only
+  Yes / booked / after-close are written there; a "Maybe" is not).
+- The Aug 29 fence is a UTC date compare, because BOTH sides are UTC: the app
+  export's "Created date" values are `+00:00`, and `submittedAt` is an ISO `Z`.
+  Converting either to Eastern moves leads across the fence.
+- Close rate stays by lead-created month and is marked "still maturing" for a
+  month younger than 60 days (52 wins: median 19 days to first win, 90% inside
+  52). The alternative — by month the deal closed — divides wins from older
+  leads by this month's leads, so numerator and denominator are different
+  people.
+
+---
+
 ## PII masking is role-gated, not absolute
 
 `lib/adminLeads.ts` masked every identity at the MODULE BOUNDARY: `maskEmail`,

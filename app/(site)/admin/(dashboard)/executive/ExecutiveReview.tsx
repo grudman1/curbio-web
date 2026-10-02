@@ -28,9 +28,8 @@ import {
   funnelCounts,
   OTHER_MARKETS_KEY,
   OTHER_MARKETS_LABEL,
-  SNAPSHOT_LABEL,
-  SNAPSHOT_MONTHS,
 } from "@/config/appLeadsSnapshot";
+import { feedLabel, hubMonths, leadFeed } from "@/lib/leadStore";
 import type { ExecNotes } from "@/lib/marketingExecNotes";
 import { Table, Td, Th, Tr } from "@/app/(site)/admin/_ui/DataTable";
 import { DASH, Eyebrow, Meta, Panel } from "@/app/(site)/admin/_ui/primitives";
@@ -70,7 +69,7 @@ function DashStat({ label, tooltip }: { label: string; tooltip?: string }) {
   );
 }
 
-export function ExecutiveReview({
+export async function ExecutiveReview({
   month,
   notes,
   editable,
@@ -85,10 +84,14 @@ export function ExecutiveReview({
   share?: boolean;
 }) {
   const monthName = monthLabelFull(month);
-  const prevMonth = SNAPSHOT_MONTHS[SNAPSHOT_MONTHS.indexOf(month) - 1] as string | undefined;
+  const allMonths = hubMonths();
+  const prevMonth = allMonths[allMonths.indexOf(month) - 1] as string | undefined;
 
-  const agg = aggregateSnapshot(new Set([month]));
-  const prevAgg = prevMonth ? aggregateSnapshot(new Set([prevMonth])) : null;
+  // The merged feed (snapshot + live leads) — the same read as Home, so the
+  // review's headline can never disagree with it.
+  const feed = await leadFeed();
+  const agg = aggregateSnapshot(new Set([month]), "all", feed.deals);
+  const prevAgg = prevMonth ? aggregateSnapshot(new Set([prevMonth]), "all", feed.deals) : null;
 
   // ── per-market scorecard, sorted by gap, worst first ──────────────────────
   const target = QUALIFIED_TARGET_PER_MARKET_PER_MONTH;
@@ -143,8 +146,8 @@ export function ExecutiveReview({
   const shrank = movers.filter((m) => m.delta < 0).slice(-3).reverse();
 
   // ── funnel, this month vs last ────────────────────────────────────────────
-  const funnel = funnelCounts(new Set([month]));
-  const prevFunnel = prevMonth ? funnelCounts(new Set([prevMonth])) : null;
+  const funnel = funnelCounts(new Set([month]), feed.deals);
+  const prevFunnel = prevMonth ? funnelCounts(new Set([prevMonth]), feed.deals) : null;
   const stages = [
     { label: "Engaged", cur: null as number | null, prev: null as number | null },
     { label: "Qualified", cur: funnel[0], prev: prevFunnel?.[0] ?? null },
@@ -176,7 +179,7 @@ export function ExecutiveReview({
           {otherQ > 0 && ` (+${otherQ} in app markets without landing pages, outside the target.)`}
         </p>
         <p className="m-0 mt-2.5 font-sans text-ops-label text-content-subtle">
-          {monthName} · {SNAPSHOT_LABEL}
+          {monthName} · {feedLabel(feed)}
         </p>
       </section>
 

@@ -50,10 +50,15 @@ export type StoredLead = {
   detectedCity?: string;
   detectedRegion?: string;
   variant?: string | null;
+  /** Giveaway hand-offs only (lib/giveaway/appDelivery.ts): which giveaway and
+   *  why the entrant was sent to the app. Labels, never a Qualified rule. */
+  giveaway?: string;
+  appReason?: string;
 };
 
 export type DeliveryRecord = {
   leadId: string;
+  submittedAt?: string;
   persistOk: boolean;
   resendAttempted: boolean;
   resendOk: boolean;
@@ -132,6 +137,43 @@ export const readRecentLeads = cache(async (limit = 50): Promise<LeadsResult> =>
       total: 0,
       error: err instanceof Error ? err.message : String(err),
     };
+  }
+});
+
+export type AllLeadRowsResult =
+  | { configured: false }
+  | { configured: true; rows: LeadRow[]; error: string | null };
+
+/** EVERY lead in leads:v1 (the write path caps the list at 5000) joined with its
+ *  delivery record. This is the Hub's Qualified feed (lib/leadStore.ts): it
+ *  must see the whole list, not the newest N, or a busy week silently drops the
+ *  oldest post-snapshot leads. READ-ONLY token; cached per request. */
+export const readAllLeadRows = cache(async (): Promise<AllLeadRowsResult> => {
+  const redis = getReadOnlyRedis();
+  if (!redis) return { configured: false };
+  try {
+    const [raw, deliveries] = await Promise.all([
+      redis.lrange<StoredLead | string>(LEADS_KEY, 0, -1),
+      redis.hgetall<Record<string, DeliveryRecord | string>>(DELIVERY_KEY),
+    ]);
+    const parse = <T,>(v: T | string): T | null => {
+      if (typeof v !== "string") return v;
+      try {
+        return JSON.parse(v) as T;
+      } catch {
+        return null;
+      }
+    };
+    const rows: LeadRow[] = (raw ?? [])
+      .map((entry) => parse<StoredLead>(entry))
+      .filter((l): l is StoredLead => !!l)
+      .map((lead) => {
+        const d = lead.leadId ? deliveries?.[lead.leadId] : undefined;
+        return { lead, delivery: d ? parse<DeliveryRecord>(d) : null };
+      });
+    return { configured: true, rows, error: null };
+  } catch (err) {
+    return { configured: true, rows: [], error: err instanceof Error ? err.message : String(err) };
   }
 });
 

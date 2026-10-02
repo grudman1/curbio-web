@@ -82,6 +82,7 @@ export function OpsMetric({
   badge,
   unwired,
   sparkline,
+  note,
 }: {
   label: string;
   value: React.ReactNode;
@@ -90,6 +91,8 @@ export function OpsMetric({
   /** No data source: dashed border, hollow dot, em-dash value, no caption. */
   unwired?: { tooltip: string };
   sparkline?: React.ReactNode;
+  /** One muted line under the value — data freshness, not a metric. */
+  note?: React.ReactNode;
 }) {
   return (
     // No dashed border for an unwired metric. It singled ONE card out as
@@ -127,6 +130,8 @@ export function OpsMetric({
         {/* flex-none: if anything has to give, it is not the chart's scale. */}
         {sparkline && <span className="flex-none">{sparkline}</span>}
       </div>
+
+      {note && <div className="mt-1.5 text-ops-micro text-content-muted">{note}</div>}
 
       {/* Reserved even when empty, so a card without a delta doesn't sit
           shorter than its neighbours in the grid. */}

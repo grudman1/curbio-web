@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { CHANNEL_PLAN_BY_SLUG } from "@/config/channelPlan";
-import { SNAPSHOT_MONTHS, aggregateSnapshot } from "@/config/appLeadsSnapshot";
-import { mergedSnapshotDeals } from "@/lib/leadStore";
+import { aggregateSnapshot } from "@/config/appLeadsSnapshot";
+import { hubMonths, mergedSnapshotDeals } from "@/lib/leadStore";
 import { QUALIFIED_TARGET_PER_MARKET_PER_MONTH } from "@/config/marketingHub";
 import { MARKETS } from "@/config/markets";
 import { PageHeader } from "../../_ui/v2/PageHeader";
@@ -33,9 +33,10 @@ export async function ChannelScreen({
   if (!plan) notFound();
 
   const sp = await searchParams;
-  const tf = parseTimeframe(sp.t, SNAPSHOT_MONTHS, "month");
-  const months = monthsFor(tf, SNAPSHOT_MONTHS);
-  const label = timeframeLabel(tf, SNAPSHOT_MONTHS);
+  const allMonths = hubMonths();
+  const tf = parseTimeframe(sp.t, allMonths, "month");
+  const months = monthsFor(tf, allMonths);
+  const label = timeframeLabel(tf, allMonths);
 
   // Qualified attributable to this PLANNING channel = the sum over the
   // measured channels it covers. A channel covering none (Events, Content)
