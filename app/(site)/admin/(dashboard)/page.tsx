@@ -648,8 +648,9 @@ export default async function HomeScreen({
                   : `Snapshot only · through ${formatFreshness(SNAPSHOT_AS_OF)} · live feed unavailable`}
               </div>
               <div>
-                Website leads only after {formatFreshness(SNAPSHOT_AS_OF)}. Phone and manual leads not
-                included until the app connection is live.
+                {/* Temporary — until the new website and the CRM API connection are live. */}
+                sell.curbio.com leads only after {formatFreshness(SNAPSHOT_AS_OF)}. curbio.com, phone and
+                manual leads are added at each app export.
               </div>
             </>
           }
