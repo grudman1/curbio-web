@@ -36,6 +36,12 @@ html[data-giveaway][data-giveaway-engaged] {
   to { transform: rotate(360deg); }
 }
 
+@keyframes gw-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.gw-fade { animation: gw-fade 350ms var(--easing-out) both; }
 .gw-rise { animation: gw-rise 420ms var(--easing-out) both; }
 .gw-spin { animation: gw-spin 0.7s linear infinite; }
 

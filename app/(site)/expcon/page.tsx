@@ -6,9 +6,8 @@ import { isClosed } from "@/lib/giveaway/mode";
 
 // EVENT tier — eXpcon Salt Lake City 2026. An event-themed sibling of /exp,
 // mounted beside it for the same reason /exp is not under /lp/: it lives at
-// the path the printed short link uses (curbio.com/expcon), so when curbio.com
-// moves onto this app the QR codes already in the world resolve to this route
-// with no redirect for anyone to remember.
+// the address the printed QR code encodes (sell.curbio.com/expcon, with no
+// redirect and no tags), so the ink keeps resolving here for good.
 //
 // Unlike /exp it is NOT the campaign template — see
 // components/giveaway/GiveawayPage.tsx for why — and unlike /exp it never

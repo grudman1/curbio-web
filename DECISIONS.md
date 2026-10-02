@@ -655,3 +655,30 @@ too), poppers at each side as accents, and pieces roughly twice the size
 (12–22px, with 30–52px streamers). About 460 pieces on a desktop, about 185 on a
 phone, ~3.5 s. Measured on the live canvas: no region of a 4×3 grid of the
 screen stays empty. The headline is briefly hidden at peak — that is the moment.
+
+## The eXpcon QR goes straight to the page — no short link, no redirect, no tags
+
+Decided 2026-10-02, before anything was printed. The QR encodes
+`https://sell.curbio.com/expcon` and nothing else (`docs/expcon/qr/`, level H,
+read back with the OS's own detector). The WordPress `curbio.com/expcon`
+redirect was dropped, and so was restoring `curbio.com/exp`'s tags in
+WordPress — that is fixed in code after the show (the partnership derivation in
+the live lead route). This reverses the earlier "short link so the tags can be
+corrected after printing" reasoning: the page now supplies its own tags, so
+there is nothing in the ink to correct.
+
+Attribution (Attribution Spec v3.3), in `lib/giveaway/attribution.ts`:
+1. No tags → Channel `event`, medium `qr`, campaign `expcon-giveaway-oct`,
+   marked defaulted; first touch written once.
+2. Real tags always beat the page's channel and campaign defaults.
+3. **ReferralSourceId is always `eXp realty`** — the page is only promoted to
+   eXp agents. A `referral_source_id` in the URL is ignored, not trusted.
+Every other way the page is promoted (email, social, HSM LinkedIn, paid) is a
+row on the Links screen so nobody types a UTM by hand.
+
+The "Enjoying your Dirty Soda?" line is shown only to visitors with no
+`utm_source`; everyone else sees "Can't make it to Salt Lake? You can still
+enter. Enter in 20 seconds." The line is kept invisible (its space reserved)
+until the browser has looked at the URL's tags, then faded in, so nobody sees
+the wrong version flash. (First version swapped the text after load; changed
+the same day.)

@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { getStoredUtms } from "@/lib/analytics";
 import type { PublicGiveaway } from "@/config/giveaways";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -29,7 +30,15 @@ import type { PublicGiveaway } from "@/config/giveaways";
 // removed on unmount, so the rules cannot follow a visitor to another route.
 // ─────────────────────────────────────────────────────────────────────────────
 
-type GiveawayContext = { giveaway: PublicGiveaway; closed: boolean };
+type GiveawayContext = {
+  giveaway: PublicGiveaway;
+  closed: boolean;
+  /** Arrived with no tags — the booth QR, or the address typed in. `null` until
+   *  the browser has looked at the URL's tags (a moment after load); then true
+   *  or false. Anything that differs between the two must stay hidden while it
+   *  is null, so nobody sees the wrong version flash. */
+  inPerson: boolean | null;
+};
 
 const Ctx = createContext<GiveawayContext | null>(null);
 
@@ -54,6 +63,16 @@ export function GiveawayShell({
   children: ReactNode;
 }) {
   const [closed, setClosed] = useState(initialClosed);
+  const [inPerson, setInPerson] = useState<boolean | null>(null);
+
+  // Who is reading: the page is static, so "did they come through a tagged
+  // link" can only be asked in the browser. EntryCard's mount effect captures
+  // the URL's tags into session storage before stripping them, and child
+  // effects run before this one, so by now they are there. Only a tagged
+  // visitor sees one line differ, and it is not shown until this has decided.
+  useEffect(() => {
+    setInPerson(!getStoredUtms().utm_source?.trim());
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -87,7 +106,7 @@ export function GiveawayShell({
     };
   }, [giveaway.closesAt]);
 
-  return <Ctx.Provider value={{ giveaway, closed }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ giveaway, closed, inPerson }}>{children}</Ctx.Provider>;
 }
 
 /** Fold the cookie notice down once the visitor is filling the form in. Called

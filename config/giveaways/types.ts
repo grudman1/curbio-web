@@ -55,8 +55,8 @@ export type KitItem = {
 export type Giveaway = {
   /** Store key, email-list tag and admin URL segment. Never shown to visitors. */
   slug: string;
-  /** Where the page is mounted. Matches the printed short link's path so the
-   *  link keeps working when curbio.com moves onto this app. */
+  /** Where the page is mounted. The printed QR code encodes this path on
+   *  sell.curbio.com, so it must keep answering here. */
   path: string;
 
   meta: { title: string; description: string };
@@ -207,9 +207,13 @@ export type Giveaway = {
       headline: string;
       /** The prize sentence under the headline: who wins what. */
       sub: { full: string; short: string };
-      /** The line under it: the Dirty Soda opener, and how long entering
-       *  takes. Said here and nowhere else on the page. */
+      /** The line under it for someone who scanned the booth QR (no tags in
+       *  the URL): the Dirty Soda opener, and how long entering takes. Said
+       *  here and nowhere else on the page. */
       body: string;
+      /** The same line for everyone who arrived through a tagged link — email,
+       *  social — who is not standing at the booth. */
+      bodyRemote: string;
     };
     countdown: { eyebrow: string; note: string };
     form: {

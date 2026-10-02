@@ -5,7 +5,7 @@ import type { Giveaway } from "./types";
 //
 // Curbio is a Gold Sponsor, Booth #9 in the Solutions Village, Oct 7–9 at the
 // Salt Palace. Visitors are eXp agents on their phones, scanning one QR code
-// (curbio.com/expcon) off the booth sign, the postcards, Rick's slide and the
+// (sell.curbio.com/expcon, no tags) off the booth sign, the postcards, Rick's slide and the
 // event-app ad.
 //
 // There is ONE prize, the Listing-Ready Kit, and each of the five winners gets
@@ -87,6 +87,8 @@ export const expcon: Giveaway = {
   booking: { eventSlug: "general-meeting" },
 
   attribution: {
+    // The referral is always "eXp realty": this page is only promoted to eXp
+    // agents, and the server ignores any referral_source_id in the URL.
     // Starts "expcon-", not "exp-realty-": the dashboard recognises estimate
     // sources by prefix, and these must not be mistaken for the eXp partner
     // page's.
@@ -143,6 +145,9 @@ export const expcon: Giveaway = {
       // "Enter in 20 seconds" is said here and only here — the form does not
       // repeat it.
       body: "Enjoying your Dirty Soda? That one's on Curbio. Enter in 20 seconds.",
+      // Anyone who arrived with a utm_source (email, social, a colleague's
+      // link) is not holding a Dirty Soda; they see this instead.
+      bodyRemote: "Can't make it to Salt Lake? You can still enter. Enter in 20 seconds.",
     },
     countdown: {
       eyebrow: "Until the drawing",
