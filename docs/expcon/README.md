@@ -23,15 +23,15 @@ WordPress redirect settings: **302**, ignore case, ignore trailing slash.
 
 | When | Paste this as the destination |
 | --- | --- |
-| Now, until `/expcon` is live | `https://sell.curbio.com/exp?utm_source=event&utm_medium=qr&utm_campaign=expcon-raffle-oct&referral_source_id=eXp%20realty` |
-| At go-live (Mon Oct 5) and after | `https://sell.curbio.com/expcon?utm_source=event&utm_medium=qr&utm_campaign=expcon-raffle-oct&referral_source_id=eXp%20realty` |
+| Now, until `/expcon` is live | `https://sell.curbio.com/exp?utm_source=event&utm_medium=qr&utm_campaign=expcon-giveaway-oct&referral_source_id=eXp%20realty` |
+| At go-live (Mon Oct 5) and after | `https://sell.curbio.com/expcon?utm_source=event&utm_medium=qr&utm_campaign=expcon-giveaway-oct&referral_source_id=eXp%20realty` |
 
 Separate fix, unrelated to eXpcon: `curbio.com/exp` lost its tags. Restore its
 destination to
 `https://sell.curbio.com/exp?utm_source=partnership&utm_campaign=exp-partner-landingpage&referral_source_id=eXp%20realty`.
 
 If the redirect ever loses its tags again, the page fills them in itself
-(Channel = event, medium = qr, campaign = expcon-raffle-oct, eXp referral), and
+(Channel = event, medium = qr, campaign = expcon-giveaway-oct, eXp referral), and
 marks the entry as "defaulted" so it can be told apart.
 
 To regenerate the QR files:
@@ -47,21 +47,35 @@ node scripts/make-qr.mjs https://curbio.com/expcon docs/expcon/qr/curbio-expcon-
 One entry per email address. Submitting again updates the same entry; it never
 makes a second entry or a second deal.
 
-| The entrant | Giveaway entry | Sent to the app (HSM) | Added to the email list |
+| The entrant | Giveaway entry | Sent to the app (HSM) | Added to ActiveCampaign |
 | --- | --- | --- | --- |
-| In a market, answers **Yes** | 1 | Yes, immediately | No |
+| In a market, answers **Yes** | 1 | Yes, immediately | **Yes** — both systems |
 | In a market, answers **Maybe** or **Not yet** | 1 | No | Yes |
 | **Market not listed** (any answer) | 1 | Never | Yes |
-| **Books a call** (any answer, in a market) | 1 + 5 | Yes, when they book | Stays on it if they were added when they entered |
+| **Books a call** (any answer, in a market) | 1 + 5 | Yes, when they book | Already on it from when they entered |
 | Changes their answer to **Yes** later | still 1 | Yes, at that moment | Tags are updated |
-| Uses the page **after the drawing** (in a market) | not in the drawing, unless they entered before it | Yes | No |
+| Uses the page **after the drawing** (in a market) | not in the drawing, unless they entered before it | Yes | Yes |
+| A **Curbio address** | kept, never drawn | Never | Never |
 
-- **Email list** is ActiveCampaign. Each person goes on their market's list
-  (Seattle and "not listed" go on the Master Contact List), with the `Market`
-  field set and three tags: `expcon-2026`, `expcon-2026-market-<market>`,
-  `expcon-2026-listing-<yes|maybe|not-yet>`.
-- Anyone who has **ever unsubscribed** from a Curbio list is left alone. They
-  are still in the drawing.
+- **ActiveCampaign gets every entrant** — including the "Yes" leads an HSM is
+  also working. Each goes on their market's list (Seattle and "not listed" go
+  on the Master Contact List) **and** on the **Engaged** list, with the
+  `Market` field set and three tags: `expcon-2026`,
+  `expcon-2026-market-<market>`, `expcon-2026-listing-<yes|maybe|not-yet>`. The
+  answer tag is what lets an automation treat the people an HSM is working
+  differently.
+- **The Engaged list has to exist.** The sync looks for a list called
+  "Engaged" (`AC_ENGAGED_LIST_NAME` in `config/emailLists.ts`). If it cannot
+  find one it writes **nothing** for that entry — nobody is put on a market
+  list and left off Engaged — and the entry shows under "Needs attention" with
+  the reason. Create the list, press **Sync now**, and everything waiting is
+  done. Meanwhile entries are kept and "Yes" leads still reach the HSM.
+- Anyone who has **ever unsubscribed** from a Curbio list is left alone: not
+  added to any list, not tagged. They are still in the drawing, and if they said
+  Yes they still go to an HSM.
+- Someone ActiveCampaign already knows keeps their own record: they are added
+  to the Engaged list and tagged, but their name, phone, Market and market list
+  are not changed.
 - "Not listed" plus a ZIP that Curbio does serve is treated as that market.
 - A hand-off to the app that fails, times out (the app is given 8 seconds) or
   is cut off is **not repeated automatically** — the app would make a
@@ -71,15 +85,15 @@ makes a second entry or a second deal.
   retry; a retry that lands clears the banner and the Leads screen still shows
   one row for them.
 - **Curbio addresses and test names are "ours"**: kept, shown, never drawn. A
-  `@curbio.com` entry is not sent to the app (it rejects them) or added to the
-  email list.
+  `@curbio.com` entry is not sent to the app (it rejects them) or added to
+  ActiveCampaign.
 - **No "New lead" email for each giveaway lead.** They would come out of the
   same email allowance as the alerts for the main lead forms. A failure alert
   is still sent. To get one per lead anyway: `leadEmails: "every-lead"` in the
   settings file.
 
 Attribution on every lead sent to the app: Channel `event`, UtmSource `event`,
-UtmMedium `qr`, UtmCampaign `expcon-raffle-oct`, ReferralSourceId `eXp realty`,
+UtmMedium `qr`, UtmCampaign `expcon-giveaway-oct`, ReferralSourceId `eXp realty`,
 Origin `web_form`, first touch write-once. Lead `source` is
 `expcon-giveaway-<market>`.
 
@@ -108,14 +122,15 @@ Before merging:
       Production (Vercel → curbiolandingpage → Settings → Environment
       Variables). Without them nothing is lost: entries are kept, marked "list
       not configured", and one click on "Sync now" adds them later.
-- [ ] **Call length.** The page says "Book 15 minutes". The Calendly event it
-      opens (`general-meeting`) is 30 minutes for some managers and 20 for
-      others. Either give every manager a 15-minute event under one shared
-      name and put that name in `booking.eventSlug`, or change `minutes` and
-      the three lines of copy that say "15 minutes".
-- [ ] **Written requests.** The rules tell people to email `team@curbio.com`
-      for the free bonus entries and the winners list. Someone has to read
-      that inbox during the show.
+- [ ] **Create the Engaged list in ActiveCampaign.** It does not exist yet
+      (the account has only the market lists and the Master Contact List,
+      checked 2026-10-01). Name it exactly **Engaged**, or tell the developer
+      the name and `AC_ENGAGED_LIST_NAME` changes. Until it exists, entries are
+      kept and flagged "Needs attention"; **Sync now** completes them.
+- [ ] **Written requests.** The rules tell people to email the address in
+      `rules.requestEmail` (`config/giveaways/expcon.ts`) for the free bonus
+      entries and the winners list. It is still `team@curbio.com` — the inbox
+      to use has not been named yet. Someone has to read it during the show.
 - [ ] **Official Rules.** Sponsor legal name, sponsor address and four prize
       values are marked in amber on `/expcon/rules`. Fill them in
       `config/giveaways/expcon.ts` (`rules.sponsorName`, `rules.sponsorAddress`,
@@ -145,17 +160,17 @@ new-lead email. It is off by default, and leads flow either way.
 ## 5. Test script
 
 Use names starting `ZZTEST` and emails like `zztest+yes1@gmail.com` (never an
-`@curbio.com` address). ZZTEST entries are flagged "test" and are never drawn.
+`@curbio.com` address). ZZTEST entries are flagged "ours" and are never drawn.
 
 **On the preview link (safe — sandbox):**
 
 | # | Do this | Expect |
 | --- | --- | --- |
 | P1 | Open the page on a phone | Name, Email and Phone are on the first screen. The header button jumps to the form. |
-| P2 | Submit: Atlanta, **Yes** | "You're in!" with the manager and the booking offer. Staff screen: "app (sandbox)". |
+| P2 | Submit: Atlanta, **Yes** | "You're in!" with the manager and the booking offer. Staff screen: **both** "app (sandbox)" and "email list (sandbox)". |
 | P3 | Submit a new email: Dallas, **Maybe** | Staff screen: "email list (sandbox)", no app badge. |
 | P4 | Submit a new email: **My market isn't listed**, ZIP 59718 | Thank-you points to Booth #9, no booking offer. Staff screen: "email list (sandbox)", market "Not listed". |
-| P5 | Submit P3's email again with **Yes** | "You were already in" message. Still one row (shown ×2), now "app (sandbox)". |
+| P5 | Submit P3's email again with **Yes** | "You were already in" message. Still one row (shown ×2), now "app (sandbox)" as well as "email list (sandbox)". |
 | P6 | Staff screen → Add bonus entries → P4's email → "+5 · visited the booth" | Row shows 6 entries. |
 | P7 | Enter a few made-up names **without** the ZZTEST prefix (the drawing skips ZZTEST; sandbox entries never touch the real list). Then staff screen → Practice drawing → Verify | Names drawn in prize order, then alternates, and "Verified". No ZZTEST names among them. |
 | P8 | Open `/expcon/rules` | Rules read correctly; amber markers on what legal still owes. |
@@ -165,20 +180,22 @@ Use names starting `ZZTEST` and emails like `zztest+yes1@gmail.com` (never an
 | # | Do this | Expect |
 | --- | --- | --- |
 | T0 | Open the page in a private window on a phone (so the cookie notice shows) | The notice sits at the bottom of the screen and the Name field is visible above it. Tap the field: the notice shrinks to about half that height. It only appears on the production site, so this is the first chance to see it. |
-| T1 | Scan the QR. Submit ZZTEST, your market, **Yes** | Staff screen: "app". Leads screen: channel Event, campaign `expcon-raffle-oct`, source `expcon-giveaway-<market>`. The HSM gets the new-lead email. In the app: a deal with ReferralSourceId `eXp realty`, LeadSource and FirstTouchCampaign filled. |
-| T2 | New email, **Maybe** | Staff screen: "email list". **No** deal, **no** HSM email. In ActiveCampaign: on the market's list, tagged `expcon-2026`, `expcon-2026-market-…`, `expcon-2026-listing-maybe`. |
+| T1 | Scan the QR. Submit ZZTEST, your market, **Yes** | **A "Yes" lead lands in BOTH systems.** Staff screen: "app" **and** "email list". In the app: a deal with ReferralSourceId `eXp realty`, LeadSource and FirstTouchCampaign filled; the HSM gets the new-lead email. Leads screen: channel Event, campaign `expcon-giveaway-oct`, source `expcon-giveaway-<market>`. In ActiveCampaign: the contact is on the market's list **and** the Engaged list, with the Market field set and tags `expcon-2026`, `expcon-2026-market-…`, `expcon-2026-listing-yes`. |
+| T2 | New email, **Maybe** | Staff screen: "email list" only. **No** deal, **no** HSM email. In ActiveCampaign: on the market's list and the Engaged list, tagged `expcon-2026`, `expcon-2026-market-…`, `expcon-2026-listing-maybe`. |
 | T3 | New email, **Not yet** | Same as T2, tagged `…-listing-not-yet`. |
-| T4 | On T3's thank-you screen, book a call | "Booked. Your 5 bonus entries are in." Staff screen: 6 entries, "app". A deal now exists. (Cancel the meeting in Calendly afterwards.) |
-| T5 | Submit T2's email again, **Yes** | One row, now "app". ActiveCampaign tag changes to `…-listing-yes`. Exactly one deal. |
-| T6 | Submit T1's email again, unchanged | No second deal. |
-| T7 | New email, **My market isn't listed**, a ZIP outside every market | "email list", on the Master Contact List. No deal. |
+| T4 | On T3's thank-you screen, book a call | "Booked. Your 5 bonus entries are in." Staff screen: 6 entries, "app" and "email list". A deal now exists. (Cancel the meeting in Calendly afterwards.) |
+| T5 | Submit T2's email again, **Yes** | One row, now "app" and "email list". ActiveCampaign: the answer tag changes to `…-listing-yes`; the lists stay as they were. Exactly one deal. |
+| T6 | Submit T1's email again, unchanged | No second deal; ActiveCampaign unchanged. |
+| T7 | New email, **My market isn't listed**, a ZIP outside every market | "email list" only: on the Master Contact List and the Engaged list. No deal. |
 | T8 | Open `sell.curbio.com/expcon` directly (no tags) and submit **Yes** | Lead still lands as channel Event with the campaign and eXp referral. |
 | T9 | Load `sell.curbio.com/exp` and `sell.curbio.com/` | Unchanged. |
+| T10 | *(Optional)* Submit an address that has unsubscribed in ActiveCampaign | Entry accepted; the staff screen shows "unsubscribed"; the contact is **not** added to any list or tagged. If they answer **Yes** they still go to the HSM. |
 
 Clean up after testing: ask Rich to delete the ZZTEST deals; delete the
-`zztest+…` contacts in ActiveCampaign; cancel any test Calendly meeting. The
-ZZTEST rows stay on the staff screen under "Tests" and are excluded from the
-drawing — nothing needs deleting there.
+`zztest+…` contacts in ActiveCampaign (that takes them off their market list and
+the Engaged list too); cancel any test Calendly meeting. The ZZTEST rows stay on
+the staff screen under "Ours" and are excluded from the drawing — nothing needs
+deleting there.
 
 ---
 
@@ -189,15 +206,16 @@ drawing — nothing needs deleting there.
   same +5 as booking a call. On `/admin/giveaway`: type their email → "Look
   up" → "+5 · visited the booth". They must have entered on the page first.
   The bonus is given once per person, whichever way it was earned.
-- A written request (email to `team@curbio.com`) is added the same way with
-  "+5 · written request".
+- A written request (an email to the inbox named in the Official Rules) is
+  added the same way with "+5 · written request".
 
 ---
 
 ## 7. Drawing day — Fri Oct 9, 12:00pm Mountain
 
 At noon the page switches itself to "The giveaway has closed." The form keeps
-working as a contact form; anyone in a market who uses it goes to the app.
+working as a contact form; anyone in a market who uses it goes to the app (and,
+like every entrant, to ActiveCampaign).
 
 1. **Check bookings.** In Calendly, export the invitees for Oct 5–9 (each
    manager has their own Calendly, so this is one export per manager, or one
@@ -229,20 +247,24 @@ The drawing code has its own check: `node scripts/test-giveaway-draw.mjs`.
 
 ## 8. One-line edits
 
-All in `config/giveaways/expcon.ts`:
+All in `config/giveaways/expcon.ts` unless it says otherwise:
 
 | To change | Edit |
 | --- | --- |
+| The headline | `copy.hero.headline` (`*…*` is the amber word). The tab title and link preview are `meta.title`. |
 | Rick's stage time | `stage.time`: `null` → `"2:15pm"`. Until then the page shows "Thursday, Oct 8 · eXpo Live Stage" with no placeholder. |
 | A prize photo | Put the image under `public/` and add `photo: "/path.jpg"` to that prize. Without one the icon shows. |
 | Prize values, sponsor name and address | `approxValue`, `rules.sponsorName`, `rules.sponsorAddress`. |
-| Booking event or length | `booking.eventSlug`, `booking.minutes`, and the copy lines that say "15 minutes". |
-| Also email the people sent to the app | `routing.emailList`: `"not-sent-to-app"` → `"everyone"`. |
+| Where written requests go | `rules.requestEmail`. The Official Rules follow. |
+| The Calendly event booked | `booking.eventSlug`. The page promises no call length, so the event's length does not matter to the copy. |
+| Keep people sent to the app OFF the email list | `routing.emailList`: `"everyone"` → `"not-sent-to-app"`. |
+| The Engaged list's name | `AC_ENGAGED_LIST_NAME` in `config/emailLists.ts`. |
 | Closing time | `closesAt` (UTC) and the four `drawing` lines that state it in words. |
 
-The word "raffle" must not appear in anything a visitor can read (Utah). The
-only place it exists is the internal campaign tag `expcon-raffle-oct`, which is
-never sent to the browser.
+The word "raffle" must not appear anywhere a visitor can see it (Utah) — and
+that includes the campaign tag, which is shown in the address bar for a moment
+after a scan. That is why the tag is `expcon-giveaway-oct` and not its original
+working name.
 
 ---
 
@@ -252,7 +274,7 @@ never sent to the browser.
   page keeps collecting contacts with the eXpcon tags.
 - **Badge-scan import.** To be built when the sample Cvent export arrives:
   dry run → review → approve, same routing rules (only "Yes" or confirmed
-  interest goes to the app; the rest go to the email list only if they
+  interest goes to the app; everyone goes to ActiveCampaign only if they
   consented). Lead `source` will be `expcon-booth-<market>`.
 - **Dashboard (`feat/hub-live-leads`).** That branch decides Qualified vs
   Engaged from a lead's `source` using an allowlist (`lib/leadSource.ts`), and

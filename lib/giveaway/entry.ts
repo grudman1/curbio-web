@@ -106,7 +106,10 @@ export type EmailListRouting = {
   status: "none" | "pending" | "synced" | "unsubscribed" | "failed" | "not_configured" | "sandbox";
   at?: string;
   contactId?: string;
-  listId?: number;
+  /** Every list the contact was active on when the sync finished — their
+   *  market's (or the Master Contact List) and the Engaged list. For someone
+   *  ActiveCampaign already knew, their own lists are included as they were. */
+  listIds?: number[];
   error?: string | null;
 };
 

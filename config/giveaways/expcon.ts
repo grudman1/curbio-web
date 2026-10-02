@@ -1,24 +1,24 @@
 import type { Giveaway } from "./types";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// eXpcon Salt Lake City 2026 — the Listing-Ready Kit giveaway.
+// eXpcon Salt Lake City 2026 — the prize giveaway.
 //
 // Curbio is a Gold Sponsor, Booth #9 in the Solutions Village, Oct 7–9 at the
 // Salt Palace. Visitors are eXp agents on their phones, scanning one QR code
 // (curbio.com/expcon) off the booth sign, the postcards, Rick's slide and the
 // event-app ad.
 //
-// The headline says "from" the kit because five people each win ONE of the
-// five things in it. The approved design read "Win the Listing-Ready Kit",
-// which promises the whole kit to a single winner — and a prize promotion's
-// headline has to match its rules.
+// The headline is Marketing's: "Win AirPods, a $100 Amazon card & more." Five
+// people each win ONE prize, not the lot, so the sentence directly beneath it
+// says "Five winners, one prize each" — and the Official Rules, not the
+// headline, are what governs what is won.
 // ─────────────────────────────────────────────────────────────────────────────
 export const expcon: Giveaway = {
   slug: "expcon-2026",
   path: "/expcon",
 
   meta: {
-    title: "Curbio at eXpcon 2026 — Win from the Listing-Ready Kit",
+    title: "Curbio at eXpcon 2026 — Win AirPods, a $100 Amazon card & more",
     description:
       "Visiting eXpcon Salt Lake City? Enter Curbio's giveaway in 20 seconds for AirPods, a $100 Amazon " +
       "gift card, or Curbio gear. Booth #9 in the Solutions Village. No purchase necessary.",
@@ -63,12 +63,11 @@ export const expcon: Giveaway = {
   ],
   bonusEntries: 5,
 
-  // ⚠ MISMATCH TO RESOLVE BEFORE GO-LIVE. The page promises 15 minutes, and
-  // `general-meeting` is not 15 minutes for anyone: Christine's is 30, Joshua's
-  // says 20, and the titles differ per manager (checked 2026-10-01). Either
-  // each manager adds a 15-minute event under one shared slug and that slug
-  // goes here, or `minutes` and the copy below change to match what exists.
-  booking: { eventSlug: "general-meeting", minutes: 15 },
+  // `general-meeting` is the event /confirm already books and every manager has
+  // it. Its length differs by manager (30 minutes for some, 20 for others,
+  // checked 2026-10-01), which is why the page says "a quick call" and never a
+  // number.
+  booking: { eventSlug: "general-meeting" },
 
   attribution: {
     // Starts "expcon-", not "exp-realty-": the dashboard recognises estimate
@@ -76,13 +75,16 @@ export const expcon: Giveaway = {
     // page's.
     source: "expcon-giveaway-{marketSlug}",
     referralSourceId: "eXp realty",
-    defaults: { utm_source: "event", utm_medium: "qr", utm_campaign: "expcon-raffle-oct" },
+    defaults: { utm_source: "event", utm_medium: "qr", utm_campaign: "expcon-giveaway-oct" },
   },
 
   routing: {
     toApp: ["yes"],
     afterClose: "all-in-market",
-    emailList: "not-sent-to-app",
+    // EVERYONE goes on the email list, including the "Yes" leads an HSM is also
+    // working (decided 2026-10-01): Marketing's automations key off the answer
+    // tag to treat those differently.
+    emailList: "everyone",
   },
 
   emailList: {
@@ -112,7 +114,7 @@ export const expcon: Giveaway = {
     headerCta: { full: "Enter the giveaway", short: "Enter to win" },
     hero: {
       pill: "eXpcon 2026 · Salt Palace",
-      headline: "Win from the *Listing-Ready* Kit.",
+      headline: "Win *AirPods*, a $100 Amazon card & more.",
       sub: {
         full:
           "Enjoying your Dirty Soda? That one's on Curbio. Enter in 20 seconds for a chance at AirPods, " +
@@ -138,8 +140,8 @@ export const expcon: Giveaway = {
       body: "We'll draw winners Friday, Oct 9 at noon Mountain. Need not be present.",
       updated: "You were already in, so we updated your entry. It still counts once.",
       bonusHeadline: "Get 5 bonus entries.",
-      bonusBody: "Book 15 minutes with your local Curbio manager.",
-      bonusCta: "Book my 15 minutes",
+      bonusBody: "Book a quick call with your local Curbio manager.",
+      bonusCta: "Book my quick call",
       bonusAlternative: "Or stop by Booth #9 and talk with our team. Same 5 entries.",
       notListed:
         "We're not in your market yet, and we'll let you know when we are. Stop by Booth #9 and talk with our team for 5 bonus entries.",
@@ -181,7 +183,7 @@ export const expcon: Giveaway = {
       thanksHeadline: "Thanks. We'll be *in touch.*",
       thanksBody: "Your local Curbio manager will reach out within one business day.",
       enteredBody: "Entries closed Friday, Oct 9 at noon Mountain. Winners are notified by email and phone.",
-      bookingCta: "Book 15 minutes now",
+      bookingCta: "Book a quick call now",
     },
   },
 };

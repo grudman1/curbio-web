@@ -250,7 +250,7 @@ export default async function GiveawayAdminPage({
         </OpsCard>
         <OpsCard
           title="Where they went"
-          titleTooltip="Sent to the app: said Yes, or booked a call. Email list: everyone else, tagged with the event, their market and their answer."
+          titleTooltip="Sent to the app: said Yes, booked a call, or used the contact form after the close. Email list: every entrant — including those sent to the app — on their market's list and the Engaged list, tagged with the event, their market and their answer."
         >
           <div className="flex flex-wrap gap-8">
             <Stat label={sandbox ? "app (sandbox)" : "sent to app"} value={readable ? counts.app : null} />
@@ -318,7 +318,7 @@ export default async function GiveawayAdminPage({
         </OpsCard>
         <OpsCard
           title="Email list"
-          titleTooltip="ActiveCampaign. Each entrant goes on their market's list — or the Master Contact List when the market has none — tagged with the event, their market and their answer. Anyone who has ever unsubscribed is left alone."
+          titleTooltip="ActiveCampaign. Each entrant goes on their market's list — or the Master Contact List when the market has none — and on the Engaged list, tagged with the event, their market and their answer. Anyone who has ever unsubscribed is left alone, and so is a Curbio address."
         >
           <EmailListPanel
             slug={giveaway.slug}

@@ -121,7 +121,7 @@ const EVENT_LINKS: TrackedLink[] = [
     owner: "Marketing",
     channel: "event",
     medium: "qr",
-    campaign: "expcon-raffle-oct",
+    campaign: "expcon-giveaway-oct",
     market: "all",
     destination: "https://curbio.com/expcon",
     trackedUrl: "https://curbio.com/expcon",
@@ -131,7 +131,7 @@ const EVENT_LINKS: TrackedLink[] = [
     printedAt: null,
     origin: "seed",
     notes:
-      "Booth #9 signage, eXpcon Salt Lake City, Oct 7–9 2026. The QR is only https://curbio.com/expcon; the WordPress redirect (302) adds utm_source=event, utm_medium=qr, utm_campaign=expcon-raffle-oct and referral_source_id=eXp realty, and lands on sell.curbio.com/expcon. Print files: docs/expcon/qr/. The redirect lives in WordPress — it has to be recreated at the website cutover.",
+      "Booth #9 signage, eXpcon Salt Lake City, Oct 7–9 2026. The QR is only https://curbio.com/expcon; the WordPress redirect (302) adds utm_source=event, utm_medium=qr, utm_campaign=expcon-giveaway-oct and referral_source_id=eXp realty, and lands on sell.curbio.com/expcon. Print files: docs/expcon/qr/. The redirect lives in WordPress — it has to be recreated at the website cutover.",
   },
 ];
 

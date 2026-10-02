@@ -478,9 +478,11 @@ was not edited to make room for it.
 - **Most entrants never reach the app.** Only an in-market entrant who answers
   "Yes", or who books a call, is handed to an HSM (plus anyone in a market who
   uses the form after the drawing, when it is a plain contact form). Everyone
-  else is an entry and an email-list contact. An entrant handed over is ALSO
-  written to `leads:v1` / `leads:delivery:v1` in the existing shapes, so the
-  Leads screen and the CRM-failure banner see it like any other lead.
+  else is an entry and an email-list contact — and since 2026-10-01 the ones
+  handed to an HSM are email-list contacts too (see the next section). An
+  entrant handed over is ALSO written to `leads:v1` / `leads:delivery:v1` in
+  the existing shapes, so the Leads screen and the CRM-failure banner see it
+  like any other lead.
 - **`lib/giveaway/appDelivery.ts` duplicates `/api/lead`'s delivery, on
   purpose.** The alternative was a new optional field and a skip-the-CRM
   branch in the lead route days before a conference. If `/api/lead` changes
@@ -512,7 +514,7 @@ was not edited to make room for it.
   re-submission: the form is public, so otherwise anyone who knew a rival's
   email could re-submit it as "Test" and remove them from the drawing. A
   Curbio address is also not sent to the app (it rejects them with a 403) or
-  added to the email list.
+  added to ActiveCampaign.
 - **The 90-day answer travels in `workDetails`** (the app's "requested work"),
   behind a switch on the entries screen that is off until Rich confirms the
   field. Never `Message`.
@@ -520,13 +522,30 @@ was not edited to make room for it.
 ## The giveaway writes to ActiveCampaign
 
 Until now this app only read ActiveCampaign (the contact mirror, the email
-sync crons). `lib/giveaway/emailList.ts` is the first write: an entrant who is
-not handed to the app is added to the opt-in list and tagged.
+sync crons). `lib/giveaway/emailList.ts` is the first write: an entrant is
+added to the opt-in lists and tagged.
 
-- **Where.** There is no single opt-in list. A contact goes on their market's
-  list with the `Market` field set (`config/emailLists.ts`, checked against
-  the live account 2026-10-01). Seattle has no list, and an out-of-area agent
-  has no market, so both go to the Master Contact List.
+- **Everyone, including "Yes" leads (decided 2026-10-01).** Every entrant
+  goes to ActiveCampaign, and the ones an HSM is also working go to both. The
+  app is where a person is worked; the list is where they are nurtured; the
+  answer tag (`expcon-2026-listing-yes`) is what lets Marketing's automations
+  treat the two differently. The first version left the "Yes" leads off the
+  list; `routing.emailList` is the one-line switch between the two. Only a
+  Curbio address is skipped.
+- **Where.** Two lists per contact. Their market's list, with the `Market`
+  field set (`config/emailLists.ts`, checked against the live account
+  2026-10-01; Seattle has no list, and an out-of-area agent has no market, so
+  both go to the Master Contact List) — and the **Engaged** list, every
+  entrant, in every market.
+- **The Engaged list is found by name, and the sync fails closed without it.**
+  The list did not exist on 2026-10-01 (only lists 3–9), so there was no id to
+  write down. `AC_ENGAGED_LIST_NAME` names it; ActiveCampaign's name filter is
+  a substring match, so the match is exact in code. If it cannot be found, the
+  sync writes NOTHING for that entry — no contact, no market list, no tags —
+  rather than leaving people on a market list and off Engaged. The entry is
+  kept, marked failed with the reason, and "Sync now" completes it once the
+  list exists. Pin an id in place of the name if the list is ever renamed
+  during an event.
 - **Tags.** `expcon-2026`, `expcon-2026-market-<slug>`,
   `expcon-2026-listing-<yes|maybe|not-yet>`. A changed answer swaps the tag.
 - **Consent.** A notice line under the submit button ("You'll also receive
@@ -538,11 +557,11 @@ not handed to the app is added to the opt-in list and tagged.
 - **A prior unsubscribe wins.** Anyone who has ever unsubscribed from, or
   bounced on, any list is left completely alone: not re-subscribed, not
   updated, not tagged. A notice line is not consent to undo an opt-out.
-- **An existing subscriber is only tagged.** The form is public — anyone can
-  type anyone's email — so for a contact already active on a list, nothing is
-  written but the three tags. Their name, phone, Market and list memberships
-  stay as they were. Only a contact new to ActiveCampaign is created from
-  what was typed.
+- **An existing subscriber keeps their own record.** The form is public —
+  anyone can type anyone's email — so for a contact already active on a list,
+  the only writes are the three tags and the Engaged list. Their name, phone,
+  Market and market-list memberships stay as they were. Only a contact new to
+  ActiveCampaign is created from what was typed.
 - **It runs after the response** (`after()`), because it is several calls to a
   rate-limited third party and must not sit between a tap and "You're in!".
   Its outcome is written back onto the entry, and the entries screen can
@@ -577,8 +596,11 @@ Utah prohibits gambling, raffles included, and eXpcon 2026 is in Salt Lake
 City. Every string a visitor can read — page, buttons, confirmation, Official
 Rules — says "giveaway" or "drawing".
 
-The internal campaign tag is `expcon-raffle-oct`, because the redirect was
-being set up with it before the wording was settled. It is never shown: the
-page's client components receive `publicGiveaway()`
-(`config/giveaways/types.ts`), which leaves the tag out, so it is not in the
-page source either. The server applies it.
+The internal campaign tag began as `expcon-raffle-oct`, because the redirect
+was being set up with it before the wording was settled. It was renamed
+**`expcon-giveaway-oct`** (2026-10-01) before launch: the tag sits in the
+address bar for a moment after a QR scan, so it is visible after all. The page's
+client components also receive `publicGiveaway()`
+(`config/giveaways/types.ts`), which leaves the routing rules and tags out, so
+none of them is in the page source either. The server applies the tag when a
+visitor arrives without one.

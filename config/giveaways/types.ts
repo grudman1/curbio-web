@@ -16,9 +16,10 @@
 // directory would silently produce no CSS.
 //
 // THE WORD. Utah prohibits gambling, raffles included, so every string a
-// visitor can read says "giveaway" or "drawing". The one place the old word
-// survives is the utm_campaign tag below, which was already printed into the
-// redirect before the wording was settled and is never shown to anyone.
+// visitor can read says "giveaway" or "drawing" — and so does the internal
+// campaign tag (`expcon-giveaway-oct`), which began life with the old word and
+// was renamed before launch because the tag is visible in the address bar for a
+// moment after a scan.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { ReferralSourceId } from "@/config/campaigns/types";
@@ -109,11 +110,10 @@ export type Giveaway = {
    * no way to know if one manager lacks it. `general-meeting` is the event
    * /confirm uses and every manager has it.
    *
-   * `minutes` is what the page PROMISES, and nothing checks it against
-   * Calendly. The two must be made to agree by a person: either the event
-   * named here really is this long, or this number is wrong.
+   * There is deliberately no length here. Managers' events differ, so the copy
+   * says "a quick call" and promises no number.
    */
-  booking: { eventSlug: string; minutes: number };
+  booking: { eventSlug: string };
 
   attribution: {
     /** Lead `source`. `{marketSlug}` interpolates, as on campaign pages. */
@@ -136,11 +136,13 @@ export type Giveaway = {
      *  so anyone who fills it in is asking to be contacted. */
     afterClose: "all-in-market";
     /**
-     * Who is added to the opt-in email list.
-     *   "not-sent-to-app"  everyone the app did not receive
+     * Who is added to the opt-in email list (ActiveCampaign: their market's
+     * list and the Engaged list — config/emailLists.ts). Curbio addresses are
+     * never added, whatever this says.
      *   "everyone"         all entrants, including those an HSM is working
+     *   "not-sent-to-app"  everyone the app did not receive
      */
-    emailList: "not-sent-to-app" | "everyone";
+    emailList: "everyone" | "not-sent-to-app";
   };
 
   emailList: {
@@ -244,8 +246,7 @@ export type Giveaway = {
  * do not need the routing rules, the email-list tags, the deal note or the
  * default campaign tag, and whatever is passed to a client component is
  * serialised into the page's HTML for anyone to read. Leaving those out keeps
- * the internal campaign tag — the one string here that still says "raffle" —
- * out of the page source entirely.
+ * the internal routing and campaign tags out of the page source entirely.
  */
 export type PublicGiveaway = Pick<
   Giveaway,

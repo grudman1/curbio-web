@@ -695,8 +695,7 @@ export function EntryCard() {
                     />
                   )}
                   <p className="m-0 font-sans text-body text-content">
-                    Book {giveaway.booking.minutes} minutes with <strong>{manager.name}</strong>, your local Curbio
-                    manager.
+                    Book a quick call with <strong>{manager.name}</strong>, your local Curbio manager.
                   </p>
                 </div>
               ) : (
@@ -766,7 +765,7 @@ export function EntryCard() {
             )}
             <div>
               <h2 className="text-[22px] leading-[1.2]">
-                {giveaway.booking.minutes} minutes with {manager.firstName}
+                Quick call with {manager.firstName}
               </h2>
               <p className="m-0 font-sans text-small text-content-muted">
                 {manager.name} · {manager.title}

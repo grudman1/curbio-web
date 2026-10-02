@@ -79,9 +79,9 @@ export function GiveawayHero() {
             {copy.hero.pill}
           </p>
           <div className="flex flex-col gap-3 lg:gap-[18px]">
-            {/* The emphasised phrase never breaks: "Listing-Ready" is a
-                hyphenated compound, and the browser will otherwise split it
-                at the hyphen and strand "Ready" on the next line. */}
+            {/* The emphasised phrase never breaks across lines: split in the
+                middle, an amber phrase reads as two separate emphases (and a
+                hyphenated one strands half its word on the next line). */}
             <h1 className="text-[clamp(36px,7vw,84px)] leading-[1.02] tracking-[-0.02em] [&_em]:whitespace-nowrap">
               <RichText>{closed ? copy.closed.headline : copy.hero.headline}</RichText>
             </h1>

@@ -1,6 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // WHERE AN OPT-IN CONTACT GOES IN ACTIVECAMPAIGN.
 //
+// Two lists per contact: their MARKET's list, and the ENGAGED list (below).
+//
 // Verified against the live account on 2026-10-01, not assumed:
 //
 //   list 3  Master Contact List   1 active contact — effectively unused
@@ -11,9 +13,9 @@
 //   list 8  LOS ANGELES      40,976   ← Riverside contacts live here too
 //   list 9  DALLAS           19,850
 //
-// So "the opt-in list" is not one list. A contact belongs to their MARKET's
-// list, and the `Market` custom field (id 12) carries the value that tells
-// Riverside from Los Angeles inside list 8. The values in use are upper-case
+// There is no single opt-in list. A contact belongs to their MARKET's list,
+// and the `Market` custom field (id 12) carries the value that tells Riverside
+// from Los Angeles inside list 8. The values in use are upper-case
 // words — ATLANTA, DALLAS, MARYLAND, NOVA, DC, LA, RIVERSIDE — which are
 // neither our slugs nor the CRM's names, hence a mapping rather than a
 // derivation.
@@ -38,6 +40,27 @@ export const AC_MARKET_FIELD_ID = 12;
 
 /** "Master Contact List" — for contacts with no market list of their own. */
 export const AC_FALLBACK_LIST_ID = 3;
+
+/**
+ * THE ENGAGED LIST — the one audience of everyone who has raised a hand with
+ * us, in every market. Every giveaway entrant goes on it IN ADDITION to their
+ * market's list (decided 2026-10-01), "Yes" leads included, so Marketing's
+ * automations can run off a single list and treat the "Yes" ones differently
+ * by their tag (`expcon-2026-listing-yes`).
+ *
+ * FOUND BY NAME, not id. As of 2026-10-01 this list does not exist in the
+ * account yet (only lists 3–9 do), so there is no id to write down. Once it
+ * does, nothing here needs to change as long as it is called exactly this
+ * (case does not matter) — and if it is called something else, change this one
+ * word.
+ *
+ * Until the list can be found, the sync FAILS CLOSED: it stops before writing
+ * anything to ActiveCampaign, so nobody is put on a market list and quietly
+ * left off this one. Entries are kept, the entries screen lists them under
+ * "Needs attention" with the reason, and "Sync now" finishes the job once the
+ * list exists (lib/giveaway/emailList.ts → engagedListId).
+ */
+export const AC_ENGAGED_LIST_NAME = "Engaged";
 
 type EmailListTarget = {
   listId: number;

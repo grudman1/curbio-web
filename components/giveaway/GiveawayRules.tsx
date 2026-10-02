@@ -144,8 +144,8 @@ export function GiveawayRules({ giveaway }: { giveaway: Giveaway }) {
           </p>
           <ul>
             <li>
-              <strong>Book a call.</strong> Book a {giveaway.booking.minutes}-minute call with your local Curbio
-              manager using the link on the confirmation screen, before the Entry Period ends.
+              <strong>Book a call.</strong> Book a call with your local Curbio manager using the link on the
+              confirmation screen, before the Entry Period ends.
             </li>
             <li>
               <strong>Visit the booth (free alternative).</strong> Visit Curbio at Booth #{event.booth} in the{" "}

@@ -1,5 +1,5 @@
 import { NOT_LISTED, type Giveaway, type ListingAnswer } from "@/config/giveaways";
-import { AC_MARKET_FIELD_ID, emailListFor, unknownEmailListSlugs } from "@/config/emailLists";
+import { AC_ENGAGED_LIST_NAME, AC_MARKET_FIELD_ID, emailListFor, unknownEmailListSlugs } from "@/config/emailLists";
 import type { EmailListRouting, GiveawayEntry } from "./entry";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -12,8 +12,16 @@ import type { EmailListRouting, GiveawayEntry } from "./entry";
 // occasional emails from Curbio", doing what a sign-up form does. See
 // DECISIONS.md → "The giveaway writes to ActiveCampaign".
 //
+// EVERY entrant goes through this — including the "Yes" leads who also go to
+// an HSM (decided 2026-10-01): the app is where a person is worked, the email
+// list is where they are nurtured, and the answer tag is what lets Marketing's
+// automations tell the two apart. Only a Curbio address is skipped.
+//
 // For each entrant, in this order:
 //
+//   0. Find the Engaged list. If it cannot be found, stop BEFORE writing
+//      anything (see config/emailLists.ts): nobody is put on a market list and
+//      left off this one.
 //   1. Look the address up. If the person has EVER unsubscribed from (or
 //      bounced on) any Curbio list, stop — nothing is created, changed or
 //      tagged. A notice line under a button is not the "affirmative consent"
@@ -21,25 +29,28 @@ import type { EmailListRouting, GiveawayEntry } from "./entry";
 //      close.
 //   2. If they are NEW to ActiveCampaign, create the contact from what they
 //      typed, with the Market field when they are in a market.
-//   3. Put a new contact on their market's list — or the Master Contact List
-//      when the market has none (config/emailLists.ts).
+//   3. Lists. Someone who is not yet an active subscriber to a market audience
+//      goes on their market's list — or the Master Contact List when the
+//      market has none (config/emailLists.ts). EVERYONE not already on it goes
+//      on the Engaged list.
 //   4. Tag them: the event, their market, their 90-day answer.
 //
-// ── Someone ActiveCampaign already knows is only TAGGED ─────────────────────
+// ── Someone ActiveCampaign already knows keeps their own record ─────────────
 // The form is public: anyone can type anyone's email. So for a contact who is
-// already an active subscriber, steps 2 and 3 are skipped entirely — their
-// name, phone, Market and list memberships stay exactly as they were. A form
-// submission can add three tags to an existing subscriber; it cannot rename
-// them, change the number we call them on, or move them between markets'
-// mailings. (A contact who exists but is on no list at all is added to one and
-// given a Market; their name and phone are still left alone.)
+// already an active subscriber, the contact step and the market-list step are
+// skipped — their name, phone, Market and market-list memberships stay exactly
+// as they were. A form submission can add the three tags and the Engaged list
+// to an existing subscriber; it cannot rename them, change the number we call
+// them on, or move them between markets' mailings. (A contact who exists but is
+// on no market list is added to one and given a Market; their name and phone
+// are still left alone.)
 //
 // Every step is idempotent, so a retry — or a re-submission with a changed
 // answer — converges on the right state instead of piling up duplicates. The
 // one thing that needs undoing on a change is the previous answer's tag.
 //
 // ── This runs AFTER the visitor has their answer ────────────────────────────
-// It is five to nine HTTP calls to a third party with a 5-requests-a-second
+// It is six to ten HTTP calls to a third party with a 5-requests-a-second
 // limit. None of that belongs between a tap on "Enter" and "You're in!" on
 // conference Wi-Fi, so the submit endpoint stores the entry, responds, and
 // only then calls this. The outcome is written back onto the entry, and the
@@ -133,6 +144,31 @@ export function answerTag(giveaway: Giveaway, answer: ListingAnswer): string {
   return `${giveaway.emailList.answerTagPrefix}${answer.replace(/_/g, "-")}`;
 }
 
+// ── The Engaged list ─────────────────────────────────────────────────────────
+// Found by name, once per server instance (config/emailLists.ts says why it is
+// not an id). `filters[name]` is a substring match in ActiveCampaign — "Engaged"
+// would also return "Engaged – Cold" — so the name is compared whole.
+
+let engagedListIdCache: number | null = null;
+
+async function engagedListId(): Promise<number> {
+  if (engagedListIdCache !== null) return engagedListIdCache;
+  const res = await ac(`/lists?filters[name]=${encodeURIComponent(AC_ENGAGED_LIST_NAME)}&limit=100`);
+  const data = await json<{ lists?: { id: string; name: string }[] }>(res, "list lookup");
+  const wanted = AC_ENGAGED_LIST_NAME.trim().toLowerCase();
+  const exact = (data.lists ?? []).filter((l) => l.name.trim().toLowerCase() === wanted);
+  if (exact.length === 0) {
+    throw new Error(
+      `The "${AC_ENGAGED_LIST_NAME}" list does not exist in ActiveCampaign yet. Create it, then press Sync now.`
+    );
+  }
+  if (exact.length > 1) {
+    throw new Error(`More than one ActiveCampaign list is called "${AC_ENGAGED_LIST_NAME}". Rename one, then press Sync now.`);
+  }
+  engagedListIdCache = Number(exact[0].id);
+  return engagedListIdCache;
+}
+
 // ── The sync ─────────────────────────────────────────────────────────────────
 
 type ContactList = { list: string; status: string };
@@ -151,6 +187,8 @@ export async function syncEntrantToEmailList(giveaway: Giveaway, entry: Giveaway
     if (bad.length) throw new Error(`config/emailLists.ts names markets that do not exist: ${bad.join(", ")}`);
 
     const target = emailListFor(entry.marketSlug);
+    // 0. Before anything is written: is there an Engaged list to put them on?
+    const engagedId = await engagedListId();
 
     // 1. Is this someone who already told us to stop?
     const found = await json<{ contacts?: { id: string }[] }>(
@@ -179,7 +217,11 @@ export async function syncEntrantToEmailList(giveaway: Giveaway, entry: Giveaway
     // 2. The contact. See the header: an existing contact's own details are
     //    never overwritten by what somebody typed into a public form.
     const known = contactId !== null;
-    const subscribedSomewhere = memberships.some((m) => m.status === ACTIVE);
+    const active = new Set(memberships.filter((m) => m.status === ACTIVE).map((m) => Number(m.list)));
+    // "On a market audience" means active on any list EXCEPT the Engaged one —
+    // otherwise a contact whose only membership is Engaged (an interrupted
+    // earlier sync) would never be given their market's list.
+    const onMarketAudience = [...active].some((id) => id !== engagedId);
     const marketField = target.marketValue
       ? { fieldValues: [{ field: String(AC_MARKET_FIELD_ID), value: target.marketValue }] }
       : {};
@@ -200,8 +242,8 @@ export async function syncEntrantToEmailList(giveaway: Giveaway, entry: Giveaway
         "contact sync"
       );
       contactId = created.contact?.id ?? null;
-    } else if (!subscribedSomewhere && target.marketValue) {
-      // Known to ActiveCampaign but on no list: give them a Market, nothing else.
+    } else if (!onMarketAudience && target.marketValue) {
+      // Known to ActiveCampaign but on no market list: give them a Market, nothing else.
       await json(
         await ac("/contact/sync", { method: "POST", body: { contact: { email: entry.email, ...marketField } } }),
         "contact sync"
@@ -209,23 +251,36 @@ export async function syncEntrantToEmailList(giveaway: Giveaway, entry: Giveaway
     }
     if (!contactId) throw new Error("contact sync returned no id");
 
-    // 3. The list — for anyone who is not already an active subscriber.
-    if (!subscribedSomewhere) {
-      await json(
-        await ac("/contactLists", {
-          method: "POST",
-          body: { contactList: { list: target.listId, contact: contactId, status: 1 } },
-        }),
-        "list subscription"
-      );
-    }
+    // 3. The lists. Idempotent: a retry finds what is already there and adds
+    //    only what is missing.
+    const subscribe = async (list: number) => {
+      const res = await ac("/contactLists", {
+        method: "POST",
+        body: { contactList: { list, contact: contactId, status: 1 } },
+      });
+      // A 404 for the Engaged list means the id remembered above is gone — the
+      // list was deleted or re-made. Forget it, so the next attempt looks again
+      // (and fails closed, before writing anything, if it is truly gone).
+      if (res.status === 404 && list === engagedId) engagedListIdCache = null;
+      await json(res, "list subscription");
+      active.add(list);
+    };
+    if (!onMarketAudience) await subscribe(target.listId);
+    if (!active.has(engagedId)) await subscribe(engagedId);
 
     // 4. Tags. On a re-submission the previous answer's tag has to go, or the
     //    contact ends up tagged both "maybe" and "yes".
     const wanted = [giveaway.emailList.tag, marketTag(giveaway, entry.marketSlug), answerTag(giveaway, entry.listing90)];
     if (entry.revisions > 0) await removeStaleTags(giveaway, contactId, new Set(wanted));
+    // A tag the contact already carries is not posted again. With every entrant
+    // synced, re-syncs are routine (an answer changes, a catch-up run repeats
+    // an entry), and what ActiveCampaign says to a duplicate tag is not
+    // something this code should have to know.
+    const have = known ? await currentTagIds(contactId) : new Set<string>();
     for (const name of wanted) {
-      let res = await ac("/contactTags", { method: "POST", body: { contactTag: { contact: contactId, tag: await tagId(name) } } });
+      const id = await tagId(name);
+      if (have.has(id)) continue;
+      let res = await ac("/contactTags", { method: "POST", body: { contactTag: { contact: contactId, tag: id } } });
       if (!res.ok && res.status < 500) {
         // The remembered id may be for a tag someone has since deleted and
         // re-made in ActiveCampaign. Forget it, look the name up again, once.
@@ -239,12 +294,24 @@ export async function syncEntrantToEmailList(giveaway: Giveaway, entry: Giveaway
       status: "synced",
       at,
       contactId,
-      // Only the list WE put them on. An existing subscriber was tagged where they are.
-      ...(subscribedSomewhere ? {} : { listId: target.listId }),
+      listIds: [...active].sort((a, b) => a - b),
       error: null,
     };
   } catch (err) {
     return { status: "failed", at, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/** The ids of the tags a contact already has. Best-effort: if the lookup fails
+ *  the answer is "none", and every wanted tag is posted as before. */
+async function currentTagIds(contactId: string): Promise<Set<string>> {
+  try {
+    const res = await ac(`/contacts/${contactId}/contactTags`);
+    if (!res.ok) return new Set();
+    const data = (await res.json()) as { contactTags?: { tag: string }[] };
+    return new Set((data.contactTags ?? []).map((ct) => String(ct.tag)));
+  } catch {
+    return new Set();
   }
 }
 
