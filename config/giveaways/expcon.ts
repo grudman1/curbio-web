@@ -8,20 +8,24 @@ import type { Giveaway } from "./types";
 // (curbio.com/expcon) off the booth sign, the postcards, Rick's slide and the
 // event-app ad.
 //
-// The headline is Marketing's: "Win AirPods, a $100 Amazon card & more." Five
-// people each win ONE prize, not the lot, so the sentence directly beneath it
-// says "Five winners, one prize each" — and the Official Rules, not the
-// headline, are what governs what is won.
+// There is ONE prize, the Listing-Ready Kit, and each of the five winners gets
+// all of it: AirPods, a $100 Amazon gift card and the three pieces of Curbio
+// gear. Nothing on the page, in the rules or in the drawing assigns one item
+// to one winner, or draws in an order that means something. Where the copy
+// says "five", it is `kit.winners` written out in words — change the one, and
+// search this file for the other.
 // ─────────────────────────────────────────────────────────────────────────────
 export const expcon: Giveaway = {
   slug: "expcon-2026",
   path: "/expcon",
 
+  // The tab title, and — set explicitly in app/(site)/expcon/page.tsx — the
+  // link preview when someone shares the page.
   meta: {
-    title: "Curbio at eXpcon 2026 — Win AirPods, a $100 Amazon card & more",
+    title: "Win the Listing-Ready Kit — Curbio at eXpcon 2026",
     description:
-      "Visiting eXpcon Salt Lake City? Enter Curbio's giveaway in 20 seconds for AirPods, a $100 Amazon " +
-      "gift card, or Curbio gear. Booth #9 in the Solutions Village. No purchase necessary.",
+      "Enter Curbio's eXpcon giveaway in 20 seconds. Five agents each win the Listing-Ready Kit: AirPods, " +
+      "a $100 Amazon gift card and Curbio gear. Booth #9. No purchase necessary.",
   },
   metaClosed: {
     title: "Curbio at eXpcon 2026",
@@ -39,8 +43,14 @@ export const expcon: Giveaway = {
     booth: "9",
   },
 
-  // ← Rick's time is not confirmed. Set `time` (e.g. "2:15pm") when it is.
-  stage: { speaker: "Rick Rudman", day: "Thursday, Oct 8", place: "eXpo Live Stage", time: null },
+  // "Hear Rick Rudman, Curbio CEO · Thursday, Oct 8 · 11:30am MT · eXpo Live Stage"
+  stage: {
+    speaker: "Rick Rudman",
+    role: "Curbio CEO",
+    day: "Thursday, Oct 8",
+    time: "11:30am MT",
+    place: "eXpo Live Stage",
+  },
 
   // Fri Oct 9 2026, 12:00pm Mountain. Utah is on daylight time in October
   // (UTC−6), so noon there is 18:00 UTC.
@@ -53,14 +63,21 @@ export const expcon: Giveaway = {
   },
   opens: "October 5, 2026",
 
-  prizes: [
-    { name: "Apple AirPods", line: "For calls between showings.", icon: "airpods", approxValue: null },
-    // The one value that is not an estimate: it is printed on the prize.
-    { name: "$100 Amazon gift card", line: "Treat yourself after closing.", icon: "gift", approxValue: "$100" },
-    { name: "Curbio duffel", line: "Your open-house go-bag.", icon: "duffel", approxValue: null },
-    { name: "Curbio tumbler", line: "Coffee that survives the drive.", icon: "tumbler", approxValue: null },
-    { name: "Curbio notepad", line: "For the walkthrough notes.", icon: "notepad", approxValue: null },
-  ],
+  // Five identical kits. Every winner receives every item below.
+  kit: {
+    name: "Listing-Ready Kit",
+    winners: 5,
+    // Approximate retail value of one kit — $2,500 across the five. Stated in
+    // the Official Rules, not on the page.
+    approxValueUsd: 500,
+    items: [
+      { name: "Apple AirPods", line: "For calls between showings.", icon: "airpods" },
+      { name: "$100 Amazon gift card", line: "Treat yourself after closing.", icon: "gift" },
+      { name: "Curbio duffel", line: "Your open-house go-bag.", icon: "duffel" },
+      { name: "Curbio tumbler", line: "Coffee that survives the drive.", icon: "tumbler" },
+      { name: "Curbio notepad", line: "For the walkthrough notes.", icon: "notepad" },
+    ],
+  },
   bonusEntries: 5,
 
   // `general-meeting` is the event /confirm already books and every manager has
@@ -98,9 +115,10 @@ export const expcon: Giveaway = {
 
   rules: {
     path: "/expcon/rules",
-    sponsorName: null,
-    sponsorAddress: null,
+    sponsorName: "Curbio, Inc.",
+    sponsorAddress: "3030 Greenmount Ave, Ste 300, Baltimore, MD 21218",
     requestEmail: "team@curbio.com",
+    governingLaw: "State of Maryland",
     minAge: 18,
     respondWithinDays: 7,
     notifyWithinHours: 48,
@@ -108,19 +126,23 @@ export const expcon: Giveaway = {
 
   copy: {
     banner: {
-      full: "Curbio is a Gold Sponsor at eXpcon Salt Lake City · Oct 7–9 · Booth #9",
-      short: "Gold Sponsor at eXpcon · Oct 7–9 · Booth #9",
+      // A non-breaking space keeps "Booth #9" together on a narrow phone.
+      full: "Curbio is a Gold Sponsor at eXpcon Salt Lake City · Oct 7–9 · Booth\u00a0#9",
+      short: "Gold Sponsor at eXpcon · Oct 7–9 · Booth\u00a0#9",
     },
     headerCta: { full: "Enter the giveaway", short: "Enter to win" },
     hero: {
       pill: "eXpcon 2026 · Salt Palace",
-      headline: "Win *AirPods*, a $100 Amazon card & more.",
+      headline: "Win the *Listing-Ready Kit*.",
+      // The non-breaking space after "a" keeps "a $100 Amazon gift card" from
+      // ending a line on a lone "a".
       sub: {
-        full:
-          "Enjoying your Dirty Soda? That one's on Curbio. Enter in 20 seconds for a chance at AirPods, " +
-          "a $100 Amazon gift card, or Curbio gear built for agents on the go. Five winners, one prize each.",
-        short: "Enjoying your Dirty Soda? That one's on Curbio. Enter in 20 seconds. Five winners, five prizes.",
+        full: "Five agents each win the whole kit: AirPods, a\u00a0$100 Amazon gift card, and Curbio gear built for agents on the go.",
+        short: "Five agents each win the whole kit: AirPods, a\u00a0$100 Amazon gift card, and Curbio gear.",
       },
+      // "Enter in 20 seconds" is said here and only here — the form does not
+      // repeat it.
+      body: "Enjoying your Dirty Soda? That one's on Curbio. Enter in 20 seconds.",
     },
     countdown: {
       eyebrow: "Until the drawing",
@@ -129,7 +151,6 @@ export const expcon: Giveaway = {
     form: {
       eyebrow: "Giveaway entry · Booth #9",
       title: "Enter to win",
-      sub: "Takes about 20 seconds.",
       submit: "Enter the giveaway",
       pending: "Entering…",
       emailOptIn: "You'll also receive occasional emails from Curbio. Unsubscribe anytime.",
@@ -147,10 +168,12 @@ export const expcon: Giveaway = {
         "We're not in your market yet, and we'll let you know when we are. Stop by Booth #9 and talk with our team for 5 bonus entries.",
       booked: "Booked. Your 5 bonus entries are in.",
     },
-    prizes: {
-      eyebrow: "What's in the kit",
+    kit: {
+      eyebrow: "The Listing-Ready Kit",
       headline: "Built for agents who *live in their car*.",
-      note: "Five winners, one prize each, drawn in this order.",
+      label: "{winners} kits. {winners} winners. Every winner gets everything below.",
+      badge: "×{winners} winners",
+      contents: "Every kit includes",
     },
     why: {
       eyebrow: "Why Curbio",

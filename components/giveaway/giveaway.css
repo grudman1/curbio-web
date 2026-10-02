@@ -24,18 +24,13 @@ html[data-giveaway][data-giveaway-engaged] {
 
 /* ── Motion ──────────────────────────────────────────────────────────────────
    globals.css zeroes every animation under prefers-reduced-motion, so none of
-   this needs its own guard. */
+   this needs its own guard.
+
+   Confetti is not here: it is drawn on a canvas by confetti.ts, which checks
+   prefers-reduced-motion itself because a canvas is not subject to CSS. */
 @keyframes gw-rise {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: none; }
-}
-@keyframes gw-float {
-  0%, 100% { transform: translateY(0) rotate(var(--gw-r, 0deg)); }
-  50% { transform: translateY(-6px) rotate(var(--gw-r, 0deg)); }
-}
-@keyframes gw-burst {
-  0% { transform: translate(0, 0) rotate(0); opacity: 1; }
-  100% { transform: translate(var(--gw-dx), var(--gw-dy)) rotate(var(--gw-rot)); opacity: 0; }
 }
 @keyframes gw-spin {
   to { transform: rotate(360deg); }
@@ -43,16 +38,6 @@ html[data-giveaway][data-giveaway-engaged] {
 
 .gw-rise { animation: gw-rise 420ms var(--easing-out) both; }
 .gw-spin { animation: gw-spin 0.7s linear infinite; }
-
-/* Confetti. Decorative, aria-hidden, never over a control. */
-.gw-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
-.gw-confetti > span { position: absolute; transform: rotate(var(--gw-r, 0deg)); }
-.gw-confetti > span[data-float] { animation: gw-float var(--gw-t, 6s) ease-in-out infinite; }
-.gw-burst { position: absolute; left: 64px; top: 64px; width: 0; height: 0; pointer-events: none; }
-.gw-burst > span {
-  position: absolute;
-  animation: gw-burst 1400ms cubic-bezier(0.15, 0.7, 0.3, 1) var(--gw-delay, 0ms) both;
-}
 
 /* ── The entry card's ticket edge ────────────────────────────────────────────
    Two half-circles bitten out of the card's sides, in the page's own

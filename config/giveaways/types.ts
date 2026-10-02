@@ -40,18 +40,16 @@ export const ANSWER_LABEL: Record<ListingAnswer, string> = {
  *  config/markets.ts stays the only place a market is named. */
 export const NOT_LISTED = "not-listed";
 
-export type PrizeIcon = "airpods" | "gift" | "duffel" | "tumbler" | "notepad";
+export type KitIcon = "airpods" | "gift" | "duffel" | "tumbler" | "notepad";
 
-export type GiveawayPrize = {
+/** One thing in the kit. */
+export type KitItem = {
   name: string;
-  /** One line under the name on the prize card. */
+  /** One line under the name on the kit card. */
   line: string;
-  icon: PrizeIcon;
+  icon: KitIcon;
   /** Path under /public. Omit and the icon shows — photos are a drop-in. */
   photo?: string;
-  /** Approximate retail value, for the Official Rules. `null` renders a marked
-   *  placeholder so the rules cannot be published with a value nobody set. */
-  approxValue: string | null;
 };
 
 export type Giveaway = {
@@ -79,11 +77,11 @@ export type Giveaway = {
   };
 
   /**
-   * The stage session. `time` is the ONE-LINE EDIT: set it to "2:15pm" and the
-   * card reads "Thursday, Oct 8 · eXpo Live Stage · 2:15pm". While it is null
-   * the card simply omits it — a visitor never sees a placeholder.
+   * The stage session. The card reads "Hear Rick Rudman, Curbio CEO" over
+   * "Thursday, Oct 8 · 11:30am MT" over "eXpo Live Stage". A null `time` is
+   * simply left out — a visitor never sees a placeholder.
    */
-  stage: { speaker: string; day: string; place: string; time: string | null };
+  stage: { speaker: string; role: string; day: string; time: string | null; place: string };
 
   /**
    * End of the entry period, ISO 8601 in UTC. The SERVER clock decides: an
@@ -96,8 +94,22 @@ export type Giveaway = {
   /** Start of the entry period as the Official Rules state it. */
   opens: string;
 
-  /** In DRAW ORDER: the first name drawn wins the first prize. */
-  prizes: GiveawayPrize[];
+  /**
+   * What EACH winner receives. Every winner gets the whole kit — all of the
+   * items, not one of them — so there is one list of items, one count of
+   * winners, and nothing about the order names are drawn in: the five winners
+   * are interchangeable, and the drawing records no prize against any of them.
+   */
+  kit: {
+    /** "Listing-Ready Kit". */
+    name: string;
+    /** How many people are drawn as winners. Each receives one kit. */
+    winners: number;
+    items: KitItem[];
+    /** Approximate retail value of ONE kit, in whole dollars. The Official
+     *  Rules state it per kit and, times `winners`, in total. */
+    approxValueUsd: number;
+  };
   /** Extra entries for booking a call — or for the free alternatives. Awarded
    *  once per person, so an entry is worth 1 or 1 + this. */
   bonusEntries: number;
@@ -172,11 +184,15 @@ export type Giveaway = {
 
   rules: {
     path: string;
-    /** `null` renders a marked placeholder on the rules page. */
+    /** `null` renders a marked placeholder on the rules page — and puts a
+     *  draft notice at the top of it — so the rules cannot be published with
+     *  a sponsor nobody named. */
     sponsorName: string | null;
     sponsorAddress: string | null;
     /** Where a written request for the bonus entries is sent. */
     requestEmail: string;
+    /** "State of Maryland" — the rules say they are governed by the laws of it. */
+    governingLaw: string;
     minAge: number;
     respondWithinDays: number;
     notifyWithinHours: number;
@@ -189,13 +205,16 @@ export type Giveaway = {
       pill: string;
       /** RichText: `*…*` is the amber emphasis. */
       headline: string;
+      /** The prize sentence under the headline: who wins what. */
       sub: { full: string; short: string };
+      /** The line under it: the Dirty Soda opener, and how long entering
+       *  takes. Said here and nowhere else on the page. */
+      body: string;
     };
     countdown: { eyebrow: string; note: string };
     form: {
       eyebrow: string;
       title: string;
-      sub: string;
       submit: string;
       pending: string;
       /** Its own line, under the button — not folded into the fine print. */
@@ -214,7 +233,11 @@ export type Giveaway = {
       notListed: string;
       booked: string;
     };
-    prizes: { eyebrow: string; headline: string; note: string };
+    /**
+     * The kit section. `{winners}` in `label` and `badge` is replaced with
+     * `kit.winners`, so the number is written once.
+     */
+    kit: { eyebrow: string; headline: string; label: string; badge: string; contents: string };
     why: { eyebrow: string; headline: string };
     sold: { eyebrow: string; headline: string };
     closer: { headline: string; cta: string; finePrint: string };
@@ -250,7 +273,7 @@ export type Giveaway = {
  */
 export type PublicGiveaway = Pick<
   Giveaway,
-  "slug" | "path" | "event" | "stage" | "closesAt" | "drawing" | "prizes" | "bonusEntries" | "booking" | "copy"
+  "slug" | "path" | "event" | "stage" | "closesAt" | "drawing" | "kit" | "bonusEntries" | "booking" | "copy"
 > & {
   rules: Pick<Giveaway["rules"], "path" | "minAge">;
   attribution: {
@@ -268,7 +291,7 @@ export function publicGiveaway(g: Giveaway): PublicGiveaway {
     stage: g.stage,
     closesAt: g.closesAt,
     drawing: g.drawing,
-    prizes: g.prizes,
+    kit: g.kit,
     bonusEntries: g.bonusEntries,
     booking: g.booking,
     copy: g.copy,

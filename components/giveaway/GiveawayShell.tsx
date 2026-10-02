@@ -13,7 +13,9 @@ import type { PublicGiveaway } from "@/config/giveaways";
 // server believed at build time; it has to be the first client render too, or
 // React would be hydrating markup that does not match. An effect then checks
 // the clock and arms a timer for the closing instant, so a phone left open on
-// the page at noon on Friday flips without a reload.
+// the page at noon on Friday flips without a reload. A phone that was asleep at
+// noon is checked again the moment it is woken (visibilitychange / pageshow),
+// because a sleeping page's timers are not reliable.
 //
 // This decides what the page SAYS. It does not decide who is in the drawing:
 // the submit endpoint stamps each entry against the server's clock, and the
@@ -70,8 +72,19 @@ export function GiveawayShell({
       setClosed(remaining <= 0);
       if (remaining > 0) timer = setTimeout(check, Math.min(remaining + 250, MAX_TIMEOUT_MS));
     };
+    const wake = () => {
+      if (document.hidden) return;
+      clearTimeout(timer);
+      check();
+    };
     check();
-    return () => clearTimeout(timer);
+    document.addEventListener("visibilitychange", wake);
+    window.addEventListener("pageshow", wake);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", wake);
+      window.removeEventListener("pageshow", wake);
+    };
   }, [giveaway.closesAt]);
 
   return <Ctx.Provider value={{ giveaway, closed }}>{children}</Ctx.Provider>;

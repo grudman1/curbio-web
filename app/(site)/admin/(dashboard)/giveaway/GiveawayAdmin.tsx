@@ -555,14 +555,17 @@ function ReportLine({
 export function DrawPanel({
   slug,
   closed,
-  prizes,
+  winners,
+  kitName,
   draws,
   eligiblePeople,
   notify,
 }: {
   slug: string;
   closed: boolean;
-  prizes: string[];
+  /** How many people are drawn. Each wins the same whole kit. */
+  winners: number;
+  kitName: string;
   draws: DrawRecord[];
   eligiblePeople: number;
   notify: string;
@@ -581,7 +584,7 @@ export function DrawPanel({
         if (!note.trim()) return;
       }
       const ok = window.confirm(
-        `Run the OFFICIAL drawing now?\n\n${eligiblePeople} people are eligible. ${prizes.length} winners and their alternates will be drawn and recorded. This cannot be undone.`
+        `Run the OFFICIAL drawing now?\n\n${eligiblePeople} people are eligible. ${winners} winners (each gets the ${kitName}) and their alternates will be drawn and recorded. This cannot be undone.`
       );
       if (!ok) return;
     }
@@ -655,21 +658,25 @@ export function DrawPanel({
               </p>
             )}
 
+            <p className="m-0 mt-2 font-sans text-ops-label text-content-muted">
+              All {d.winners.length} winners receive the same whole {kitName}. The order drawn assigns nothing; it is
+              recorded because the seed reproduces the names in exactly this order. Alternates step in in order.
+            </p>
             <Table className="mt-2">
               <Thead>
                 <Th>Drawn</Th>
-                <Th>Prize</Th>
                 <Th>Name</Th>
                 <Th>Email</Th>
                 <Th>Phone</Th>
                 <Th align="right">Entries</Th>
               </Thead>
               <tbody>
-                {d.winners.map((w) => (
+                {d.winners.map((w, i) => (
                   <Tr key={w.email}>
-                    <Td numeric>{w.position}</Td>
-                    <Td className="font-semibold">{w.prize}</Td>
-                    <Td>{w.name}</Td>
+                    <Td numeric>
+                      <span className="font-semibold">Winner</span> {i + 1}
+                    </Td>
+                    <Td className="font-semibold">{w.name}</Td>
                     <Td>{w.email}</Td>
                     <Td numeric className="whitespace-nowrap">{w.phone}</Td>
                     <Td align="right" numeric>{w.entries}</Td>
@@ -678,7 +685,6 @@ export function DrawPanel({
                 {d.alternates.map((a) => (
                   <Tr key={a.email}>
                     <Td numeric muted>alt {a.order}</Td>
-                    <Td muted>—</Td>
                     <Td muted>{a.name}</Td>
                     <Td muted>{a.email}</Td>
                     <Td numeric muted className="whitespace-nowrap">{a.phone}</Td>

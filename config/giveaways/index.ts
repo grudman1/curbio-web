@@ -1,7 +1,7 @@
 import { expcon } from "./expcon";
 import type { Giveaway } from "./types";
 
-export type { Giveaway, GiveawayPrize, ListingAnswer, PrizeIcon, PublicGiveaway } from "./types";
+export type { Giveaway, KitIcon, KitItem, ListingAnswer, PublicGiveaway } from "./types";
 export { ANSWER_LABEL, LISTING_ANSWERS, NOT_LISTED, publicGiveaway } from "./types";
 
 // ─────────────────────────────────────────────────────────────────────────────
