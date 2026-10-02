@@ -20,6 +20,19 @@ import { isClosed } from "@/lib/giveaway/mode";
 // matters for a page reached from a conference hall's Wi-Fi.
 export const revalidate = 60;
 
+// The picture in a shared link (iMessage, Slack, LinkedIn): public/og/expcon.png,
+// 1200×630, the prize only. ABSOLUTE on sell.curbio.com on purpose: the site's
+// metadataBase is curbio.com, which still serves WordPress, so a relative URL
+// would point at a file that is not there. Without an image at all, apps pick
+// the biggest photo on the page (it was an Atlanta house). To re-make it, see
+// docs/expcon/README.md, "The share image".
+const SHARE_IMAGE = {
+  url: "https://sell.curbio.com/og/expcon.png",
+  width: 1200,
+  height: 630,
+  alt: "Win the Listing-Ready Kit: AirPods, a $100 Amazon gift card, a Curbio duffel, tumbler and notepad.",
+};
+
 // The tab title and the link preview follow the page: once the entry period has
 // ended they stop inviting people to enter. Regenerated with the page, so they
 // catch up within the same minute.
@@ -34,8 +47,8 @@ export function generateMetadata(): Metadata {
   return {
     title,
     description,
-    openGraph: { title, description, type: "website" },
-    twitter: { card: "summary", title, description },
+    openGraph: { title, description, type: "website", images: [SHARE_IMAGE] },
+    twitter: { card: "summary_large_image", title, description, images: [SHARE_IMAGE.url] },
     ...routeMetadata(expcon.path),
   };
 }

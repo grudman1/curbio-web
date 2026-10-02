@@ -329,3 +329,16 @@ working name.
   of the delivery code in `app/api/lead/route.ts`, so that file did not have
   to change the week of the conference. If `/api/lead` changes its stored
   record, its delivery record or its app payload, change both.
+
+---
+
+## 10. The share image
+
+The picture that appears when the link is shared (iMessage, Slack, LinkedIn) is
+`public/og/expcon.png` — 1200×630, the prize only, no booth details. It is set in
+`app/(site)/expcon/page.tsx` as an absolute `sell.curbio.com` URL. To change it,
+replace that file (same name, same size). Apps cache previews: an old share keeps
+the old picture, and a new one can need a fresh link or the app's cache refresh
+(LinkedIn Post Inspector, Slack "unfurl"). The image is only served from
+production once this is merged — a preview deployment's share image points at
+production.
