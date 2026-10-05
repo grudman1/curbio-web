@@ -1,3 +1,5 @@
+import PageTimingBeacon from "@/components/campaign/PageTimingBeacon";
+
 // Campaign group layout — deliberately a PASS-THROUGH.
 //
 // Campaign chrome (header, sticky bar, footer) is rendered inside the page
@@ -8,6 +10,14 @@
 //
 // If campaign-wide chrome is ever wanted, it belongs HERE and must be removed
 // from PageShell/ExpShell in the same change, never added alongside them.
+//
+// PageTimingBeacon renders nothing — it reports per-visit load timing and bot
+// signals to PostHog. Not chrome. See the component.
 export default function CampaignsLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <PageTimingBeacon />
+    </>
+  );
 }

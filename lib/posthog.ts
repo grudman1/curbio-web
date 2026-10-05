@@ -131,10 +131,16 @@ export function optOutPostHog(): void {
 }
 
 /** Capture an event with current attribution attached. No-op without consent. */
-export function posthogCapture(name: string, params: Record<string, unknown> = {}): void {
+export function posthogCapture(
+  name: string,
+  params: Record<string, unknown> = {},
+  // sendBeacon for events fired from pagehide, where a normal request can be
+  // cancelled by the unload.
+  options?: { transport?: "XHR" | "fetch" | "sendBeacon" }
+): void {
   if (!client) return;
   try {
-    client.capture(name, { ...superProperties(), ...params });
+    client.capture(name, { ...superProperties(), ...params }, options);
   } catch {
     /* analytics must never throw into the caller */
   }

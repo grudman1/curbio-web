@@ -9,6 +9,7 @@ import PageSkeleton from "@/components/PageSkeleton";
 import ExpPageSkeleton from "@/components/ExpPageSkeleton";
 import { CAMPAIGNS, CAMPAIGN_BY_SLUG } from "@/config/campaigns";
 import { routeMetadata } from "@/config/routes";
+import { EARLY_RESOLVE_SCRIPT } from "@/lib/earlyResolve";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE campaign landing page. One route, N configs.
@@ -76,9 +77,15 @@ export default async function CampaignPage({
 
   // Suspense lets useSearchParams inside the client tree coexist with
   // prerendering; the fallback IS the prerendered HTML, and the first paint.
+  // The inline script starts /api/resolve during HTML parse, in parallel with
+  // the JS download — see lib/earlyResolve.ts. Static string, so the route
+  // stays prerendered.
   return (
-    <Suspense fallback={<Skeleton />}>
-      <CampaignClient page={page} />
-    </Suspense>
+    <>
+      <script dangerouslySetInnerHTML={{ __html: EARLY_RESOLVE_SCRIPT }} />
+      <Suspense fallback={<Skeleton />}>
+        <CampaignClient page={page} />
+      </Suspense>
+    </>
   );
 }
