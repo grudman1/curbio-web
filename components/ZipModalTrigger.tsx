@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ZipModal } from "./LpModals";
 import { Icon } from "./LpKit";
+import { MARKETS } from "@/config/markets";
 
 export function ZipModalTrigger({
   label,
@@ -19,6 +20,8 @@ export function ZipModalTrigger({
   prompted?: boolean;
 }) {
   const [open, setOpen] = useState(initialOpen);
+  const known = marketSlug ? MARKETS.find((m) => m.slug === marketSlug) : undefined;
+  const shortLabel = marketSlug ? (known?.shortName ?? label) : "Market";
   return (
     <>
       <button
@@ -26,13 +29,14 @@ export function ZipModalTrigger({
         onClick={() => setOpen(true)}
         aria-label={marketSlug ? `Market: ${label}. Change market` : "Choose your market"}
       >
-        <Icon name="pin" size={13} color="var(--fg-muted)" stroke={1.75} />
-        {/* Narrow phones (<360px) get "Market" instead of "Choose your market"
-            so the pill stays on one line beside the logos. A chosen market's
-            name is shown as-is. The button's aria-label always has the full
-            wording. */}
+        <span className="lp-mkt-pin" aria-hidden>
+          <Icon name="pin" size={13} color="var(--fg-muted)" stroke={1.75} />
+        </span>
+        {/* Narrow phones get a short label ("Market", or a market's shortName)
+            so the pill stays on one line beside the logos — see globals.css
+            for the breakpoint. The button's aria-label keeps the full wording. */}
         <span className="lp-mkt-btn-full">{label}</span>
-        <span className="lp-mkt-btn-short" aria-hidden>{marketSlug ? label : "Market"}</span>
+        <span className="lp-mkt-btn-short" aria-hidden>{shortLabel}</span>
         <Icon name="chevronDown" size={14} color="var(--fg-muted)" stroke={2} style={{ marginLeft: 1 }} />
       </button>
       <ZipModal

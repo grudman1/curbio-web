@@ -208,10 +208,31 @@ em { font-style: normal; }
 .lp-ph-navy { background: repeating-linear-gradient(45deg, #13294f, #13294f 14px, #0f2347 14px, #0f2347 28px); }
 
 /* ============================================================ HEADER */
-/* Header market pill: short label under 360px (ZipModalTrigger). */
+/* Header market pill (ZipModalTrigger). One line, always; the logos never
+   shrink to make room for it. On narrow phones the header tightens and the
+   pill swaps to its short label ("Market", or a market's shortName). The
+   breakpoints are MEASURED, not guessed — see the Stage 1 PR. */
 .lp-mkt-btn { white-space: nowrap; }
+.lp-header .lp-header-logo, .lp-header .exp-header-logos, .lp-header .exp-solutions-logo { flex-shrink: 0; }
 .lp-mkt-btn-short { display: none; }
-@media (max-width: 359px) { .lp-mkt-btn-full { display: none; } .lp-mkt-btn-short { display: inline; } }
+.lp-mkt-pin { display: inline-flex; }
+/* Co-branded header (two logos): the full "Choose your market" pill only fits
+   beside them from ~500px. The plain Curbio header has room down to ~400px. */
+@media (max-width: 499px) {
+  .exp-header-logos ~ .lp-mkt-btn .lp-mkt-btn-full { display: none; }
+  .exp-header-logos ~ .lp-mkt-btn .lp-mkt-btn-short { display: inline; }
+}
+@media (max-width: 399px) {
+  .lp-mkt-btn-full { display: none; }
+  .lp-mkt-btn-short { display: inline; }
+}
+@media (max-width: 400px) {
+  .lp-header .lp-shell { padding-left: 16px; padding-right: 16px; }
+  .lp-header .lp-header-inner, .lp-header .exp-header-logos { gap: 10px; }
+  .lp-header .lp-header-logo { height: 20px; }
+  .lp-header .exp-solutions-logo { height: 14px; }
+  .lp-mkt-pin { display: none; }
+}
 
 /* ---------- promo bar (config `promoBanner`; components/PromoBanner.tsx) ----------
    In normal flow above the header — never fixed — so it cannot sit on top of
