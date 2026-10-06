@@ -15,11 +15,11 @@ import {
   reconcileAction,
   removeBonusAction,
   runDrawingAction,
-  sendTestAlertAction,
   sendToAppAction,
   setDealNoteAction,
   syncEmailListAction,
   verifyDrawingAction,
+  sendTestAlertAction,
 } from "./actions";
 
 // The interactive halves of the giveaway screen. Everything here calls a
@@ -349,74 +349,6 @@ export function DealNoteSwitch({ slug, on, example }: { slug: string; on: boolea
       <p className="m-0 rounded-md bg-app-well px-3 py-2 font-mono text-[12.5px] leading-[1.5] text-content">{example}</p>
       <p className="m-0 font-sans text-ops-label text-content-muted">
         Leave off until Rich confirms the app&apos;s “requested work” field is the right place for it.
-      </p>
-    </div>
-  );
-}
-
-// ── Failure alerts (owner) ───────────────────────────────────────────────────
-
-/** Where "CRM delivery FAILED" emails go, and a button that proves they arrive:
- *  it sends a clearly-labelled TEST through the same path and shows what the
- *  email service answered. */
-export function AlertTest({
-  slug,
-  to,
-  source,
-  configured,
-}: {
-  slug: string;
-  to: string;
-  source: string;
-  configured: boolean;
-}) {
-  const toast = useToast();
-  const [busy, startTransition] = useTransition();
-  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
-
-  function send() {
-    setResult(null);
-    startTransition(async () => {
-      const res = await sendTestAlertAction(slug);
-      if (res.ok) {
-        setResult({ ok: true, text: `Accepted by the email service for ${res.to}. Now check that inbox (and spam): if it arrives, real alerts will too.` });
-        toast("success", "Test alert sent.");
-      } else {
-        setResult({ ok: false, text: `Not sent${"to" in res ? ` to ${res.to}` : ""}: ${res.error}` });
-        toast("error", "The test alert failed.");
-      }
-    });
-  }
-
-  return (
-    <div className="flex flex-col gap-3">
-      <p className="m-0 font-sans text-ops-body text-content">
-        When a lead cannot be delivered to the app, an email goes to <strong className="break-all">{to}</strong>{" "}
-        <span className="text-content-muted">(from {source})</span>.
-      </p>
-      {!configured && (
-        <p className="m-0 rounded-md bg-pill-bad-bg px-3 py-2 font-sans text-ops-body font-semibold text-pill-bad-fg">
-          No email key is set in this environment, so no alert can be sent.
-        </p>
-      )}
-      <div className="flex flex-wrap items-center gap-2">
-        <Button onClick={send} disabled={busy || !configured}>
-          {busy ? "Sending…" : "Send a test alert"}
-        </Button>
-      </div>
-      {result && (
-        <p
-          role="status"
-          className={`m-0 rounded-md px-3 py-2 font-sans text-ops-body font-semibold ${
-            result.ok ? "bg-pill-good-bg text-pill-good-fg" : "bg-pill-bad-bg text-pill-bad-fg"
-          }`}
-        >
-          {result.text}
-        </p>
-      )}
-      <p className="m-0 font-sans text-ops-label text-content-muted">
-        Alerts are sent from Resend&apos;s shared test address. Until a Curbio domain is verified in Resend, it may
-        deliver only to the Resend account owner&apos;s own address — this test tells you whether yours does.
       </p>
     </div>
   );
@@ -771,6 +703,74 @@ export function DrawPanel({
         ))
       )}
       {official.length > 0 && <p className="m-0 font-sans text-ops-label text-content-muted">{notify}</p>}
+    </div>
+  );
+}
+
+// ── Failure alerts (owner) ───────────────────────────────────────────────────
+
+/** Where "CRM delivery FAILED" emails go, and a button that proves they arrive:
+ *  it sends a clearly-labelled TEST through the same path and shows what the
+ *  email service answered. */
+export function AlertTest({
+  slug,
+  to,
+  source,
+  configured,
+}: {
+  slug: string;
+  to: string;
+  source: string;
+  configured: boolean;
+}) {
+  const toast = useToast();
+  const [busy, startTransition] = useTransition();
+  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+
+  function send() {
+    setResult(null);
+    startTransition(async () => {
+      const res = await sendTestAlertAction(slug);
+      if (res.ok) {
+        setResult({ ok: true, text: `Accepted by the email service for ${res.to}. Now check that inbox (and spam): if it arrives, real alerts will too.` });
+        toast("success", "Test alert sent.");
+      } else {
+        setResult({ ok: false, text: `Not sent${"to" in res ? ` to ${res.to}` : ""}: ${res.error}` });
+        toast("error", "The test alert failed.");
+      }
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="m-0 font-sans text-ops-body text-content">
+        When a lead cannot be delivered to the app, an email goes to <strong className="break-all">{to}</strong>{" "}
+        <span className="text-content-muted">(from {source})</span>.
+      </p>
+      {!configured && (
+        <p className="m-0 rounded-md bg-pill-bad-bg px-3 py-2 font-sans text-ops-body font-semibold text-pill-bad-fg">
+          No email key is set in this environment, so no alert can be sent.
+        </p>
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button onClick={send} disabled={busy || !configured}>
+          {busy ? "Sending…" : "Send a test alert"}
+        </Button>
+      </div>
+      {result && (
+        <p
+          role="status"
+          className={`m-0 rounded-md px-3 py-2 font-sans text-ops-body font-semibold ${
+            result.ok ? "bg-pill-good-bg text-pill-good-fg" : "bg-pill-bad-bg text-pill-bad-fg"
+          }`}
+        >
+          {result.text}
+        </p>
+      )}
+      <p className="m-0 font-sans text-ops-label text-content-muted">
+        Alerts are sent from Resend&apos;s shared test address. Until a Curbio domain is verified in Resend, it may
+        deliver only to the Resend account owner&apos;s own address — this test tells you whether yours does.
+      </p>
     </div>
   );
 }

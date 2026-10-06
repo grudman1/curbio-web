@@ -23,8 +23,8 @@ import { FilterChips } from "../../_ui/FilterChips";
 import { buttonClass } from "../../_ui/Button";
 import { currentAdminUser } from "../../_ui/session";
 import {
-  BonusTool,
   AlertTest,
+  BonusTool,
   DealNoteSwitch,
   DrawPanel,
   EmailListPanel,
