@@ -247,6 +247,7 @@ deleting there.
   The bonus is given once per person, whichever way it was earned.
 - A written request (an email to the inbox named in the Official Rules) is
   added the same way with "+5 · written request".
+
 ---
 
 ## 7. Drawing day — Fri Oct 9, 12:00pm Mountain
