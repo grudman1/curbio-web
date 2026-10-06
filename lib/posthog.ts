@@ -108,6 +108,13 @@ export async function initPostHog(): Promise<void> {
       // and address; none of it may reach an analytics vendor.
       mask_all_element_attributes: true,
       mask_all_text: true,
+      // Session replay: mask every input value (name, email, phone, address).
+      // posthog-js already defaults to this, but a project-level dashboard
+      // setting can override the default — a value set HERE takes precedence
+      // over the dashboard, so it can't be switched off by accident. Visitor
+      // details shown as page TEXT (e.g. /confirm's email) carry the
+      // `ph-mask` class, the recorder's text-mask class.
+      session_recording: { maskAllInputs: true },
     });
     client = posthog;
     posthog.register(superProperties());

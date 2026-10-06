@@ -203,7 +203,8 @@ export default function ConfirmShell({
       </h1>
       <p className="lp-confirm-receipt-sub">
         {hsmFirstName ?? "Your local Curbio team"} will reach out within one business day
-        {prefill.email ? <> at <strong>{prefill.email}</strong></> : null}.
+        {/* ph-mask: the visitor's own email — masked in PostHog session replay. */}
+        {prefill.email ? <> at <strong className="ph-mask">{prefill.email}</strong></> : null}.
       </p>
     </div>
   );

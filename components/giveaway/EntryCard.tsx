@@ -695,8 +695,13 @@ export function EntryCard() {
                 {gotBonus ? copy.thanks.booked : "Your call is booked."}
               </p>
               <p className="m-0 font-sans text-body text-content">
-                {bookingNote ??
-                  `${manager?.firstName ?? "Your local manager"} will call at the time you picked. A confirmation is on its way to ${saved.email}.`}
+                {bookingNote ?? (
+                  <>
+                    {manager?.firstName ?? "Your local manager"} will call at the time you picked. A confirmation is on
+                    its way to {/* ph-mask: entrant's email — masked in PostHog session replay. */}
+                    <span className="ph-mask">{saved.email}</span>.
+                  </>
+                )}
               </p>
             </div>
           ) : saved.marketSlug ? (
@@ -757,7 +762,12 @@ export function EntryCard() {
           )}
 
           <p className="relative m-0 font-sans text-[13px] text-content-muted">
-            {contactRequest ? "Sent" : "Entered"} as {firstName} · {saved.email}.{" "}
+            {contactRequest ? "Sent" : "Entered"} as{" "}
+            {/* ph-mask: entrant's name and email — masked in PostHog session replay. */}
+            <span className="ph-mask">
+              {firstName} · {saved.email}
+            </span>
+            .{" "}
             <button
               type="button"
               onClick={startOver}
