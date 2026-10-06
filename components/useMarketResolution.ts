@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { canonicalSlug } from "@/lib/markets";
+import { takeEarlyResolve } from "@/lib/earlyResolve";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Client-side market resolution for the prerendered landing routes (/ and
@@ -77,9 +78,20 @@ export function useMarketResolution(): Resolution | null {
       const v = params.get(k);
       if (v) qs.set(k, v);
     }
-    fetch(`/api/resolve?${qs.toString()}`, { signal: AbortSignal.timeout(6000) })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
+    // The landing page may have started this exact request during HTML parse
+    // (lib/earlyResolve.ts). Same 6s ceiling either way.
+    const early = takeEarlyResolve(qs.toString());
+    const request = early
+      ? Promise.race([
+          early,
+          new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 6000)),
+        ])
+      : fetch(`/api/resolve?${qs.toString()}`, { signal: AbortSignal.timeout(6000) }).then((r) =>
+          r.ok ? r.json() : null
+        );
+    request
+      .then((raw) => {
+        const data = raw as Record<string, string | null> | null;
         if (cancelled) return;
         if (data?.source === "out-of-area") {
           setRes({
