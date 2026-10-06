@@ -199,4 +199,26 @@ export type CampaignPage = {
 
   /** Partner id from lib/partners.ts. Adds co-branding. Omit for owned pages. */
   partner?: string;
+
+  /**
+   * Dismissible announcement bar above the header. OFF unless a config sets
+   * it — today only /exp does. Hides itself at `endsAt` with no deploy, and
+   * remembers a dismissal per `id` in localStorage. See
+   * components/PromoBanner.tsx.
+   */
+  promoBanner?: PromoBanner;
+};
+
+export type PromoBanner = {
+  /** Stable key for the dismissal memory. Change it to show a new banner to
+   *  people who dismissed an old one. */
+  id: string;
+  /** Plain lead-in before the link, e.g. "At eXpcon, or not?". */
+  lead: string;
+  /** The link text. The arrow is added by the component. */
+  linkText: string;
+  /** Absolute URL, tags included. */
+  href: string;
+  /** ISO instant the bar stops showing. */
+  endsAt: string;
 };
