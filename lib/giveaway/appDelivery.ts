@@ -3,7 +3,7 @@ import { Resend } from "resend";
 import { ANSWER_LABEL, type Giveaway } from "@/config/giveaways";
 import { isKnownReferralSource } from "@/config/campaigns/types";
 import { crmNameForSlug } from "@/config/markets";
-import { dealNote, leadSource, type AppReason, type GiveawayEntry } from "./entry";
+import { leadSource, type AppReason, type GiveawayEntry } from "./entry";
 import { storeScope } from "./mode";
 import { claimLeadRow, safeError } from "./store";
 
@@ -35,9 +35,9 @@ import { claimLeadRow, safeError } from "./store";
 //
 //   - A market is guaranteed (appDecision refuses an entry without one), so
 //     the route's "unroutable" branch has no equivalent.
-//   - The 90-day answer rides in `workDetails`, the app's free-text "requested
-//     work" field — the one thing an HSM actually sees on the deal and in
-//     their new-lead email. Gated by a switch, because that field is Rich's.
+//   - The 90-day answer is NOT sent to the app. Any lead that reaches it is
+//     assumed to have a listing, so a note would say nothing new. The answer
+//     stays on the entry (and, as `listing90`, on the stored lead row).
 //   - Nothing here DEDUPES. The app does not either: for a lead with a market
 //     and no ZIP, every POST makes a new deal. One entry per email is what
 //     stops a double-tap becoming two deals, and that is enforced upstream.
@@ -106,10 +106,9 @@ export async function deliverToApp(
   giveaway: Giveaway,
   entry: GiveawayEntry,
   reason: AppReason,
-  options: { includeDealNote: boolean; leadId: string }
+  options: { leadId: string }
 ): Promise<AppDeliveryResult> {
   const a = entry.attribution;
-  const note = dealNote(giveaway, entry.listing90);
 
   const payload = {
     leadId: options.leadId,
@@ -120,9 +119,7 @@ export async function deliverToApp(
     email: entry.email,
     zip: entry.zip,
     address: "",
-    // Ours, not the CRM's: kept on the stored lead so the record explains
-    // itself even while the deal-note switch is off.
-    description: note,
+    description: "",
     market: crmNameForSlug(entry.marketSlug),
     source: leadSource(giveaway, entry.marketSlug),
     variant: null,
@@ -256,7 +253,6 @@ export async function deliverToApp(
       origin: payload.entryPoint,
       leadSource: payload.firstTouchChannel,
       firstTouchCampaign: payload.firstTouchCampaign,
-      ...(options.includeDealNote ? { workDetails: note } : {}),
     };
     console.log("[giveaway] posting lead to CRM", logCtx); // payload itself is PII — never log it
     const res = await fetch(webhook, {
