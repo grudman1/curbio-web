@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 
 export default function ExpPage() {
   return (
-    <Suspense fallback={<ExpPageSkeleton />}>
+    <Suspense fallback={<ExpPageSkeleton hero={exp.hero} partnerId={exp.partner} />}>
       <CampaignClient page={exp} />
     </Suspense>
   );

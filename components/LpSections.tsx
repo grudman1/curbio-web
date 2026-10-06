@@ -1,8 +1,9 @@
 import Image from "next/image";
 import { track } from "@vercel/analytics";
-import { Icon, Eyebrow, AmberRule, PillButton } from "./LpKit";
+import { Icon, Eyebrow, PillButton } from "./LpKit";
 import { ZipModalTrigger } from "./ZipModalTrigger";
 import { FormCard } from "./FormCard";
+import { HeroCopyBody } from "./HeroCopyBody";
 import { trackEvent } from "@/lib/events";
 import { readVariantFromCookie } from "@/lib/ctaVariant";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
@@ -133,43 +134,7 @@ export function Hero({
               {neutral ? "For listing agents" : `${market.name} agents`}
             </Eyebrow>
           )}
-          <h1 className="lp-hero-h1">
-            {headline ?? (
-              <>
-                We do the <em>prep.</em>
-                <br />
-                You make the <em>sale.</em>
-                <br />
-                Seller pays <em>at close.</em>
-              </>
-            )}
-          </h1>
-          <AmberRule width={48} style={{ margin: "22px 0" }} />
-          <p className="lp-hero-sub">
-            {heroSub ?? "Move-in ready sells. Your seller pays nothing until it closes."}
-          </p>
-          <div className="lp-hero-trust">
-            <span className="lp-sold-proof">
-              <Icon name="home" size={12} color="var(--fg-muted)" stroke={2} />
-              {trust?.[0] ?? "8,000+ homes prepped"}
-            </span>
-            <span className="lp-sold-proof-dot" aria-hidden>·</span>
-            <span className="lp-sold-proof">
-              <Icon name="shield" size={12} color="var(--fg-muted)" stroke={2} />
-              {trust?.[1] ?? "1-year warranty"}
-            </span>
-            <span className="lp-sold-proof-dot" aria-hidden>·</span>
-            <span className="lp-sold-proof">
-              <Icon name="check" size={12} color="var(--fg-muted)" stroke={2.5} />
-              {trust?.[2] ?? "Licensed & insured"}
-            </span>
-          </div>
-          {phone && (
-            <p className="lp-hero-phone">
-              Prefer to talk it through?{" "}
-              <a href={`tel:${phone.tel}`}>{phone.display}</a>
-            </p>
-          )}
+          <HeroCopyBody headline={headline} heroSub={heroSub} trust={trust} phone={phone} />
         </div>
         <div className="lp-hero-form-col">
           <FormCard

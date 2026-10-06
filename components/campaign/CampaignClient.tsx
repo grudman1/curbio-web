@@ -33,7 +33,9 @@ export default function CampaignClient({ page }: { page: CampaignPage }) {
     );
   }
 
-  if (!res) return <Skeleton />;
+  // Same skeleton as the prerendered fallback, real hero copy included — or
+  // hydration would flash the headline back to a grey bar.
+  if (!res) return <Skeleton hero={page.hero} partnerId={page.partner} />;
 
   if (res.view === "waitlist") {
     return <WaitlistShell outZip={res.outZip} geoCity={res.geoCity} geoRegion={res.geoRegion} />;
