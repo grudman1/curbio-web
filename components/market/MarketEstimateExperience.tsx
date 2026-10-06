@@ -98,6 +98,9 @@ export function MarketEstimateExperience({
                 prefillAddress={location?.address}
                 locationLabel={locationLabel}
                 consumeMarketPrefill={Boolean(location)}
+                // The homepage ZIP/address search hands over `location`;
+                // without it the visitor arrived on the market URL itself.
+                marketSource={location ? "zip" : "param"}
               />
             </div>
             <aside className="c-market-hsm" aria-label={`Your ${resolvedMarket.name} Curbio manager`}>

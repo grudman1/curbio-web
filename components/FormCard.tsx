@@ -9,6 +9,7 @@ import { deriveChannel } from "@/lib/channels";
 import { campaignBaseFor, campaignHref } from "@/lib/campaignBase";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 import type { CtaVariant } from "@/lib/ctaVariant";
+import { readMarketPick } from "@/lib/marketPick";
 
 /**
  * Agent-facing ZIP label — the historical wording, kept as the default so
@@ -102,6 +103,9 @@ export function FormCard({
   const [emailEdited, setEmailEdited] = useState(false);
   const [errs, setErrs] = useState<{ name?: string; email?: string; zip?: string; server?: string }>({});
   const [pending, setPending] = useState(false);
+  // Set when the lead route sent this submission to the waitlist instead of
+  // the CRM (see the market gate in app/api/lead/route.ts). Replaces the form.
+  const [diverted, setDiverted] = useState<{ outcome: "waitlist" | "held"; zip: string } | null>(null);
   const router = useRouter();
 
   // Spam time-trap: when this form became interactive. Sent as `renderedAt`
@@ -146,13 +150,15 @@ export function FormCard({
       }));
       setPrefilled((p) => ({ name: p.name || !!urlName, email: p.email || !!urlEmail }));
     }
-    // Keep ?market= so a browser refresh re-resolves the correct market via the
-    // server (geo would otherwise win on reload). Strip everything else: PII
-    // (n, e), utm_* already captured above, and any other params.
-    const marketSlug = params.get("market");
-    const cleanUrl = marketSlug
-      ? `${window.location.pathname}?market=${encodeURIComponent(marketSlug)}`
-      : window.location.pathname;
+    // Keep ?market= and ?zip= so a browser refresh re-resolves the market the
+    // visitor chose (geo would otherwise win on reload). Strip everything else:
+    // PII (n, e), utm_* already captured above, and any other params.
+    const keep = new URLSearchParams();
+    for (const k of ["market", "zip"] as const) {
+      const v = params.get(k);
+      if (v) keep.set(k, v);
+    }
+    const cleanUrl = keep.size ? `${window.location.pathname}?${keep.toString()}` : window.location.pathname;
     window.history.replaceState({}, "", cleanUrl);
     if (consumeMarketPrefill) {
       document.cookie = "curbio_market_prefill=; path=/markets; max-age=0; samesite=lax";
@@ -184,6 +190,7 @@ export function FormCard({
   const marketless = !market.slug;
   const showZipField = showZip || marketless;
   const zipRequired = marketless;
+  const zipTyped = showZipField && f.zip.trim() !== "";
 
   const submit = useCallback(
     async (e: React.FormEvent) => {
@@ -271,7 +278,10 @@ export function FormCard({
               // Which signal decided the market. A ZIP typed into this form
               // outranks whatever the page resolved at render time — it is the
               // most recent thing the visitor actually told us.
-              marketSource: f.zip.trim() ? "form-zip" : marketSource,
+              // Only a ZIP typed into the VISIBLE field counts: a hidden ZIP
+              // carried in from the picker or the homepage was already
+              // reflected in `marketSource` by the page.
+              marketSource: zipTyped ? "form-zip" : decidedBy(marketSource, market.slug),
               // Spam tripwire — see the lead route.
               renderedAt: renderedAtRef.current,
               ...(f.zip && { zip: f.zip.replace(/\D/g, "").slice(0, 5) }),
@@ -284,11 +294,21 @@ export function FormCard({
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.ok) throw new Error(data.error || "Something went wrong. Please try again.");
 
+        // The route found no served market for this ZIP and put the visitor on
+        // the waitlist (or held it for a human). Not a lead: no lead_submit,
+        // no /confirm — the form becomes the "not in your area yet" step.
+        if (data.outcome === "waitlist" || data.outcome === "held") {
+          setDiverted({ outcome: data.outcome, zip: f.zip.replace(/\D/g, "").slice(0, 5) });
+          return;
+        }
+        // A marketless lead whose ZIP the route matched to a market.
+        const routedSlug: string = typeof data.market === "string" ? data.market : market.slug;
+
         // 4. Analytics off the critical path — yield to the browser first
         setTimeout(() => {
           track("lead_submit", { variant });
           trackEvent("lead_submit", {
-            market: market.slug || "unknown",
+            market: routedSlug || "unknown",
             variant,
             ga_client_id: gaClientId ?? undefined,
             channel: derivedChannel,
@@ -310,7 +330,7 @@ export function FormCard({
         document.cookie =
           `curbio_confirm_prefill=${encodeURIComponent(prefillJson)}; path=/confirm; max-age=120; samesite=lax`;
         const qs = new URLSearchParams();
-        if (market.slug) qs.set("market", market.slug);
+        if (routedSlug) qs.set("market", routedSlug);
         if (partnerSlug) qs.set("partner", partnerSlug);
         // Resolved at navigation time, not render time: on sell.curbio.com the
         // pathname is "/" and this yields "/confirm" exactly as before, while
@@ -324,8 +344,34 @@ export function FormCard({
         setPending(false);
       }
     },
-    [pending, f, market, crmMarketName, variant, source, partnerSlug, router, zipRequired, marketSource, defaultUtmSource]
+    [pending, f, market, crmMarketName, variant, source, partnerSlug, router, zipRequired, zipTyped, marketSource, defaultUtmSource]
   );
+
+  if (diverted) {
+    const first = f.name.trim().split(/\s+/)[0];
+    return (
+      <div className="lp-fc lp-fc-diverted" id="quote-form" role="status">
+        <p className="lp-fc-diverted-eyebrow">Thanks{first ? `, ${first}` : ""}</p>
+        {diverted.outcome === "waitlist" ? (
+          <>
+            <h2 className="lp-fc-diverted-title">We&rsquo;re not in your area yet.</h2>
+            <p className="lp-fc-diverted-body">
+              Curbio doesn&rsquo;t serve ZIP {diverted.zip} yet. We&rsquo;ve saved your details and
+              we&rsquo;ll be in touch when we launch near you.
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 className="lp-fc-diverted-title">We&rsquo;ve got your request.</h2>
+            <p className="lp-fc-diverted-body">
+              We couldn&rsquo;t confirm coverage{diverted.zip ? ` for ZIP ${diverted.zip}` : ""} just now,
+              so a member of the Curbio team will follow up with you directly.
+            </p>
+          </>
+        )}
+      </div>
+    );
+  }
 
   return (
     <form className="lp-fc" id="quote-form" onSubmit={submit} onFocusCapture={onFormFocus} noValidate>
@@ -444,4 +490,15 @@ export function FormCard({
       </p>
     </form>
   );
+}
+
+/**
+ * "param" means the market came in on a ?market= URL — but that URL is the
+ * same whether someone clicked a campaign link or picked a card in the market
+ * picker. The picker leaves a visit-only flag (lib/marketPick.ts); when it
+ * names this market, the market was a PICK.
+ */
+function decidedBy(marketSource: string | null, slug: string): string | null {
+  if (marketSource === "param" && slug && readMarketPick() === slug) return "pick";
+  return marketSource;
 }

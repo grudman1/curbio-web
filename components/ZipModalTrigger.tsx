@@ -9,15 +9,14 @@ export function ZipModalTrigger({
   marketSlug,
   initialOpen = false,
   basePath = "/",
-  required = false,
+  prompted = false,
 }: {
   label: string;
   marketSlug: string | null;
   initialOpen?: boolean;
   basePath?: string;
-  /** Neutral state only — see ZipModal. Makes the picker a gate the visitor
-   *  must answer rather than a switcher they can dismiss. */
-  required?: boolean;
+  /** Neutral state only — see ZipModal. "Where are you listing?" copy. */
+  prompted?: boolean;
 }) {
   const [open, setOpen] = useState(initialOpen);
   return (
@@ -36,11 +35,9 @@ export function ZipModalTrigger({
         onClose={() => setOpen(false)}
         current={marketSlug ? { slug: marketSlug } : null}
         basePath={basePath}
-        // `required` is only ever passed alongside the neutral auto-open, so
-        // the gate and the auto-open are the same event. A visitor who already
-        // HAS a market gets required={false} from the shell and keeps a fully
-        // dismissible switcher.
-        required={required}
+        // `prompted` is only ever passed alongside the neutral auto-open; it
+        // changes the copy, never whether the picker can be closed.
+        prompted={prompted}
       />
     </>
   );

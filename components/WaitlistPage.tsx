@@ -10,11 +10,18 @@ export function WaitlistPage({
   geoCity,
   geoRegion,
   onChooseMarket,
+  referralSourceId,
+  waitlistFrom,
 }: {
   zip: string;
   geoCity?: string;
   geoRegion?: string;
   onChooseMarket: () => void;
+  /** The page's partner referral ("eXp realty" on eXp pages). Omitted on owned
+   *  pages, so they carry no partner referral. */
+  referralSourceId?: string;
+  /** The page source the visitor came from, e.g. "exp-realty-unknown". */
+  waitlistFrom?: string;
 }) {
   const [f, setF] = useState({ name: "", email: "", zip: zip });
   const [sent, setSent] = useState(false);
@@ -57,6 +64,8 @@ export function WaitlistPage({
           email: f.email.trim(),
           zip: f.zip.replace(/\D/g, "").slice(0, 5),
           source: "waitlist",
+          ...(referralSourceId ? { referralSourceId } : {}),
+          ...(waitlistFrom ? { waitlistFrom } : {}),
           submittedAt: new Date().toISOString(),
           entryPoint: "web_form",
           medium: utms.utm_medium ?? null,

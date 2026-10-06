@@ -48,6 +48,9 @@ export default async function CampaignMarketPage({
       page={page}
       market={getCampaignMarket(resolved?.slug ?? slug)}
       crmMarketName={crmMarketName ?? null}
+        // Reached only through ?market=<slug> (middleware rewrite). "param"
+        // here; FormCard upgrades it to "pick" when the market picker set it.
+        marketSource="param"
     />
   );
 }

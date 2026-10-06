@@ -128,8 +128,9 @@ export default function CampaignShell({
   crmMarketName = null,
   neutral = false,
   showPicker = false,
-  requirePicker = false,
+  promptPicker = false,
   marketSource = null,
+  prefillZip,
   variant: serverVariant,
   marketExperience,
 }: {
@@ -138,15 +139,14 @@ export default function CampaignShell({
   crmMarketName?: string | null;
   neutral?: boolean;
   showPicker?: boolean;
-  /**
-   * Locks the auto-opened picker so it cannot be dismissed — set only on the
-   * NEUTRAL branch of CampaignClient, where the page behind it has no market
-   * and (on /exp and /lp/sell) no ZIP field either. See ZipModal for the
-   * incident this closes.
-   */
-  requirePicker?: boolean;
+  /** "Where are you listing?" copy on the auto-opened picker — NEUTRAL branch
+   *  of CampaignClient only. The picker stays closable. See ZipModal. */
+  promptPicker?: boolean;
   /** Which signal decided the market — forwarded to the lead payload. */
   marketSource?: string | null;
+  /** The ZIP the visitor typed in the picker, when that is what decided the
+   *  market. Carried, hidden, into the lead. */
+  prefillZip?: string;
   /** Site-market mount of this same conversion spine. The site layout owns
    *  chrome; this variant owns the market hero and local content around the
    *  unchanged FormCard. */
@@ -235,7 +235,7 @@ export default function CampaignShell({
           initialPickerOpen={showPicker}
           basePath={marketBase}
           showMarketPicker={page.market.mode === "picker"}
-          requirePicker={requirePicker}
+          promptPicker={promptPicker}
         />
       ) : (
         <Header
@@ -245,7 +245,7 @@ export default function CampaignShell({
           logoHref={base}
           basePath={marketBase}
           showMarketPicker={page.market.mode === "picker"}
-          requirePicker={requirePicker}
+          promptPicker={promptPicker}
         />
       )}
 
@@ -268,6 +268,7 @@ export default function CampaignShell({
           emailPlaceholder={page.emailPlaceholder}
           defaultUtmSource={page.attribution.defaultUtmSource}
           marketSource={marketSource}
+          prefillZip={prefillZip}
           source={page.attribution.source.replace(/\{marketSlug\}/g, marketSlug)}
         />
 
