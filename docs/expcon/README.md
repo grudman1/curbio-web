@@ -237,6 +237,15 @@ deleting there.
   The bonus is given once per person, whichever way it was earned.
 - A written request (an email to the inbox named in the Official Rules) is
   added the same way with "+5 · written request".
+- **Failure alerts.** If a lead cannot be delivered to the app, an email
+  "CRM delivery FAILED — lead preserved" goes to the address shown in the
+  **Failure alerts** card on `/admin/giveaway` (it comes from `RESEND_TO_EMAIL`,
+  else `LEAD_NOTIFY_EMAIL`, else the built-in `grudman1@gmail.com`). Press
+  **Send a test alert** once before the show: it goes through the same path and
+  shows the email service's own answer. If Resend refuses (alerts are sent from
+  Resend's shared test address, which may deliver only to the Resend account
+  owner until a Curbio domain is verified), the screen says why. Accepted means
+  Resend took it; the proof is the email arriving — check the inbox and spam.
 
 ---
 

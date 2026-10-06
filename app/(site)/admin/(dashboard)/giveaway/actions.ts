@@ -15,6 +15,7 @@ import {
   verifyDrawing,
   type ReconcileReport,
 } from "@/lib/giveaway/service";
+import { sendTestAlert, type AlertTestResult } from "@/lib/giveaway/appDelivery";
 import { storeScope } from "@/lib/giveaway/mode";
 import { appendLog, writeSetting, type DrawRecord } from "@/lib/giveaway/store";
 
@@ -169,6 +170,27 @@ export async function setDealNoteAction(slug: string, on: boolean): Promise<{ ok
   }
   revalidatePath(PATH);
   return { ok: true };
+}
+
+/**
+ * Owner only: send a TEST failure alert to the owner address, through the same
+ * path a real one takes, and report what the email service said.
+ */
+export async function sendTestAlertAction(slug: string): Promise<AlertTestResult | Fail> {
+  const session = await ownerSession();
+  if (!session) return { ok: false, error: "Owner access required." };
+  const giveaway = giveawayFor(slug);
+  if (!giveaway) return { ok: false, error: "Unknown giveaway." };
+  const result = await sendTestAlert(session.email);
+  await appendLog(storeScope(giveaway), {
+    at: new Date().toISOString(),
+    email: null,
+    by: session.email,
+    action: "alert_test",
+    detail: result.ok ? `sent to ${result.to}` : `FAILED — ${result.error}`,
+  });
+  revalidatePath(PATH);
+  return result;
 }
 
 export async function runDrawingAction(
