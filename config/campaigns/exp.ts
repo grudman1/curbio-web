@@ -1,4 +1,5 @@
 import type { CampaignPage } from "./types";
+import { expcon } from "../giveaways/expcon";
 
 // eXp Realty partner page — the SAME template as /lp/sell, mounted in a
 // different tier.
@@ -50,4 +51,19 @@ export const exp: CampaignPage = {
   },
 
   partner: "exp",
+
+  // eXpcon giveaway cross-promo. Ends when entries close, read from the
+  // giveaway's own settings so the two can never disagree. Tags: the
+  // "eXpcon 2026 · /exp banner" row in config/linkRegistry.ts — they keep
+  // banner entries apart from the booth QR (event/qr) and the emails
+  // (email/e); the eXp referral is added by /expcon itself.
+  promoBanner: {
+    id: "expcon-2026",
+    lead: "At eXpcon, or not?",
+    linkText: "Enter to win the Listing-Ready Kit",
+    href:
+      "https://sell.curbio.com/expcon?utm_source=partnership&utm_medium=collateral" +
+      "&utm_campaign=partner-expcon-oct&utm_content=exp-banner",
+    endsAt: expcon.closesAt,
+  },
 };

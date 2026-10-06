@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import CampaignClient from "@/components/campaign/CampaignClient";
+import { PromoBanner } from "@/components/PromoBanner";
 import ExpPageSkeleton from "@/components/ExpPageSkeleton";
 import { exp } from "@/config/campaigns/exp";
 import { routeMetadata } from "@/config/routes";
@@ -20,8 +21,11 @@ export const metadata: Metadata = {
 
 export default function ExpPage() {
   return (
-    <Suspense fallback={<ExpPageSkeleton hero={exp.hero} partnerId={exp.partner} />}>
-      <CampaignClient page={exp} />
-    </Suspense>
+    <>
+      {exp.promoBanner && <PromoBanner banner={exp.promoBanner} />}
+      <Suspense fallback={<ExpPageSkeleton hero={exp.hero} partnerId={exp.partner} />}>
+        <CampaignClient page={exp} />
+      </Suspense>
+    </>
   );
 }

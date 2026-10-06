@@ -208,6 +208,18 @@ em { font-style: normal; }
 .lp-ph-navy { background: repeating-linear-gradient(45deg, #13294f, #13294f 14px, #0f2347 14px, #0f2347 28px); }
 
 /* ============================================================ HEADER */
+/* ---------- promo bar (config `promoBanner`; components/PromoBanner.tsx) ----------
+   In normal flow above the header — never fixed — so it cannot sit on top of
+   the bottom cookie notice, and the market pop-up's overlay (z-index 200)
+   simply covers it. */
+.lp-promo { position: relative; background: var(--amber); color: var(--navy); padding: 9px 56px; text-align: center; }
+.lp-promo-text { margin: 0; font-family: var(--font-sans); font-size: 14px; font-weight: 600; line-height: 1.35; }
+.lp-promo-link { color: var(--navy); font-weight: 800; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+.lp-promo-link:hover { text-decoration-thickness: 2px; }
+.lp-promo-x { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: none; border: 0; border-radius: 999px; color: var(--navy); cursor: pointer; }
+.lp-promo-x:hover { background: rgba(13,37,77,0.10); }
+.lp-promo-link:focus-visible, .lp-promo-x:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+@media (max-width: 600px) { .lp-promo { padding: 8px 48px 8px 16px; text-align: left; } .lp-promo-text { font-size: 13px; } .lp-promo-x { right: 2px; } }
 .lp-header { background: var(--navy); border-bottom: none; }
 /* padding-top/bottom only — the shorthand `padding: 14px 0` was clobbering
    .lp-shell's horizontal padding (same element), leaving the header flush
