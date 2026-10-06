@@ -208,6 +208,32 @@ em { font-style: normal; }
 .lp-ph-navy { background: repeating-linear-gradient(45deg, #13294f, #13294f 14px, #0f2347 14px, #0f2347 28px); }
 
 /* ============================================================ HEADER */
+/* Header market pill (ZipModalTrigger). One line, always; the logos never
+   shrink to make room for it. On narrow phones the header tightens and the
+   pill swaps to its short label ("Market", or a market's shortName). The
+   breakpoints are MEASURED, not guessed — see the Stage 1 PR. */
+.lp-mkt-btn { white-space: nowrap; }
+.lp-header .lp-header-logo, .lp-header .exp-header-logos, .lp-header .exp-solutions-logo { flex-shrink: 0; }
+.lp-mkt-btn-short { display: none; }
+.lp-mkt-pin { display: inline-flex; }
+/* Co-branded header (two logos): the full "Choose your market" pill only fits
+   beside them from ~500px. The plain Curbio header has room down to ~400px. */
+@media (max-width: 499px) {
+  .exp-header-logos ~ .lp-mkt-btn .lp-mkt-btn-full { display: none; }
+  .exp-header-logos ~ .lp-mkt-btn .lp-mkt-btn-short { display: inline; }
+}
+@media (max-width: 399px) {
+  .lp-mkt-btn-full { display: none; }
+  .lp-mkt-btn-short { display: inline; }
+}
+@media (max-width: 400px) {
+  .lp-header .lp-shell { padding-left: 16px; padding-right: 16px; }
+  .lp-header .lp-header-inner, .lp-header .exp-header-logos { gap: 10px; }
+  .lp-header .lp-header-logo { height: 20px; }
+  .lp-header .exp-solutions-logo { height: 14px; }
+  .lp-mkt-pin { display: none; }
+}
+
 /* ---------- promo bar (config `promoBanner`; components/PromoBanner.tsx) ----------
    In normal flow above the header — never fixed — so it cannot sit on top of
    the bottom cookie notice, and the market pop-up's overlay (z-index 200)
@@ -305,6 +331,12 @@ em { font-style: normal; }
 .lp-fc-check { display: inline-flex; margin-bottom: 16px; }
 .lp-fc-sent-h { font-family: var(--font-serif); font-weight: 600; font-size: 18px; color: var(--navy); margin: 0 0 8px; }
 .lp-fc-sent-sub { font-family: var(--font-sans); font-size: 14px; color: var(--fg-muted); line-height: 1.55; margin: 0; max-width: 28ch; }
+/* The form's "not in your area yet" step — shown in place of the form when the
+   lead route sends a marketless lead to the waitlist (FormCard `diverted`). */
+.lp-fc-diverted { text-align: left; }
+.lp-fc-diverted-eyebrow { margin: 0 0 8px; font-family: var(--font-sans); font-size: 12px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--amber); }
+.lp-fc-diverted-title { margin: 0 0 10px; font-family: var(--font-serif); font-size: 26px; font-weight: 600; line-height: 1.15; color: var(--navy); }
+.lp-fc-diverted-body { margin: 0; font-family: var(--font-sans); font-size: 15px; line-height: 1.55; color: var(--fg-muted); }
 @media (max-width: 860px) { .lp-fc { max-width: none; } }
 @media (max-width: 400px) { .lp-fc { padding: 24px 20px; } }
 
@@ -482,3 +514,34 @@ em { font-style: normal; }
 .lp-hero-phone { margin: 14px 0 0; font-size: 14px; color: var(--fg-muted); }
 .lp-hero-phone a { color: var(--navy); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 .lp-hero-phone a:hover { color: var(--amber); }
+
+/* ---------- CookieYes notice: compact on phones ----------
+   The notice is CookieYes's own markup and styles (loaded from their CDN), so
+   these overrides need !important. It is NOT hidden, delayed or blocked — only
+   made smaller: full width minus a gutter, tighter padding and type, so it
+   stops covering half a phone screen (226px tall at 375px before, ~134px after).
+   Class names verified on the live notice 2026-10-06; if CookieYes renames
+   them these rules simply stop matching and the notice falls back to its
+   stock look — nothing breaks. */
+@media (max-width: 600px) {
+  .cky-consent-container { left: 8px !important; right: 8px !important; bottom: 8px !important; width: auto !important; max-width: none !important; }
+  .cky-consent-container .cky-consent-bar { padding: 10px 40px 10px 14px !important; border-radius: 12px !important; }
+  .cky-consent-container .cky-notice .cky-title { font-size: 13px !important; line-height: 1.3 !important; margin: 0 0 3px !important; }
+  .cky-consent-container .cky-notice-group,
+  .cky-consent-container .cky-notice-group p,
+  .cky-consent-container .cky-notice-group a,
+  .cky-consent-container .cky-notice-group button { font-size: 12px !important; line-height: 1.4 !important; }
+  .cky-consent-container .cky-notice-group p { margin: 0 !important; }
+  .cky-consent-container .cky-notice-group > * + * { margin-top: 4px !important; }
+  .cky-consent-container .cky-title,
+  .cky-consent-container .cky-notice-des,
+  .cky-consent-container .cky-notice-btn-wrapper { padding: 0 !important; }
+  .cky-consent-container .cky-notice-btn-wrapper { margin-top: 4px !important; justify-content: flex-start !important; }
+  .cky-consent-container .cky-btn-do-not-sell { padding: 2px 0 !important; text-align: left !important; }
+  .cky-consent-container .cky-banner-btn-close { top: 6px !important; right: 6px !important; }
+  /* While the notice is up, give pop-ups room to scroll their last controls
+     (ZIP box, Find, waitlist link) clear of it. */
+  body:has(.cky-consent-container:not(.cky-hide)) .lp-overlay { padding-bottom: 190px; }
+  body:has(.cky-consent-container:not(.cky-hide)) main { padding-bottom: 180px; }
+}
+
