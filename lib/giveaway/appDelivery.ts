@@ -3,10 +3,10 @@ import { Resend } from "resend";
 import { ANSWER_LABEL, type Giveaway } from "@/config/giveaways";
 import { isKnownReferralSource } from "@/config/campaigns/types";
 import { crmNameForSlug } from "@/config/markets";
-import { parseEstimateId } from "./estimateId";
 import { dealNote, leadSource, type AppReason, type GiveawayEntry } from "./entry";
 import { storeScope } from "./mode";
 import { claimLeadRow, safeError } from "./store";
+import { parseEstimateId } from "./estimateId";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HANDING A GIVEAWAY ENTRANT TO THE APP — as a lead, in the lead store's own
