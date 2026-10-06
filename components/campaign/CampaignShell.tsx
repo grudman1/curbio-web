@@ -50,14 +50,18 @@ import type { ResolvedMarket } from "@/lib/markets";
  * The two are mutually exclusive by construction — showing a badge and a
  * wordmark side by side would put two partner marks in one lockup.
  */
-function CoBrandMark({
+export function CoBrandMark({
   partnerId,
   market,
   neutral,
+  servingPlaceholder = false,
 }: {
   partnerId: string;
   market: CampaignMarket;
   neutral: boolean;
+  /** Skeleton only: the serving line names the market, so it renders as a
+   *  grey bar — the neutral text, invisible, keeps the exact box size. */
+  servingPlaceholder?: boolean;
 }) {
   const partner = PARTNERS[partnerId];
   if (!partner) return null;
@@ -98,7 +102,18 @@ function CoBrandMark({
             its name in the mark; repeating it as text directly underneath
             stutters. Left as data rather than tied to `stacked` so a partner
             can choose either independently. */}
-        {serving && <span className="exp-cobrand-serving">{serving}</span>}
+        {serving &&
+          (servingPlaceholder ? (
+            <span
+              className="exp-cobrand-serving"
+              aria-hidden
+              style={{ color: "transparent", background: "var(--stone)", borderRadius: 4, width: "fit-content" }}
+            >
+              {serving}
+            </span>
+          ) : (
+            <span className="exp-cobrand-serving">{serving}</span>
+          ))}
         <span className="exp-cobrand-title">
           <RichText>{partner.coBrand.title}</RichText>
         </span>

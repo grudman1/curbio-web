@@ -78,7 +78,7 @@ export default async function CampaignVariantPage({
   // route. CampaignClient buckets from the cookie itself — no flash to fix.
   const Skeleton = page.partner ? ExpPageSkeleton : PageSkeleton;
   return (
-    <Suspense fallback={<Skeleton />}>
+    <Suspense fallback={<Skeleton hero={page.hero} partnerId={page.partner} />}>
       <CampaignClient page={page} />
     </Suspense>
   );

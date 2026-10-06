@@ -83,7 +83,7 @@ export default async function CampaignPage({
   return (
     <>
       <script dangerouslySetInnerHTML={{ __html: EARLY_RESOLVE_SCRIPT }} />
-      <Suspense fallback={<Skeleton />}>
+      <Suspense fallback={<Skeleton hero={page.hero} partnerId={page.partner} />}>
         <CampaignClient page={page} />
       </Suspense>
     </>
