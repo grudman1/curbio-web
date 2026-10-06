@@ -248,7 +248,7 @@ Nothing else touches the CookieYes cookie or its APIs directly.
 | Signal | Mechanism |
 |---|---|
 | GA4 (`NEXT_PUBLIC_GA_ID`) | Google Consent Mode v2 — a `consent` `default`/`update` signal pushed onto the gtag dataLayer queue in `lib/analytics.ts`, ahead of `config` by construction. The GA4 *script* always loads; Consent Mode is what tells it to stay cookieless when denied, rather than the script being blocked outright. |
-| Microsoft Clarity (`NEXT_PUBLIC_CLARITY_ID`) | Full injection gate (`components/ClarityLoader.tsx`) — Clarity has no consent-mode equivalent, so it is simply never injected until analytics consent is `true`. `clarity('stop')` fires if consent is revoked after injection. |
+| PostHog (`NEXT_PUBLIC_POSTHOG_KEY`) | Full injection gate (`lib/posthog.ts`) — PostHog has no consent-mode equivalent, so it is never initialised until analytics consent is `true`, and opts out of capturing if consent is revoked. |
 
 **Deliberately NOT gated** (first-party, functional, or cookieless — no
 consent gate applies):
@@ -276,7 +276,7 @@ present. Currently `"granted"` (US state-privacy-law opt-out posture).
 **Global Privacy Control (GPC):** a GPC signal (`navigator.globalPrivacyControl
 === true`) always overrides everything else, including an existing "yes"
 decision cookie. Under GPC: Consent Mode reports `denied` for all four
-signals, Clarity never injects, and there is no separate custom UI — CookieYes's
+signals, PostHog never initialises, and there is no separate custom UI — CookieYes's
 own GPC handling (dashboard setting, see below) additionally records the
 opt-out against the visitor's session.
 
