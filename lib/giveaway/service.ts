@@ -144,7 +144,7 @@ async function routeToApp(
   entry.routing.app = !result.crmAttempted
     ? { status: "not_configured", reason, at, leadId }
     : result.crmOk
-      ? { status: "sent", reason, at, leadId, crmStatus: result.crmStatus }
+      ? { status: "sent", reason, at, leadId, crmStatus: result.crmStatus, estimateId: result.crmEstimateId }
       : { status: "failed", reason, at, leadId, crmStatus: result.crmStatus, error: result.crmError };
   await saveEntry(scope, entry);
 

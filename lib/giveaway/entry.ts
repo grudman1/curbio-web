@@ -90,6 +90,10 @@ export type AppRouting = {
   /** Join key into leads:v1 / leads:delivery:v1. */
   leadId?: string;
   crmStatus?: number | null;
+  /** The app's estimate id, returned when it accepted the lead — what to search
+   *  for in the app to find the deal. Absent on entries sent before this was
+   *  recorded, and when the app's answer carried none. */
+  estimateId?: number | null;
   error?: string | null;
 };
 
