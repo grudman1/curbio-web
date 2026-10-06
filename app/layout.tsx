@@ -93,9 +93,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <script id="cookieyes" type="text/javascript" src="...">
             React renders JSX attributes in written order, so the order below
             reproduces that snippet byte-for-byte as a contiguous prefix —
-            id, type, src — with our one deviation, `async`, appended AFTER
-            src, outside any prefix-anchored match. async keeps a synchronous
-            head script from blocking HTML parsing (FCP/LCP); the preconnect
+            id, type, src — with our one deviation, `defer`, appended AFTER
+            src, outside any prefix-anchored match. defer (was async until
+            2026-10) never interrupts HTML parsing: async ran the banner script
+            the moment it arrived, mid-parse, competing with the first paint;
+            defer waits until the document is parsed. lib/consent.ts does not
+            need it earlier — absent the decision cookie it falls back to
+            CONSENT_DEFAULT, and onConsentChange picks up the later decision.
+            The preconnect
             below pre-pays the connection in case Verify ever forces us to
             drop it (measure paint cost first if so — and if a byte-identical
             snippet still fails, that's a CookieYes support ticket, not code).
@@ -108,7 +113,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             id="cookieyes"
             type="text/javascript"
             src={`https://cdn-cookieyes.com/client_data/${COOKIEYES_ID}/script.js`}
-            async
+            defer
           />
         )}
         {IS_PROD && COOKIEYES_ID && (
