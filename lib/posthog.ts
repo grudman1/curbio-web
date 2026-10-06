@@ -3,14 +3,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // PostHog — product analytics, alongside GA4 (which stays).
 //
-// CONSENT: PostHog is gated exactly like Microsoft Clarity, NOT like GA4.
+// CONSENT: PostHog is gated by injection, NOT like GA4.
 //
 //   GA4      uses Google Consent Mode v2: it always loads and runs
 //            cookieless/pinged when consent is denied.
-//   Clarity  has no consent-mode equivalent, so the only way to honour a
-//            decline is to never inject it.
-//   PostHog  likewise. It is not initialised until analytics consent is true,
-//            and opts out of capturing if consent is later revoked.
+//   PostHog  has no consent-mode equivalent, so the only way to honour a
+//            decline is to never initialise it. It is not initialised until
+//            analytics consent is true, and opts out of capturing if consent
+//            is later revoked.
 //
 // The consent decision itself comes from lib/consent.ts and nowhere else —
 // that module already encodes the full priority chain (GPC signal → CookieYes

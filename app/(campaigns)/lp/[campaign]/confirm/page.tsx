@@ -17,7 +17,7 @@ export const metadata: Metadata = routeMetadata("/confirm");
 
 /** Calendly prefill handed off from FormCard via the short-lived, path-scoped
  *  `curbio_confirm_prefill` cookie — PII never travels in the URL, where it
- *  would land in browser history, Vercel request logs, and Clarity session
+ *  would land in browser history, Vercel request logs, and analytics session
  *  metadata. ConfirmShell expires the cookie on mount. */
 function parsePrefillCookie(raw: string | undefined): { name?: string; email?: string; phone?: string } {
   if (!raw) return {};

@@ -3,7 +3,6 @@ import Script from "next/script";
 import { Lora, Libre_Franklin } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import ClarityLoader from "@/components/ClarityLoader";
 import { PostHogProvider } from "@/components/PostHogProvider";
 import { ScrollDepth } from "@/components/ScrollDepth";
 import { SITE_ORIGIN } from "@/config/routes";
@@ -73,7 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* CookieYes — banner UI + the consent cookie/GPC handling that
             lib/consent.ts reads. NOT relied on for automatic script blocking:
             our own scripts gate themselves on consent state in their own code
-            (Google Consent Mode v2 in lib/analytics.ts; ClarityLoader in body).
+            (Google Consent Mode v2 in lib/analytics.ts; PostHogProvider in body).
 
             This is a PLAIN <script> tag, deliberately not next/script:
             CookieYes's installation checker parses the raw HTML for a literal
@@ -107,7 +106,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             snippet still fails, that's a CookieYes support ticket, not code).
 
             id="cookieyes" is REQUIRED — their script locates its own tag by
-            this exact id. Env-gated like GA/Clarity: absent = no banner, no
+            this exact id. Env-gated like GA/PostHog: absent = no banner, no
             crash, in any environment. */}
         {IS_PROD && COOKIEYES_ID && (
           <script
@@ -157,11 +156,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             strategy="lazyOnload"
           />
         )}
-        {/* Microsoft Clarity has no consent-mode equivalent — it is only
-            injected once analytics consent is true. See ClarityLoader. */}
-        <ClarityLoader />
-        {/* PostHog, gated on the SAME consent state as Clarity (not GA4's
-            consent-mode posture — PostHog has no cookieless mode either).
+        {/* PostHog, gated on analytics consent (not GA4's consent-mode
+            posture — PostHog has no cookieless mode, so it is never
+            initialised until analytics consent is true).
             Lives here in the root layout so no page ever needs retrofitting,
             and captures pageviews manually on route change because the App
             Router does not fire them for client-side navigations. Env-gated:

@@ -299,7 +299,7 @@ export function FormCard({
         // 5. Navigate immediately after successful POST. PII travels to
         // /confirm in a short-lived, path-scoped cookie — NEVER in the URL,
         // which would land in browser history, Vercel request logs, and
-        // Clarity session metadata (input masking doesn't cover URLs).
+        // analytics session metadata (input masking doesn't cover URLs).
         // /confirm reads it server-side so the Calendly iframe src is still
         // prefilled in the first SSR HTML, then expires it on mount.
         const prefillJson = JSON.stringify({

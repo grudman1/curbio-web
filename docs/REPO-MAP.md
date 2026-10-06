@@ -215,10 +215,10 @@ path, which runs for both trees.
 - **Fonts**: `next/font/google` — Lora 600 → `--font-serif`; Libre Franklin 400/600/700/800 → `--font-sans`. Both variable classes on `<html>`.
 - **Metadata**: `metadataBase = SITE_ORIGIN` (`https://curbio.com`), default title/description/OG, favicons. **Viewport**: `maximumScale: 5`.
 - **Head**: CookieYes (prod + ID only), preconnect/dns-prefetch for CookieYes / `app.curbio.com` / Calendly, preload of `/logo/curbio-white.svg`.
-- **Body**: `<Analytics />`, `<SpeedInsights />`, GA4 loader (prod + ID, `lazyOnload`), `<ClarityLoader />` and `<PostHogProvider />` (both consent-gated), `<ScrollDepth />`.
+- **Body**: `<Analytics />`, `<SpeedInsights />`, GA4 loader (prod + ID, `lazyOnload`), `<PostHogProvider />` (consent-gated), `<ScrollDepth />`.
 - **CSS**: `./globals.css` then `./tokens.css`.
 
-Worth stating plainly: Vercel Analytics, Speed Insights, GA4, Clarity, PostHog,
+Worth stating plainly: Vercel Analytics, Speed Insights, GA4, PostHog,
 CookieYes and scroll-depth all mount on `/admin` too — there is
 no branch on route.
 
@@ -494,7 +494,7 @@ Server actions also write: `admin/actions.ts`, `admin/login/actions.ts`,
 | **Anthropic API** | `/api/admin/ask` | — | `ANTHROPIC_API_KEY` |
 | **Notable** (`api.notablefi.com`) | `/api/notable-estimate` | — | none |
 | **PostHog** | — | client, consent-gated | `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST` |
-| **GA4 / Clarity / CookieYes** | — | client | `NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_CLARITY_ID`, `NEXT_PUBLIC_COOKIEYES_ID` |
+| **GA4 / CookieYes** | — | client | `NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_COOKIEYES_ID` |
 | **Committed snapshots** (not services) | admin + hub | offline scripts | `config/appLeadsSnapshot.json` (`asOf` 2026-08-29, 852 deals, refreshed by `scripts/import-app-leads.mjs`), `config/linkRegistrySeed.json`, `config/emailListHealth.ts` (transcribed from `data/imports/mailchimp-audience-summary.csv`), the CSVs under `data/imports/` |
 
 Session signing: `ADMIN_SESSION_SECRET`. Exec share link: `EXEC_SHARE_TOKEN`
@@ -573,5 +573,5 @@ surfaces.
 2. **`admin/_ui/v2/font.ts`**, referenced twice in `tailwind.config.ts` comments, does not exist. The file is `fonts.ts`, declaring `--ops-font-*`.
 3. **"Magnificent Seven" channels.** `config/channelPlan.ts` defines six slugs; comments in `channels/[slug]/page.tsx` say "Magnificent Seven" and `config/adminNav.ts` says "the six". Which count is intended is unresolved.
 4. **Duplicate screens.** Nine `/admin/*` routes re-export `/marketing/(hub)/*` implementations; both URLs are reachable and linked from their own navs. Whether the hub's own sidebar survives the migration is not stated anywhere in the repo.
-5. **Analytics on gated pages.** GA4, Clarity, PostHog, Vercel Analytics and CookieYes mount in the root layout with no route branch, so they run on `/admin` and `/marketing`. No comment says whether that is intended.
+5. **Analytics on gated pages.** GA4, PostHog, Vercel Analytics and CookieYes mount in the root layout with no route branch, so they run on `/admin` and `/marketing`. No comment says whether that is intended.
 6. **`grudman1@gmail.com` fallback** at `app/api/lead/route.ts:306` — a personal address as last-resort lead recipient. Whether that is deliberate for production is not determinable from the code.
