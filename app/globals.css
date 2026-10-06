@@ -493,7 +493,7 @@ em { font-style: normal; }
    The notice is CookieYes's own markup and styles (loaded from their CDN), so
    these overrides need !important. It is NOT hidden, delayed or blocked — only
    made smaller: full width minus a gutter, tighter padding and type, so it
-   stops covering half a phone screen (it was 226px tall at 320–390px).
+   stops covering half a phone screen (226px tall at 375px before, ~134px after).
    Class names verified on the live notice 2026-10-06; if CookieYes renames
    them these rules simply stop matching and the notice falls back to its
    stock look — nothing breaks. */
@@ -507,10 +507,15 @@ em { font-style: normal; }
   .cky-consent-container .cky-notice-group button { font-size: 12px !important; line-height: 1.4 !important; }
   .cky-consent-container .cky-notice-group p { margin: 0 !important; }
   .cky-consent-container .cky-notice-group > * + * { margin-top: 4px !important; }
+  .cky-consent-container .cky-title,
+  .cky-consent-container .cky-notice-des,
+  .cky-consent-container .cky-notice-btn-wrapper { padding: 0 !important; }
+  .cky-consent-container .cky-notice-btn-wrapper { margin-top: 4px !important; justify-content: flex-start !important; }
+  .cky-consent-container .cky-btn-do-not-sell { padding: 2px 0 !important; text-align: left !important; }
   .cky-consent-container .cky-banner-btn-close { top: 6px !important; right: 6px !important; }
   /* While the notice is up, give pop-ups room to scroll their last controls
      (ZIP box, Find, waitlist link) clear of it. */
-  body:has(.cky-consent-container:not(.cky-hide)) .lp-overlay { padding-bottom: 170px; }
-  body:has(.cky-consent-container:not(.cky-hide)) main { padding-bottom: 140px; }
+  body:has(.cky-consent-container:not(.cky-hide)) .lp-overlay { padding-bottom: 190px; }
+  body:has(.cky-consent-container:not(.cky-hide)) main { padding-bottom: 180px; }
 }
 
