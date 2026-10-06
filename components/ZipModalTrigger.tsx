@@ -27,7 +27,12 @@ export function ZipModalTrigger({
         aria-label={marketSlug ? `Market: ${label}. Change market` : "Choose your market"}
       >
         <Icon name="pin" size={13} color="var(--fg-muted)" stroke={1.75} />
-        {label}
+        {/* Narrow phones (<360px) get "Market" instead of "Choose your market"
+            so the pill stays on one line beside the logos. A chosen market's
+            name is shown as-is. The button's aria-label always has the full
+            wording. */}
+        <span className="lp-mkt-btn-full">{label}</span>
+        <span className="lp-mkt-btn-short" aria-hidden>{marketSlug ? label : "Market"}</span>
         <Icon name="chevronDown" size={14} color="var(--fg-muted)" stroke={2} style={{ marginLeft: 1 }} />
       </button>
       <ZipModal

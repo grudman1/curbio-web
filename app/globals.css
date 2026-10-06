@@ -208,6 +208,11 @@ em { font-style: normal; }
 .lp-ph-navy { background: repeating-linear-gradient(45deg, #13294f, #13294f 14px, #0f2347 14px, #0f2347 28px); }
 
 /* ============================================================ HEADER */
+/* Header market pill: short label under 360px (ZipModalTrigger). */
+.lp-mkt-btn { white-space: nowrap; }
+.lp-mkt-btn-short { display: none; }
+@media (max-width: 359px) { .lp-mkt-btn-full { display: none; } .lp-mkt-btn-short { display: inline; } }
+
 /* ---------- promo bar (config `promoBanner`; components/PromoBanner.tsx) ----------
    In normal flow above the header — never fixed — so it cannot sit on top of
    the bottom cookie notice, and the market pop-up's overlay (z-index 200)

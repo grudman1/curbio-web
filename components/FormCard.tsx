@@ -351,9 +351,9 @@ export function FormCard({
     const first = f.name.trim().split(/\s+/)[0];
     return (
       <div className="lp-fc lp-fc-diverted" id="quote-form" role="status">
-        <p className="lp-fc-diverted-eyebrow">Thanks{first ? `, ${first}` : ""}</p>
         {diverted.outcome === "waitlist" ? (
           <>
+            <p className="lp-fc-diverted-eyebrow">Thanks{first ? `, ${first}` : ""}</p>
             <h2 className="lp-fc-diverted-title">We&rsquo;re not in your area yet.</h2>
             <p className="lp-fc-diverted-body">
               Curbio doesn&rsquo;t serve ZIP {diverted.zip} yet. We&rsquo;ve saved your details and
@@ -361,13 +361,12 @@ export function FormCard({
             </p>
           </>
         ) : (
-          <>
-            <h2 className="lp-fc-diverted-title">We&rsquo;ve got your request.</h2>
-            <p className="lp-fc-diverted-body">
-              We couldn&rsquo;t confirm coverage{diverted.zip ? ` for ZIP ${diverted.zip}` : ""} just now,
-              so a member of the Curbio team will follow up with you directly.
-            </p>
-          </>
+          // Held: the ZIP could not be checked (timeout / lookup failure). We
+          // do NOT know it is out of area, so nothing here may say so — the
+          // lead is held for a human and Gavin gets "Held for review".
+          <h2 className="lp-fc-diverted-title">
+            Thanks, we&rsquo;ve got your info and a Curbio manager will follow up.
+          </h2>
         )}
       </div>
     );
@@ -474,7 +473,9 @@ export function FormCard({
       <button className="lp-fc-submit" type="submit" disabled={pending} aria-busy={pending}>
         {pending ? (
           <>
-            <span className="lp-spinner" aria-hidden /> Sending…
+            {/* A marketless lead waits on the server's ZIP check (up to ~3s),
+                so say what it is doing rather than a bare "Sending…". */}
+            <span className="lp-spinner" aria-hidden /> {zipRequired ? "Checking your ZIP…" : "Sending…"}
           </>
         ) : (
           ctaCopy

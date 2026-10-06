@@ -181,6 +181,9 @@ function leadLogContext(p: {
   };
 }
 
+/** Submit-time ZIP lookup budget for the market gate (page loads keep 800ms). */
+const SUBMIT_ZIP_CHECK_MS = 3000;
+
 export async function POST(req: Request) {
   let body: LeadBody;
   try {
@@ -243,17 +246,21 @@ export async function POST(req: Request) {
   //   no ZIP at all       → waitlist, flagged "no-zip" for a human
   //
   // Uses the same served-ZIP lookup the market picker's ZIP box goes through
-  // (lib/operator.ts via lib/resolveMarket.ts), with its 3s hard timeout.
+  // (lib/operator.ts via lib/resolveMarket.ts), but with a 3s budget instead
+  // of the page-load 800ms — the visitor is already watching a loading state.
   // Pages WITHOUT market selection (/staging-design-dc, /contact) never enter
   // this branch — see lib/marketGate.ts.
   const cleanZip = body.zip ? body.zip.replace(/\D/g, "").slice(0, 5) : "";
   let gateMarket: string | null = null;
   let gateSlug: string | null = null;
   let waitlistReason: "out-of-area" | "zip-check-failed" | "no-zip" | null = null;
+  let zipCheckMs: number | null = null;
   const sentMarket = body.crmMarketName ?? toCrmMarket(body.market);
   if (!sentMarket && body.source !== "waitlist" && isPickerPageSource(body.source)) {
     if (cleanZip.length === 5) {
-      const lead = await getOperatorLead(cleanZip);
+      const started = Date.now();
+      const lead = await getOperatorLead(cleanZip, SUBMIT_ZIP_CHECK_MS);
+      zipCheckMs = Date.now() - started;
       const resolved = buildResolvedMarket(lead);
       if (lead === null) waitlistReason = "zip-check-failed";
       else if (resolved) {
@@ -263,7 +270,7 @@ export async function POST(req: Request) {
     } else {
       waitlistReason = "no-zip";
     }
-    console.log("[lead] market gate", { source: body.source, outcome: gateSlug ?? waitlistReason });
+    console.log("[lead] market gate", { source: body.source, outcome: gateSlug ?? waitlistReason, zipCheckMs });
   }
   const originalSource = body.source ?? "quote";
 
