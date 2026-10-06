@@ -125,10 +125,10 @@ function implementedPages(): RegistryEntry[] {
     path: "/expcon",
     group: "site",
     title: "eXpcon 2026 Giveaway",
-    status: "stub",
+    status: "live",
     indexed: indexedFor("/expcon"),
     derivedFrom: "config/giveaways/expcon.ts",
-    note: "stub until the go-live test passes on production — kit photos are optional (icons show without them)",
+    note: "live: go-live test passed on production (2026-10-06). Kit photos are optional — icons show without them",
   });
   out.push({
     path: "/expcon/rules",
