@@ -64,6 +64,9 @@ export function WaitlistPage({
           email: f.email.trim(),
           zip: f.zip.replace(/\D/g, "").slice(0, 5),
           source: "waitlist",
+          // Every waitlist sign-up reached this page because its ZIP is out
+          // of area (or the visitor said so via "Join the waitlist").
+          marketSource: "out-of-area",
           ...(referralSourceId ? { referralSourceId } : {}),
           ...(waitlistFrom ? { waitlistFrom } : {}),
           submittedAt: new Date().toISOString(),
