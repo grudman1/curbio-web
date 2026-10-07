@@ -540,9 +540,12 @@ was not edited to make room for it.
   email could re-submit it as "Test" and remove them from the drawing. A
   Curbio address is also not sent to the app (it rejects them with a 403) or
   added to ActiveCampaign.
-- **The 90-day answer travels in `workDetails`** (the app's "requested work"),
-  behind a switch on the entries screen that is off until Rich confirms the
-  field. Never `Message`.
+- **The 90-day answer is not sent to the app.** (Reversed 2026-10-06. It used
+  to travel in `workDetails`, behind a switch that was off until Rich
+  confirmed the field; the switch and the code behind it are gone.) Anything
+  that reaches the app is assumed to have a listing, so the note would say
+  nothing new. The answer stays on the entry. Never put anything in `Message`:
+  a non-empty one keeps an estimate out of deal creation.
 
 ## The giveaway writes to ActiveCampaign
 
