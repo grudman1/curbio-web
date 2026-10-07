@@ -176,10 +176,9 @@ Going live:
 4. Flip `/expcon`, `/expcon/rules` and `/admin/giveaway` from `stub` to `live`
    in `config/pageRegistry.ts`.
 
-Optional, any time: when Rich confirms the app's "requested work" field can
-hold the note, turn on **Deal note** on `/admin/giveaway`. HSMs then see
-`eXpcon 2026 giveaway · Listing in next 90 days: Yes` on the deal and in their
-new-lead email. It is off by default, and leads flow either way.
+There is no deal note: any lead that reaches the app is assumed to have a
+listing, so nothing is added to the deal's "requested work". The 90-day answer
+stays on the entry (staff screen, CSV, the stored lead row's `listing90`).
 
 ---
 
@@ -219,6 +218,11 @@ Use names starting `ZZTEST` and emails like `zztest+yes1@gmail.com` (never an
 | T12 | Open the **Curbio LinkedIn** link — `…/expcon?utm_source=organic&utm_medium=social&utm_campaign=social-expcon-oct&utm_content=linkedin` — and submit **Yes** (new ZZTEST address) — *attribution case 3, LinkedIn tag* | Same "Can't make it" line. The lead lands as channel **Organic**, medium `social`, campaign `social-expcon-oct`, content `linkedin`, ReferralSourceId **`eXp realty`**. |
 | T13 | Open the email link again with `&referral_source_id=Somebody%20Else` added, and submit **Yes** (new ZZTEST address) | ReferralSourceId is still **`eXp realty`**: a referral in the URL cannot change it. |
 | T10 | *(Optional)* Submit an address that has unsubscribed in ActiveCampaign | Entry accepted; the staff screen shows "unsubscribed"; the contact is **not** added to any list or tagged. If they answer **Yes** they still go to the HSM. |
+
+Finding a deal fast: when the app accepts a lead it answers with an ID, and the
+staff screen shows it next to the app badge ("app ID 99632"), searchable in the
+box above the table and in the CSV (`app_estimate_id`). It is the ID to look up
+in the app. Entries sent before this was recorded show none.
 
 Clean up after testing: ask Rich to delete the ZZTEST deals; delete the
 `zztest+…` contacts in ActiveCampaign (that takes them off their market list and

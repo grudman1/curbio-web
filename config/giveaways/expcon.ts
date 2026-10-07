@@ -112,7 +112,6 @@ export const expcon: Giveaway = {
     answerTagPrefix: "expcon-2026-listing-",
   },
 
-  dealNote: "eXpcon 2026 giveaway · Listing in next 90 days: {answer}",
   leadEmails: "failures-only",
 
   rules: {

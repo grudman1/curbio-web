@@ -3,9 +3,10 @@ import { Resend } from "resend";
 import { ANSWER_LABEL, type Giveaway } from "@/config/giveaways";
 import { isKnownReferralSource } from "@/config/campaigns/types";
 import { crmNameForSlug } from "@/config/markets";
-import { dealNote, leadSource, type AppReason, type GiveawayEntry } from "./entry";
+import { leadSource, type AppReason, type GiveawayEntry } from "./entry";
 import { storeScope } from "./mode";
 import { claimLeadRow, safeError } from "./store";
+import { parseEstimateId } from "./estimateId";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HANDING A GIVEAWAY ENTRANT TO THE APP — as a lead, in the lead store's own
@@ -35,9 +36,9 @@ import { claimLeadRow, safeError } from "./store";
 //
 //   - A market is guaranteed (appDecision refuses an entry without one), so
 //     the route's "unroutable" branch has no equivalent.
-//   - The 90-day answer rides in `workDetails`, the app's free-text "requested
-//     work" field — the one thing an HSM actually sees on the deal and in
-//     their new-lead email. Gated by a switch, because that field is Rich's.
+//   - The 90-day answer is NOT sent to the app. Any lead that reaches it is
+//     assumed to have a listing, so a note would say nothing new. The answer
+//     stays on the entry (and, as `listing90`, on the stored lead row).
 //   - Nothing here DEDUPES. The app does not either: for a lead with a market
 //     and no ZIP, every POST makes a new deal. One entry per email is what
 //     stops a double-tap becoming two deals, and that is enforced upstream.
@@ -99,6 +100,8 @@ export type AppDeliveryResult = {
   crmAttempted: boolean;
   crmOk: boolean;
   crmStatus: number | null;
+  /** The app's estimate id, when it accepted the lead and said which. */
+  crmEstimateId: number | null;
   crmError: string | null;
 };
 
@@ -106,10 +109,9 @@ export async function deliverToApp(
   giveaway: Giveaway,
   entry: GiveawayEntry,
   reason: AppReason,
-  options: { includeDealNote: boolean; leadId: string }
+  options: { leadId: string }
 ): Promise<AppDeliveryResult> {
   const a = entry.attribution;
-  const note = dealNote(giveaway, entry.listing90);
 
   const payload = {
     leadId: options.leadId,
@@ -120,9 +122,7 @@ export async function deliverToApp(
     email: entry.email,
     zip: entry.zip,
     address: "",
-    // Ours, not the CRM's: kept on the stored lead so the record explains
-    // itself even while the deal-note switch is off.
-    description: note,
+    description: "",
     market: crmNameForSlug(entry.marketSlug),
     source: leadSource(giveaway, entry.marketSlug),
     variant: null,
@@ -233,6 +233,7 @@ export async function deliverToApp(
   }
 
   let crmStatus: number | null = null;
+  let crmEstimateId: number | null = null;
   let crmBody: string | null = null;
   const webhook = process.env.CURBIO_CRM_WEBHOOK_URL;
 
@@ -256,7 +257,6 @@ export async function deliverToApp(
       origin: payload.entryPoint,
       leadSource: payload.firstTouchChannel,
       firstTouchCampaign: payload.firstTouchCampaign,
-      ...(options.includeDealNote ? { workDetails: note } : {}),
     };
     console.log("[giveaway] posting lead to CRM", logCtx); // payload itself is PII — never log it
     const res = await fetch(webhook, {
@@ -274,6 +274,9 @@ export async function deliverToApp(
       crmBody = redactPii(raw, [payload.email, payload.name, payload.phone]).trim().slice(0, 500);
       throw new Error(`CRM webhook returned ${res.status}${crmBody ? ` — ${crmBody}` : " — (empty body)"}`);
     }
+    // The body is the estimate id. Best effort: failing to read it must never
+    // turn a lead the app accepted into a failure.
+    crmEstimateId = parseEstimateId(await res.text().catch(() => ""));
     return true;
   }
 
@@ -334,6 +337,7 @@ export async function deliverToApp(
           crmAttempted,
           crmOk,
           crmStatus,
+          crmEstimateId,
           crmError: crmOk ? null : crmBody,
           unroutable: false,
           recordedAt: new Date().toISOString(),
@@ -344,5 +348,13 @@ export async function deliverToApp(
     }
   }
 
-  return { leadId: payload.leadId, persistOk, crmAttempted, crmOk, crmStatus, crmError: crmOk ? null : crmBody };
+  return {
+    leadId: payload.leadId,
+    persistOk,
+    crmAttempted,
+    crmOk,
+    crmStatus,
+    crmEstimateId: crmOk ? crmEstimateId : null,
+    crmError: crmOk ? null : crmBody,
+  };
 }

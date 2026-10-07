@@ -1,5 +1,4 @@
 import {
-  ANSWER_LABEL,
   LISTING_ANSWERS,
   NOT_LISTED,
   type Giveaway,
@@ -90,6 +89,10 @@ export type AppRouting = {
   /** Join key into leads:v1 / leads:delivery:v1. */
   leadId?: string;
   crmStatus?: number | null;
+  /** The app's estimate id, returned when it accepted the lead — what to search
+   *  for in the app to find the deal. Absent on entries sent before this was
+   *  recorded, and when the app's answer carried none. */
+  estimateId?: number | null;
   error?: string | null;
 };
 
@@ -343,11 +346,6 @@ export function wantsEmailList(entry: GiveawayEntry, giveaway: Giveaway): boolea
   if (isInternalAddress(entry.email)) return false;
   if (giveaway.routing.emailList === "everyone") return true;
   return appDecision(entry, giveaway) === null;
-}
-
-/** The line an HSM reads on the deal. */
-export function dealNote(giveaway: Giveaway, answer: ListingAnswer): string {
-  return giveaway.dealNote.replace(/\{answer\}/g, ANSWER_LABEL[answer]);
 }
 
 /** Lead `source` for an entry that goes to the app. */

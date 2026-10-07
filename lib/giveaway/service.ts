@@ -1,6 +1,5 @@
 import { NOT_LISTED, type Giveaway } from "@/config/giveaways";
 import { MARKET_BY_SLUG } from "@/config/markets";
-import { deriveChannel } from "@/lib/channels";
 import { buildResolvedMarket } from "@/lib/markets";
 import { getOperatorLead } from "@/lib/operator";
 import { deliverToApp } from "./appDelivery";
@@ -35,7 +34,6 @@ import {
   readDrawSnapshot,
   readDraws,
   readEntries,
-  readSettings,
   saveDraw,
   saveEntry,
   storeConfigured,
@@ -129,7 +127,6 @@ async function routeToApp(
   }
 
   const scope = storeScope(giveaway);
-  const settings = await readSettings(scope);
   // One lead id per person, for every attempt: it is what keeps a retry from
   // becoming a second row on the Leads screen.
   const leadId = entry.routing.app.leadId ?? crypto.randomUUID();
@@ -140,11 +137,11 @@ async function routeToApp(
   entry.routing.app = { status: "sending", reason, at, leadId };
   await saveEntry(scope, entry);
 
-  const result = await deliverToApp(giveaway, entry, reason, { includeDealNote: settings.dealNote, leadId });
+  const result = await deliverToApp(giveaway, entry, reason, { leadId });
   entry.routing.app = !result.crmAttempted
     ? { status: "not_configured", reason, at, leadId }
     : result.crmOk
-      ? { status: "sent", reason, at, leadId, crmStatus: result.crmStatus }
+      ? { status: "sent", reason, at, leadId, crmStatus: result.crmStatus, estimateId: result.crmEstimateId }
       : { status: "failed", reason, at, leadId, crmStatus: result.crmStatus, error: result.crmError };
   await saveEntry(scope, entry);
 

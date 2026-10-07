@@ -38,7 +38,7 @@ export default function CampaignClient({ page }: { page: CampaignPage }) {
   if (!res) return <Skeleton hero={page.hero} partnerId={page.partner} />;
 
   if (res.view === "waitlist") {
-    return <WaitlistShell outZip={res.outZip} geoCity={res.geoCity} geoRegion={res.geoRegion} />;
+    return <WaitlistShell page={page} outZip={res.outZip} geoCity={res.geoCity} geoRegion={res.geoRegion} />;
   }
 
   if (res.view === "market") {
@@ -48,6 +48,7 @@ export default function CampaignClient({ page }: { page: CampaignPage }) {
         market={getCampaignMarket(res.slug)}
         crmMarketName={res.crmMarketName}
         marketSource={res.source}
+        prefillZip={res.zip}
       />
     );
   }
@@ -60,12 +61,12 @@ export default function CampaignClient({ page }: { page: CampaignPage }) {
       neutral
       // Only auto-open the picker on pages that have one.
       showPicker={page.market.mode === "picker"}
-      // ...and LOCK it. This is the branch where we genuinely do not know
-      // where the visitor is: no ?market=, no ?zip=, and IP geo missed. The
-      // form behind this modal is fully functional, so a dismissible picker
-      // here is exactly how a lead reaches the CRM with Market: null and no
-      // ZIP — unroutable, and accepted with a 200 so nothing alerts.
-      requirePicker={page.market.mode === "picker"}
+      // ...asking "where are you listing?". This is the branch where we
+      // genuinely do not know where the visitor is: no ?market=, no ?zip=,
+      // and IP geo missed. The picker can be closed; the form behind it then
+      // REQUIRES a ZIP, and the lead route settles that ZIP before anything
+      // reaches the CRM (market gate, app/api/lead/route.ts).
+      promptPicker={page.market.mode === "picker"}
       marketSource="none"
     />
   );

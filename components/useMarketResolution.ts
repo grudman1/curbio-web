@@ -32,7 +32,9 @@ export type Resolution =
   // straight from lib/resolveMarket.ts. /api/resolve has always returned it
   // and this hook has always thrown it away, which is why no lead in Redis can
   // say how its market was chosen. Carried through to FormCard now.
-  | { view: "market"; slug: string; crmMarketName: string | null; source: string }
+  // `zip` is set when a ZIP the visitor typed (the picker's ZIP box → ?zip=)
+  // decided the market; the form carries it so the lead keeps that ZIP.
+  | { view: "market"; slug: string; crmMarketName: string | null; source: string; zip?: string }
   | { view: "neutral" }
   | { view: "waitlist"; outZip?: string; geoCity?: string; geoRegion?: string };
 
@@ -106,6 +108,7 @@ export function useMarketResolution(): Resolution | null {
             slug: data.slug,
             crmMarketName: data.crmMarketName ?? null,
             source: typeof data.source === "string" ? data.source : "none",
+            ...(data.source === "zip" && qs.get("zip") ? { zip: qs.get("zip")!.replace(/\D/g, "").slice(0, 5) } : {}),
           });
         } else {
           setRes({ view: "neutral" });
