@@ -46,7 +46,11 @@ export async function POST(req: Request) {
   if (!giveaway) return NextResponse.json({ ok: false, error: "Unknown giveaway" }, { status: 404 });
 
   try {
-    const outcome = await enterGiveaway(giveaway, body);
+    // Request IP + Referer for the email-consent record. Vercel puts the
+    // client first in x-forwarded-for.
+    const fwd = req.headers.get("x-forwarded-for");
+    const ip = (fwd ? fwd.split(",")[0] : req.headers.get("x-real-ip"))?.trim() || null;
+    const outcome = await enterGiveaway(giveaway, body, { ip, referer: req.headers.get("referer") });
     if (!outcome.ok) {
       return NextResponse.json(
         { ok: false, error: outcome.error, fields: outcome.fields ?? [] },

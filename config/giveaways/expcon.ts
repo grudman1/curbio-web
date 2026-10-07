@@ -159,9 +159,13 @@ export const expcon: Giveaway = {
       title: "Enter to win",
       submit: "Enter the giveaway",
       pending: "Entering…",
-      emailOptIn: "You'll also receive occasional emails from Curbio. Unsubscribe anytime.",
+      // The label of an OPTIONAL, UNCHECKED box — stored verbatim on the entry
+      // as the consent text when someone ticks it. Change it and new consents
+      // record the new wording; old ones keep theirs.
+      emailOptIn: "Send me occasional emails from Curbio. Unsubscribe anytime.",
     },
     thanks: {
+      emailOptional: "Email updates from Curbio are optional and not required to enter.",
       eyebrow: "Entry confirmed",
       headline: "You're *in*!",
       body: "We'll draw winners Friday, Oct 9 at noon Mountain. Need not be present.",

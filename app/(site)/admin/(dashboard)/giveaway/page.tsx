@@ -231,6 +231,7 @@ export default async function GiveawayAdminPage({
     phone: formatPhone(e.phone),
     phoneDigits: e.phone.replace(/\D/g, ""),
     manual: e.origin === "manual",
+    emailOk: e.emailConsent === true && e.origin !== "manual",
     method: e.method ?? null,
     addedBy: e.addedBy ?? null,
     deleted: !!e.deletedAt,

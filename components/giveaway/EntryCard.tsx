@@ -144,6 +144,8 @@ export function EntryCard() {
 
   const [f, setF] = useState({ name: "", email: "", phone: "", market: "", zip: "" });
   const [listing, setListing] = useState<ListingAnswer | null>(null);
+  // Optional, unchecked by default. Entering never requires it.
+  const [emailConsent, setEmailConsent] = useState(false);
   const [errs, setErrs] = useState<Partial<Record<FieldKey, boolean>>>({});
   const [serverError, setServerError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -255,6 +257,9 @@ export function EntryCard() {
           market: f.market,
           zip: notListed ? f.zip.replace(/\D/g, "").slice(0, 5) : "",
           listing90: listing,
+          emailConsent,
+          // Where the box was shown — stored with the consent decision.
+          pageUrl: window.location.origin + window.location.pathname,
           referralSourceId: refIdRef.current,
           firstTouchChannel: firstTouch?.channel ?? null,
           firstTouchCampaign: firstTouch?.campaign ?? null,
@@ -632,7 +637,15 @@ export function EntryCard() {
                 which had to be undone), and it sits in its own block with
                 room above and below so nothing can crowd it at 320px. */}
             <div className="flex flex-col gap-3.5 pt-1">
-              <p className="m-0 font-sans text-[13px] font-semibold leading-[1.55] text-content">{copy.form.emailOptIn}</p>
+              <label className="flex min-h-[44px] cursor-pointer items-start gap-3 font-sans text-[14px] font-semibold leading-[1.5] text-content">
+                <input
+                  type="checkbox"
+                  checked={emailConsent}
+                  onChange={(e) => setEmailConsent(e.target.checked)}
+                  className="mt-0.5 h-5 w-5 flex-none cursor-pointer accent-[var(--color-brand,#0d254d)]"
+                />
+                <span>{copy.form.emailOptIn}</span>
+              </label>
               <p className="m-0 font-sans text-[13px] font-normal leading-[1.65] text-content-muted [&_a]:font-semibold [&_a]:text-content [&_a]:underline [&_a]:underline-offset-2">
                 {!closed && (
                   <>
@@ -762,6 +775,7 @@ export function EntryCard() {
           )}
 
           <p className="relative m-0 font-sans text-[13px] text-content-muted">
+            {copy.thanks.emailOptional}{" "}
             {contactRequest ? "Sent" : "Entered"} as{" "}
             {/* ph-mask: entrant's name and email — masked in PostHog session replay. */}
             <span className="ph-mask">

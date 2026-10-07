@@ -180,6 +180,10 @@ const ACTIVE = "1";
 
 export async function syncEntrantToEmailList(giveaway: Giveaway, entry: GiveawayEntry): Promise<EmailListRouting> {
   const at = new Date().toISOString();
+  // Second lock on the consent gate (the first is wantsEmailList): whatever
+  // queued this entry, nobody who did not tick the box is ever sent to
+  // ActiveCampaign — not even once keys are added.
+  if (entry.emailConsent !== true || entry.origin === "manual") return { status: "none", at };
   if (!emailListConfigured()) return { status: "not_configured", at };
 
   try {

@@ -45,6 +45,8 @@ export type EntryRow = {
   phoneDigits: string;
   /** Typed in on this screen (booth / written request). */
   manual: boolean;
+  /** Ticked the optional email box on the form. Manual entries: never. */
+  emailOk: boolean;
   method: "booth" | "written" | null;
   addedBy: string | null;
   deleted: boolean;
@@ -334,12 +336,16 @@ export function EntriesTable({
             app ID {r.estimateId}
           </span>
         )}
-        {r.manual ? (
-          <StatusBadge status="No email consent" tone="neutral" title="Typed in by staff — never added to the email list." />
+        {r.emailOk ? (
+          <StatusBadge status="Email OK" tone="success" title="Ticked “Send me occasional emails from Curbio” on the entry form." />
         ) : (
-          list && <StatusBadge status={list.label} tone={list.tone} title={`${list.title} ${r.emailListDetail}`.trim()} />
+          <StatusBadge
+            status="No email consent"
+            tone="neutral"
+            title={r.manual ? "Typed in by staff — never added to the email list." : "Did not tick the email box. Never added to the email list."}
+          />
         )}
-        {!app && !list && !r.manual && <span className="ops-subtle">—</span>}
+        {r.emailOk && list && <StatusBadge status={list.label} tone={list.tone} title={`${list.title} ${r.emailListDetail}`.trim()} />}
       </span>
     );
   };
