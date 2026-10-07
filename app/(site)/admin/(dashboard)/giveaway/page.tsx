@@ -190,9 +190,13 @@ export default async function GiveawayAdminPage({
   // confirmed there (refused, never reported back, or never attempted), or its
   // email-list step is still owed. Both are judged against where the entry
   // SHOULD go now — someone since handed to an HSM no longer owes a list sync.
-  // Real problems only: the app refused it or never confirmed it. ActiveCampaign
-  // "not configured" is a setup state, said once in the Email list card.
-  const needsAttention = (e: GiveawayEntry) => !sandbox && isAppOutstanding(e, giveaway);
+  // Real problems only: the app refused it or never confirmed it, or an
+  // ActiveCampaign sync for someone who ticked the box failed. "Not
+  // configured" is a setup state, said once in the Email list card.
+  const needsAttention = (e: GiveawayEntry) =>
+    !sandbox &&
+    (isAppOutstanding(e, giveaway) ||
+      (e.emailConsent === true && e.origin !== "manual" && e.routing.emailList.status === "failed"));
 
   // App delivery at a glance — the line at the top of the page. "Due" is every
   // entry that SHOULD be with an HSM (answered Yes, booked, or used the contact
@@ -329,7 +333,7 @@ export default async function GiveawayAdminPage({
         </OpsCard>
         <OpsCard
           title="Where they went"
-          titleTooltip="Sent to the app: said Yes, booked a call, or used the contact form after the close. Email list: every entrant — including those sent to the app — on their market's list and the Engaged list, tagged with the event, their market and their answer."
+          titleTooltip="Sent to the app: said Yes, booked a call, or used the contact form after the close. Email list: only entrants who ticked the email box — subscribed to “Curbio Marketing” in ActiveCampaign and tagged event:expcon-2026."
         >
           <div className="flex flex-wrap gap-8">
             <Stat label={sandbox ? "app (sandbox)" : "sent to app"} value={readable ? counts.app : null} />
@@ -410,7 +414,7 @@ export default async function GiveawayAdminPage({
         </OpsCard>
         <OpsCard
           title="Email list"
-          titleTooltip="ActiveCampaign. Each entrant goes on their market's list — or the Master Contact List when the market has none — and on the Engaged list, tagged with the event, their market and their answer. Anyone who has ever unsubscribed is left alone, and so is a Curbio address."
+          titleTooltip="ActiveCampaign, through lib/marketingContacts.ts. Only entrants who ticked the email box: subscribed to “Curbio Marketing”, tagged event:expcon-2026, with Contact Type, Market, HSM, Lifecycle, Listing Timeline, sources and consent filled in. Anyone who has unsubscribed is left alone; tests, manual entries and @curbio.com / @example.com addresses are never synced."
         >
           <EmailListPanel
             slug={giveaway.slug}

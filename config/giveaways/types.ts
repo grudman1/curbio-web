@@ -161,12 +161,13 @@ export type Giveaway = {
   };
 
   emailList: {
-    /** The tag every entrant carries. */
+    /** The ONE tag a consenting entrant gets in ActiveCampaign (exact name;
+     *  it must already exist — the sync fails closed without it). */
     tag: string;
-    /** Prefixes for the two per-person tags: `<prefix><market slug>` and
-     *  `<prefix><answer>`. */
-    marketTagPrefix: string;
-    answerTagPrefix: string;
+    /** Written to the "Consent Source" field. */
+    consentSource: string;
+    /** Written to "Brokerage". */
+    brokerage: string;
   };
 
 

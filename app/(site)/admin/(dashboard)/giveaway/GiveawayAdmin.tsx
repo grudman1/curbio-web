@@ -849,7 +849,8 @@ export function EmailListPanel({
         {progress && <span className="ops-subtle ops-tnum">{progress}</span>}
       </div>
       <p className="m-0 font-sans text-ops-label text-content-muted">
-        Tag <span className="font-mono">{tag}</span>
+        List <span className="font-mono">Curbio Marketing</span> · tag <span className="font-mono">{tag}</span> · consenting
+        entrants only
         {unsubscribed > 0 && ` · ${unsubscribed} left alone (previously unsubscribed)`}
       </p>
     </div>

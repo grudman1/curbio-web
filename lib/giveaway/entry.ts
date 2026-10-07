@@ -109,9 +109,8 @@ export type EmailListRouting = {
   status: "none" | "pending" | "synced" | "unsubscribed" | "failed" | "not_configured" | "sandbox";
   at?: string;
   contactId?: string;
-  /** Every list the contact was active on when the sync finished — their
-   *  market's (or the Master Contact List) and the Engaged list. For someone
-   *  ActiveCampaign already knew, their own lists are included as they were. */
+  /** Every list the contact was active on when the sync finished: "Curbio
+   *  Marketing" plus, for someone ActiveCampaign already knew, their own. */
   listIds?: number[];
   error?: string | null;
 };
@@ -383,6 +382,8 @@ export function wantsEmailList(entry: GiveawayEntry, giveaway: Giveaway): boolea
   if (entry.origin === "manual" || entry.deletedAt) return false;
   // THE consent gate: only someone who ticked the box. Absent = no.
   if (entry.emailConsent !== true) return false;
+  // Never our own tests, or a reserved test domain.
+  if (entry.isTest || /@example\.com$/i.test(entry.email)) return false;
   if (giveaway.routing.emailList === "everyone") return true;
   return appDecision(entry, giveaway) === null;
 }

@@ -79,25 +79,20 @@ makes a second entry or a second deal.
 | Uses the page **after the drawing** (in a market) | not in the drawing, unless they entered before it | Yes | Yes |
 | A **Curbio address** | kept, never drawn | Never | Never |
 
-- **ActiveCampaign gets every entrant** — including the "Yes" leads an HSM is
-  also working. Each goes on their market's list (Seattle and "not listed" go
-  on the Master Contact List) **and** on the **Engaged** list, with the
-  `Market` field set and three tags: `expcon-2026`,
-  `expcon-2026-market-<market>`, `expcon-2026-listing-<yes|maybe|not-yet>`. The
-  answer tag is what lets an automation treat the people an HSM is working
-  differently.
-- **The Engaged list has to exist.** The sync looks for a list called
-  "Engaged" (`AC_ENGAGED_LIST_NAME` in `config/emailLists.ts`). If it cannot
-  find one it writes **nothing** for that entry — nobody is put on a market
-  list and left off Engaged — and the entry shows under "Needs attention" with
-  the reason. Create the list, press **Sync now**, and everything waiting is
-  done. Meanwhile entries are kept and "Yes" leads still reach the HSM.
-- Anyone who has **ever unsubscribed** from a Curbio list is left alone: not
-  added to any list, not tagged. They are still in the drawing, and if they said
-  Yes they still go to an HSM.
-- Someone ActiveCampaign already knows keeps their own record: they are added
-  to the Engaged list and tagged, but their name, phone, Market and market list
-  are not changed.
+- **ActiveCampaign gets only entrants who ticked the email box** ("Send me
+  occasional emails from Curbio", optional and unchecked). They are subscribed
+  to **Curbio Marketing** and tagged `event:expcon-2026`, with Contact Type,
+  Market, Brokerage, HSM, Lifecycle Stage, Listing Timeline, sources and consent
+  filled in. Everything about how is in `docs/activecampaign.md`. Never synced:
+  people who did not tick, manual (Add entry) entries, tests, and
+  `@curbio.com` / `@example.com` addresses.
+- **Fail closed.** If the list, any field, any dropdown option or the tag is
+  missing in ActiveCampaign, nothing is written for that entry; it shows under
+  "Needs attention" and **Sync now** finishes it once fixed. Entries, app
+  delivery and the drawing are never affected.
+- Anyone who has **ever unsubscribed** from a Curbio list is left alone. They
+  are still in the drawing, and if they said Yes they still go to an HSM.
+- Someone ActiveCampaign already knows keeps their own name, phone and Market.
 - "Not listed" plus a ZIP that Curbio does serve is treated as that market.
 - A hand-off to the app that fails, times out (the app is given 8 seconds) or
   is cut off is **not repeated automatically** — the app would make a
@@ -140,16 +135,10 @@ happens only on the Production deployment (`sell.curbio.com`).
 
 Before merging:
 
-- [ ] **ActiveCampaign keys in Vercel.** `ACTIVECAMPAIGN_ACCOUNT_URL` and
-      `ACTIVECAMPAIGN_API_KEY` are not set in Vercel today. Add both to
-      Production (Vercel → curbiolandingpage → Settings → Environment
-      Variables). Without them nothing is lost: entries are kept, marked "list
-      not configured", and one click on "Sync now" adds them later.
-- [ ] **Create the Engaged list in ActiveCampaign.** It does not exist yet
-      (the account has only the market lists and the Master Contact List,
-      checked 2026-10-01). Name it exactly **Engaged**, or tell the developer
-      the name and `AC_ENGAGED_LIST_NAME` changes. Until it exists, entries are
-      kept and flagged "Needs attention"; **Sync now** completes them.
+- [ ] **ActiveCampaign keys in Vercel.** Add `ACTIVECAMPAIGN_ACCOUNT_URL` and
+      `ACTIVECAMPAIGN_API_KEY` to **Production only** (previews must never call
+      ActiveCampaign). Until then consenting entries wait as "list not
+      configured"; one **Sync now** adds them. See `docs/activecampaign.md`.
 - [ ] **Failure alerts reach you.** If a lead cannot be delivered to the app, an
       email "CRM delivery FAILED — lead preserved" goes to the address shown in
       the **Failure alerts** card on `/admin/giveaway` (`RESEND_TO_EMAIL`, else
