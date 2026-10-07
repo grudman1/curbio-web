@@ -339,10 +339,15 @@ export async function syncMarketingContact(input: MarketingContact): Promise<Mar
       put("consentDate", input.consentDate);
     } else {
       fillIfEmpty("contactType", input.contactType);
-      fillIfEmpty("market", input.market); // never overwritten
       fillIfEmpty("brokerage", input.brokerage);
-      fillIfEmpty("hsmName", input.hsmName);
-      fillIfEmpty("hsmEmail", input.hsmEmail);
+      // Market is never overwritten — and the HSM belongs to the market, so it
+      // is only filled together with it. (A contact on file as Seattle must not
+      // get a Dallas HSM because somebody picked Dallas on a form.)
+      if (!has("market")) {
+        put("market", input.market);
+        fillIfEmpty("hsmName", input.hsmName);
+        fillIfEmpty("hsmEmail", input.hsmEmail);
+      }
       // Lifecycle only moves up.
       const was = LIFECYCLE.indexOf(current("lifecycle") as Lifecycle);
       if (LIFECYCLE.indexOf(input.lifecycle) > was) put("lifecycle", input.lifecycle);

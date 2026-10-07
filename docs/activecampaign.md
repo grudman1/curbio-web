@@ -24,8 +24,8 @@ written** for that person (fail closed) and the caller records the error.
 | Contact Type | dropdown: Agent / Team Lead / Broker/Owner / Partner / Homeowner | caller's (eXpcon: `Agent`) | only if empty |
 | Market | text | market config display name, e.g. `Atlanta, GA`, or `Not listed` | **never overwritten** (only if empty) |
 | Brokerage | text | caller's (eXpcon: `eXp Realty`) | only if empty |
-| HSM Name | text | market config `hsm.name`; blank if not listed | only if empty |
-| HSM Email | text | market config `hsm.email`; blank if not listed or not yet supplied | only if empty |
+| HSM Name | text | market config `hsm.name`; blank if not listed | only when Market is being filled (the HSM follows the market) |
+| HSM Email | text | market config `hsm.email`; blank if not listed or not yet supplied | only when Market is being filled |
 | Lifecycle Stage | dropdown: Subscriber / Engaged / Sales Qualified / Customer | see below | **only moves up** |
 | Listing Timeline | dropdown: Within 90 days / 3-6 months / Not yet | Yes → Within 90 days · Maybe → 3-6 months · Not yet → Not yet | latest answer |
 | First Source | text | `<channel> / <campaign>` of the first touch | **set once** (only if empty) |

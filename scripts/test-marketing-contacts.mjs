@@ -147,6 +147,7 @@ await scenario("existing contact: name, phone, Market, First Source NOT overwrit
   const c = S.contacts.find((x) => x.id === id);
   assert.deepEqual([c.firstName, c.lastName, c.phone], ["Real", "Name", "2065550000"]);
   assert.equal(valueOf(id, "Market"), "Seattle, WA");
+  assert.equal(valueOf(id, "HSM Name"), null); // HSM follows Market: not filled for a kept market
   assert.equal(valueOf(id, "First Source"), "email / nurture-jun");
   assert.equal(valueOf(id, "Lifecycle Stage"), "Sales Qualified");
   assert.equal(valueOf(id, "Latest Source"), "event / expcon-giveaway-oct");
@@ -155,6 +156,16 @@ await scenario("existing contact: name, phone, Market, First Source NOT overwrit
   assert.equal(S.contacts.length, 1);
   assert.ok(S.contactLists.some((x) => x.contact === id && x.list === "10" && x.status === "1"));
   assert.ok(S.contactLists.some((x) => x.contact === id && x.list === "3" && x.status === "1")); // old list untouched
+});
+
+await scenario("existing contact with NO market: Market and HSM filled together", async () => {
+  reset();
+  const id = seedContact({ email: "qa.agent@brokerage.test", firstName: "Real" }, { lists: [[3, 1]] });
+  const r = await M.syncMarketingContact(base());
+  assert.equal(r.status, "synced");
+  assert.equal(valueOf(id, "Market"), "Atlanta, GA");
+  assert.equal(valueOf(id, "HSM Name"), "Christine Harvey");
+  assert.equal(S.contacts.find((x) => x.id === id).firstName, "Real");
 });
 
 await scenario("lifecycle rises Engaged → Sales Qualified (a Yes lead sent to the app)", async () => {
