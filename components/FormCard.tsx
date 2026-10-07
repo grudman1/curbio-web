@@ -10,6 +10,16 @@ import { campaignBaseFor, campaignHref } from "@/lib/campaignBase";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
 import type { CtaVariant } from "@/lib/ctaVariant";
 import { readMarketPick } from "@/lib/marketPick";
+import { MARKETS } from "@/config/markets";
+
+/** The dropdown's last option — the visitor's market is not one of ours. */
+const NOT_LISTED = "not-listed";
+
+// Alphabetical with the service area, like /expcon's entry form: a list
+// someone scans for their own city.
+const MARKET_OPTIONS = [...MARKETS]
+  .sort((a, b) => a.displayName.localeCompare(b.displayName))
+  .map((m) => ({ slug: m.slug, label: `${m.displayName} — ${m.coverage}` }));
 
 /**
  * Agent-facing ZIP label — the historical wording, kept as the default so
@@ -45,6 +55,7 @@ export function FormCard({
   partnerSlug,
   defaultUtmSource,
   marketSource = null,
+  marketChoice = false,
 }: {
   market: CampaignMarket;
   crmMarketName?: string | null;
@@ -88,6 +99,14 @@ export function FormCard({
    * what the page resolved to at render time.
    */
   marketSource?: string | null;
+  /**
+   * No market is known on a page WITH market selection (the visitor closed the
+   * picker without choosing). The form asks for the market itself: a dropdown
+   * built from config/markets.ts, plus "My market isn't listed", which reveals
+   * a required ZIP that the lead route settles (served / waitlist / held).
+   * Pages without market selection (/staging-design-dc) never set this.
+   */
+  marketChoice?: boolean;
 }) {
   const [f, setF] = useState({
     name: prefillName,
@@ -95,13 +114,15 @@ export function FormCard({
     phone: "",
     zip: prefillZip,
     address: prefillAddress,
+    // marketChoice only: "" (not chosen yet), a market slug, or NOT_LISTED.
+    pick: "",
   });
   // Which fields were prefilled (via props, or via ?n=/?e= read on mount) —
   // drives the amber "prefilled" border until the visitor edits the field.
   const [prefilled, setPrefilled] = useState({ name: !!prefillName, email: !!prefillEmail });
   const [nameEdited, setNameEdited] = useState(false);
   const [emailEdited, setEmailEdited] = useState(false);
-  const [errs, setErrs] = useState<{ name?: string; email?: string; zip?: string; server?: string }>({});
+  const [errs, setErrs] = useState<{ name?: string; email?: string; zip?: string; market?: string; server?: string }>({});
   const [pending, setPending] = useState(false);
   // Set when the lead route sent this submission to the waitlist instead of
   // the CRM (see the market gate in app/api/lead/route.ts). Replaces the form.
@@ -188,9 +209,16 @@ export function FormCard({
   // the form itself cannot produce a lead with neither market nor ZIP. That
   // combination is the one the CRM accepts with a 200 and can route to no one.
   const marketless = !market.slug;
-  const showZipField = showZip || marketless;
-  const zipRequired = marketless;
+  const notListed = marketChoice && f.pick === NOT_LISTED;
+  // A market picked from the dropdown (never NOT_LISTED).
+  const chosenSlug = marketChoice && f.pick && f.pick !== NOT_LISTED ? f.pick : null;
+  const showZipField = marketChoice ? notListed : showZip || marketless;
+  const zipRequired = marketChoice ? notListed : marketless;
   const zipTyped = showZipField && f.zip.trim() !== "";
+  // A visible field sends what was typed; otherwise only a ZIP handed over
+  // hidden (picker / homepage) — never a stale one left behind by switching
+  // the dropdown away from "not listed".
+  const zipToSend = (showZipField ? f.zip : prefillZip).replace(/\D/g, "").slice(0, 5);
 
   const submit = useCallback(
     async (e: React.FormEvent) => {
@@ -198,7 +226,9 @@ export function FormCard({
       if (pending) return;
 
       // 1. Validate synchronously before any await
-      const next: { name?: string; email?: string; zip?: string } = {};
+      const next: { name?: string; email?: string; zip?: string; market?: string } = {};
+      if (marketChoice && !f.pick)
+        next.market = "Choose your market, or pick \u201cMy market isn\u2019t listed\u201d.";
       if (!f.name.trim()) next.name = "Please enter your name.";
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim()))
         next.email = "Please enter a valid email address.";
@@ -208,7 +238,7 @@ export function FormCard({
       // somewhere to put the answer we are asking for.
       if (zipRequired && f.zip.replace(/\D/g, "").length !== 5)
         next.zip = "Enter your 5-digit ZIP so we can route you to the right local manager.";
-      if (next.name || next.email || next.zip) {
+      if (next.name || next.email || next.zip || next.market) {
         setErrs(next);
         return;
       }
@@ -264,8 +294,9 @@ export function FormCard({
               email: f.email.trim(),
               phone: f.phone.trim() || undefined,
               source: source ?? `email-campaign-${market.slug || "unknown"}`,
-              market: market.slug || null,
-              crmMarketName: crmMarketName ?? null,
+              market: chosenSlug ?? (market.slug || null),
+              // The route maps a chosen slug to the CRM's market name itself.
+              crmMarketName: chosenSlug ? null : (crmMarketName ?? null),
               variant,
               submittedAt: new Date().toISOString(),
               referralSourceId: refIdRef.current,
@@ -281,10 +312,14 @@ export function FormCard({
               // Only a ZIP typed into the VISIBLE field counts: a hidden ZIP
               // carried in from the picker or the homepage was already
               // reflected in `marketSource` by the page.
-              marketSource: zipTyped ? "form-zip" : decidedBy(marketSource, market.slug),
+              marketSource: chosenSlug
+                ? "form-select"
+                : zipTyped
+                  ? "form-zip"
+                  : decidedBy(marketSource, market.slug),
               // Spam tripwire — see the lead route.
               renderedAt: renderedAtRef.current,
-              ...(f.zip && { zip: f.zip.replace(/\D/g, "").slice(0, 5) }),
+              ...(zipToSend && { zip: zipToSend }),
               ...(f.address.trim() && { address: f.address.trim() }),
               ...utms,
             }),
@@ -298,11 +333,11 @@ export function FormCard({
         // the waitlist (or held it for a human). Not a lead: no lead_submit,
         // no /confirm — the form becomes the "not in your area yet" step.
         if (data.outcome === "waitlist" || data.outcome === "held") {
-          setDiverted({ outcome: data.outcome, zip: f.zip.replace(/\D/g, "").slice(0, 5) });
+          setDiverted({ outcome: data.outcome, zip: zipToSend });
           return;
         }
         // A marketless lead whose ZIP the route matched to a market.
-        const routedSlug: string = typeof data.market === "string" ? data.market : market.slug;
+        const routedSlug: string = typeof data.market === "string" ? data.market : (chosenSlug ?? market.slug);
 
         // 4. Analytics off the critical path — yield to the browser first
         setTimeout(() => {
@@ -344,7 +379,7 @@ export function FormCard({
         setPending(false);
       }
     },
-    [pending, f, market, crmMarketName, variant, source, partnerSlug, router, zipRequired, zipTyped, marketSource, defaultUtmSource]
+    [pending, f, market, crmMarketName, variant, source, partnerSlug, router, zipRequired, zipTyped, zipToSend, chosenSlug, marketChoice, marketSource, defaultUtmSource]
   );
 
   if (diverted) {
@@ -428,10 +463,38 @@ export function FormCard({
         />
       </div>
 
+      {marketChoice && (
+        <div className="lp-fc-field">
+          <label className="lp-fc-label" htmlFor="fc-market">Market</label>
+          <select
+            id="fc-market"
+            className={"lp-input lp-select" + (errs.market ? " lp-input-err" : "") + (f.pick ? "" : " lp-select-empty")}
+            value={f.pick}
+            onChange={(e) => {
+              const v = e.target.value;
+              setF((s) => ({ ...s, pick: v }));
+              setErrs((p) => ({ ...p, market: undefined, zip: undefined }));
+            }}
+            aria-required
+            aria-invalid={!!errs.market}
+            aria-describedby={errs.market ? "fc-market-err" : undefined}
+          >
+            <option value="">Select your market</option>
+            {MARKET_OPTIONS.map((m) => (
+              <option key={m.slug} value={m.slug}>
+                {m.label}
+              </option>
+            ))}
+            <option value={NOT_LISTED}>My market isn&rsquo;t listed</option>
+          </select>
+          {errs.market && <span id="fc-market-err" className="lp-fc-err" role="alert">{errs.market}</span>}
+        </div>
+      )}
+
       {showZipField && (
         <div className="lp-fc-field">
           <label className="lp-fc-label" htmlFor="fc-zip">
-            {zipLabel}
+            {marketChoice ? "ZIP code of the home you\u2019re listing" : zipLabel}
             {!zipRequired && <span className="lp-fc-optional"> (optional)</span>}
           </label>
           <input

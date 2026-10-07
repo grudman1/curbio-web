@@ -193,6 +193,11 @@ em { font-style: normal; }
 .lp-input:focus { outline: 0; border-color: var(--amber); box-shadow: 0 0 0 3px var(--amber-30); }
 .lp-input-err { border-color: var(--error); }
 .lp-input-err:focus { border-color: var(--error); box-shadow: 0 0 0 3px rgba(226,75,74,0.16); }
+/* Market dropdown (FormCard, no-market state). Native select, styled to match
+   .lp-input, with our own chevron. */
+.lp-select { appearance: none; -webkit-appearance: none; padding-right: 40px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%230d254d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; text-overflow: ellipsis; }
+.lp-select-empty { color: var(--navy-30); }
+.lp-select option { color: var(--navy); }
 .lp-input-prefilled { background-color: #faf9f8; border-color: #e8c97a; }
 
 /* ---------- icon disc (Lucide line, navy, in a stone disc) ---------- */

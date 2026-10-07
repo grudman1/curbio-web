@@ -39,6 +39,7 @@ export const exp: CampaignPage = {
   sections: {
     soldProof: true,
     soldByLine: "*Sold by eXp agents* in {market}.",
+    soldByLineNational: "*Sold by eXp agents.*",
     howItWorks: true,
     closer: "One listing. You'll wonder *why you waited.*",
   },

@@ -107,6 +107,13 @@ export type CampaignPage = {
     soldProof: boolean;
     /** `{market}` interpolates. Omit for the shared default. */
     soldByLine?: RichLine;
+    /**
+     * By-line for the NATIONAL sold strip shown when no market is known (one
+     * verified home per market, market name only — the /expcon pattern). Comes
+     * after "Prepped by Curbio." Omit for no by-line, which is right for any
+     * page that is not a partner's: only partner pages may name their agents.
+     */
+    soldByLineNational?: RichLine;
     howItWorks: boolean;
     /** Closer headline. Inline markup. `false` hides the section. */
     closer: RichLine | false;
