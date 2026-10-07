@@ -21,6 +21,7 @@ import {
   reconcileAction,
   removeBonusAction,
   runDrawingAction,
+  setWinnerStatusAction,
   sendToAppAction,
   syncEmailListAction,
   verifyDrawingAction,
@@ -966,12 +967,156 @@ function ReportLine({
 
 // ── The drawing (owner) ──────────────────────────────────────────────────────
 
+export type WinnerView = {
+  drawId: string;
+  winners: {
+    email: string;
+    name: string;
+    phone: string;
+    entries: number;
+    market: string;
+    slot: string;
+    state: "not_notified" | "notified" | "claimed" | "forfeited";
+    at: string | null;
+    by: string | null;
+    notifiedAt: string | null;
+    notifiedBy: string | null;
+  }[];
+  alternates: { order: number; email: string; name: string; phone: string; entries: number; market: string }[];
+};
+
+const WINNER_STATE: Record<WinnerView["winners"][number]["state"], { label: string; tone: Tone }> = {
+  not_notified: { label: "Not yet notified", tone: "warning" },
+  notified: { label: "Notified", tone: "neutral" },
+  claimed: { label: "Claimed", tone: "success" },
+  forfeited: { label: "Forfeited", tone: "error" },
+};
+
+const MT_SHORT = (iso: string) =>
+  new Date(iso).toLocaleString("en-US", { timeZone: "America/Denver", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+
+/** Winners as they stand now, with status and actions. No emails or texts are
+ *  sent from here: staff notify people themselves and record it. */
+function WinnersPanel({
+  slug,
+  drawId,
+  mode,
+  kitName,
+  view,
+}: {
+  slug: string;
+  drawId: string;
+  mode: "official" | "practice";
+  kitName: string;
+  view: WinnerView;
+}) {
+  const router = useRouter();
+  const toast = useToast();
+  const [busy, startTransition] = useTransition();
+  const active = view.winners.filter((w) => w.state !== "forfeited");
+
+  function set(w: WinnerView["winners"][number], state: "notified" | "claimed" | "forfeited") {
+    if (state === "forfeited") {
+      const next = view.alternates[0];
+      const msg = `Mark ${w.name} as FORFEITED?\n\n${next ? `Alternate ${next.order}, ${next.name}, becomes a winner.` : "There are no alternates left."}\nThis is logged and cannot be undone.`;
+      if (!window.confirm(msg)) return;
+    }
+    startTransition(async () => {
+      const res = await setWinnerStatusAction(slug, drawId, w.email, state);
+      toast(res.ok ? "success" : "error", res.ok ? (state === "forfeited" ? (res.promoted ? "Forfeited — the next alternate is now a winner." : "Forfeited — no alternates left.") : "Saved.") : res.error);
+      router.refresh();
+    });
+  }
+
+  async function copy() {
+    const text = active.map((w) => `${w.name}\t${w.email}\t${w.phone}`).join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      toast("success", `Copied ${active.length} winner${active.length === 1 ? "" : "s"} (name, email, phone).`);
+    } catch {
+      window.prompt("Copy the winner details:", text);
+    }
+  }
+
+  return (
+    <div className="mt-2 flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-sans text-ops-body font-semibold text-content">
+          {mode === "practice" ? "Winners (practice — not the real winners)" : "Winners"}
+        </span>
+        <span className="ops-subtle">Each receives the same whole {kitName}. No emails or texts are sent from here.</span>
+        <button type="button" onClick={copy} disabled={active.length === 0} className={buttonClass("secondary", "sm") + " ml-auto min-h-[40px]"}>
+          Copy winner details
+        </button>
+      </div>
+      <ul className="m-0 flex list-none flex-col gap-2 p-0">
+        {view.winners.map((w) => {
+          const st = WINNER_STATE[w.state];
+          return (
+            <li key={w.email} className={`rounded-md border border-app-border p-3 ${w.state === "forfeited" ? "opacity-60" : ""}`}>
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5 font-sans text-ops-body">
+                    <span className="ops-subtle">{w.slot}</span>
+                    <span className="font-semibold text-content">{w.name}</span>
+                    <StatusBadge status={st.label} tone={st.tone} />
+                  </div>
+                  <div className="break-all font-sans text-ops-body text-content-muted">
+                    {w.email} · <span className="ops-tnum">{w.phone}</span> · {w.market} · {w.entries} {w.entries === 1 ? "entry" : "entries"}
+                  </div>
+                  {(w.notifiedAt || (w.state !== "not_notified" && w.at)) && (
+                    <div className="ops-subtle">
+                      {w.notifiedAt && `Notified by ${w.notifiedBy} · ${MT_SHORT(w.notifiedAt)} MT`}
+                      {w.state !== "notified" && w.state !== "not_notified" && w.at && `${w.notifiedAt ? " · " : ""}${st.label} by ${w.by} · ${MT_SHORT(w.at)} MT`}
+                    </div>
+                  )}
+                </div>
+                {w.state !== "forfeited" && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {w.state === "not_notified" && (
+                      <button type="button" disabled={busy} onClick={() => set(w, "notified")} className={buttonClass("secondary", "sm") + " min-h-[40px]"}>
+                        Mark notified
+                      </button>
+                    )}
+                    {w.state !== "claimed" && (
+                      <button type="button" disabled={busy} onClick={() => set(w, "claimed")} className={buttonClass("secondary", "sm") + " min-h-[40px]"}>
+                        Mark claimed
+                      </button>
+                    )}
+                    <button type="button" disabled={busy} onClick={() => set(w, "forfeited")} className={buttonClass("ghost", "sm") + " min-h-[40px]"}>
+                      Forfeit
+                    </button>
+                  </div>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      {view.alternates.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <span className="font-sans text-ops-label font-semibold text-content-muted">Alternates, in order</span>
+          <ol className="m-0 list-none p-0">
+            {view.alternates.map((a) => (
+              <li key={a.email} className="break-all py-0.5 font-sans text-ops-body text-content-muted">
+                <span className="ops-subtle">Alternate {a.order}</span> · {a.name} · {a.email} · <span className="ops-tnum">{a.phone}</span> · {a.market} · {a.entries}{" "}
+                {a.entries === 1 ? "entry" : "entries"}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DrawPanel({
   slug,
   closed,
   winners,
   kitName,
   draws,
+  winnerViews,
   eligiblePeople,
   notify,
 }: {
@@ -981,6 +1126,9 @@ export function DrawPanel({
   winners: number;
   kitName: string;
   draws: DrawRecord[];
+  /** Per drawing: current winners (with status, promotions applied) and the
+   *  alternates not yet used. Same order as `draws`. */
+  winnerViews: WinnerView[];
   eligiblePeople: number;
   notify: string;
 }) {
@@ -1072,41 +1220,13 @@ export function DrawPanel({
               </p>
             )}
 
-            <p className="m-0 mt-2 font-sans text-ops-label text-content-muted">
-              All {d.winners.length} winners receive the same whole {kitName}. The order drawn assigns nothing; it is
-              recorded because the seed reproduces the names in exactly this order. Alternates step in in order.
-            </p>
-            <Table className="mt-2">
-              <Thead>
-                <Th>Drawn</Th>
-                <Th>Name</Th>
-                <Th>Email</Th>
-                <Th>Phone</Th>
-                <Th align="right">Entries</Th>
-              </Thead>
-              <tbody>
-                {d.winners.map((w, i) => (
-                  <Tr key={w.email}>
-                    <Td numeric>
-                      <span className="font-semibold">Winner</span> {i + 1}
-                    </Td>
-                    <Td className="font-semibold">{w.name}</Td>
-                    <Td>{w.email}</Td>
-                    <Td numeric className="whitespace-nowrap">{w.phone}</Td>
-                    <Td align="right" numeric>{w.entries}</Td>
-                  </Tr>
-                ))}
-                {d.alternates.map((a) => (
-                  <Tr key={a.email}>
-                    <Td numeric muted>alt {a.order}</Td>
-                    <Td muted>{a.name}</Td>
-                    <Td muted>{a.email}</Td>
-                    <Td numeric muted className="whitespace-nowrap">{a.phone}</Td>
-                    <Td align="right" numeric muted>{a.entries}</Td>
-                  </Tr>
-                ))}
-              </tbody>
-            </Table>
+            <WinnersPanel
+              slug={slug}
+              drawId={d.id}
+              mode={d.mode}
+              kitName={kitName}
+              view={winnerViews.find((v) => v.drawId === d.id) ?? { drawId: d.id, winners: [], alternates: [] }}
+            />
             <p className="m-0 mt-2 break-all font-mono text-[11.5px] leading-[1.5] text-content-muted">
               seed {d.seed} · list {d.snapshotHash} · {d.algorithm}
               {d.excluded.tests + d.excluded.afterClose > 0 &&
