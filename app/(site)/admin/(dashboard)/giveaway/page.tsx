@@ -275,10 +275,13 @@ export default async function GiveawayAdminPage({
         </p>
       )}
 
+      {/* Phones: status, Add entry, then the entries (search, +5) BEFORE the
+          stats; tablet and up keep the reading order. */}
+      <div className="flex flex-col">
       {readable && (
         <div
           role="status"
-          className={`mb-ops-gap flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md px-4 py-3 font-sans text-ops-body font-semibold ${
+          className={`order-1 md:order-none mb-ops-gap flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md px-4 py-3 font-sans text-ops-body font-semibold ${
             sandbox
               ? "bg-pill-neutral-bg text-pill-neutral-fg"
               : appBad > 0
@@ -304,9 +307,9 @@ export default async function GiveawayAdminPage({
         </div>
       )}
 
-      <div className="mb-ops-gap max-w-[860px]">{addCard}</div>
+      <div className="order-2 md:order-none mb-ops-gap max-w-[860px]">{addCard}</div>
 
-      <div className="mb-ops-gap grid grid-cols-1 gap-ops-gap md:grid-cols-3">
+      <div className="order-4 md:order-none mb-ops-gap grid grid-cols-1 gap-ops-gap md:grid-cols-3">
         <OpsCard
           title="In the drawing"
           titleTooltip="People who entered during the entry period, not counting our own tests. Entries are 1 each, or 1 plus the bonus."
@@ -344,7 +347,7 @@ export default async function GiveawayAdminPage({
         </OpsCard>
       </div>
 
-      <div className="mb-ops-gap">
+      <div className="order-3 md:order-none mb-ops-gap">
         <FilterChips
           param="f"
           active={filter}
@@ -388,6 +391,8 @@ export default async function GiveawayAdminPage({
             />
           )}
         </OpsCard>
+      </div>
+
       </div>
 
       <div className="mb-ops-gap max-w-[560px]">{bonusCard}</div>

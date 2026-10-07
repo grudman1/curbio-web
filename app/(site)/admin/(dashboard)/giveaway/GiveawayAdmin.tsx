@@ -599,6 +599,9 @@ export function AddEntryForm({
   const [error, setError] = useState<string | null>(null);
   const [existing, setExisting] = useState<{ email: string; name: string; entries: number; hasBonus: boolean; deleted: boolean } | null>(null);
   const [busy, startTransition] = useTransition();
+  // Phones: the form is folded behind one button so search and +5 stay near
+  // the top of the screen. Tablet and up: always open.
+  const [open, setOpen] = useState(false);
   const set = <K extends keyof typeof blank>(k: K, v: (typeof blank)[K]) => {
     setF((s) => ({ ...s, [k]: v }));
     setExisting(null);
@@ -645,7 +648,16 @@ export function AddEntryForm({
   const label = "font-sans text-ops-label font-semibold text-content";
   const control = "h-[44px] w-full rounded-md border border-app-border bg-surface-raised px-3 font-sans text-[16px] text-content";
   return (
-    <form onSubmit={submit} className="flex flex-col gap-3">
+    <>
+    <Button
+      variant={open ? "secondary" : "primary"}
+      onClick={() => setOpen((v) => !v)}
+      className="min-h-[44px] w-full md:hidden"
+      aria-expanded={open}
+    >
+      {open ? "Close" : "Add entry"}
+    </Button>
+    <form onSubmit={submit} className={`${open ? "mt-3 flex" : "hidden"} flex-col gap-3 md:mt-0 md:flex`}>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1">
           <span className={label}>Name</span>
@@ -738,6 +750,7 @@ export function AddEntryForm({
         {busy ? "Saving…" : "Add entry"}
       </Button>
     </form>
+    </>
   );
 }
 
