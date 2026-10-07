@@ -182,6 +182,7 @@ const EVENT_LINKS: TrackedLink[] = [
   expconRow("hsm-linkedin", "eXpcon 2026 · HSM personal LinkedIn", "social_bio", "HSMs", "hsm_field", "social", "social-expcon-oct", "linkedin", "For HSMs to post from their own LinkedIn. utm_source=hsm_field."),
   expconRow("paid-linkedin", "eXpcon 2026 · paid social · LinkedIn", "paid_ad", "Marketing", "paid_social", "social", "paid-expcon-oct", "linkedin", "Only if paid social is used. Swap utm_content for another platform by adding a row."),
   expconRow("paid-instagram", "eXpcon 2026 · paid social · Instagram", "paid_ad", "Marketing", "paid_social", "social", "paid-expcon-oct", "instagram", "Only if paid social is used."),
+  expconRow("exp-banner", "eXpcon 2026 · /exp banner", "partner_page", "Marketing", "partnership", "collateral", "partner-expcon-oct", "exp-banner", "The dismissible bar on sell.curbio.com/exp (config/campaigns/exp.ts promoBanner). Hides itself when entries close, Oct 9 noon MT. Partnership + utm_content exp-banner keep these entries apart from the booth QR (event/qr) and the emails (email/e)."),
   expconRow("paid-facebook", "eXpcon 2026 · paid social · Facebook", "paid_ad", "Marketing", "paid_social", "social", "paid-expcon-oct", "facebook", "Only if paid social is used."),
 ];
 

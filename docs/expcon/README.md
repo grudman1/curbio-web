@@ -186,10 +186,9 @@ Going live:
 4. Flip `/expcon`, `/expcon/rules` and `/admin/giveaway` from `stub` to `live`
    in `config/pageRegistry.ts`.
 
-Optional, any time: when Rich confirms the app's "requested work" field can
-hold the note, turn on **Deal note** on `/admin/giveaway`. HSMs then see
-`eXpcon 2026 giveaway · Listing in next 90 days: Yes` on the deal and in their
-new-lead email. It is off by default, and leads flow either way.
+There is no deal note: any lead that reaches the app is assumed to have a
+listing, so nothing is added to the deal's "requested work". The 90-day answer
+stays on the entry (staff screen, CSV, the stored lead row's `listing90`).
 
 ---
 
@@ -230,6 +229,11 @@ Use names starting `ZZTEST` and emails like `zztest+yes1@gmail.com` (never an
 | T13 | Open the email link again with `&referral_source_id=Somebody%20Else` added, and submit **Yes** (new ZZTEST address) | ReferralSourceId is still **`eXp realty`**: a referral in the URL cannot change it. |
 | T10 | *(Optional)* Submit an address that has unsubscribed in ActiveCampaign | Entry accepted; the staff screen shows "unsubscribed"; the contact is **not** added to any list or tagged. If they answer **Yes** they still go to the HSM. |
 
+Finding a deal fast: when the app accepts a lead it answers with an ID, and the
+staff screen shows it next to the app badge ("app ID 99632"), searchable in the
+box above the table and in the CSV (`app_estimate_id`). It is the ID to look up
+in the app. Entries sent before this was recorded show none.
+
 Clean up after testing: ask Rich to delete the ZZTEST deals; delete the
 `zztest+…` contacts in ActiveCampaign (that takes them off their market list and
 the Engaged list too); cancel any test Calendly meeting. The ZZTEST rows stay on
@@ -247,6 +251,13 @@ deleting there.
   The bonus is given once per person, whichever way it was earned.
 - A written request (an email to the inbox named in the Official Rules) is
   added the same way with "+5 · written request".
+- **Is it working? Check from your phone (owner login).** Open
+  `/admin/giveaway`. The top line says **App delivery: all N sent** (green) or
+  **N need attention · X of Y sent** (red). Tap **Show them** to list only the
+  entries that did not reach the app. For each: look for the person in the app
+  first (the app does not dedupe; a retry of a lead that did land makes a second
+  deal), then tap **Retry app**. The line shows when it was read, and the page
+  does not refresh itself — reload it.
 
 ---
 

@@ -97,7 +97,6 @@ const K = {
   log: (s: StoreScope) => `${prefix(s)}:log`,
   draws: (s: StoreScope) => `${prefix(s)}:draws`,
   drawSnapshot: (s: StoreScope, id: string) => `${prefix(s)}:draw:${id}`,
-  settings: (s: StoreScope) => `${prefix(s)}:settings`,
   leadRows: (s: StoreScope) => `${prefix(s)}:leadrows`,
   lock: (s: StoreScope, email: string) => `${prefix(s)}:lock:${email}`,
   syncLock: (s: StoreScope, email: string) => `${prefix(s)}:synclock:${email}`,
@@ -364,41 +363,4 @@ export async function readDrawSnapshot(scope: StoreScope, id: string): Promise<D
   const redis = readOnlyRedis();
   if (!redis) return null;
   return parse(await redis.get<DrawTicket[] | string>(K.drawSnapshot(scope, id)));
-}
-
-// ── Settings ─────────────────────────────────────────────────────────────────
-
-export type GiveawaySettings = {
-  /**
-   * Send the "eXpcon 2026 giveaway · Listing in next 90 days: …" line to the
-   * app with each lead. OFF until Rich confirms the app's "requested work"
-   * field is the right home for it — the lead goes either way; only the note
-   * waits.
-   */
-  dealNote: boolean;
-};
-
-const DEFAULT_SETTINGS: GiveawaySettings = { dealNote: false };
-
-/** Settings, defaulting to the SAFE value for anything missing or unreadable:
- *  a Redis hiccup must never turn a switch on. */
-export async function readSettings(scope: StoreScope): Promise<GiveawaySettings> {
-  const redis = readWriteRedis();
-  if (!redis) return DEFAULT_SETTINGS;
-  try {
-    const hash = await redis.hgetall<Record<string, unknown>>(K.settings(scope));
-    return { dealNote: String(hash?.dealNote ?? "") === "on" };
-  } catch {
-    return DEFAULT_SETTINGS;
-  }
-}
-
-export async function writeSetting(
-  scope: StoreScope,
-  key: keyof GiveawaySettings,
-  on: boolean
-): Promise<void> {
-  const redis = readWriteRedis();
-  if (!redis) throw new Error("giveaway store not configured");
-  await redis.hset(K.settings(scope), { [key]: on ? "on" : "off" });
 }
