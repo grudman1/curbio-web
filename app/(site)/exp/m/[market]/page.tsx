@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import CampaignShell from "@/components/campaign/CampaignShell";
+import { PromoBanner } from "@/components/PromoBanner";
 import { getCampaignMarket } from "@/lib/campaignMarkets";
 import { MARKETS } from "@/config/markets";
 import { resolveMarket } from "@/lib/resolveMarket";
@@ -32,10 +33,16 @@ export default async function ExpMarketPage({
   const { market: resolved, crmMarketName } = await resolveMarket({ market: slug });
 
   return (
-    <CampaignShell
-      page={exp}
-      market={getCampaignMarket(resolved?.slug ?? slug)}
-      crmMarketName={crmMarketName ?? null}
-    />
+    <>
+      {exp.promoBanner && <PromoBanner banner={exp.promoBanner} />}
+      <CampaignShell
+        page={exp}
+        market={getCampaignMarket(resolved?.slug ?? slug)}
+        crmMarketName={crmMarketName ?? null}
+        // Reached only through ?market=<slug> (middleware rewrite). "param"
+        // here; FormCard upgrades it to "pick" when the market picker set it.
+        marketSource="param"
+      />
+    </>
   );
 }

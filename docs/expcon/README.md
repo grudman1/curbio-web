@@ -176,10 +176,9 @@ Going live:
 4. Flip `/expcon`, `/expcon/rules` and `/admin/giveaway` from `stub` to `live`
    in `config/pageRegistry.ts`.
 
-Optional, any time: when Rich confirms the app's "requested work" field can
-hold the note, turn on **Deal note** on `/admin/giveaway`. HSMs then see
-`eXpcon 2026 giveaway · Listing in next 90 days: Yes` on the deal and in their
-new-lead email. It is off by default, and leads flow either way.
+There is no deal note: any lead that reaches the app is assumed to have a
+listing, so nothing is added to the deal's "requested work". The 90-day answer
+stays on the entry (staff screen, CSV, the stored lead row's `listing90`).
 
 ---
 

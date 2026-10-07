@@ -59,6 +59,9 @@ export type Market = {
    * field. Distinct from displayName on purpose; both are live text.
    */
   name: string;
+  /** Header pill on narrow phones, when `name` is too long to sit beside the
+   *  logos ("NoVA" for Northern Virginia). Defaults to `name`. */
+  shortName?: string;
   /** Human label — "Atlanta, GA". Carries the state, so don't append it again. */
   displayName: string;
   /** Service-area line under the market name — "Metro Atlanta · North GA". */
@@ -142,6 +145,7 @@ export const MARKETS: Market[] = [
   },
   {
     slug: "washington-dc",
+    shortName: "DC",
     name: "Washington, DC",
     displayName: "Washington, DC",
     coverage: "All DC Areas",
@@ -217,6 +221,7 @@ export const MARKETS: Market[] = [
   },
   {
     slug: "los-angeles",
+    shortName: "LA",
     name: "Los Angeles",
     displayName: "Los Angeles, CA",
     coverage: "Greater Los Angeles",
@@ -241,6 +246,7 @@ export const MARKETS: Market[] = [
   },
   {
     slug: "northern-virginia",
+    shortName: "NoVA",
     name: "Northern Virginia",
     displayName: "Northern Virginia, VA",
     coverage: "Arlington · Manassas",

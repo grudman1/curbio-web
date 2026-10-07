@@ -16,7 +16,6 @@ import {
   removeBonusAction,
   runDrawingAction,
   sendToAppAction,
-  setDealNoteAction,
   syncEmailListAction,
   verifyDrawingAction,
 } from "./actions";
@@ -324,41 +323,6 @@ export function EntriesTable({ slug, rows, sandbox }: { slug: string; rows: Entr
         </tbody>
       </Table>
       {q && shown.length === 0 && <p className="m-0 ops-subtle">No entries match “{query}”.</p>}
-    </div>
-  );
-}
-
-// ── Deal note switch (owner) ─────────────────────────────────────────────────
-
-export function DealNoteSwitch({ slug, on, example }: { slug: string; on: boolean; example: string }) {
-  const router = useRouter();
-  const toast = useToast();
-  const [busy, startTransition] = useTransition();
-
-  function toggle() {
-    startTransition(async () => {
-      const res = await setDealNoteAction(slug, !on);
-      toast(res.ok ? "success" : "error", res.ok ? `Deal note ${on ? "off" : "on"}.` : res.error);
-      router.refresh();
-    });
-  }
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <StatusBadge
-          status={on ? "on" : "off"}
-          tone={on ? "success" : "neutral"}
-          title={on ? "The note is sent with every lead." : "Leads go to the app without the note."}
-        />
-        <Button onClick={toggle} disabled={busy}>
-          {on ? "Turn off" : "Turn on"}
-        </Button>
-      </div>
-      <p className="m-0 rounded-md bg-app-well px-3 py-2 font-mono text-[12.5px] leading-[1.5] text-content">{example}</p>
-      <p className="m-0 font-sans text-ops-label text-content-muted">
-        Leave off until Rich confirms the app&apos;s “requested work” field is the right place for it.
-      </p>
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import {
-  ANSWER_LABEL,
   LISTING_ANSWERS,
   NOT_LISTED,
   type Giveaway,
@@ -347,11 +346,6 @@ export function wantsEmailList(entry: GiveawayEntry, giveaway: Giveaway): boolea
   if (isInternalAddress(entry.email)) return false;
   if (giveaway.routing.emailList === "everyone") return true;
   return appDecision(entry, giveaway) === null;
-}
-
-/** The line an HSM reads on the deal. */
-export function dealNote(giveaway: Giveaway, answer: ListingAnswer): string {
-  return giveaway.dealNote.replace(/\{answer\}/g, ANSWER_LABEL[answer]);
 }
 
 /** Lead `source` for an entry that goes to the app. */

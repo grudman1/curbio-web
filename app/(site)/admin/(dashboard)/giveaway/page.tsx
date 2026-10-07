@@ -13,7 +13,7 @@ import {
 } from "@/lib/giveaway/entry";
 import { deliveryMode, isClosed, storeScope } from "@/lib/giveaway/mode";
 import { isEmailListOutstanding } from "@/lib/giveaway/service";
-import { readDraws, readEntries, readLog, readSettings } from "@/lib/giveaway/store";
+import { readDraws, readEntries, readLog } from "@/lib/giveaway/store";
 import { PageHeader } from "../../_ui/v2/PageHeader";
 import { OpsCard } from "../../_ui/v2/OpsCard";
 import { EmptyState } from "../../_ui/v2/EmptyState";
@@ -23,7 +23,6 @@ import { buttonClass } from "../../_ui/Button";
 import { currentAdminUser } from "../../_ui/session";
 import {
   BonusTool,
-  DealNoteSwitch,
   DrawPanel,
   EmailListPanel,
   EntriesTable,
@@ -161,10 +160,9 @@ export default async function GiveawayAdminPage({
     );
   }
 
-  const [read, draws, settings, log] = await Promise.all([
+  const [read, draws, log] = await Promise.all([
     readEntries(scope),
     readDraws(scope),
-    readSettings(scope),
     readLog(scope, 40),
   ]);
   const readable = read.configured && !read.error;
@@ -273,19 +271,7 @@ export default async function GiveawayAdminPage({
         </OpsCard>
       </div>
 
-      <div className="mb-ops-gap grid grid-cols-1 gap-ops-gap lg:grid-cols-2">
-        {bonusCard}
-        <OpsCard
-          title="Deal note"
-          titleTooltip="Sends the 90-day answer to the app with each lead, in its “requested work” field — the line an HSM sees on the deal and in their new-lead email. Leads go to the app either way; only this note waits on the switch."
-        >
-          <DealNoteSwitch
-            slug={giveaway.slug}
-            on={settings.dealNote}
-            example={giveaway.dealNote.replace("{answer}", ANSWER_LABEL.yes)}
-          />
-        </OpsCard>
-      </div>
+      <div className="mb-ops-gap max-w-[560px]">{bonusCard}</div>
 
       <div className="mb-ops-gap">
         <FilterChips
