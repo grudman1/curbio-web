@@ -125,7 +125,8 @@ export type EntryAttribution = {
   /** Derived server-side from utm_source against the closed list. */
   channel: Channel;
   referralSourceId: string;
-  entryPoint: "web_form";
+  /** "manual" for an entry staff typed in on the admin screen — Origin in the app. */
+  entryPoint: "web_form" | "manual";
   firstTouchChannel: string | null;
   firstTouchCampaign: string | null;
   /** True when the page's own defaults filled in for missing tags — so a
@@ -170,6 +171,22 @@ export type GiveawayEntry = {
   booking: EntryBooking | null;
   attribution: EntryAttribution;
   routing: { app: AppRouting; emailList: EmailListRouting };
+
+  // ── Booth tools (all optional: absent on entries written before them) ──────
+  /** "manual" when staff typed the entry in on the admin screen; absent for
+   *  the public page. A manual entry is never synced to the email list — the
+   *  person gave no email consent on a form. */
+  origin?: "page" | "manual";
+  /** Manual entries: who typed it in, and how the person asked to be entered. */
+  addedBy?: string;
+  method?: "booth" | "written";
+  /** Manual entries: the person asked for a Curbio manager to contact them.
+   *  The ONLY way a manual entry reaches the app (with Yes + a served market). */
+  contactConsent?: boolean;
+  /** Soft delete. A deleted entry is off the list and out of the drawing, and
+   *  can be restored; its lead records are untouched. */
+  deletedAt?: string | null;
+  deletedBy?: string | null;
 };
 
 // ── Identity ─────────────────────────────────────────────────────────────────
@@ -287,8 +304,10 @@ export function entryCount(entry: Pick<GiveawayEntry, "bonus">, giveaway: Giveaw
 }
 
 /** In the drawing: entered during the entry period, and not one of our tests. */
-export function isDrawable(entry: Pick<GiveawayEntry, "inEntryPeriod" | "isTest">): boolean {
-  return entry.inEntryPeriod && !entry.isTest;
+export function isDrawable(entry: Pick<GiveawayEntry, "inEntryPeriod" | "isTest" | "deletedAt">): boolean {
+  // Eligibility only — the drawing math (draw.ts) is untouched. A deleted entry
+  // is simply not on the list it draws from.
+  return entry.inEntryPeriod && !entry.isTest && !entry.deletedAt;
 }
 
 /** Did they book a call (as opposed to earning the bonus the free way)? */
@@ -307,6 +326,10 @@ export function hasBooked(entry: Pick<GiveawayEntry, "booking">): boolean {
 export function appDecision(entry: GiveawayEntry, giveaway: Giveaway): AppReason | null {
   if (!entry.marketSlug) return null;
   if (isInternalAddress(entry.email)) return null;
+  if (entry.deletedAt) return null;
+  // Typed in by staff: to an HSM only when the person said Yes AND asked to be
+  // contacted (a served market is checked above). Nothing else sends it.
+  if (entry.origin === "manual") return entry.listing90 === "yes" && entry.contactConsent ? "manual" : null;
   if (hasBooked(entry)) return "booked";
   if (giveaway.routing.toApp.includes(entry.listing90)) return "answer";
   // Anyone who used the page once it had become a contact form — whether that
@@ -344,6 +367,8 @@ export function isAppOutstanding(entry: GiveawayEntry, giveaway: Giveaway): bool
 /** Should this person be on the opt-in email list? */
 export function wantsEmailList(entry: GiveawayEntry, giveaway: Giveaway): boolean {
   if (isInternalAddress(entry.email)) return false;
+  // Never: a manual entry carries no email consent. Deleted: off the list.
+  if (entry.origin === "manual" || entry.deletedAt) return false;
   if (giveaway.routing.emailList === "everyone") return true;
   return appDecision(entry, giveaway) === null;
 }

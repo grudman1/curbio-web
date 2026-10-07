@@ -11,6 +11,12 @@ import type { DrawRecord } from "@/lib/giveaway/store";
 import type { ReconcileReport } from "@/lib/giveaway/service";
 import {
   addBonusAction,
+  addManualEntryAction,
+  countTestRecordsAction,
+  deleteAllTestEntriesAction,
+  deleteEntryAction,
+  restoreEntryAction,
+  undoBonusAction,
   lookupEntrantAction,
   reconcileAction,
   removeBonusAction,
@@ -33,8 +39,18 @@ type Tone = "success" | "warning" | "error" | "neutral";
 export type EntryRow = {
   email: string;
   name: string;
-  /** Already masked server-side. */
+  /** Full, formatted — every signed-in admin sees it (2026-10-07). */
   phone: string;
+  /** Digits only, for searching by the last 4. */
+  phoneDigits: string;
+  /** Typed in on this screen (booth / written request). */
+  manual: boolean;
+  method: "booth" | "written" | null;
+  addedBy: string | null;
+  deleted: boolean;
+  deletedBy: string | null;
+  /** In the entry period, no bonus yet, not deleted: the +5 button shows. */
+  canBonus: boolean;
   market: string;
   inMarket: boolean;
   answer: string;
@@ -188,16 +204,43 @@ export function BonusTool({
   );
 }
 
-// ── Entries table (owner) ────────────────────────────────────────────────────
+// ── Entries table ────────────────────────────────────────────────────────────
 
-export function EntriesTable({ slug, rows, sandbox }: { slug: string; rows: EntryRow[]; sandbox: boolean }) {
+const UNDO_MS = 10_000;
+
+export function EntriesTable({
+  slug,
+  rows,
+  sandbox,
+  frozen,
+  bonusEntries,
+  deletedView,
+}: {
+  slug: string;
+  rows: EntryRow[];
+  sandbox: boolean;
+  /** The official drawing has run: delete and restore are off. */
+  frozen: boolean;
+  bonusEntries: number;
+  /** Showing the "Deleted" filter: rows offer Restore instead of Delete. */
+  deletedView: boolean;
+}) {
   const router = useRouter();
   const toast = useToast();
   const [query, setQuery] = useState("");
   const [busy, startTransition] = useTransition();
+  const [undo, setUndo] = useState<{ email: string; name: string; entries: number; timer: number } | null>(null);
 
+  // Live filter: name, email, market, app ID, or the phone's digits (last 4).
   const q = query.trim().toLowerCase();
-  const shown = q ? rows.filter((r) => `${r.name} ${r.email} ${r.market} ${r.estimateId ?? ""}`.toLowerCase().includes(q)) : rows;
+  const qDigits = q.replace(/\D/g, "");
+  const shown = q
+    ? rows.filter(
+        (r) =>
+          `${r.name} ${r.email} ${r.market} ${r.estimateId ?? ""}`.toLowerCase().includes(q) ||
+          (qDigits.length >= 3 && r.phoneDigits.endsWith(qDigits))
+      )
+    : rows;
 
   function send(row: EntryRow) {
     const retry = row.app === "failed" || row.app === "sending";
@@ -222,33 +265,206 @@ export function EntriesTable({ slug, rows, sandbox }: { slug: string; rows: Entr
     });
   }
 
+  function plusFive(row: EntryRow) {
+    startTransition(async () => {
+      const res = await addBonusAction(slug, row.email, "booth");
+      if (!res.ok) {
+        toast("error", res.error);
+        return;
+      }
+      if (res.already) {
+        toast("success", `${row.name} already had the bonus — nothing changed.`);
+        return;
+      }
+      if (undo) window.clearTimeout(undo.timer);
+      const timer = window.setTimeout(() => setUndo(null), UNDO_MS);
+      setUndo({ email: row.email, name: row.name, entries: res.entries, timer });
+      router.refresh();
+    });
+  }
+
+  function undoPlusFive() {
+    if (!undo) return;
+    const { email, name, timer } = undo;
+    window.clearTimeout(timer);
+    setUndo(null);
+    startTransition(async () => {
+      const res = await undoBonusAction(slug, email);
+      toast(res.ok ? "success" : "error", res.ok ? `Undone — ${name} is back to 1 entry.` : res.error);
+      router.refresh();
+    });
+  }
+
+  function remove(row: EntryRow) {
+    const how = row.isTest
+      ? "This is a TEST entry: it is deleted for good, with its rows on the Leads screen (a backup copy is kept)."
+      : "It comes off the list and out of the drawing. Its lead records are kept, and it can be restored from “Deleted”.";
+    if (!window.confirm(`Delete this entry?\n\n${row.name}\n${row.email}\n\n${how}`)) return;
+    startTransition(async () => {
+      const res = await deleteEntryAction(slug, row.email, row.isTest);
+      toast(
+        res.ok ? "success" : "error",
+        res.ok
+          ? res.hard
+            ? `Deleted ${row.name} for good (${res.leadRows ?? 0} lead row${res.leadRows === 1 ? "" : "s"} removed). Backup: ${res.backupKey}`
+            : `Deleted ${row.name}. Restore it from “Deleted”.`
+          : res.error
+      );
+      router.refresh();
+    });
+  }
+
+  function restore(row: EntryRow) {
+    if (!window.confirm(`Restore ${row.name} (${row.email})? They go back on the list and into the drawing.`)) return;
+    startTransition(async () => {
+      const res = await restoreEntryAction(slug, row.email);
+      toast(res.ok ? "success" : "error", res.ok ? `Restored ${row.name}.` : res.error);
+      router.refresh();
+    });
+  }
+
+  const badges = (r: EntryRow) => {
+    const app = APP_BADGE[r.app];
+    const list = LIST_BADGE[r.emailList];
+    return (
+      <span className="inline-flex flex-wrap gap-1">
+        {app && <StatusBadge status={app.label} tone={app.tone} title={`${app.title} ${r.appDetail}`.trim()} />}
+        {r.estimateId !== null && (
+          <span className="ops-subtle ops-tnum self-center whitespace-nowrap" title="The ID the app gave this lead. Search it in the app to find the deal.">
+            app ID {r.estimateId}
+          </span>
+        )}
+        {r.manual ? (
+          <StatusBadge status="No email consent" tone="neutral" title="Typed in by staff — never added to the email list." />
+        ) : (
+          list && <StatusBadge status={list.label} tone={list.tone} title={`${list.title} ${r.emailListDetail}`.trim()} />
+        )}
+        {!app && !list && !r.manual && <span className="ops-subtle">—</span>}
+      </span>
+    );
+  };
+
+  const nameTags = (r: EntryRow) => (
+    <>
+      {r.isTest && <StatusBadge status="ours" tone="neutral" title="One of ours — a test entry or a Curbio address. Never drawn." />}
+      {r.manual && (
+        <StatusBadge
+          status={r.method === "written" ? "manual · written" : "manual · booth"}
+          tone="neutral"
+          title={`Added on this screen${r.addedBy ? ` by ${r.addedBy}` : ""}.`}
+        />
+      )}
+      {r.afterClose && !r.isTest && (
+        <StatusBadge status="after close" tone="neutral" title="Submitted after the entry period ended. Not in the drawing." />
+      )}
+      {r.deleted && <StatusBadge status="deleted" tone="warning" title={`Deleted${r.deletedBy ? ` by ${r.deletedBy}` : ""}.`} />}
+      {r.revisions > 0 && (
+        <span className="ops-subtle" title={`Re-submitted ${r.revisions} time${r.revisions === 1 ? "" : "s"} — still one entry.`}>
+          ×{r.revisions + 1}
+        </span>
+      )}
+    </>
+  );
+
+  const actions = (r: EntryRow, big = false) => {
+    const size = big ? "md" : "sm";
+    const tap = big ? " min-h-[44px] px-4" : "";
+    return (
+      <>
+        {!deletedView && r.canBonus && (
+          <button type="button" disabled={busy} onClick={() => plusFive(r)} className={buttonClass("primary", size) + tap}>
+            +{bonusEntries}
+          </button>
+        )}
+        {!deletedView && r.canSend && (
+          <button type="button" disabled={busy} onClick={() => send(r)} className={buttonClass("ghost", size) + tap}>
+            {r.app === "failed" || r.app === "sending" ? "Retry app" : "Send to app"}
+          </button>
+        )}
+        {!deletedView && r.bonus && (
+          <button type="button" disabled={busy} onClick={() => dropBonus(r)} className={buttonClass("ghost", size) + tap}>
+            Remove bonus
+          </button>
+        )}
+        {deletedView ? (
+          <button
+            type="button"
+            disabled={busy || frozen}
+            title={frozen ? "The official drawing has run — the list is frozen." : undefined}
+            onClick={() => restore(r)}
+            className={buttonClass("ghost", size) + tap}
+          >
+            Restore
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={busy || frozen}
+            title={frozen ? "The official drawing has run — the list is frozen." : undefined}
+            onClick={() => remove(r)}
+            className={buttonClass("ghost", size) + tap}
+          >
+            Delete
+          </button>
+        )}
+      </>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <Input
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search name, email, market or app ID"
+        placeholder="Search name, email, phone (last 4), market or app ID"
         aria-label="Search entries"
-        className="max-w-[320px]"
+        className="h-[44px] w-full md:max-w-[360px]"
       />
-      <Table>
-        <Thead>
-          <Th>Entered (MT)</Th>
-          <Th>Name</Th>
-          <Th>Email</Th>
-          <Th>Phone</Th>
-          <Th>Market</Th>
-          <Th>90 days</Th>
-          <Th align="right">Entries</Th>
-          <Th>Went to</Th>
-          <Th align="right"> </Th>
-        </Thead>
-        <tbody>
-          {shown.map((r) => {
-            const app = APP_BADGE[r.app];
-            const list = LIST_BADGE[r.emailList];
-            return (
+
+      {/* Phones: stacked cards, no sideways scrolling. */}
+      <ul className="m-0 flex list-none flex-col gap-2 p-0 md:hidden">
+        {shown.map((r) => (
+          <li key={r.email} className="rounded-md border border-app-border bg-surface-raised p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5 font-sans text-ops-body font-semibold text-content">
+                  <span className="break-words">{r.name}</span>
+                  {nameTags(r)}
+                </div>
+                <div className="break-all font-sans text-ops-body text-content-muted">{r.email}</div>
+                <div className="font-sans text-ops-body text-content-muted ops-tnum">{r.phone}</div>
+              </div>
+              <div className="flex-none text-right">
+                <div className="ops-tnum font-sans text-[22px] font-bold leading-none text-content">{r.entries}</div>
+                <div className="ops-subtle">{r.entries === 1 ? "entry" : "entries"}</div>
+              </div>
+            </div>
+            <div className="mt-1.5 font-sans text-ops-body text-content">
+              {r.market} · {r.answer}
+            </div>
+            <div className="mt-1.5">{badges(r)}</div>
+            <div className="mt-2.5 flex flex-wrap gap-2">{actions(r, true)}</div>
+          </li>
+        ))}
+      </ul>
+
+      {/* Tablet and up: the table. */}
+      <div className="hidden md:block">
+        <Table>
+          <Thead>
+            <Th>Entered (MT)</Th>
+            <Th>Name</Th>
+            <Th>Email</Th>
+            <Th>Phone</Th>
+            <Th>Market</Th>
+            <Th>90 days</Th>
+            <Th align="right">Entries</Th>
+            <Th>Went to</Th>
+            <Th align="right"> </Th>
+          </Thead>
+          <tbody>
+            {shown.map((r) => (
               <Tr key={r.email}>
                 <Td muted className="whitespace-nowrap">
                   {r.entered}
@@ -256,17 +472,7 @@ export function EntriesTable({ slug, rows, sandbox }: { slug: string; rows: Entr
                 <Td className="font-semibold">
                   <span className="inline-flex flex-wrap items-center gap-1.5">
                     {r.name}
-                    {r.isTest && (
-                      <StatusBadge status="ours" tone="neutral" title="One of ours — a test entry or a Curbio address. Never drawn." />
-                    )}
-                    {r.afterClose && !r.isTest && (
-                      <StatusBadge status="after close" tone="neutral" title="Submitted after the entry period ended. Not in the drawing." />
-                    )}
-                    {r.revisions > 0 && (
-                      <span className="ops-subtle" title={`Re-submitted ${r.revisions} time${r.revisions === 1 ? "" : "s"} — still one entry.`}>
-                        ×{r.revisions + 1}
-                      </span>
-                    )}
+                    {nameTags(r)}
                   </span>
                 </Td>
                 <Td>{r.email}</Td>
@@ -289,42 +495,249 @@ export function EntriesTable({ slug, rows, sandbox }: { slug: string; rows: Entr
                   {r.entries}
                   {r.bonus && <span className="ops-subtle"> · {BONUS_LABEL[r.bonus]}</span>}
                 </Td>
-                <Td>
-                  <span className="inline-flex flex-wrap gap-1">
-                    {app && <StatusBadge status={app.label} tone={app.tone} title={`${app.title} ${r.appDetail}`.trim()} />}
-                    {r.estimateId !== null && (
-                      <span
-                        className="ops-subtle ops-tnum self-center whitespace-nowrap"
-                        title="The ID the app gave this lead. Search it in the app to find the deal."
-                      >
-                        app ID {r.estimateId}
-                      </span>
-                    )}
-                    {list && (
-                      <StatusBadge status={list.label} tone={list.tone} title={`${list.title} ${r.emailListDetail}`.trim()} />
-                    )}
-                    {!app && !list && <span className="ops-subtle">—</span>}
-                  </span>
-                </Td>
+                <Td>{badges(r)}</Td>
                 <Td align="right" className="whitespace-nowrap">
-                  {r.canSend && (
-                    <button type="button" disabled={busy} onClick={() => send(r)} className={buttonClass("ghost", "sm")}>
-                      {r.app === "failed" || r.app === "sending" ? "Retry app" : "Send to app"}
-                    </button>
-                  )}
-                  {r.bonus && (
-                    <button type="button" disabled={busy} onClick={() => dropBonus(r)} className={buttonClass("ghost", "sm")}>
-                      Remove bonus
-                    </button>
-                  )}
+                  <span className="inline-flex gap-1">{actions(r)}</span>
                 </Td>
               </Tr>
-            );
-          })}
-        </tbody>
-      </Table>
+            ))}
+          </tbody>
+        </Table>
+      </div>
       {q && shown.length === 0 && <p className="m-0 ops-subtle">No entries match “{query}”.</p>}
+
+      {undo && (
+        <div
+          role="status"
+          className="fixed bottom-4 left-1/2 z-50 flex w-[calc(100%-32px)] max-w-[480px] -translate-x-1/2 items-center justify-between gap-3 rounded-lg bg-surface-inverse px-4 py-3 font-sans text-ops-body text-content-inverse shadow-lg"
+        >
+          <span>
+            Added +{bonusEntries} for {undo.name}, now {undo.entries} entries
+          </span>
+          <button type="button" onClick={undoPlusFive} className="min-h-[44px] flex-none px-2 font-bold underline underline-offset-2">
+            Undo
+          </button>
+        </div>
+      )}
     </div>
+  );
+}
+
+// ── Delete all test entries ──────────────────────────────────────────────────
+
+export function DeleteAllTests({ slug, frozen }: { slug: string; frozen: boolean }) {
+  const router = useRouter();
+  const toast = useToast();
+  const [busy, startTransition] = useTransition();
+  function run() {
+    startTransition(async () => {
+      const c = await countTestRecordsAction(slug);
+      if (!c.ok) {
+        toast("error", c.error);
+        return;
+      }
+      if (c.entries + c.waitlist === 0) {
+        toast("success", "There are no test entries to delete.");
+        return;
+      }
+      const ok = window.confirm(
+        `Delete all test entries for good?\n\n${c.entries} test entr${c.entries === 1 ? "y" : "ies"} (“ours”), with their rows on the Leads screen\n${c.waitlist} ZZTEST waitlist sign-up${c.waitlist === 1 ? "" : "s"}\n\nA backup copy is kept. The CRM is not touched.`
+      );
+      if (!ok) return;
+      const res = await deleteAllTestEntriesAction(slug);
+      toast(
+        res.ok ? "success" : "error",
+        res.ok
+          ? `Deleted ${res.entries} test entries (${res.leadRows} lead rows) and ${res.waitlist} waitlist sign-ups. Backup: ${res.backupKey}`
+          : res.error
+      );
+      router.refresh();
+    });
+  }
+  return (
+    <button
+      type="button"
+      disabled={busy || frozen}
+      title={frozen ? "The official drawing has run — the list is frozen." : undefined}
+      onClick={run}
+      className={buttonClass("ghost", "sm")}
+    >
+      Delete all test entries
+    </button>
+  );
+}
+
+// ── Add entry (booth / written request) ──────────────────────────────────────
+
+const NOT_LISTED = "not-listed";
+
+export function AddEntryForm({
+  slug,
+  bonusEntries,
+  closed,
+  markets,
+}: {
+  slug: string;
+  bonusEntries: number;
+  closed: boolean;
+  markets: { slug: string; label: string }[];
+}) {
+  const router = useRouter();
+  const toast = useToast();
+  const blank = {
+    name: "",
+    email: "",
+    phone: "",
+    market: "",
+    zip: "",
+    listing90: "",
+    method: "booth" as "booth" | "written",
+    addBonus: true,
+    contactConsent: false,
+  };
+  const [f, setF] = useState(blank);
+  const [error, setError] = useState<string | null>(null);
+  const [existing, setExisting] = useState<{ email: string; name: string; entries: number; hasBonus: boolean; deleted: boolean } | null>(null);
+  const [busy, startTransition] = useTransition();
+  const set = <K extends keyof typeof blank>(k: K, v: (typeof blank)[K]) => {
+    setF((s) => ({ ...s, [k]: v }));
+    setExisting(null);
+  };
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setExisting(null);
+    startTransition(async () => {
+      const res = await addManualEntryAction(slug, { ...f, zip: f.market === NOT_LISTED ? f.zip : "" });
+      if (res.ok) {
+        toast(
+          "success",
+          `Added ${res.name} — ${res.entries} ${res.entries === 1 ? "entry" : "entries"}${res.inEntryPeriod ? "" : " (after the close: not in the drawing)"}${
+            res.app === "sent" ? " · sent to the app" : res.app === "sandbox" ? " · app (sandbox)" : ""
+          }.`
+        );
+        setF(blank);
+        router.refresh();
+        return;
+      }
+      if (res.existing) setExisting(res.existing);
+      setError(res.error);
+    });
+  }
+
+  function plusFiveExisting() {
+    if (!existing) return;
+    startTransition(async () => {
+      const res = await addBonusAction(slug, existing.email, f.method);
+      if (!res.ok) {
+        setError(res.error);
+        return;
+      }
+      toast("success", res.already ? `${existing.name} already had the bonus.` : `Added +${bonusEntries} for ${existing.name}, now ${res.entries} entries.`);
+      setExisting(null);
+      setError(null);
+      setF(blank);
+      router.refresh();
+    });
+  }
+
+  const label = "font-sans text-ops-label font-semibold text-content";
+  const control = "h-[44px] w-full rounded-md border border-app-border bg-surface-raised px-3 font-sans text-[16px] text-content";
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1">
+          <span className={label}>Name</span>
+          <input className={control} value={f.name} onChange={(e) => set("name", e.target.value)} autoComplete="off" required />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className={label}>Email</span>
+          <input
+            className={control}
+            type="email"
+            inputMode="email"
+            autoCapitalize="none"
+            autoComplete="off"
+            value={f.email}
+            onChange={(e) => set("email", e.target.value)}
+            required
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className={label}>Phone</span>
+          <input className={control} type="tel" inputMode="tel" value={f.phone} onChange={(e) => set("phone", e.target.value)} required />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className={label}>Market</span>
+          <select className={control} value={f.market} onChange={(e) => set("market", e.target.value)} required>
+            <option value="">Select a market</option>
+            {markets.map((m) => (
+              <option key={m.slug} value={m.slug}>
+                {m.label}
+              </option>
+            ))}
+            <option value={NOT_LISTED}>Not listed</option>
+          </select>
+        </label>
+        {f.market === NOT_LISTED && (
+          <label className="flex flex-col gap-1">
+            <span className={label}>ZIP code</span>
+            <input className={control} inputMode="numeric" maxLength={10} value={f.zip} onChange={(e) => set("zip", e.target.value)} required />
+          </label>
+        )}
+        <label className="flex flex-col gap-1">
+          <span className={label}>Listing in next 90 days</span>
+          <select className={control} value={f.listing90} onChange={(e) => set("listing90", e.target.value)} required>
+            <option value="">Select</option>
+            <option value="yes">Yes</option>
+            <option value="maybe">Maybe</option>
+            <option value="not_yet">Not yet</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className={label}>Method</span>
+          <select className={control} value={f.method} onChange={(e) => set("method", e.target.value as "booth" | "written")}>
+            <option value="booth">Booth</option>
+            <option value="written">Written request</option>
+          </select>
+        </label>
+      </div>
+      <label className="flex min-h-[44px] items-center gap-2.5 font-sans text-ops-body text-content">
+        <input type="checkbox" className="h-5 w-5" checked={f.addBonus} onChange={(e) => set("addBonus", e.target.checked)} />
+        Add +{bonusEntries} (booth visit)
+      </label>
+      <label className="flex min-h-[44px] items-center gap-2.5 font-sans text-ops-body text-content">
+        <input type="checkbox" className="h-5 w-5" checked={f.contactConsent} onChange={(e) => set("contactConsent", e.target.checked)} />
+        They asked a Curbio manager to contact them
+      </label>
+      {closed && (
+        <p className="m-0 font-sans text-ops-label text-content-muted">
+          The entry period has closed: entries added now are saved but are not in the drawing.
+        </p>
+      )}
+      <FieldError>{error}</FieldError>
+      {existing && (
+        <div className="flex flex-col gap-2 rounded-md bg-app-well px-3 py-3 font-sans text-ops-body text-content">
+          <span>
+            <strong>{existing.name}</strong> ({existing.email}) already has {existing.entries}{" "}
+            {existing.entries === 1 ? "entry" : "entries"}
+            {existing.deleted ? " — the entry is deleted; restore it from “Deleted”." : "."}
+          </span>
+          {!existing.deleted &&
+            (existing.hasBonus ? (
+              <span className="text-content-muted">They already have the bonus. It is awarded once.</span>
+            ) : (
+              <Button variant="primary" disabled={busy} onClick={plusFiveExisting} className="min-h-[44px] self-start">
+                Add +{bonusEntries} instead
+              </Button>
+            ))}
+        </div>
+      )}
+      <Button type="submit" variant="primary" disabled={busy} className="min-h-[44px] self-start px-6">
+        {busy ? "Saving…" : "Add entry"}
+      </Button>
+    </form>
   );
 }
 
@@ -337,6 +750,7 @@ export function EmailListPanel({
   sandbox,
   unsubscribed,
   tag,
+  notConfiguredRows = 0,
 }: {
   slug: string;
   outstanding: number;
@@ -344,6 +758,9 @@ export function EmailListPanel({
   sandbox: boolean;
   unsubscribed: number;
   tag: string;
+  /** Entries waiting only because ActiveCampaign is not set up — said here,
+   *  once, instead of a pill on every row. */
+  notConfiguredRows?: number;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -396,8 +813,10 @@ export function EmailListPanel({
         </p>
       ) : !configured ? (
         <p className="m-0 font-sans text-ops-body text-tone-bad">
-          ActiveCampaign is not configured here. Entries are being kept; add ACTIVECAMPAIGN_ACCOUNT_URL and
-          ACTIVECAMPAIGN_API_KEY in Vercel, redeploy, then sync.
+          ActiveCampaign is not configured here
+          {notConfiguredRows > 0 ? ` — ${notConfiguredRows} ${notConfiguredRows === 1 ? "entry is" : "entries are"} waiting` : ""}.
+          Entries are being kept; add ACTIVECAMPAIGN_ACCOUNT_URL and ACTIVECAMPAIGN_API_KEY in Vercel, redeploy, then
+          sync.
         </p>
       ) : (
         <p className="m-0 font-sans text-ops-body text-content">

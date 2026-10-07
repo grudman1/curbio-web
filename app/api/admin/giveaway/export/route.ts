@@ -57,12 +57,7 @@ function phone(raw: string): string {
 export async function GET(req: NextRequest) {
   const session = await requireAdminApiSession();
   if (!session) return unauthorized();
-  if (session.role !== "owner") {
-    return new Response(JSON.stringify({ error: "Owner access required." }), {
-      status: 403,
-      headers: { "content-type": "application/json" },
-    });
-  }
+  // Any signed-in admin (2026-10-07: no owner/staff distinction on the giveaway).
 
   const giveaway = giveawayBySlug(req.nextUrl.searchParams.get("giveaway"));
   if (!giveaway) return new Response("Unknown giveaway", { status: 404 });

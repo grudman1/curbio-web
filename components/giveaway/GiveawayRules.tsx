@@ -128,12 +128,16 @@ export function GiveawayRules({ giveaway }: { giveaway: Giveaway }) {
           <p>
             No purchase or payment of any kind is necessary to enter or win. During the Entry Period, visit {publicUrl}{" "}
             and complete and submit the entry form with your name, email address, phone number, market and your answer
-            to the question about upcoming listings. You will receive {count(1)} entry.
+            to the question about upcoming listings, or ask a Curbio team member at Booth #{event.booth} to enter you.
+            You may also enter in writing: email <a href={`mailto:${rules.requestEmail}`}>{rules.requestEmail}</a> with
+            your name, email address, phone number, market and your answer to the question about upcoming listings, so
+            that it is received before the Entry Period ends, and a Curbio team member will enter you. Every method of
+            entry is equal: you will receive {count(1)} entry.
           </p>
           <p>
-            Limit {count(1)} entry per person and per email address. If you submit the form more than once, your
-            existing entry is updated; it is not counted again. You must submit your own entry. Entries made by
-            automated means are void.
+            Limit {count(1)} entry per person and per email address. If you enter more than once, by any method, your
+            existing entry is updated; it is not counted again. You must enter yourself, or ask a Curbio team member to
+            enter you as described above. Entries made by automated means are void.
           </p>
         </Section>
 

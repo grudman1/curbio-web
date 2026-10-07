@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { ANSWER_LABEL, GIVEAWAYS } from "@/config/giveaways";
 import { MARKET_BY_SLUG } from "@/config/markets";
-import { maskPhone } from "@/lib/adminLeads";
 import { alertEmailConfigured, alertRecipient } from "@/lib/giveaway/appDelivery";
 import { emailListConfigured } from "@/lib/giveaway/emailList";
 import {
@@ -13,7 +12,8 @@ import {
   type GiveawayEntry,
 } from "@/lib/giveaway/entry";
 import { deliveryMode, isClosed, storeScope } from "@/lib/giveaway/mode";
-import { isEmailListOutstanding } from "@/lib/giveaway/service";
+import { isEmailListOutstanding, isFrozen } from "@/lib/giveaway/service";
+import { MARKETS } from "@/config/markets";
 import { readDraws, readEntries, readLog } from "@/lib/giveaway/store";
 import { PageHeader } from "../../_ui/v2/PageHeader";
 import { OpsCard } from "../../_ui/v2/OpsCard";
@@ -23,8 +23,10 @@ import { FilterChips } from "../../_ui/FilterChips";
 import { buttonClass } from "../../_ui/Button";
 import { currentAdminUser } from "../../_ui/session";
 import {
+  AddEntryForm,
   AlertTest,
   BonusTool,
+  DeleteAllTests,
   DrawPanel,
   EmailListPanel,
   EntriesTable,
@@ -36,20 +38,13 @@ import {
 // Giveaway entries — who entered, where each person was routed, and the
 // drawing.
 //
-// OWNER-ONLY, with one exception. The screen lists every entrant's name and
-// email, exports their phone numbers and picks prize winners, so everything
-// but the first card is rendered for an owner and nobody else. The exception
-// is the bonus tool: booth staff add the "visited the booth" bonus, and they
-// are not owners. It takes an email and answers with a first name — it cannot
-// be used to browse.
+// ANY SIGNED-IN ADMIN sees and can do everything here (Gavin, 2026-10-07: no
+// owner/staff distinction on this screen), including full phone numbers. The
+// session is still checked on every action (actions.ts); every write is in the
+// log at the bottom of the page, which is how "who did what" is answered.
 //
-// The role comes from the server session, never from a prop or a query param,
-// and every action re-checks it (actions.ts). This page hiding a card is
-// presentation; that file is the gate.
-//
-// Phone numbers stay masked in the table, as on the Leads screen: the list is
-// what gets screenshotted. They are whole in the export and beside a drawn
-// winner's name, the two places someone actually needs to dial one.
+// Test entries are hidden unless "Show tests" is on. Soft-deleted entries live
+// under the "Deleted" filter, with Restore.
 //
 // ONE ROW PER PERSON by construction — the store is keyed by email — so
 // "deduped" is not a step that happens here.
@@ -99,15 +94,23 @@ function marketLabel(e: GiveawayEntry): string {
 }
 
 
-type Filter = "all" | "app" | "appfail" | "list" | "attention" | "tests";
+type Filter = "all" | "app" | "appfail" | "list" | "attention" | "tests" | "deleted";
+
+function formatPhone(raw: string): string {
+  const d = raw.replace(/\D/g, "");
+  const ten = d.length === 11 && d.startsWith("1") ? d.slice(1) : d;
+  return ten.length === 10 ? `(${ten.slice(0, 3)}) ${ten.slice(3, 6)}-${ten.slice(6)}` : raw;
+}
 
 export default async function GiveawayAdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ f?: string }>;
+  searchParams: Promise<{ f?: string; t?: string }>;
 }) {
   const [me, sp] = await Promise.all([currentAdminUser(), searchParams]);
-  const isOwner = me?.role === "owner";
+  // No owner/staff split on this screen; the BonusTool keeps its after-close
+  // allowance for everyone.
+  const isOwner = !!me;
   // One giveaway today. When there is a second, this becomes a picker.
   const giveaway = GIVEAWAYS[0];
   const scope = storeScope(giveaway);
@@ -146,6 +149,20 @@ export default async function GiveawayAdminPage({
     />
   );
 
+  const addCard = (
+    <OpsCard
+      title="Add entry"
+      titleTooltip="For someone at the booth, or a written request. One entry per email — an existing email is offered +5 instead. Never added to the email list (no email consent). Sent to an HSM only if they said Yes, the market is served, and they asked to be contacted."
+    >
+      <AddEntryForm
+        slug={giveaway.slug}
+        bonusEntries={giveaway.bonusEntries}
+        closed={closed}
+        markets={[...MARKETS].sort((a, b) => a.displayName.localeCompare(b.displayName)).map((m) => ({ slug: m.slug, label: m.displayName }))}
+      />
+    </OpsCard>
+  );
+
   const bonusCard = (
     <OpsCard
       title="Add bonus entries"
@@ -155,29 +172,27 @@ export default async function GiveawayAdminPage({
     </OpsCard>
   );
 
-  if (!isOwner) {
-    return (
-      <>
-        {header}
-        <div className="max-w-[560px]">{bonusCard}</div>
-      </>
-    );
-  }
 
-  const [read, draws, log] = await Promise.all([
+  const [read, draws, log, frozen] = await Promise.all([
     readEntries(scope),
     readDraws(scope),
     readLog(scope, 40),
+    isFrozen(giveaway),
   ]);
   const readable = read.configured && !read.error;
-  const entries = readable ? read.entries : [];
+  const all = readable ? read.entries : [];
+  // Soft-deleted entries are off every count and list except "Deleted".
+  const deleted = all.filter((e) => !!e.deletedAt);
+  const entries = all.filter((e) => !e.deletedAt);
+  const showTests = sp.t === "1";
 
   // An entry that needs a person: it should be with an HSM and is not
   // confirmed there (refused, never reported back, or never attempted), or its
   // email-list step is still owed. Both are judged against where the entry
   // SHOULD go now — someone since handed to an HSM no longer owes a list sync.
-  const needsAttention = (e: GiveawayEntry) =>
-    !sandbox && (isAppOutstanding(e, giveaway) || isEmailListOutstanding(e, giveaway));
+  // Real problems only: the app refused it or never confirmed it. ActiveCampaign
+  // "not configured" is a setup state, said once in the Email list card.
+  const needsAttention = (e: GiveawayEntry) => !sandbox && isAppOutstanding(e, giveaway);
 
   // App delivery at a glance — the line at the top of the page. "Due" is every
   // entry that SHOULD be with an HSM (answered Yes, booked, or used the contact
@@ -197,8 +212,11 @@ export default async function GiveawayAdminPage({
     attention: entries.filter(needsAttention).length,
     tests: entries.filter((e) => e.isTest).length,
   };
-  const filter: Filter = (["app", "appfail", "list", "attention", "tests"] as const).find((k) => k === sp.f) ?? "all";
-  const shown = entries.filter((e) => {
+  const filter: Filter = (["app", "appfail", "list", "attention", "tests", "deleted"] as const).find((k) => k === sp.f) ?? "all";
+  const shown = (filter === "deleted" ? deleted : entries).filter((e) => {
+    if (filter === "deleted") return showTests || !e.isTest;
+    // Tests are hidden unless "Show tests" is on, or the "Ours" filter asks.
+    if (e.isTest && !showTests && filter !== "tests") return false;
     if (filter === "app") return ["sent", "sandbox"].includes(e.routing.app.status);
     if (filter === "appfail") return !sandbox && isAppOutstanding(e, giveaway);
     if (filter === "list") return ["synced", "sandbox"].includes(e.routing.emailList.status);
@@ -210,7 +228,14 @@ export default async function GiveawayAdminPage({
   const rows: EntryRow[] = shown.map((e) => ({
     email: e.email,
     name: e.name,
-    phone: maskPhone(e.phone),
+    phone: formatPhone(e.phone),
+    phoneDigits: e.phone.replace(/\D/g, ""),
+    manual: e.origin === "manual",
+    method: e.method ?? null,
+    addedBy: e.addedBy ?? null,
+    deleted: !!e.deletedAt,
+    deletedBy: e.deletedBy ?? null,
+    canBonus: e.inEntryPeriod && !e.bonus && !e.deletedAt,
     market: marketLabel(e),
     inMarket: e.marketSlug !== null,
     answer: ANSWER_LABEL[e.listing90],
@@ -232,11 +257,13 @@ export default async function GiveawayAdminPage({
           : "",
     estimateId: e.routing.app.estimateId ?? null,
     canSend: e.marketSlug !== null && !isInternalAddress(e.email) && !isInApp(e),
-    emailList: e.routing.emailList.status,
+    // "not configured" is said once, in the Email list card — not on every row.
+    emailList: e.routing.emailList.status === "not_configured" ? "none" : e.routing.emailList.status,
     emailListDetail: e.routing.emailList.error ?? "",
   }));
 
   const outstanding = sandbox ? 0 : entries.filter((e) => isEmailListOutstanding(e, giveaway)).length;
+  const notConfiguredRows = entries.filter((e) => e.routing.emailList.status === "not_configured").length;
 
   return (
     <>
@@ -277,6 +304,8 @@ export default async function GiveawayAdminPage({
         </div>
       )}
 
+      <div className="mb-ops-gap max-w-[860px]">{addCard}</div>
+
       <div className="mb-ops-gap grid grid-cols-1 gap-ops-gap md:grid-cols-3">
         <OpsCard
           title="In the drawing"
@@ -315,8 +344,6 @@ export default async function GiveawayAdminPage({
         </OpsCard>
       </div>
 
-      <div className="mb-ops-gap max-w-[560px]">{bonusCard}</div>
-
       <div className="mb-ops-gap">
         <FilterChips
           param="f"
@@ -328,18 +355,42 @@ export default async function GiveawayAdminPage({
             { key: "appfail", label: "App needs attention", count: readable ? appBad : null },
             { key: "attention", label: "Needs attention", count: readable ? counts.attention : null },
             { key: "tests", label: "Ours", count: readable ? counts.tests : null },
+            { key: "deleted", label: "Deleted", count: readable ? deleted.length : null },
           ]}
         />
-        <OpsCard title="Entries" control={<span className="ops-subtle">one row per person</span>} ruled>
+        <OpsCard
+          title="Entries"
+          control={
+            <span className="inline-flex flex-wrap items-center gap-3">
+              <a
+                href={`?${new URLSearchParams({ ...(filter !== "all" ? { f: filter } : {}), ...(showTests ? {} : { t: "1" }) }).toString()}`}
+                className="ops-subtle underline underline-offset-2"
+              >
+                {showTests ? "Hide tests" : `Show tests (${counts.tests})`}
+              </a>
+              <DeleteAllTests slug={giveaway.slug} frozen={frozen} />
+            </span>
+          }
+          ruled
+        >
           {!read.configured ? (
             <EmptyState headline="Upstash not configured in this environment." />
           ) : rows.length === 0 ? (
             <EmptyState headline={filter === "all" ? "No entries yet." : "Nothing matches this filter."} />
           ) : (
-            <EntriesTable slug={giveaway.slug} rows={rows} sandbox={sandbox} />
+            <EntriesTable
+              slug={giveaway.slug}
+              rows={rows}
+              sandbox={sandbox}
+              frozen={frozen}
+              bonusEntries={giveaway.bonusEntries}
+              deletedView={filter === "deleted"}
+            />
           )}
         </OpsCard>
       </div>
+
+      <div className="mb-ops-gap max-w-[560px]">{bonusCard}</div>
 
       <div className="mb-ops-gap grid grid-cols-1 gap-ops-gap lg:grid-cols-2">
         <OpsCard
@@ -358,6 +409,7 @@ export default async function GiveawayAdminPage({
             configured={emailListConfigured()}
             sandbox={sandbox}
             unsubscribed={entries.filter((e) => e.routing.emailList.status === "unsubscribed").length}
+            notConfiguredRows={notConfiguredRows}
             tag={giveaway.emailList.tag}
           />
         </OpsCard>

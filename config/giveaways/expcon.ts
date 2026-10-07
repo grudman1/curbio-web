@@ -95,6 +95,8 @@ export const expcon: Giveaway = {
     source: "expcon-giveaway-{marketSlug}",
     referralSourceId: "eXp realty",
     defaults: { utm_source: "event", utm_medium: "qr", utm_campaign: "expcon-giveaway-oct" },
+    // Typed in at the booth or from a written request (admin "Add entry").
+    manual: { utm_source: "event", utm_campaign: "expcon-booth-oct" },
   },
 
   routing: {
