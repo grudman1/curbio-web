@@ -50,6 +50,8 @@ export type EntryRow = {
    *  no attempt on record. */
   app: string;
   appDetail: string;
+  /** The app's estimate id for this person, when it gave one. */
+  estimateId: number | null;
   /** In a market, not a Curbio address, and not already in the app. */
   canSend: boolean;
   emailList: string;
@@ -194,7 +196,7 @@ export function EntriesTable({ slug, rows, sandbox }: { slug: string; rows: Entr
   const [busy, startTransition] = useTransition();
 
   const q = query.trim().toLowerCase();
-  const shown = q ? rows.filter((r) => `${r.name} ${r.email} ${r.market}`.toLowerCase().includes(q)) : rows;
+  const shown = q ? rows.filter((r) => `${r.name} ${r.email} ${r.market} ${r.estimateId ?? ""}`.toLowerCase().includes(q)) : rows;
 
   function send(row: EntryRow) {
     const retry = row.app === "failed" || row.app === "sending";
@@ -225,7 +227,7 @@ export function EntriesTable({ slug, rows, sandbox }: { slug: string; rows: Entr
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search name, email or market"
+        placeholder="Search name, email, market or app ID"
         aria-label="Search entries"
         className="max-w-[320px]"
       />
@@ -289,6 +291,14 @@ export function EntriesTable({ slug, rows, sandbox }: { slug: string; rows: Entr
                 <Td>
                   <span className="inline-flex flex-wrap gap-1">
                     {app && <StatusBadge status={app.label} tone={app.tone} title={`${app.title} ${r.appDetail}`.trim()} />}
+                    {r.estimateId !== null && (
+                      <span
+                        className="ops-subtle ops-tnum self-center whitespace-nowrap"
+                        title="The ID the app gave this lead. Search it in the app to find the deal."
+                      >
+                        app ID {r.estimateId}
+                      </span>
+                    )}
                     {list && (
                       <StatusBadge status={list.label} tone={list.tone} title={`${list.title} ${r.emailListDetail}`.trim()} />
                     )}

@@ -215,6 +215,7 @@ export default async function GiveawayAdminPage({
         : e.routing.app.reason
           ? `Why: ${e.routing.app.reason.replace("_", " ")}`
           : "",
+    estimateId: e.routing.app.estimateId ?? null,
     canSend: e.marketSlug !== null && !isInternalAddress(e.email) && !isInApp(e),
     emailList: e.routing.emailList.status,
     emailListDetail: e.routing.emailList.error ?? "",

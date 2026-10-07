@@ -6,6 +6,7 @@ import { crmNameForSlug } from "@/config/markets";
 import { leadSource, type AppReason, type GiveawayEntry } from "./entry";
 import { storeScope } from "./mode";
 import { claimLeadRow, safeError } from "./store";
+import { parseEstimateId } from "./estimateId";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HANDING A GIVEAWAY ENTRANT TO THE APP — as a lead, in the lead store's own
@@ -99,6 +100,8 @@ export type AppDeliveryResult = {
   crmAttempted: boolean;
   crmOk: boolean;
   crmStatus: number | null;
+  /** The app's estimate id, when it accepted the lead and said which. */
+  crmEstimateId: number | null;
   crmError: string | null;
 };
 
@@ -230,6 +233,7 @@ export async function deliverToApp(
   }
 
   let crmStatus: number | null = null;
+  let crmEstimateId: number | null = null;
   let crmBody: string | null = null;
   const webhook = process.env.CURBIO_CRM_WEBHOOK_URL;
 
@@ -270,6 +274,9 @@ export async function deliverToApp(
       crmBody = redactPii(raw, [payload.email, payload.name, payload.phone]).trim().slice(0, 500);
       throw new Error(`CRM webhook returned ${res.status}${crmBody ? ` — ${crmBody}` : " — (empty body)"}`);
     }
+    // The body is the estimate id. Best effort: failing to read it must never
+    // turn a lead the app accepted into a failure.
+    crmEstimateId = parseEstimateId(await res.text().catch(() => ""));
     return true;
   }
 
@@ -330,6 +337,7 @@ export async function deliverToApp(
           crmAttempted,
           crmOk,
           crmStatus,
+          crmEstimateId,
           crmError: crmOk ? null : crmBody,
           unroutable: false,
           recordedAt: new Date().toISOString(),
@@ -340,5 +348,13 @@ export async function deliverToApp(
     }
   }
 
-  return { leadId: payload.leadId, persistOk, crmAttempted, crmOk, crmStatus, crmError: crmOk ? null : crmBody };
+  return {
+    leadId: payload.leadId,
+    persistOk,
+    crmAttempted,
+    crmOk,
+    crmStatus,
+    crmEstimateId: crmOk ? crmEstimateId : null,
+    crmError: crmOk ? null : crmBody,
+  };
 }
