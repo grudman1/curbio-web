@@ -274,7 +274,8 @@ export type LogEvent = {
     | "app_failed"
     | "email_list"
     | "setting_changed"
-    | "draw";
+    | "draw"
+    | "alert_test";
   detail?: string;
 };
 

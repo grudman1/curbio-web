@@ -4,9 +4,11 @@ import { revalidatePath } from "next/cache";
 import { giveawayBySlug, type Giveaway } from "@/config/giveaways";
 import { requireAdminApiSession } from "@/lib/adminApiAuth";
 import { ownerSession } from "@/lib/adminGuards";
+import { sendTestAlert, type AlertTestResult } from "@/lib/giveaway/appDelivery";
 import {
   addBonus,
   findEntrant,
+  logAlertTest,
   reconcileBookings,
   removeBonus,
   runDrawing,
@@ -172,4 +174,19 @@ export async function verifyDrawingAction(
   const giveaway = giveawayFor(slug);
   if (!giveaway) return { ok: false, error: "Unknown giveaway." };
   return verifyDrawing(giveaway, drawId);
+}
+
+/**
+ * Owner only: send a TEST failure alert to the owner address, through the same
+ * path a real one takes, and report what the email service said.
+ */
+export async function sendTestAlertAction(slug: string): Promise<AlertTestResult | Fail> {
+  const session = await ownerSession();
+  if (!session) return { ok: false, error: "Owner access required." };
+  const giveaway = giveawayFor(slug);
+  if (!giveaway) return { ok: false, error: "Unknown giveaway." };
+  const result = await sendTestAlert(session.email);
+  await logAlertTest(giveaway, session.email, result);
+  revalidatePath(PATH);
+  return result;
 }

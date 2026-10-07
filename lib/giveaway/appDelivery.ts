@@ -84,6 +84,67 @@ function within<T>(ms: number, work: Promise<T>, what: string): Promise<T> {
   ]);
 }
 
+// ── Where failure alerts go, and the test of it ──────────────────────────────
+
+/** The sender of every giveaway email. Resend's shared test address: until a
+ *  domain is verified in the Resend account it may deliver ONLY to the account
+ *  owner's own address, and anything else is refused at send time — which the
+ *  test below surfaces rather than leaving it to be found on the day. */
+const ALERT_FROM = "Curbio Leads <onboarding@resend.dev>";
+
+/** Same recipient chain as the lead route, including its last-resort address:
+ *  a lead alert with nowhere to go is the failure this chain exists to prevent.
+ *  `source` says which link of the chain supplied it. */
+export function alertRecipient(): { to: string; source: "RESEND_TO_EMAIL" | "LEAD_NOTIFY_EMAIL" | "built-in default" } {
+  if (process.env.RESEND_TO_EMAIL) return { to: process.env.RESEND_TO_EMAIL, source: "RESEND_TO_EMAIL" };
+  if (process.env.LEAD_NOTIFY_EMAIL) return { to: process.env.LEAD_NOTIFY_EMAIL, source: "LEAD_NOTIFY_EMAIL" };
+  return { to: "grudman1@gmail.com", source: "built-in default" };
+}
+
+export function alertEmailConfigured(): boolean {
+  return !!process.env.RESEND_API_KEY;
+}
+
+export type AlertTestResult =
+  | { ok: true; to: string; id: string | null }
+  | { ok: false; to: string; error: string };
+
+/**
+ * Send a clearly-labelled TEST through exactly the path a real "CRM delivery
+ * FAILED" alert takes — same Resend account, same sender, same recipient chain,
+ * same timeout — and report the email service's own answer. A refusal (an
+ * unverified sender, a recipient it will not deliver to, a bad key) comes back
+ * as an error here, which is the point: find out now, not at 11am on Thursday.
+ * "Accepted" means Resend took it; the proof is it arriving in the inbox.
+ */
+export async function sendTestAlert(by: string): Promise<AlertTestResult> {
+  const { to } = alertRecipient();
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return { ok: false, to, error: "No email key (RESEND_API_KEY) is set in this environment, so no alert can be sent." };
+  try {
+    const result = await within(
+      EMAIL_TIMEOUT_MS,
+      new Resend(key).emails.send({
+        from: ALERT_FROM,
+        to,
+        subject: "TEST — Curbio giveaway failure alerts reach you",
+        text: [
+          "This is a TEST of the alert that is emailed when a giveaway lead cannot be delivered to the app.",
+          "",
+          "If you can read this, a real \"CRM delivery FAILED\" alert will reach this inbox.",
+          `Pressed by: ${by}`,
+          `Sent: ${new Date().toISOString()}`,
+        ].join("\n"),
+      }),
+      "test alert"
+    );
+    if (result.error) return { ok: false, to, error: result.error.message };
+    return { ok: true, to, id: result.data?.id ?? null };
+  } catch (err) {
+    return { ok: false, to, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 /** Same rule as the lead route: a third-party error body may echo what was
  *  submitted, and a log line is not a PII-safe place. */
 function redactPii(text: string, secrets: (string | null | undefined)[]): string {
@@ -186,9 +247,7 @@ export async function deliverToApp(
 
   // ── 2. Notification + CRM, in parallel.
   const resendKey = process.env.RESEND_API_KEY;
-  // Same recipient chain as the lead route, including its last-resort address:
-  // a lead alert with nowhere to go is the failure this chain exists to prevent.
-  const resendTo = process.env.RESEND_TO_EMAIL || process.env.LEAD_NOTIFY_EMAIL || "grudman1@gmail.com";
+  const resendTo = alertRecipient().to;
   const resend = resendKey ? new Resend(resendKey) : null;
 
   // Announce a lead once, and only when this giveaway asks for it.
@@ -221,7 +280,7 @@ export async function deliverToApp(
     const result = await within(
       EMAIL_TIMEOUT_MS,
       resend.emails.send({
-        from: "Curbio Leads <onboarding@resend.dev>",
+        from: ALERT_FROM,
         to: resendTo,
         subject: `New Curbio Lead — ${payload.firstName} ${payload.lastName} — ${payload.market ?? "unknown market"}`.trim(),
         text,
@@ -304,7 +363,7 @@ export async function deliverToApp(
       await within(
         EMAIL_TIMEOUT_MS,
         resend.emails.send({
-          from: "Curbio Leads <onboarding@resend.dev>",
+          from: ALERT_FROM,
           to: resendTo,
           subject: "⚠️ CRM delivery FAILED — lead preserved",
           text: [

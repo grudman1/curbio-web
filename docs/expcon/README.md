@@ -150,6 +150,16 @@ Before merging:
       checked 2026-10-01). Name it exactly **Engaged**, or tell the developer
       the name and `AC_ENGAGED_LIST_NAME` changes. Until it exists, entries are
       kept and flagged "Needs attention"; **Sync now** completes them.
+- [ ] **Failure alerts reach you.** If a lead cannot be delivered to the app, an
+      email "CRM delivery FAILED — lead preserved" goes to the address shown in
+      the **Failure alerts** card on `/admin/giveaway` (`RESEND_TO_EMAIL`, else
+      `LEAD_NOTIFY_EMAIL`, else the built-in `grudman1@gmail.com`). Press **Send
+      a test alert** once, then check that inbox and spam. It goes through the
+      same path as a real alert and shows the email service's own answer. Alerts
+      are sent from Resend's shared test address, which may deliver only to the
+      Resend account owner until a Curbio domain is verified; if Resend refuses,
+      the screen says why. Accepted means Resend took it — the proof is the
+      email arriving.
 - [ ] **Written requests.** The rules tell people to email
       **team@curbio.com** (`rules.requestEmail`, confirmed 2026-10-02) for the
       free bonus entries and the winners list. Someone has to read that inbox

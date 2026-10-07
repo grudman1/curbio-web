@@ -2,7 +2,7 @@ import { NOT_LISTED, type Giveaway } from "@/config/giveaways";
 import { MARKET_BY_SLUG } from "@/config/markets";
 import { buildResolvedMarket } from "@/lib/markets";
 import { getOperatorLead } from "@/lib/operator";
-import { deliverToApp } from "./appDelivery";
+import { deliverToApp, type AlertTestResult } from "./appDelivery";
 import { attributionFrom } from "./attribution";
 import { DRAW_ALGORITHM, newSeed, runDraw, verifyDraw, type DrawTicket } from "./draw";
 import { emailListConfigured, syncEntrantToEmailList } from "./emailList";
@@ -754,4 +754,15 @@ export async function verifyDrawing(giveaway: Giveaway, drawId: string): Promise
   const order = [...record.winners.map((w) => w.email), ...record.alternates.map((a) => a.email)];
   const check = verifyDraw(tickets, { seed: record.seed, snapshotHash: record.snapshotHash, order });
   return { ok: true, verified: check.ok, reason: check.reason };
+}
+
+/** Record that an owner pressed "Send a test alert", and what came of it. */
+export async function logAlertTest(giveaway: Giveaway, by: string, result: AlertTestResult): Promise<void> {
+  await appendLog(storeScope(giveaway), {
+    at: new Date().toISOString(),
+    email: null,
+    by,
+    action: "alert_test",
+    detail: result.ok ? `sent to ${result.to}` : `FAILED — ${result.error}`,
+  });
 }

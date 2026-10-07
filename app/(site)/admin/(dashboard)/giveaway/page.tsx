@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ANSWER_LABEL, GIVEAWAYS } from "@/config/giveaways";
 import { MARKET_BY_SLUG } from "@/config/markets";
 import { maskPhone } from "@/lib/adminLeads";
+import { alertEmailConfigured, alertRecipient } from "@/lib/giveaway/appDelivery";
 import { emailListConfigured } from "@/lib/giveaway/emailList";
 import {
   entryCount,
@@ -22,6 +23,7 @@ import { FilterChips } from "../../_ui/FilterChips";
 import { buttonClass } from "../../_ui/Button";
 import { currentAdminUser } from "../../_ui/session";
 import {
+  AlertTest,
   BonusTool,
   DrawPanel,
   EmailListPanel,
@@ -374,6 +376,20 @@ export default async function GiveawayAdminPage({
             draws={draws}
             eligiblePeople={drawable.length}
             notify={`Notify by email and phone within ${giveaway.rules.notifyWithinHours} hours. A winner has ${giveaway.rules.respondWithinDays} days to respond before the next alternate takes the kit.`}
+          />
+        </OpsCard>
+      </div>
+
+      <div className="mb-ops-gap max-w-[860px]">
+        <OpsCard
+          title="Failure alerts"
+          titleTooltip="The email sent to the owner when a giveaway lead cannot be delivered to the app. Send a test to prove it arrives before it matters."
+        >
+          <AlertTest
+            slug={giveaway.slug}
+            to={alertRecipient().to}
+            source={alertRecipient().source}
+            configured={alertEmailConfigured()}
           />
         </OpsCard>
       </div>
