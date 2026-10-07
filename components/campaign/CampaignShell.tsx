@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Header, Hero, SoldProofStrip, HowItWorks, Closer } from "../LpSections";
+import { Header, Hero, SoldProofStrip, NationalSoldStrip, HowItWorks, Closer } from "../LpSections";
+import { nationalSoldMix } from "@/lib/giveaway/soldMix";
 import { StickyBar } from "../StickyBar";
 import { Eyebrow } from "../LpKit";
 import { RichText, interpolate } from "./RichText";
@@ -208,8 +209,12 @@ export default function CampaignShell({
 
   // Whether the stone-coloured sold band renders at all. Read twice below —
   // once to render it, once to decide the next band's colour.
-  const soldStripRenders =
-    !!page.sections.soldProof && !neutral && market.sold.length > 0;
+  // A known market shows its own listings; an unknown one (market selection
+  // pages only) shows the national mix — one verified home per market.
+  const marketChoice = neutral && page.market.mode === "picker";
+  const nationalHomes = marketChoice && page.sections.soldProof ? nationalSoldMix() : [];
+  const marketStripRenders = !!page.sections.soldProof && !neutral && market.sold.length > 0;
+  const soldStripRenders = marketStripRenders || nationalHomes.length > 0;
 
   const partnerId = page.partner;
   const partner = partnerId ? PARTNERS[partnerId] : undefined;
@@ -269,13 +274,24 @@ export default function CampaignShell({
           defaultUtmSource={page.attribution.defaultUtmSource}
           marketSource={marketSource}
           prefillZip={prefillZip}
+          marketChoice={marketChoice}
           source={page.attribution.source.replace(/\{marketSlug\}/g, marketSlug)}
         />
 
         {/* A market with no verified listings renders no strip at all, rather
             than an empty row under a "Prepped by Curbio" eyebrow. Gated on the
             DATA, not on a slug — see Market.placeholder in config/markets.ts. */}
-        {soldStripRenders && (
+        {nationalHomes.length > 0 && (
+          <NationalSoldStrip
+            homes={nationalHomes}
+            soldByLine={
+              page.sections.soldByLineNational ? (
+                <RichText>{page.sections.soldByLineNational}</RichText>
+              ) : undefined
+            }
+          />
+        )}
+        {marketStripRenders && (
           <SoldProofStrip
             market={market}
             soldByLine={

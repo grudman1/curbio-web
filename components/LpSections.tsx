@@ -91,6 +91,7 @@ export function Hero({
   defaultUtmSource,
   marketSource,
   prefillZip,
+  marketChoice = false,
 }: {
   market: CampaignMarket;
   crmMarketName?: string | null;
@@ -127,6 +128,8 @@ export function Hero({
   marketSource?: string | null;
   /** Forwarded to FormCard — hidden ZIP from the market picker. */
   prefillZip?: string;
+  /** Forwarded to FormCard — no market known: ask for one in the form. */
+  marketChoice?: boolean;
 }) {
   return (
     <section className="lp-hero" id="hero">
@@ -155,6 +158,7 @@ export function Hero({
             defaultUtmSource={defaultUtmSource}
             marketSource={marketSource}
             prefillZip={prefillZip}
+            marketChoice={marketChoice}
             partnerSlug={partnerSlug}
           />
         </div>
@@ -164,6 +168,52 @@ export function Hero({
 }
 
 // ── b. Sold-proof strip ──
+/**
+ * The sold strip for a visitor whose market we do NOT know: one verified home
+ * per market, labelled with the market name only — the /expcon pattern, and
+ * the same list (lib/giveaway/soldMix.ts, derived from config/markets.ts).
+ */
+export function NationalSoldStrip({
+  homes,
+  soldByLine,
+}: {
+  homes: { marketSlug: string; market: string; price: string; photo: string }[];
+  /** After "Prepped by Curbio." — omitted on non-partner pages. */
+  soldByLine?: React.ReactNode;
+}) {
+  return (
+    <section className="lp-sold" id="sold">
+      <div className="lp-shell">
+        <Eyebrow style={{ textAlign: "center", color: "var(--fg-muted)" }}>
+          Prepped by Curbio.{soldByLine ? <> {soldByLine}</> : null}
+        </Eyebrow>
+        <ul className="lp-sold-row">
+          {homes.map((h) => (
+            <li className="lp-sold-card" key={h.marketSlug}>
+              <div className="lp-sold-photo" aria-hidden>
+                <Image
+                  src={h.photo}
+                  alt={`A ${h.market} home prepped by Curbio`}
+                  fill
+                  sizes="(max-width: 520px) 78vw, (max-width: 860px) 64vw, 230px"
+                  style={{ objectFit: "cover" }}
+                />
+                <span className="lp-sold-pill">
+                  <Icon name="check" size={12} color="#fff" stroke={2.5} /> Sold
+                </span>
+              </div>
+              <div className="lp-sold-body">
+                <span className="lp-sold-hood">{h.market}</span>
+                <span className="lp-sold-price">{h.price}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
 export function SoldProofStrip({
   market,
   soldByLine,
