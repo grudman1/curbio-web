@@ -66,6 +66,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 // The event runs on Mountain time, so that is the clock this screen shows.
+const AS_OF = new Intl.DateTimeFormat("en-US", { timeZone: "America/Denver", hour: "numeric", minute: "2-digit" });
+
 const MT = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/Denver",
   month: "short",
@@ -95,7 +97,7 @@ function marketLabel(e: GiveawayEntry): string {
 }
 
 
-type Filter = "all" | "app" | "list" | "attention" | "tests";
+type Filter = "all" | "app" | "appfail" | "list" | "attention" | "tests";
 
 export default async function GiveawayAdminPage({
   searchParams,
@@ -175,6 +177,16 @@ export default async function GiveawayAdminPage({
   const needsAttention = (e: GiveawayEntry) =>
     !sandbox && (isAppOutstanding(e, giveaway) || isEmailListOutstanding(e, giveaway));
 
+  // App delivery at a glance — the line at the top of the page. "Due" is every
+  // entry that SHOULD be with an HSM (answered Yes, booked, or used the contact
+  // form after the close, in a market, not a Curbio address); "sent" is those
+  // the app accepted; the rest — refused, never reported back, or never tried —
+  // are what a person has to look at. Counted over ALL entries, test ones
+  // included: a test that fails to reach the app is still the app not answering.
+  const appDue = entries.filter((e) => isAppOutstanding(e, giveaway) || isInApp(e));
+  const appBad = appDue.filter((e) => !isInApp(e)).length;
+  const appSent = appDue.length - appBad;
+
   const drawable = entries.filter(isDrawable);
   const counts = {
     all: entries.length,
@@ -183,9 +195,10 @@ export default async function GiveawayAdminPage({
     attention: entries.filter(needsAttention).length,
     tests: entries.filter((e) => e.isTest).length,
   };
-  const filter: Filter = (["app", "list", "attention", "tests"] as const).find((k) => k === sp.f) ?? "all";
+  const filter: Filter = (["app", "appfail", "list", "attention", "tests"] as const).find((k) => k === sp.f) ?? "all";
   const shown = entries.filter((e) => {
     if (filter === "app") return ["sent", "sandbox"].includes(e.routing.app.status);
+    if (filter === "appfail") return !sandbox && isAppOutstanding(e, giveaway);
     if (filter === "list") return ["synced", "sandbox"].includes(e.routing.emailList.status);
     if (filter === "attention") return needsAttention(e);
     if (filter === "tests") return e.isTest;
@@ -231,6 +244,35 @@ export default async function GiveawayAdminPage({
         <p className="mb-ops-gap rounded-md bg-pill-bad-bg px-3 py-2 font-sans text-ops-body text-pill-bad-fg">
           The entry store could not be read: {read.error}
         </p>
+      )}
+
+      {readable && (
+        <div
+          role="status"
+          className={`mb-ops-gap flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md px-4 py-3 font-sans text-ops-body font-semibold ${
+            sandbox
+              ? "bg-pill-neutral-bg text-pill-neutral-fg"
+              : appBad > 0
+                ? "bg-pill-bad-bg text-pill-bad-fg"
+                : "bg-pill-good-bg text-pill-good-fg"
+          }`}
+        >
+          <span>
+            {sandbox
+              ? "App delivery: sandbox — nothing is sent to the app outside production"
+              : appBad > 0
+                ? `App delivery: ${appBad} need${appBad === 1 ? "s" : ""} attention · ${appSent} of ${appDue.length} sent`
+                : appDue.length === 0
+                  ? "App delivery: nothing to send yet"
+                  : `App delivery: all ${appSent} sent`}
+          </span>
+          {!sandbox && appBad > 0 && (
+            <a href="?f=appfail" className="underline underline-offset-2">
+              Show them
+            </a>
+          )}
+          <span className="ml-auto font-normal opacity-80">as of {AS_OF.format(new Date())} MT · reload to refresh</span>
+        </div>
       )}
 
       <div className="mb-ops-gap grid grid-cols-1 gap-ops-gap md:grid-cols-3">
@@ -281,6 +323,7 @@ export default async function GiveawayAdminPage({
             { key: "all", label: "All", count: readable ? counts.all : null },
             { key: "app", label: "Sent to app", count: readable ? counts.app : null },
             { key: "list", label: "Email list", count: readable ? counts.list : null },
+            { key: "appfail", label: "App needs attention", count: readable ? appBad : null },
             { key: "attention", label: "Needs attention", count: readable ? counts.attention : null },
             { key: "tests", label: "Ours", count: readable ? counts.tests : null },
           ]}

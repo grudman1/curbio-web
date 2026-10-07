@@ -241,6 +241,13 @@ deleting there.
   The bonus is given once per person, whichever way it was earned.
 - A written request (an email to the inbox named in the Official Rules) is
   added the same way with "+5 · written request".
+- **Is it working? Check from your phone (owner login).** Open
+  `/admin/giveaway`. The top line says **App delivery: all N sent** (green) or
+  **N need attention · X of Y sent** (red). Tap **Show them** to list only the
+  entries that did not reach the app. For each: look for the person in the app
+  first (the app does not dedupe; a retry of a lead that did land makes a second
+  deal), then tap **Retry app**. The line shows when it was read, and the page
+  does not refresh itself — reload it.
 
 ---
 
