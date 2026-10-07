@@ -95,7 +95,8 @@ export type Market = {
    * business hours) still comes live from the operator API per request — this
    * is a display convenience, not a cache.
    */
-  hsm: { name: string; photo: string | null };
+  /** `email` feeds ActiveCampaign's "HSM Email" field; blank until supplied. */
+  hsm: { name: string; photo: string | null; email?: string };
   /** Brokerage partner logos. Empty everywhere — no assets, no permissions. */
   brokerageLogos: { name: string; src: string }[];
   /** Human search terms accepted by the public estimate finder. The canonical

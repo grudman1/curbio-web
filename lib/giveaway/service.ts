@@ -146,6 +146,12 @@ async function routeToApp(
     : result.crmOk
       ? { status: "sent", reason, at, leadId, crmStatus: result.crmStatus, estimateId: result.crmEstimateId }
       : { status: "failed", reason, at, leadId, crmStatus: result.crmStatus, error: result.crmError };
+  // Just reached an HSM: a consenting contact already on the email list is
+  // re-synced so its Lifecycle Stage rises to "Sales Qualified" (it never
+  // moves down). Picked up by the next sync or "Sync now".
+  if (isInApp(entry) && entry.routing.emailList.status === "synced" && wantsEmailList(entry, giveaway)) {
+    entry.routing.emailList = { status: "pending" };
+  }
   await saveEntry(scope, entry);
 
   if (result.crmAttempted) {

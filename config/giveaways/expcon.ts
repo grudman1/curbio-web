@@ -108,10 +108,12 @@ export const expcon: Giveaway = {
     emailList: "everyone",
   },
 
+  // ActiveCampaign (lib/marketingContacts.ts via lib/giveaway/emailList.ts):
+  // consenting entrants only, list "Curbio Marketing", this one tag.
   emailList: {
-    tag: "expcon-2026",
-    marketTagPrefix: "expcon-2026-market-",
-    answerTagPrefix: "expcon-2026-listing-",
+    tag: "event:expcon-2026",
+    consentSource: "eXpcon 2026 giveaway form (checkbox)",
+    brokerage: "eXp Realty",
   },
 
   leadEmails: "failures-only",
