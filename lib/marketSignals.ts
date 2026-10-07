@@ -54,18 +54,20 @@ export type MarketSourceKind =
   | "pick"
   | "zip"
   | "form-zip"
+  | "form-select"
   | "geo"
   | "out-of-area"
   | "none"
   | "unknown";
 
-const RECORDED_KINDS: readonly string[] = ["param", "pick", "zip", "form-zip", "geo", "out-of-area", "none"];
+const RECORDED_KINDS: readonly string[] = ["param", "pick", "zip", "form-zip", "form-select", "geo", "out-of-area", "none"];
 
 export const MARKET_SOURCE_LABEL: Record<MarketSourceKind, string> = {
   param: "campaign link (?market=)",
   pick: "picked in the market picker",
   zip: "ZIP entered in the market picker",
   "form-zip": "ZIP entered in the form",
+  "form-select": "market chosen in the form",
   geo: "IP geolocation",
   "out-of-area": "out of area — waitlist",
   none: "not resolved — chooser shown",
@@ -77,6 +79,7 @@ export const MARKET_SOURCE_LABEL: Record<MarketSourceKind, string> = {
 export const MARKET_SOURCE_STRENGTH: Record<MarketSourceKind, "strong" | "medium" | "weak" | "none"> = {
   zip: "strong",
   "form-zip": "strong",
+  "form-select": "strong",
   pick: "strong",
   param: "weak",
   geo: "medium",

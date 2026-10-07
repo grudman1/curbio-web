@@ -5,7 +5,7 @@ import { deriveChannel } from "@/lib/channels";
 import { crmNameForSlug } from "@/config/markets";
 import { isKnownReferralSource } from "@/config/campaigns/types";
 import { getOperatorLead } from "@/lib/operator";
-import { buildResolvedMarket } from "@/lib/markets";
+import { buildResolvedMarket, canonicalSlug } from "@/lib/markets";
 import { isPickerPageSource, withMarketSlug } from "@/lib/marketGate";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -273,6 +273,11 @@ export async function POST(req: Request) {
     console.log("[lead] market gate", { source: body.source, outcome: gateSlug ?? waitlistReason, zipCheckMs });
   }
   const originalSource = body.source ?? "quote";
+  // The market a neutral page's lead ended up with — settled by the gate, or
+  // chosen in the form's dropdown — re-stamps "exp-realty-unknown" as
+  // "exp-realty-<slug>". withMarketSlug only rewrites a trailing "-unknown",
+  // so a lead whose page already knew its market keeps its source untouched.
+  const stampSlug = gateSlug ?? (isPickerPageSource(originalSource) ? canonicalSlug(body.market) : null);
 
   const payload = {
     // Join key between the leads:v1 record and its leads:delivery:v1 outcome.
@@ -287,7 +292,7 @@ export async function POST(req: Request) {
     address: body.address?.trim() ?? "",
     description: body.description?.trim() ?? "",
     market: sentMarket ?? gateMarket,
-    source: waitlistReason ? "waitlist" : gateSlug ? withMarketSlug(originalSource, gateSlug) : originalSource,
+    source: waitlistReason ? "waitlist" : stampSlug ? withMarketSlug(originalSource, stampSlug) : originalSource,
     variant: body.variant ?? null,
     magnet: body.magnet ?? null,
     submittedAt: body.submittedAt ?? new Date().toISOString(),
