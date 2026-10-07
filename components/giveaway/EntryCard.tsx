@@ -604,6 +604,18 @@ export function EntryCard() {
               }}
             />
 
+            {/* Optional email consent — UNCHECKED, never required. Above the
+                button so it is decided before submitting, not after. */}
+            <label className="flex min-h-[44px] cursor-pointer items-start gap-3 font-sans text-[14px] font-semibold leading-[1.5] text-content">
+              <input
+                type="checkbox"
+                checked={emailConsent}
+                onChange={(e) => setEmailConsent(e.target.checked)}
+                className="mt-0.5 h-5 w-5 flex-none cursor-pointer accent-[var(--color-brand,#0d254d)]"
+              />
+              <span>{copy.form.emailOptIn}</span>
+            </label>
+
             {serverError && (
               <p role="alert" className="m-0 rounded-lg bg-accent-subtle px-4 py-3 font-sans text-small font-semibold text-content">
                 {serverError}
@@ -629,23 +641,11 @@ export function EntryCard() {
               )}
             </button>
 
-            {/* The email line stands on its own, directly under the button —
-                it is a consent a visitor should not have to find. The fine
-                print below it is set as plain 13px body text with a real
-                line height (the `text-label` size token it used before
-                carries a tight line height and wide letter-spacing, both of
-                which had to be undone), and it sits in its own block with
-                room above and below so nothing can crowd it at 320px. */}
+            {/* Fine print under the button, set as plain 13px body text with a
+                real line height and room above and below so nothing can crowd
+                it at 320px. (The email line that used to sit here is now the
+                optional checkbox above the button.) */}
             <div className="flex flex-col gap-3.5 pt-1">
-              <label className="flex min-h-[44px] cursor-pointer items-start gap-3 font-sans text-[14px] font-semibold leading-[1.5] text-content">
-                <input
-                  type="checkbox"
-                  checked={emailConsent}
-                  onChange={(e) => setEmailConsent(e.target.checked)}
-                  className="mt-0.5 h-5 w-5 flex-none cursor-pointer accent-[var(--color-brand,#0d254d)]"
-                />
-                <span>{copy.form.emailOptIn}</span>
-              </label>
               <p className="m-0 font-sans text-[13px] font-normal leading-[1.65] text-content-muted [&_a]:font-semibold [&_a]:text-content [&_a]:underline [&_a]:underline-offset-2">
                 {!closed && (
                   <>

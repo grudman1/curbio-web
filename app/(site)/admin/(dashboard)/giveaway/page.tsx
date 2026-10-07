@@ -264,7 +264,10 @@ export default async function GiveawayAdminPage({
   }));
 
   const outstanding = sandbox ? 0 : entries.filter((e) => isEmailListOutstanding(e, giveaway)).length;
-  const notConfiguredRows = entries.filter((e) => e.routing.emailList.status === "not_configured").length;
+  // Only entries that can ever sync (ticked the email box) count as waiting.
+  const notConfiguredRows = entries.filter(
+    (e) => e.routing.emailList.status === "not_configured" && e.emailConsent === true && e.origin !== "manual"
+  ).length;
 
   return (
     <>
