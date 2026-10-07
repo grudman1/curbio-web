@@ -16,6 +16,9 @@ import type { DrawTicket } from "./draw";
 //   giveaway:<slug>:leadrows   HASH   lead id → when its leads:v1 row was written
 //   giveaway:<slug>:lock:<email>      STRING  one writer per person (expires)
 //   giveaway:<slug>:synclock:<email>  STRING  one email-list sync per person (expires)
+//   giveaway:<slug>:deleted-backup    LIST    a copy of every HARD-deleted test
+//                                             entry and its lead rows, written
+//                                             before anything is removed
 //
 // ── Why a hash keyed by email ───────────────────────────────────────────────
 // "One entry per person" is then a property of the STORE, not of code that has
@@ -100,7 +103,23 @@ const K = {
   leadRows: (s: StoreScope) => `${prefix(s)}:leadrows`,
   lock: (s: StoreScope, email: string) => `${prefix(s)}:lock:${email}`,
   syncLock: (s: StoreScope, email: string) => `${prefix(s)}:synclock:${email}`,
+  backup: (s: StoreScope) => `${prefix(s)}:deleted-backup`,
 };
+
+/** The lead store the Leads screen and the Hub count from. Shared with
+ *  app/api/lead/route.ts and appDelivery.ts. */
+const LEADS_KEY = "leads:v1";
+const DELIVERY_KEY = "leads:delivery:v1";
+const WAITLIST_KEY = "waitlist:leads";
+
+/** Raw-string client: LREM must be handed the exact stored value, which the
+ *  default client (it parses JSON) cannot give back. Write credential. */
+function rawWriteRedis(): Redis | null {
+  const url = process.env.UPSTASH_REDIS_REST_KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_KV_REST_API_TOKEN;
+  if (!url || !token) return null;
+  return new Redis({ url, token, automaticDeserialization: false });
+}
 
 /** Upstash hands back a parsed object or a JSON string depending on how the
  *  value was written. Both are normal. */
@@ -275,7 +294,11 @@ export type LogEvent = {
     | "email_list"
     | "setting_changed"
     | "draw"
-    | "alert_test";
+    | "alert_test"
+    | "added_manually"
+    | "deleted"
+    | "restored"
+    | "hard_deleted";
   detail?: string;
 };
 
@@ -363,4 +386,102 @@ export async function readDrawSnapshot(scope: StoreScope, id: string): Promise<D
   const redis = readOnlyRedis();
   if (!redis) return null;
   return parse(await redis.get<DrawTicket[] | string>(K.drawSnapshot(scope, id)));
+}
+
+
+// ── Hard delete (test entries only) ──────────────────────────────────────────
+
+export type HardDeleteResult = { entry: boolean; leadRows: number; deliveryRecords: number; backupKey: string };
+
+/**
+ * Remove a TEST entry for good: the entry, its id lookup, its lead-row marker,
+ * and its rows in leads:v1 / leads:delivery:v1 (so the Hub's counts drop). A
+ * copy of everything removed is pushed to `giveaway:<slug>:deleted-backup`
+ * FIRST — if that write fails, nothing is deleted.
+ *
+ * Callers decide WHAT is a test entry (entry.isTest); this only does it. The
+ * CRM is never touched.
+ */
+export async function hardDeleteEntry(scope: StoreScope, entry: GiveawayEntry, by: string): Promise<HardDeleteResult> {
+  const raw = rawWriteRedis();
+  if (!raw) throw new Error("giveaway store not configured");
+  const leadId = entry.routing.app.leadId ?? null;
+
+  // Lead rows that belong to this entry: by lead id, or — for a row written
+  // without one — by this entry's id.
+  const rows = ((await raw.lrange(LEADS_KEY, 0, -1)) as string[]) ?? [];
+  const mine = rows.filter((r) => {
+    try {
+      const l = JSON.parse(r) as { leadId?: string; giveawayEntryId?: string };
+      return (leadId && l.leadId === leadId) || l.giveawayEntryId === entry.id;
+    } catch {
+      return false;
+    }
+  });
+  const leadIds = new Set<string>(leadId ? [leadId] : []);
+  for (const r of mine) {
+    try {
+      const id = (JSON.parse(r) as { leadId?: string }).leadId;
+      if (id) leadIds.add(id);
+    } catch {}
+  }
+  const delivery: Record<string, string | null> = {};
+  for (const id of leadIds) delivery[id] = ((await raw.hget(DELIVERY_KEY, id)) as string | null) ?? null;
+
+  // 1. Backup first.
+  await raw.lpush(
+    K.backup(scope),
+    JSON.stringify({ at: new Date().toISOString(), by, entry, leadRows: mine, delivery })
+  );
+
+  // 2. Then remove.
+  const removed = await raw.hdel(K.entries(scope), entry.email);
+  await raw.hdel(K.ids(scope), entry.id);
+  if (leadIds.size) await raw.hdel(K.leadRows(scope), ...leadIds);
+  let leadRows = 0;
+  for (const r of mine) leadRows += Number(await raw.lrem(LEADS_KEY, 1, r));
+  let deliveryRecords = 0;
+  if (leadIds.size) deliveryRecords = Number(await raw.hdel(DELIVERY_KEY, ...leadIds));
+  return { entry: Number(removed) === 1, leadRows, deliveryRecords, backupKey: K.backup(scope) };
+}
+
+/** Test sign-ups on the out-of-area waitlist: name starts with ZZTEST AND the
+ *  email mailbox starts with zztest (both — never a real "Test" person). */
+export function isZztestIdentity(name: unknown, email: unknown): boolean {
+  const n = String(name ?? "").trim();
+  const mailbox = String(email ?? "").trim().toLowerCase().split("@")[0];
+  return /^zztest\b/i.test(n) && /^zztest([+._-]|$)/.test(mailbox);
+}
+
+export async function readZztestWaitlist(): Promise<{ raw: string; name: string; email: string }[]> {
+  const raw = rawWriteRedis();
+  if (!raw) return [];
+  const rows = ((await raw.lrange(WAITLIST_KEY, 0, -1)) as string[]) ?? [];
+  const out: { raw: string; name: string; email: string }[] = [];
+  for (const r of rows) {
+    try {
+      const w = JSON.parse(r) as { name?: string; email?: string };
+      if (isZztestIdentity(w.name, w.email)) out.push({ raw: r, name: String(w.name), email: String(w.email) });
+    } catch {}
+  }
+  return out;
+}
+
+/** Remove ZZTEST waitlist sign-ups, backing each up first. */
+export async function deleteZztestWaitlist(scope: StoreScope, by: string): Promise<number> {
+  const raw = rawWriteRedis();
+  if (!raw) return 0;
+  const rows = await readZztestWaitlist();
+  if (!rows.length) return 0;
+  await raw.lpush(
+    K.backup(scope),
+    JSON.stringify({ at: new Date().toISOString(), by, waitlist: rows.map((r) => r.raw) })
+  );
+  let n = 0;
+  for (const r of rows) n += Number(await raw.lrem(WAITLIST_KEY, 1, r.raw));
+  return n;
+}
+
+export function backupKey(scope: StoreScope): string {
+  return K.backup(scope);
 }

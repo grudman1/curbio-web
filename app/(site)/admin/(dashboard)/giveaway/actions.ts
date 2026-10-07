@@ -3,11 +3,19 @@
 import { revalidatePath } from "next/cache";
 import { giveawayBySlug, type Giveaway } from "@/config/giveaways";
 import { requireAdminApiSession } from "@/lib/adminApiAuth";
-import { ownerSession } from "@/lib/adminGuards";
+
 import { sendTestAlert, type AlertTestResult } from "@/lib/giveaway/appDelivery";
 import {
   addBonus,
+  addManualEntry,
+  countTestRecords,
+  deleteAllTestEntries,
   findEntrant,
+  hardDeleteTestEntry,
+  restoreEntry,
+  softDeleteEntry,
+  type ManualInput,
+  type ManualResult,
   logAlertTest,
   reconcileBookings,
   removeBonus,
@@ -22,21 +30,15 @@ import { type DrawRecord } from "@/lib/giveaway/store";
 // ─────────────────────────────────────────────────────────────────────────────
 // Mutations for the giveaway entries screen.
 //
-// TWO LEVELS OF ACCESS, both re-derived from the session on every call — the
-// screen hiding a button is never the gate:
+// ONE LEVEL OF ACCESS (Gavin, 2026-10-07): anyone signed in to the admin can
+// use every action on this screen — add, +5, delete, restore, send to the app,
+// export, the drawing. The session is still re-derived on every call (the
+// screen hiding a button is never the gate), and every write names who did it
+// in the giveaway's own log (lib/giveaway/store.ts), which matters more now.
 //
-//   any signed-in admin   look an entrant up by email and add the booth-visit
-//                         or written-request bonus. This is the "free
-//                         alternative" the Official Rules promise, and the
-//                         people adding it are booth staff, not the owner.
-//                         It returns a first name and a market — enough to
-//                         confirm the right person, nothing to browse.
-//   owner only            everything else: the list, the export, sending to
-//                         the app, removing a bonus, reconciling bookings,
-//                         and the drawing.
-//
-// Every write names who did it in the giveaway's own log
-// (lib/giveaway/store.ts). Nothing here deletes anything.
+// Deletes: a REAL entry is soft-deleted (restorable, lead records kept); a TEST
+// entry is hard-deleted with a backup first. Both stop once the official
+// drawing has run.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const PATH = "/admin/giveaway";
@@ -72,18 +74,18 @@ export async function addBonusAction(
   const giveaway = giveawayFor(slug);
   if (!giveaway) return { ok: false, error: "Unknown giveaway." };
   if (source !== "booth" && source !== "written") return { ok: false, error: "Unknown bonus type." };
-  // After the entry period only an owner may add one — for a visit that
-  // happened before the deadline and is being typed in after it.
-  const result = await addBonus(giveaway, email, source, session.email, session.role === "owner");
+  // After the entry period any admin may still add one — for a visit that
+  // happened before the deadline and is being typed in after it. Logged.
+  const result = await addBonus(giveaway, email, source, session.email, true);
   if (result.ok) revalidatePath(PATH);
   return result;
 }
 
-// ── Owner only ───────────────────────────────────────────────────────────────
+// ── Every other action (also any signed-in admin) ────────────────────────────
 
 export async function removeBonusAction(slug: string, email: string, why: string): Promise<{ ok: true } | Fail> {
-  const session = await ownerSession();
-  if (!session) return { ok: false, error: "Owner access required." };
+  const session = await requireAdminApiSession();
+  if (!session) return { ok: false, error: "Sign in to continue." };
   const giveaway = giveawayFor(slug);
   if (!giveaway) return { ok: false, error: "Unknown giveaway." };
   if (!why.trim()) return { ok: false, error: "Say why — the reason goes in the log." };
@@ -93,8 +95,8 @@ export async function removeBonusAction(slug: string, email: string, why: string
 }
 
 export async function sendToAppAction(slug: string, email: string): Promise<{ ok: true; status: string } | Fail> {
-  const session = await ownerSession();
-  if (!session) return { ok: false, error: "Owner access required." };
+  const session = await requireAdminApiSession();
+  if (!session) return { ok: false, error: "Sign in to continue." };
   const giveaway = giveawayFor(slug);
   if (!giveaway) return { ok: false, error: "Unknown giveaway." };
   const result = await sendToApp(giveaway, email, session.email);
@@ -111,8 +113,8 @@ export async function syncEmailListAction(
   slug: string,
   runStartedAt: string
 ): Promise<{ ok: true; synced: number; failed: number; remaining: number } | Fail> {
-  const session = await ownerSession();
-  if (!session) return { ok: false, error: "Owner access required." };
+  const session = await requireAdminApiSession();
+  if (!session) return { ok: false, error: "Sign in to continue." };
   const giveaway = giveawayFor(slug);
   if (!giveaway) return { ok: false, error: "Unknown giveaway." };
   if (typeof runStartedAt !== "string" || Number.isNaN(Date.parse(runStartedAt))) {
@@ -128,8 +130,8 @@ export async function reconcileAction(
   pasted: string,
   apply: boolean
 ): Promise<{ ok: true; report: ReconcileReport; found: number; recorded: number } | Fail> {
-  const session = await ownerSession();
-  if (!session) return { ok: false, error: "Owner access required." };
+  const session = await requireAdminApiSession();
+  if (!session) return { ok: false, error: "Sign in to continue." };
   const giveaway = giveawayFor(slug);
   if (!giveaway) return { ok: false, error: "Unknown giveaway." };
   if (typeof pasted !== "string" || pasted.length > 2_000_000) return { ok: false, error: "That paste is too large." };
@@ -155,8 +157,8 @@ export async function runDrawingAction(
   mode: "official" | "practice",
   note: string
 ): Promise<{ ok: true; record: DrawRecord } | Fail> {
-  const session = await ownerSession();
-  if (!session) return { ok: false, error: "Owner access required." };
+  const session = await requireAdminApiSession();
+  if (!session) return { ok: false, error: "Sign in to continue." };
   const giveaway = giveawayFor(slug);
   if (!giveaway) return { ok: false, error: "Unknown giveaway." };
   if (mode !== "official" && mode !== "practice") return { ok: false, error: "Unknown drawing type." };
@@ -169,24 +171,101 @@ export async function verifyDrawingAction(
   slug: string,
   drawId: string
 ): Promise<{ ok: true; verified: boolean; reason?: string } | Fail> {
-  const session = await ownerSession();
-  if (!session) return { ok: false, error: "Owner access required." };
+  const session = await requireAdminApiSession();
+  if (!session) return { ok: false, error: "Sign in to continue." };
   const giveaway = giveawayFor(slug);
   if (!giveaway) return { ok: false, error: "Unknown giveaway." };
   return verifyDrawing(giveaway, drawId);
 }
 
 /**
- * Owner only: send a TEST failure alert to the owner address, through the same
+ * Send a TEST failure alert to the owner address, through the same
  * path a real one takes, and report what the email service said.
  */
 export async function sendTestAlertAction(slug: string): Promise<AlertTestResult | Fail> {
-  const session = await ownerSession();
-  if (!session) return { ok: false, error: "Owner access required." };
+  const session = await requireAdminApiSession();
+  if (!session) return { ok: false, error: "Sign in to continue." };
   const giveaway = giveawayFor(slug);
   if (!giveaway) return { ok: false, error: "Unknown giveaway." };
   const result = await sendTestAlert(session.email);
   await logAlertTest(giveaway, session.email, result);
   revalidatePath(PATH);
+  return result;
+}
+
+// ── Booth tools ──────────────────────────────────────────────────────────────
+
+export async function addManualEntryAction(slug: string, input: ManualInput): Promise<ManualResult> {
+  const session = await requireAdminApiSession();
+  if (!session) return { ok: false, error: "Sign in to continue." };
+  const giveaway = giveawayFor(slug);
+  if (!giveaway) return { ok: false, error: "Unknown giveaway." };
+  const result = await addManualEntry(giveaway, input, session.email);
+  if (result.ok) revalidatePath(PATH);
+  return result;
+}
+
+/** Undo a +5 added moments ago from the toast. Logged as a removal. */
+export async function undoBonusAction(slug: string, email: string): Promise<{ ok: true } | Fail> {
+  const session = await requireAdminApiSession();
+  if (!session) return { ok: false, error: "Sign in to continue." };
+  const giveaway = giveawayFor(slug);
+  if (!giveaway) return { ok: false, error: "Unknown giveaway." };
+  const result = await removeBonus(giveaway, email, session.email, "undo (within 10 seconds of adding)");
+  if (result.ok) revalidatePath(PATH);
+  return result;
+}
+
+/** Real entry → soft delete. Test entry → hard delete with a backup. */
+export async function deleteEntryAction(
+  slug: string,
+  email: string,
+  isTest: boolean
+): Promise<{ ok: true; hard: boolean; leadRows?: number; backupKey?: string } | Fail> {
+  const session = await requireAdminApiSession();
+  if (!session) return { ok: false, error: "Sign in to continue." };
+  const giveaway = giveawayFor(slug);
+  if (!giveaway) return { ok: false, error: "Unknown giveaway." };
+  // The server decides hard vs soft from the stored entry: hardDeleteTestEntry
+  // refuses anything that is not a test entry, whatever the screen sent.
+  if (isTest) {
+    const hard = await hardDeleteTestEntry(giveaway, email, session.email);
+    if (!hard.ok) return hard;
+    revalidatePath(PATH);
+    return { ok: true, hard: true, leadRows: hard.leadRows, backupKey: hard.backupKey };
+  }
+  const soft = await softDeleteEntry(giveaway, email, session.email);
+  if (!soft.ok) return soft;
+  revalidatePath(PATH);
+  return { ok: true, hard: false };
+}
+
+export async function restoreEntryAction(slug: string, email: string): Promise<{ ok: true } | Fail> {
+  const session = await requireAdminApiSession();
+  if (!session) return { ok: false, error: "Sign in to continue." };
+  const giveaway = giveawayFor(slug);
+  if (!giveaway) return { ok: false, error: "Unknown giveaway." };
+  const result = await restoreEntry(giveaway, email, session.email);
+  if (result.ok) revalidatePath(PATH);
+  return result;
+}
+
+export async function countTestRecordsAction(slug: string): Promise<{ ok: true; entries: number; waitlist: number } | Fail> {
+  const session = await requireAdminApiSession();
+  if (!session) return { ok: false, error: "Sign in to continue." };
+  const giveaway = giveawayFor(slug);
+  if (!giveaway) return { ok: false, error: "Unknown giveaway." };
+  return { ok: true, ...(await countTestRecords(giveaway)) };
+}
+
+export async function deleteAllTestEntriesAction(
+  slug: string
+): Promise<{ ok: true; entries: number; leadRows: number; waitlist: number; backupKey: string } | Fail> {
+  const session = await requireAdminApiSession();
+  if (!session) return { ok: false, error: "Sign in to continue." };
+  const giveaway = giveawayFor(slug);
+  if (!giveaway) return { ok: false, error: "Unknown giveaway." };
+  const result = await deleteAllTestEntries(giveaway, session.email);
+  if (result.ok) revalidatePath(PATH);
   return result;
 }

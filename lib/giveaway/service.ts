@@ -39,6 +39,9 @@ import {
   storeConfigured,
   withEntryLock,
   withSyncLock,
+  hardDeleteEntry,
+  deleteZztestWaitlist,
+  readZztestWaitlist,
   type DrawRecord,
 } from "./store";
 
@@ -765,4 +768,254 @@ export async function logAlertTest(giveaway: Giveaway, by: string, result: Alert
     action: "alert_test",
     detail: result.ok ? `sent to ${result.to}` : `FAILED — ${result.error}`,
   });
+}
+
+
+// ── Booth tools: manual entries, delete, restore ─────────────────────────────
+//
+// Any signed-in admin may use all of these (Gavin, 2026-10-07: "no owner/staff
+// distinction on this screen"). Every one writes who did it to the log.
+
+/** The official drawing has run: the list is frozen — no delete, no restore. */
+export async function isFrozen(giveaway: Giveaway): Promise<boolean> {
+  return (await readDraws(storeScope(giveaway))).some((d) => d.mode === "official");
+}
+const FROZEN = "The official drawing has run, so the list is frozen. Nothing can be deleted or restored.";
+
+export type ManualInput = {
+  name: string;
+  email: string;
+  phone: string;
+  market: string; // slug or NOT_LISTED
+  zip: string;
+  listing90: string;
+  method: "booth" | "written";
+  addBonus: boolean;
+  contactConsent: boolean;
+};
+
+export type ManualResult =
+  | { ok: true; created: true; entries: number; inEntryPeriod: boolean; app: string; name: string }
+  | {
+      ok: false;
+      error: string;
+      fields?: EntryField[];
+      /** The email already has an entry: not duplicated. The screen offers +5. */
+      existing?: { email: string; name: string; entries: number; hasBonus: boolean; deleted: boolean };
+    };
+
+/**
+ * Staff type in an entry for someone at the booth, or from a written request.
+ * Same identity rules as the page (one entry per email, ZZTEST is "ours"),
+ * same deadline rule (saved after the close, but not in the drawing). Never
+ * synced to the email list. Sent to the app ONLY for Yes + a served market +
+ * the contact box (appDecision).
+ */
+export async function addManualEntry(giveaway: Giveaway, raw: ManualInput, by: string): Promise<ManualResult> {
+  const parsed = parseEntryInput(raw as unknown as Record<string, unknown>);
+  if (!parsed.ok) return { ok: false, error: `Missing or invalid: ${parsed.fields.join(", ")}`, fields: parsed.fields };
+  if (raw.method !== "booth" && raw.method !== "written") return { ok: false, error: "Choose how they asked to be entered." };
+  if (!storeConfigured()) return { ok: false, error: "The entry store is not configured." };
+
+  const { input } = parsed;
+  const scope = storeScope(giveaway);
+  const existingFirst = await getEntry(scope, input.email);
+  if (existingFirst) {
+    return {
+      ok: false,
+      error: "This email already has an entry — nothing was added.",
+      existing: {
+        email: existingFirst.email,
+        name: existingFirst.name,
+        entries: entryCount(existingFirst, giveaway),
+        hasBonus: existingFirst.bonus !== null,
+        deleted: !!existingFirst.deletedAt,
+      },
+    };
+  }
+
+  const market = await marketFor(input.market, input.zip);
+  const { firstName, lastName } = splitName(input.name);
+  const m = giveaway.attribution.manual;
+
+  const result = await withEntryLock(scope, input.email, async (): Promise<ManualResult> => {
+    const nowMs = Date.now();
+    const now = new Date(nowMs).toISOString();
+    const closedNow = isClosed(giveaway, nowMs);
+    const entry: GiveawayEntry = {
+      id: crypto.randomUUID(),
+      giveaway: giveaway.slug,
+      email: input.email,
+      name: input.name,
+      firstName,
+      lastName,
+      phone: input.phone,
+      marketSlug: market.slug,
+      marketSource: market.source,
+      zip: input.zip,
+      listing90: input.listing90,
+      createdAt: now,
+      updatedAt: now,
+      revisions: 0,
+      inEntryPeriod: !closedNow,
+      contactRequestedAt: null,
+      isTest: isTestIdentity(input.name, input.email),
+      bonus: raw.addBonus && !closedNow ? { source: raw.method, at: now, by } : null,
+      booking: null,
+      attribution: {
+        utm_source: m.utm_source,
+        utm_medium: null,
+        utm_campaign: m.utm_campaign,
+        utm_content: null,
+        utm_term: null,
+        channel: m.utm_source,
+        referralSourceId: giveaway.attribution.referralSourceId,
+        entryPoint: "manual",
+        firstTouchChannel: m.utm_source,
+        firstTouchCampaign: m.utm_campaign,
+        defaulted: false,
+      },
+      routing: { app: { status: "none" }, emailList: { status: "none" } },
+      origin: "manual",
+      addedBy: by,
+      method: raw.method,
+      contactConsent: !!raw.contactConsent,
+      deletedAt: null,
+      deletedBy: null,
+    };
+    const created = await createEntry(scope, entry);
+    if (!created) return { ok: false, error: "This email already has an entry — nothing was added." };
+    await appendLog(scope, {
+      at: now,
+      email: entry.email,
+      by,
+      action: "added_manually",
+      detail:
+        `${raw.method === "booth" ? "booth" : "written request"} · ${input.listing90}` +
+        (entry.bonus ? ` · +${giveaway.bonusEntries}` : "") +
+        (raw.contactConsent ? " · asked to be contacted" : "") +
+        (closedNow ? " · after the close (not in the drawing)" : ""),
+    });
+    if (entry.bonus) {
+      await appendLog(scope, { at: now, email: entry.email, by, action: "bonus_added", detail: raw.method });
+    }
+    await routeToApp(giveaway, entry, appDecision(entry, giveaway), by);
+    await saveEntry(scope, entry);
+    return {
+      ok: true,
+      created: true,
+      entries: entryCount(entry, giveaway),
+      inEntryPeriod: entry.inEntryPeriod,
+      app: entry.routing.app.status,
+      name: entry.name,
+    };
+  });
+  return result === LOCK_BUSY ? { ok: false, error: STAFF_BUSY } : result;
+}
+
+/** Soft delete a REAL entry: off the list and out of the drawing, restorable.
+ *  Its lead records stay — it is a real lead. */
+export async function softDeleteEntry(giveaway: Giveaway, rawEmail: string, by: string): Promise<StaffResult> {
+  if (await isFrozen(giveaway)) return { ok: false, error: FROZEN };
+  const scope = storeScope(giveaway);
+  const email = normalizeEmail(rawEmail);
+  const result = await withEntryLock(scope, email, async (): Promise<StaffResult> => {
+    const entry = await getEntry(scope, email);
+    if (!entry) return { ok: false, error: "No entry under that email." };
+    if (entry.deletedAt) return { ok: true };
+    const at = new Date().toISOString();
+    entry.deletedAt = at;
+    entry.deletedBy = by;
+    entry.updatedAt = at;
+    await saveEntry(scope, entry);
+    await appendLog(scope, { at, email, by, action: "deleted", detail: `${entry.name} — soft delete, lead records kept` });
+    return { ok: true };
+  });
+  return result === LOCK_BUSY ? { ok: false, error: STAFF_BUSY } : result;
+}
+
+export async function restoreEntry(giveaway: Giveaway, rawEmail: string, by: string): Promise<StaffResult> {
+  if (await isFrozen(giveaway)) return { ok: false, error: FROZEN };
+  const scope = storeScope(giveaway);
+  const email = normalizeEmail(rawEmail);
+  const result = await withEntryLock(scope, email, async (): Promise<StaffResult> => {
+    const entry = await getEntry(scope, email);
+    if (!entry) return { ok: false, error: "No entry under that email." };
+    if (!entry.deletedAt) return { ok: true };
+    const at = new Date().toISOString();
+    entry.deletedAt = null;
+    entry.deletedBy = null;
+    entry.updatedAt = at;
+    await saveEntry(scope, entry);
+    await appendLog(scope, { at, email, by, action: "restored", detail: entry.name });
+    return { ok: true };
+  });
+  return result === LOCK_BUSY ? { ok: false, error: STAFF_BUSY } : result;
+}
+
+/** Hard delete ONE test entry ("ours"), with a backup first. Refuses anything
+ *  that is not a test entry — a real person is only ever soft-deleted. */
+export async function hardDeleteTestEntry(
+  giveaway: Giveaway,
+  rawEmail: string,
+  by: string
+): Promise<StaffResult<{ leadRows: number; backupKey: string }>> {
+  if (await isFrozen(giveaway)) return { ok: false, error: FROZEN };
+  const scope = storeScope(giveaway);
+  const email = normalizeEmail(rawEmail);
+  const result = await withEntryLock(scope, email, async (): Promise<StaffResult<{ leadRows: number; backupKey: string }>> => {
+    const entry = await getEntry(scope, email);
+    if (!entry) return { ok: false, error: "No entry under that email." };
+    if (!entry.isTest) return { ok: false, error: "Not a test entry. Real entries are soft-deleted so they can be restored." };
+    const done = await hardDeleteEntry(scope, entry, by);
+    await appendLog(scope, {
+      at: new Date().toISOString(),
+      email,
+      by,
+      action: "hard_deleted",
+      detail: `${entry.name} — test entry; ${done.leadRows} lead row(s) removed; backup in ${done.backupKey}`,
+    });
+    return { ok: true, leadRows: done.leadRows, backupKey: done.backupKey };
+  });
+  return result === LOCK_BUSY ? { ok: false, error: STAFF_BUSY } : result;
+}
+
+export async function countTestRecords(giveaway: Giveaway): Promise<{ entries: number; waitlist: number }> {
+  const read = await readEntries(storeScope(giveaway));
+  const entries = read.configured && !read.error ? read.entries.filter((e) => e.isTest).length : 0;
+  return { entries, waitlist: (await readZztestWaitlist()).length };
+}
+
+/** "Delete all test entries": every "ours" entry (hard, with backup) and every
+ *  ZZTEST waitlist sign-up. */
+export async function deleteAllTestEntries(
+  giveaway: Giveaway,
+  by: string
+): Promise<StaffResult<{ entries: number; leadRows: number; waitlist: number; backupKey: string }>> {
+  if (await isFrozen(giveaway)) return { ok: false, error: FROZEN };
+  const scope = storeScope(giveaway);
+  const read = await readEntries(scope);
+  if (!read.configured || read.error) return { ok: false, error: read.configured ? String(read.error) : "Store not configured." };
+  let entries = 0;
+  let leadRows = 0;
+  let backupKey = "";
+  for (const e of read.entries.filter((x) => x.isTest)) {
+    const r = await hardDeleteTestEntry(giveaway, e.email, by);
+    if (r.ok) {
+      entries++;
+      leadRows += r.leadRows;
+      backupKey = r.backupKey;
+    }
+  }
+  const waitlist = await deleteZztestWaitlist(scope, by);
+  if (waitlist) {
+    await appendLog(scope, {
+      at: new Date().toISOString(),
+      email: null,
+      by,
+      action: "hard_deleted",
+      detail: `${waitlist} ZZTEST waitlist sign-up(s); backup in ${scope.sandbox ? "sandbox " : ""}deleted-backup`,
+    });
+  }
+  return { ok: true, entries, leadRows, waitlist, backupKey: backupKey || `giveaway:${giveaway.slug}${scope.sandbox ? ":sandbox" : ""}:deleted-backup` };
 }

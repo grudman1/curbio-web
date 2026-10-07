@@ -138,6 +138,9 @@ export type Giveaway = {
      * these; this is the safety net for the day it does not.
      */
     defaults: { utm_source: Channel; utm_medium: string; utm_campaign: string };
+    /** Entries staff type in on the admin screen (booth / written request).
+     *  Stamped on the entry; Origin is always "manual". */
+    manual: { utm_source: Channel; utm_campaign: string };
   };
 
   routing: {
