@@ -16,9 +16,9 @@ import {
   removeBonusAction,
   runDrawingAction,
   sendToAppAction,
-  setDealNoteAction,
   syncEmailListAction,
   verifyDrawingAction,
+  sendTestAlertAction,
 } from "./actions";
 
 // The interactive halves of the giveaway screen. Everything here calls a
@@ -51,6 +51,8 @@ export type EntryRow = {
    *  no attempt on record. */
   app: string;
   appDetail: string;
+  /** The app's estimate id for this person, when it gave one. */
+  estimateId: number | null;
   /** In a market, not a Curbio address, and not already in the app. */
   canSend: boolean;
   emailList: string;
@@ -195,7 +197,7 @@ export function EntriesTable({ slug, rows, sandbox }: { slug: string; rows: Entr
   const [busy, startTransition] = useTransition();
 
   const q = query.trim().toLowerCase();
-  const shown = q ? rows.filter((r) => `${r.name} ${r.email} ${r.market}`.toLowerCase().includes(q)) : rows;
+  const shown = q ? rows.filter((r) => `${r.name} ${r.email} ${r.market} ${r.estimateId ?? ""}`.toLowerCase().includes(q)) : rows;
 
   function send(row: EntryRow) {
     const retry = row.app === "failed" || row.app === "sending";
@@ -226,7 +228,7 @@ export function EntriesTable({ slug, rows, sandbox }: { slug: string; rows: Entr
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search name, email or market"
+        placeholder="Search name, email, market or app ID"
         aria-label="Search entries"
         className="max-w-[320px]"
       />
@@ -290,6 +292,14 @@ export function EntriesTable({ slug, rows, sandbox }: { slug: string; rows: Entr
                 <Td>
                   <span className="inline-flex flex-wrap gap-1">
                     {app && <StatusBadge status={app.label} tone={app.tone} title={`${app.title} ${r.appDetail}`.trim()} />}
+                    {r.estimateId !== null && (
+                      <span
+                        className="ops-subtle ops-tnum self-center whitespace-nowrap"
+                        title="The ID the app gave this lead. Search it in the app to find the deal."
+                      >
+                        app ID {r.estimateId}
+                      </span>
+                    )}
                     {list && (
                       <StatusBadge status={list.label} tone={list.tone} title={`${list.title} ${r.emailListDetail}`.trim()} />
                     )}
@@ -314,41 +324,6 @@ export function EntriesTable({ slug, rows, sandbox }: { slug: string; rows: Entr
         </tbody>
       </Table>
       {q && shown.length === 0 && <p className="m-0 ops-subtle">No entries match “{query}”.</p>}
-    </div>
-  );
-}
-
-// ── Deal note switch (owner) ─────────────────────────────────────────────────
-
-export function DealNoteSwitch({ slug, on, example }: { slug: string; on: boolean; example: string }) {
-  const router = useRouter();
-  const toast = useToast();
-  const [busy, startTransition] = useTransition();
-
-  function toggle() {
-    startTransition(async () => {
-      const res = await setDealNoteAction(slug, !on);
-      toast(res.ok ? "success" : "error", res.ok ? `Deal note ${on ? "off" : "on"}.` : res.error);
-      router.refresh();
-    });
-  }
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <StatusBadge
-          status={on ? "on" : "off"}
-          tone={on ? "success" : "neutral"}
-          title={on ? "The note is sent with every lead." : "Leads go to the app without the note."}
-        />
-        <Button onClick={toggle} disabled={busy}>
-          {on ? "Turn off" : "Turn on"}
-        </Button>
-      </div>
-      <p className="m-0 rounded-md bg-app-well px-3 py-2 font-mono text-[12.5px] leading-[1.5] text-content">{example}</p>
-      <p className="m-0 font-sans text-ops-label text-content-muted">
-        Leave off until Rich confirms the app&apos;s “requested work” field is the right place for it.
-      </p>
     </div>
   );
 }
@@ -702,6 +677,74 @@ export function DrawPanel({
         ))
       )}
       {official.length > 0 && <p className="m-0 font-sans text-ops-label text-content-muted">{notify}</p>}
+    </div>
+  );
+}
+
+// ── Failure alerts (owner) ───────────────────────────────────────────────────
+
+/** Where "CRM delivery FAILED" emails go, and a button that proves they arrive:
+ *  it sends a clearly-labelled TEST through the same path and shows what the
+ *  email service answered. */
+export function AlertTest({
+  slug,
+  to,
+  source,
+  configured,
+}: {
+  slug: string;
+  to: string;
+  source: string;
+  configured: boolean;
+}) {
+  const toast = useToast();
+  const [busy, startTransition] = useTransition();
+  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+
+  function send() {
+    setResult(null);
+    startTransition(async () => {
+      const res = await sendTestAlertAction(slug);
+      if (res.ok) {
+        setResult({ ok: true, text: `Accepted by the email service for ${res.to}. Now check that inbox (and spam): if it arrives, real alerts will too.` });
+        toast("success", "Test alert sent.");
+      } else {
+        setResult({ ok: false, text: `Not sent${"to" in res ? ` to ${res.to}` : ""}: ${res.error}` });
+        toast("error", "The test alert failed.");
+      }
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="m-0 font-sans text-ops-body text-content">
+        When a lead cannot be delivered to the app, an email goes to <strong className="break-all">{to}</strong>{" "}
+        <span className="text-content-muted">(from {source})</span>.
+      </p>
+      {!configured && (
+        <p className="m-0 rounded-md bg-pill-bad-bg px-3 py-2 font-sans text-ops-body font-semibold text-pill-bad-fg">
+          No email key is set in this environment, so no alert can be sent.
+        </p>
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button onClick={send} disabled={busy || !configured}>
+          {busy ? "Sending…" : "Send a test alert"}
+        </Button>
+      </div>
+      {result && (
+        <p
+          role="status"
+          className={`m-0 rounded-md px-3 py-2 font-sans text-ops-body font-semibold ${
+            result.ok ? "bg-pill-good-bg text-pill-good-fg" : "bg-pill-bad-bg text-pill-bad-fg"
+          }`}
+        >
+          {result.text}
+        </p>
+      )}
+      <p className="m-0 font-sans text-ops-label text-content-muted">
+        Alerts are sent from Resend&apos;s shared test address. Until a Curbio domain is verified in Resend, it may
+        deliver only to the Resend account owner&apos;s own address — this test tells you whether yours does.
+      </p>
     </div>
   );
 }

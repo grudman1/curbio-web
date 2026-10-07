@@ -4,9 +4,11 @@ import { revalidatePath } from "next/cache";
 import { giveawayBySlug, type Giveaway } from "@/config/giveaways";
 import { requireAdminApiSession } from "@/lib/adminApiAuth";
 import { ownerSession } from "@/lib/adminGuards";
+import { sendTestAlert, type AlertTestResult } from "@/lib/giveaway/appDelivery";
 import {
   addBonus,
   findEntrant,
+  logAlertTest,
   reconcileBookings,
   removeBonus,
   runDrawing,
@@ -15,8 +17,7 @@ import {
   verifyDrawing,
   type ReconcileReport,
 } from "@/lib/giveaway/service";
-import { storeScope } from "@/lib/giveaway/mode";
-import { appendLog, writeSetting, type DrawRecord } from "@/lib/giveaway/store";
+import { type DrawRecord } from "@/lib/giveaway/store";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Mutations for the giveaway entries screen.
@@ -32,7 +33,7 @@ import { appendLog, writeSetting, type DrawRecord } from "@/lib/giveaway/store";
 //                         confirm the right person, nothing to browse.
 //   owner only            everything else: the list, the export, sending to
 //                         the app, removing a bonus, reconciling bookings,
-//                         the deal-note switch, and the drawing.
+//                         and the drawing.
 //
 // Every write names who did it in the giveaway's own log
 // (lib/giveaway/store.ts). Nothing here deletes anything.
@@ -149,28 +150,6 @@ export async function reconcileAction(
   };
 }
 
-export async function setDealNoteAction(slug: string, on: boolean): Promise<{ ok: true } | Fail> {
-  const session = await ownerSession();
-  if (!session) return { ok: false, error: "Owner access required." };
-  const giveaway = giveawayFor(slug);
-  if (!giveaway) return { ok: false, error: "Unknown giveaway." };
-  try {
-    const scope = storeScope(giveaway);
-    await writeSetting(scope, "dealNote", on);
-    await appendLog(scope, {
-      at: new Date().toISOString(),
-      email: null,
-      by: session.email,
-      action: "setting_changed",
-      detail: `deal note ${on ? "on" : "off"}`,
-    });
-  } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "write failed" };
-  }
-  revalidatePath(PATH);
-  return { ok: true };
-}
-
 export async function runDrawingAction(
   slug: string,
   mode: "official" | "practice",
@@ -195,4 +174,19 @@ export async function verifyDrawingAction(
   const giveaway = giveawayFor(slug);
   if (!giveaway) return { ok: false, error: "Unknown giveaway." };
   return verifyDrawing(giveaway, drawId);
+}
+
+/**
+ * Owner only: send a TEST failure alert to the owner address, through the same
+ * path a real one takes, and report what the email service said.
+ */
+export async function sendTestAlertAction(slug: string): Promise<AlertTestResult | Fail> {
+  const session = await ownerSession();
+  if (!session) return { ok: false, error: "Owner access required." };
+  const giveaway = giveawayFor(slug);
+  if (!giveaway) return { ok: false, error: "Unknown giveaway." };
+  const result = await sendTestAlert(session.email);
+  await logAlertTest(giveaway, session.email, result);
+  revalidatePath(PATH);
+  return result;
 }

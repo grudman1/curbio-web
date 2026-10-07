@@ -150,6 +150,16 @@ Before merging:
       checked 2026-10-01). Name it exactly **Engaged**, or tell the developer
       the name and `AC_ENGAGED_LIST_NAME` changes. Until it exists, entries are
       kept and flagged "Needs attention"; **Sync now** completes them.
+- [ ] **Failure alerts reach you.** If a lead cannot be delivered to the app, an
+      email "CRM delivery FAILED — lead preserved" goes to the address shown in
+      the **Failure alerts** card on `/admin/giveaway` (`RESEND_TO_EMAIL`, else
+      `LEAD_NOTIFY_EMAIL`, else the built-in `grudman1@gmail.com`). Press **Send
+      a test alert** once, then check that inbox and spam. It goes through the
+      same path as a real alert and shows the email service's own answer. Alerts
+      are sent from Resend's shared test address, which may deliver only to the
+      Resend account owner until a Curbio domain is verified; if Resend refuses,
+      the screen says why. Accepted means Resend took it — the proof is the
+      email arriving.
 - [ ] **Written requests.** The rules tell people to email
       **team@curbio.com** (`rules.requestEmail`, confirmed 2026-10-02) for the
       free bonus entries and the winners list. Someone has to read that inbox
@@ -176,10 +186,9 @@ Going live:
 4. Flip `/expcon`, `/expcon/rules` and `/admin/giveaway` from `stub` to `live`
    in `config/pageRegistry.ts`.
 
-Optional, any time: when Rich confirms the app's "requested work" field can
-hold the note, turn on **Deal note** on `/admin/giveaway`. HSMs then see
-`eXpcon 2026 giveaway · Listing in next 90 days: Yes` on the deal and in their
-new-lead email. It is off by default, and leads flow either way.
+There is no deal note: any lead that reaches the app is assumed to have a
+listing, so nothing is added to the deal's "requested work". The 90-day answer
+stays on the entry (staff screen, CSV, the stored lead row's `listing90`).
 
 ---
 
@@ -220,6 +229,11 @@ Use names starting `ZZTEST` and emails like `zztest+yes1@gmail.com` (never an
 | T13 | Open the email link again with `&referral_source_id=Somebody%20Else` added, and submit **Yes** (new ZZTEST address) | ReferralSourceId is still **`eXp realty`**: a referral in the URL cannot change it. |
 | T10 | *(Optional)* Submit an address that has unsubscribed in ActiveCampaign | Entry accepted; the staff screen shows "unsubscribed"; the contact is **not** added to any list or tagged. If they answer **Yes** they still go to the HSM. |
 
+Finding a deal fast: when the app accepts a lead it answers with an ID, and the
+staff screen shows it next to the app badge ("app ID 99632"), searchable in the
+box above the table and in the CSV (`app_estimate_id`). It is the ID to look up
+in the app. Entries sent before this was recorded show none.
+
 Clean up after testing: ask Rich to delete the ZZTEST deals; delete the
 `zztest+…` contacts in ActiveCampaign (that takes them off their market list and
 the Engaged list too); cancel any test Calendly meeting. The ZZTEST rows stay on
@@ -237,6 +251,13 @@ deleting there.
   The bonus is given once per person, whichever way it was earned.
 - A written request (an email to the inbox named in the Official Rules) is
   added the same way with "+5 · written request".
+- **Is it working? Check from your phone (owner login).** Open
+  `/admin/giveaway`. The top line says **App delivery: all N sent** (green) or
+  **N need attention · X of Y sent** (red). Tap **Show them** to list only the
+  entries that did not reach the app. For each: look for the person in the app
+  first (the app does not dedupe; a retry of a lead that did land makes a second
+  deal), then tap **Retry app**. The line shows when it was read, and the page
+  does not refresh itself — reload it.
 
 ---
 

@@ -166,9 +166,6 @@ export type Giveaway = {
     answerTagPrefix: string;
   };
 
-  /** "eXpcon 2026 giveaway · Listing in next 90 days: Yes" — the line an HSM
-   *  reads on the deal. `{answer}` interpolates. */
-  dealNote: string;
 
   /**
    * Which emails this giveaway sends to the team (through the same Resend
@@ -270,7 +267,7 @@ export type Giveaway = {
  * server acts on.
  *
  * The page's client components need the copy, the dates and the prizes. They
- * do not need the routing rules, the email-list tags, the deal note or the
+ * do not need the routing rules, the email-list tags or the
  * default campaign tag, and whatever is passed to a client component is
  * serialised into the page's HTML for anyone to read. Leaving those out keeps
  * the internal routing and campaign tags out of the page source entirely.
