@@ -168,7 +168,7 @@ function queueEmailList(giveaway: Giveaway, entry: GiveawayEntry, changed: boole
   // even if they now go to the app instead: otherwise ActiveCampaign keeps
   // saying "maybe" about a person an HSM is working as a "yes", and the next
   // nurture send to the maybes goes to them.
-  const stale = current === "synced" && changed;
+  const stale = current === "synced" && changed && entry.emailConsent === true;
   if (!wantsEmailList(entry, giveaway) && !stale) return;
   // On the list and nothing about them changed: leave it.
   if (current === "synced" && !changed) return;
@@ -246,7 +246,20 @@ export type EnterOutcome =
     }
   | { ok: false; status: 400 | 503; error: string; fields?: EntryField[] };
 
-export async function enterGiveaway(giveaway: Giveaway, body: Record<string, unknown>): Promise<EnterOutcome> {
+/** Request facts the route can see and the body cannot vouch for. */
+export type EnterMeta = { ip: string | null; referer: string | null };
+
+/** The page the box was shown on: the page's own report, else the Referer. */
+function consentPageUrl(body: Record<string, unknown>, meta: EnterMeta): string | null {
+  const v = typeof body.pageUrl === "string" && body.pageUrl.trim() ? body.pageUrl.trim() : meta.referer;
+  return v ? v.slice(0, 500) : null;
+}
+
+export async function enterGiveaway(
+  giveaway: Giveaway,
+  body: Record<string, unknown>,
+  meta: EnterMeta = { ip: null, referer: null }
+): Promise<EnterOutcome> {
   const parsed = parseEntryInput(body);
   if (!parsed.ok) {
     return { ok: false, status: 400, error: `Missing or invalid: ${parsed.fields.join(", ")}`, fields: parsed.fields };
@@ -268,6 +281,14 @@ export async function enterGiveaway(giveaway: Giveaway, body: Record<string, unk
     const nowMs = Date.now();
     const now = new Date(nowMs).toISOString();
     const closedNow = isClosed(giveaway, nowMs);
+    // The box is optional and unchecked; only a literal `true` counts.
+    const ticked = body.emailConsent === true;
+    const consentNow = {
+      text: giveaway.copy.form.emailOptIn,
+      at: now,
+      pageUrl: consentPageUrl(body, meta),
+      ip: meta.ip ? meta.ip.slice(0, 64) : null,
+    };
 
     const fresh: GiveawayEntry = {
       id: crypto.randomUUID(),
@@ -291,6 +312,8 @@ export async function enterGiveaway(giveaway: Giveaway, body: Record<string, unk
       booking: null,
       attribution: attributionFrom(body, giveaway),
       routing: { app: { status: "none" }, emailList: { status: "none" } },
+      emailConsent: ticked,
+      emailConsentDetail: consentNow,
     };
 
     let entry = fresh;
@@ -319,9 +342,17 @@ export async function enterGiveaway(giveaway: Giveaway, body: Record<string, unk
         revisions: existing.revisions + 1,
         // The first time they use the page after the close is the one recorded.
         contactRequestedAt: existing.contactRequestedAt ?? (closedNow ? now : null),
+        // Ticking now grants consent with this submission's evidence; NOT
+        // ticking never revokes an earlier tick.
+        ...(ticked
+          ? { emailConsent: true, emailConsentDetail: consentNow }
+          : existing.emailConsent === true
+            ? {}
+            : { emailConsent: false, emailConsentDetail: existing.emailConsentDetail ?? consentNow }),
       };
       const after = `${entry.marketSlug ?? NOT_LISTED}/${entry.listing90}`;
       changed = before !== after;
+      const consentGranted = ticked && existing.emailConsent !== true;
       await saveEntry(scope, entry);
       await appendLog(scope, {
         at: now,
@@ -330,6 +361,7 @@ export async function enterGiveaway(giveaway: Giveaway, body: Record<string, unk
         action: "updated",
         detail:
           (changed ? `${before} → ${after}` : "no change to market or answer") +
+          (consentGranted ? " · ticked email consent" : "") +
           (closedNow && existing.inEntryPeriod ? " (contact form, after the close)" : ""),
       });
     }
@@ -877,6 +909,9 @@ export async function addManualEntry(giveaway: Giveaway, raw: ManualInput, by: s
       },
       routing: { app: { status: "none" }, emailList: { status: "none" } },
       origin: "manual",
+      // Always: staff typing an entry in is not the person ticking a box.
+      emailConsent: false,
+      emailConsentDetail: null,
       addedBy: by,
       method: raw.method,
       contactConsent: !!raw.contactConsent,

@@ -231,6 +231,7 @@ export default async function GiveawayAdminPage({
     phone: formatPhone(e.phone),
     phoneDigits: e.phone.replace(/\D/g, ""),
     manual: e.origin === "manual",
+    emailOk: e.emailConsent === true && e.origin !== "manual",
     method: e.method ?? null,
     addedBy: e.addedBy ?? null,
     deleted: !!e.deletedAt,
@@ -263,7 +264,10 @@ export default async function GiveawayAdminPage({
   }));
 
   const outstanding = sandbox ? 0 : entries.filter((e) => isEmailListOutstanding(e, giveaway)).length;
-  const notConfiguredRows = entries.filter((e) => e.routing.emailList.status === "not_configured").length;
+  // Only entries that can ever sync (ticked the email box) count as waiting.
+  const notConfiguredRows = entries.filter(
+    (e) => e.routing.emailList.status === "not_configured" && e.emailConsent === true && e.origin !== "manual"
+  ).length;
 
   return (
     <>

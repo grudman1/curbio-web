@@ -250,8 +250,9 @@ export function GiveawayRules({ giveaway }: { giveaway: Giveaway }) {
               Privacy Policy
             </a>
             . As stated on the entry form, by entering you consent to calls and texts from Curbio (reply STOP to opt
-            out of texts), and you will receive occasional emails from Curbio, which you can unsubscribe from at any
-            time. Agreeing to be contacted is not a condition of buying anything.
+            out of texts). Email updates from Curbio are optional and not required to enter: you receive them only
+            if you tick the box on the entry form, and you can unsubscribe at any time. Agreeing to be contacted is
+            not a condition of buying anything.
           </p>
         </Section>
 

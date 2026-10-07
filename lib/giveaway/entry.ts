@@ -187,6 +187,18 @@ export type GiveawayEntry = {
    *  can be restored; its lead records are untouched. */
   deletedAt?: string | null;
   deletedBy?: string | null;
+
+  /**
+   * Email consent — the optional, UNCHECKED box on the entry form. True only
+   * if the person ticked it on some submission; a later submission without
+   * the tick never revokes it. Absent (entries from before the box existed)
+   * and manual entries mean NO consent. The email-list sync only ever runs
+   * for `true` (see wantsEmailList and syncEntrantToEmailList).
+   */
+  emailConsent?: boolean;
+  /** Evidence for the latest consent decision that counted: the exact box
+   *  text shown, when, on which page, from which IP. */
+  emailConsentDetail?: { text: string; at: string; pageUrl: string | null; ip: string | null } | null;
 };
 
 // ── Identity ─────────────────────────────────────────────────────────────────
@@ -369,6 +381,8 @@ export function wantsEmailList(entry: GiveawayEntry, giveaway: Giveaway): boolea
   if (isInternalAddress(entry.email)) return false;
   // Never: a manual entry carries no email consent. Deleted: off the list.
   if (entry.origin === "manual" || entry.deletedAt) return false;
+  // THE consent gate: only someone who ticked the box. Absent = no.
+  if (entry.emailConsent !== true) return false;
   if (giveaway.routing.emailList === "everyone") return true;
   return appDecision(entry, giveaway) === null;
 }

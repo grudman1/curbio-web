@@ -225,6 +225,8 @@ export type Giveaway = {
       emailOptIn: string;
     };
     thanks: {
+      /** One line on the thank-you screen: email updates are optional. */
+      emailOptional: string;
       eyebrow: string;
       headline: string;
       body: string;
