@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, startTransition } from "react";
 import { MARKET_CARDS, type ResolvedMarket } from "@/lib/markets";
 import { Modal, Eyebrow, PillButton, Field, Icon } from "./LpKit";
+import { writeMarketPick } from "@/lib/marketPick";
 import { trackEvent } from "@/lib/events";
 
 function isValidEmail(s: string) {
@@ -16,7 +17,7 @@ export function ZipModal({
   onClose,
   current,
   basePath = "/",
-  required = false,
+  prompted = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -27,15 +28,13 @@ export function ZipModal({
    *  stays within /exp when switching markets. Defaults to "/". */
   basePath?: string;
   /**
-   * Neutral state only: the visitor has no market and the page behind this has
-   * no way to collect one, so the picker becomes a gate rather than a
-   * convenience. Removes every dismissal affordance (see Modal) and swaps the
-   * copy from "change your market" to "we need to know where you are".
-   *
-   * All three exits still resolve to something routable — a market card, a
-   * ZIP, or the waitlist — so this gate cannot strand anyone.
+   * Neutral state only — the picker opened by itself because we do not know
+   * where the visitor is. Changes the COPY from "change your market" to "where
+   * are you listing?". It is closable like any other modal: a visitor who
+   * closes it gets the page with a required ZIP field, and the lead route
+   * settles that ZIP before anything reaches the CRM.
    */
-  required?: boolean;
+  prompted?: boolean;
 }) {
   const router = useRouter();
   const [zip, setZip] = useState("");
@@ -48,6 +47,9 @@ export function ZipModal({
     // that knows the choice was DELIBERATE. A ?market= landing could equally
     // be a campaign link the visitor never chose.
     trackEvent("market_select", { market: slug, method: "picker" });
+    // Visit-only flag so the lead records "picked", not "campaign link" — the
+    // URL below is identical to a campaign link's. See lib/marketPick.ts.
+    writeMarketPick(slug);
     onClose();
     startTransition(() => { router.push(`${base}/?market=${slug}`); });
   }
@@ -65,7 +67,7 @@ export function ZipModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} maxWidth={820} required={required}>
+    <Modal open={open} onClose={onClose} maxWidth={820}>
       <Eyebrow amber>Find your market</Eyebrow>
       <h2
         style={{
@@ -77,10 +79,10 @@ export function ZipModal({
           lineHeight: 1.1,
         }}
       >
-        {required ? "Where are you listing?" : "Choose your market"}
+        {prompted ? "Where are you listing?" : "Choose your market"}
       </h2>
       <p style={{ fontSize: 14, color: "var(--fg-muted)", margin: "0 0 18px", lineHeight: 1.5 }}>
-        {required
+        {prompted
           ? "We route every request to the local Curbio Home Services Manager who will handle your listing — so we need your area first."
           : "Pick your area to meet the local Curbio Home Services Manager who will handle your listing."}
       </p>

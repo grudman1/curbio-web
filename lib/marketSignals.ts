@@ -49,11 +49,23 @@ import type { StoredLead } from "./adminLeads";
 // and that disagreement is exactly the thing that stays invisible otherwise.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type MarketSourceKind = "param" | "zip" | "geo" | "out-of-area" | "none" | "unknown";
+export type MarketSourceKind =
+  | "param"
+  | "pick"
+  | "zip"
+  | "form-zip"
+  | "geo"
+  | "out-of-area"
+  | "none"
+  | "unknown";
+
+const RECORDED_KINDS: readonly string[] = ["param", "pick", "zip", "form-zip", "geo", "out-of-area", "none"];
 
 export const MARKET_SOURCE_LABEL: Record<MarketSourceKind, string> = {
   param: "campaign link (?market=)",
-  zip: "ZIP entered by visitor",
+  pick: "picked in the market picker",
+  zip: "ZIP entered in the market picker",
+  "form-zip": "ZIP entered in the form",
   geo: "IP geolocation",
   "out-of-area": "out of area — waitlist",
   none: "not resolved — chooser shown",
@@ -64,6 +76,8 @@ export const MARKET_SOURCE_LABEL: Record<MarketSourceKind, string> = {
  *  weak rather than quietly authoritative. */
 export const MARKET_SOURCE_STRENGTH: Record<MarketSourceKind, "strong" | "medium" | "weak" | "none"> = {
   zip: "strong",
+  "form-zip": "strong",
+  pick: "strong",
   param: "weak",
   geo: "medium",
   "out-of-area": "strong",
@@ -165,9 +179,9 @@ export function readMarketSource(lead: StoredLead): MarketSourceRead {
   // field shipped. Absent on everything older, and absence is reported as
   // unknown rather than filled in.
   const recordedRaw = (lead as StoredLead & { marketSource?: string }).marketSource;
-  const recorded =
-    recordedRaw === "param" || recordedRaw === "zip" || recordedRaw === "geo" ||
-    recordedRaw === "out-of-area" || recordedRaw === "none";
+  // "form-zip" has been SENT by FormCard since it shipped but was never in this
+  // list, so those leads read "unknown" here even though the value was stored.
+  const recorded = !!recordedRaw && RECORDED_KINDS.includes(recordedRaw);
 
   return {
     market,

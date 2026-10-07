@@ -18,13 +18,20 @@ export type OperatorLead = {
   isPoc: boolean;
 };
 
-async function fetchOperatorLead(code: string): Promise<OperatorLead | null> {
-  // 800ms budget: a slow third-party API must never cost more than this on
-  // any path that can face a visitor. Every caller has an acceptable static
-  // fallback (buildResolvedMarketFromSlug / neutral), and the 120s data cache
-  // means most calls never leave the data cache anyway.
+/** Page-load budget. See fetchOperatorLead. */
+const PAGE_LOAD_BUDGET_MS = 800;
+
+async function fetchOperatorLead(code: string, budgetMs: number): Promise<OperatorLead | null> {
+  // 800ms budget by default: a slow third-party API must never cost more than
+  // this on any path that renders a page. Every such caller has an acceptable
+  // static fallback (buildResolvedMarketFromSlug / neutral), and the 120s data
+  // cache means most calls never leave the data cache anyway.
+  //
+  // The lead route's market gate passes a longer budget: there the visitor has
+  // already pressed Submit and is looking at a loading state, and a timeout
+  // costs far more (the lead is held for a human instead of routed).
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 800);
+  const timeout = setTimeout(() => controller.abort(), budgetMs);
 
   try {
     const res = await fetch(`${ENDPOINT}?code=${code}`, {
@@ -81,13 +88,17 @@ async function fetchOperatorLead(code: string): Promise<OperatorLead | null> {
 const HARD_TIMEOUT_MS = 3000;
 
 export async function getOperatorLead(
-  zip: string | null | undefined
+  zip: string | null | undefined,
+  /** Abort budget for the request. Defaults to the page-load 800ms; only the
+   *  submit-time market gate in app/api/lead/route.ts raises it. */
+  budgetMs: number = PAGE_LOAD_BUDGET_MS
 ): Promise<OperatorLead | null> {
   const code = (zip ?? "").replace(/\D/g, "").slice(0, 5);
   if (code.length !== 5) return null;
 
   return Promise.race([
-    fetchOperatorLead(code),
-    new Promise<null>((resolve) => setTimeout(() => resolve(null), HARD_TIMEOUT_MS)),
+    fetchOperatorLead(code, budgetMs),
+    // The hard ceiling never sits below the request's own budget.
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), Math.max(HARD_TIMEOUT_MS, budgetMs + 250))),
   ]);
 }

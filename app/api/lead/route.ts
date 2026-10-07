@@ -4,6 +4,9 @@ import { Redis } from "@upstash/redis";
 import { deriveChannel } from "@/lib/channels";
 import { crmNameForSlug } from "@/config/markets";
 import { isKnownReferralSource } from "@/config/campaigns/types";
+import { getOperatorLead } from "@/lib/operator";
+import { buildResolvedMarket } from "@/lib/markets";
+import { isPickerPageSource, withMarketSlug } from "@/lib/marketGate";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NOTHING IN THIS ROUTE MAY REJECT A SUBMISSION IT CANNOT PROVE IS FAKE.
@@ -46,6 +49,8 @@ type LeadBody = {
    *  this at render and threw it away, which is why no historical lead can
    *  say how its market was chosen. Persisted from here on. */
   marketSource?: string;
+  /** Waitlist sign-ups: the page source they came from (e.g. "exp-realty-unknown"). */
+  waitlistFrom?: string;
   variant?: string; // A/B variant (cta-copy: "control" | "treatment")
   magnet?: "checklist" | "spring-listings" | "resource-kit" | null;
   submittedAt?: string;
@@ -176,6 +181,9 @@ function leadLogContext(p: {
   };
 }
 
+/** Submit-time ZIP lookup budget for the market gate (page loads keep 800ms). */
+const SUBMIT_ZIP_CHECK_MS = 3000;
+
 export async function POST(req: Request) {
   let body: LeadBody;
   try {
@@ -223,6 +231,49 @@ export async function POST(req: Request) {
   const firstName = nameParts[0];
   const lastName = nameParts.slice(1).join(" "); // empty string for single-word names
 
+  // ── MARKET GATE: a lead from a market-selection page that arrives with NO
+  // market is settled by its ZIP here, BEFORE anything is persisted or sent.
+  //
+  // This is the server half of the guarantee "a lead with no market and no
+  // served ZIP never reaches the CRM". The form cannot be the only guard — an
+  // old cached page, a JS failure or a hand-made POST would walk straight past
+  // it — so the decision lives where the CRM call does.
+  //
+  //   served ZIP          → the lead gets that market and routes as normal
+  //   out-of-area ZIP     → waitlist (never the CRM, so no "not in your market"
+  //                         email to the agent and no CRM-failure alert)
+  //   ZIP check failed    → waitlist, flagged "zip-check-failed" for a human
+  //   no ZIP at all       → waitlist, flagged "no-zip" for a human
+  //
+  // Uses the same served-ZIP lookup the market picker's ZIP box goes through
+  // (lib/operator.ts via lib/resolveMarket.ts), but with a 3s budget instead
+  // of the page-load 800ms — the visitor is already watching a loading state.
+  // Pages WITHOUT market selection (/staging-design-dc, /contact) never enter
+  // this branch — see lib/marketGate.ts.
+  const cleanZip = body.zip ? body.zip.replace(/\D/g, "").slice(0, 5) : "";
+  let gateMarket: string | null = null;
+  let gateSlug: string | null = null;
+  let waitlistReason: "out-of-area" | "zip-check-failed" | "no-zip" | null = null;
+  let zipCheckMs: number | null = null;
+  const sentMarket = body.crmMarketName ?? toCrmMarket(body.market);
+  if (!sentMarket && body.source !== "waitlist" && isPickerPageSource(body.source)) {
+    if (cleanZip.length === 5) {
+      const started = Date.now();
+      const lead = await getOperatorLead(cleanZip, SUBMIT_ZIP_CHECK_MS);
+      zipCheckMs = Date.now() - started;
+      const resolved = buildResolvedMarket(lead);
+      if (lead === null) waitlistReason = "zip-check-failed";
+      else if (resolved) {
+        gateMarket = lead.marketName ?? toCrmMarket(resolved.slug);
+        gateSlug = resolved.slug;
+      } else waitlistReason = "out-of-area";
+    } else {
+      waitlistReason = "no-zip";
+    }
+    console.log("[lead] market gate", { source: body.source, outcome: gateSlug ?? waitlistReason, zipCheckMs });
+  }
+  const originalSource = body.source ?? "quote";
+
   const payload = {
     // Join key between the leads:v1 record and its leads:delivery:v1 outcome.
     // Generated here so it is stored WITH the lead on the persist-first write.
@@ -232,11 +283,11 @@ export async function POST(req: Request) {
     lastName,
     phone: body.phone?.trim() ?? "",
     email: body.email!.trim(),
-    zip: body.zip ? body.zip.replace(/\D/g, "").slice(0, 5) : "",
+    zip: cleanZip,
     address: body.address?.trim() ?? "",
     description: body.description?.trim() ?? "",
-    market: body.crmMarketName ?? toCrmMarket(body.market),
-    source: body.source ?? "quote",
+    market: sentMarket ?? gateMarket,
+    source: waitlistReason ? "waitlist" : gateSlug ? withMarketSlug(originalSource, gateSlug) : originalSource,
     variant: body.variant ?? null,
     magnet: body.magnet ?? null,
     submittedAt: body.submittedAt ?? new Date().toISOString(),
@@ -267,10 +318,22 @@ export async function POST(req: Request) {
     entryPoint: body.entryPoint ?? "web_form",
     // Provenance for `market`. Never inferred server-side — if the client did
     // not say, the record says nothing rather than guessing.
-    marketSource: body.marketSource ?? null,
+    marketSource:
+      waitlistReason === "out-of-area"
+        ? "out-of-area"
+        : waitlistReason
+          ? "none"
+          : (body.marketSource ?? null),
     medium: body.medium ?? body.utm_medium ?? null,
     firstTouchChannel: body.firstTouchChannel ?? null,
     firstTouchCampaign: body.firstTouchCampaign ?? null,
+    // Waitlist sign-ups only: which page they came from, and — for leads the
+    // market gate diverted — why. Absent on every routed lead, so a routed
+    // lead's record is unchanged.
+    ...(body.waitlistFrom || waitlistReason
+      ? { waitlistFrom: waitlistReason ? originalSource : body.waitlistFrom }
+      : {}),
+    ...(waitlistReason ? { waitlistReason } : {}),
   };
   const logCtx = leadLogContext(payload);
   const isWaitlist = payload.source === "waitlist";
@@ -328,7 +391,10 @@ export async function POST(req: Request) {
       console.log("[resend] skipped — RESEND_API_KEY not set");
       return false;
     }
-    const subject = isWaitlist
+    const held = waitlistReason === "zip-check-failed" || waitlistReason === "no-zip";
+    const subject = held
+      ? `⚠️ Held for review — ${waitlistReason === "no-zip" ? "no market, no ZIP" : `ZIP ${payload.zip} could not be checked`} — ${payload.firstName} ${payload.lastName}`.trim()
+      : isWaitlist
       ? `Waitlist — ZIP ${payload.zip || "unknown"}${
           [payload.detectedCity, payload.detectedRegion].filter(Boolean).length
             ? `, ${[payload.detectedCity, payload.detectedRegion].filter(Boolean).join(" ")}`
@@ -352,6 +418,13 @@ export async function POST(req: Request) {
       `First touch: ${payload.firstTouchChannel ?? ""} / ${payload.firstTouchCampaign ?? ""}`,
       `Submitted:   ${payload.submittedAt}`,
       `Source:      ${payload.source}`,
+      ...(isWaitlist
+        ? [
+            `From page:   ${"waitlistFrom" in payload ? payload.waitlistFrom : ""}`,
+            `Referral:    ${payload.referralSourceId}`,
+            ...(waitlistReason ? [`Held because:${waitlistReason}${held ? " — NOT sent to the CRM; contact them and set the market by hand" : ""}`] : []),
+          ]
+        : []),
     ].join("\n");
     const result = await resend.emails.send({
       from: "Curbio Leads <onboarding@resend.dev>",
@@ -548,5 +621,13 @@ export async function POST(req: Request) {
   const pdf =
     payload.source === "magnet" && payload.magnet ? MAGNET_FILES[payload.magnet] ?? null : null;
 
-  return NextResponse.json({ ok: true, pdf });
+  // `outcome` tells the form what happened so it can show the right next step:
+  // routed leads go to /confirm (with the market the gate settled on, if any);
+  // waitlisted or held ones get the "not in your area yet" panel instead.
+  return NextResponse.json({
+    ok: true,
+    pdf,
+    outcome: waitlistReason === "out-of-area" ? "waitlist" : waitlistReason ? "held" : "routed",
+    ...(gateSlug ? { market: gateSlug } : {}),
+  });
 }
