@@ -104,6 +104,8 @@ const K = {
   lock: (s: StoreScope, email: string) => `${prefix(s)}:lock:${email}`,
   syncLock: (s: StoreScope, email: string) => `${prefix(s)}:synclock:${email}`,
   backup: (s: StoreScope) => `${prefix(s)}:deleted-backup`,
+  outcome: (s: StoreScope, id: string) => `${prefix(s)}:draw:${id}:outcome`,
+  drawLock: (s: StoreScope, id: string) => `${prefix(s)}:drawlock:${id}`,
 };
 
 /** The lead store the Leads screen and the Hub count from. Shared with
@@ -298,7 +300,8 @@ export type LogEvent = {
     | "added_manually"
     | "deleted"
     | "restored"
-    | "hard_deleted";
+    | "hard_deleted"
+    | "winner_status";
   detail?: string;
 };
 
@@ -329,7 +332,51 @@ export async function readLog(scope: StoreScope, limit = 200): Promise<LogEvent[
 
 // ── Drawings ─────────────────────────────────────────────────────────────────
 
-export type DrawPerson = { email: string; name: string; phone: string; entries: number };
+export type DrawPerson = {
+  email: string;
+  name: string;
+  phone: string;
+  entries: number;
+  /** Market display name, or "Not listed". Absent on drawings run before
+   *  2026-10-07; the screen looks it up from the entry then. */
+  market?: string;
+};
+
+// ── After a drawing: what happened to each winner ───────────────────────────
+
+export type WinnerState = "not_notified" | "notified" | "claimed" | "forfeited";
+
+/**
+ * Kept SEPARATE from the DrawRecord, which is the immutable result (Verify
+ * re-runs it). This is what staff did afterwards: per-person status, and which
+ * alternates were promoted (in order) to replace forfeited winners.
+ */
+export type DrawOutcome = {
+  people: Record<string, { state: WinnerState; at: string; by: string; notifiedAt?: string; notifiedBy?: string }>;
+  promoted: string[];
+};
+
+export async function readDrawOutcome(scope: StoreScope, drawId: string): Promise<DrawOutcome> {
+  const redis = readOnlyRedis() ?? readWriteRedis();
+  const empty: DrawOutcome = { people: {}, promoted: [] };
+  if (!redis) return empty;
+  try {
+    return parse<DrawOutcome>(await redis.get<DrawOutcome | string>(K.outcome(scope, drawId))) ?? empty;
+  } catch {
+    return empty;
+  }
+}
+
+export async function saveDrawOutcome(scope: StoreScope, drawId: string, outcome: DrawOutcome): Promise<void> {
+  const redis = readWriteRedis();
+  if (!redis) throw new Error("giveaway store not configured");
+  await redis.set(K.outcome(scope, drawId), JSON.stringify(outcome));
+}
+
+/** One status change per drawing at a time. */
+export function withDrawLock<T>(scope: StoreScope, drawId: string, work: () => Promise<T>): Promise<T | typeof LOCK_BUSY> {
+  return withLock(K.drawLock(scope, drawId), work);
+}
 
 export type DrawRecord = {
   id: string;

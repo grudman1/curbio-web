@@ -40,6 +40,11 @@ import {
   withEntryLock,
   withSyncLock,
   hardDeleteEntry,
+  readDrawOutcome,
+  saveDrawOutcome,
+  withDrawLock,
+  type DrawOutcome,
+  type WinnerState,
   deleteZztestWaitlist,
   readZztestWaitlist,
   type DrawRecord,
@@ -717,7 +722,7 @@ export async function syncEmailListBatch(
 // ── The drawing ──────────────────────────────────────────────────────────────
 
 /** Names drawn beyond the winners, in order — the alternates. */
-const ALTERNATES = 10;
+const ALTERNATES = 5;
 
 export async function runDrawing(
   giveaway: Giveaway,
@@ -750,7 +755,13 @@ export async function runDrawing(
   const byEmail = new Map(drawable.map((e) => [e.email, e]));
   const person = (email: string) => {
     const e = byEmail.get(email) as GiveawayEntry;
-    return { email, name: e.name, phone: e.phone, entries: entryCount(e, giveaway) };
+    return {
+      email,
+      name: e.name,
+      phone: e.phone,
+      entries: entryCount(e, giveaway),
+      market: e.marketSlug ? (MARKET_BY_SLUG[e.marketSlug]?.displayName ?? e.marketSlug) : "Not listed",
+    };
   };
 
   const ranAt = new Date().toISOString();
@@ -1059,4 +1070,121 @@ export async function deleteAllTestEntries(
     });
   }
   return { ok: true, entries, leadRows, waitlist, backupKey: backupKey || `giveaway:${giveaway.slug}${scope.sandbox ? ":sandbox" : ""}:deleted-backup` };
+}
+
+
+// ── Winners after a drawing ──────────────────────────────────────────────────
+//
+// Winners are the drawing's winners plus any alternates promoted, in order, to
+// replace a forfeited winner. Nothing here draws again or changes the recorded
+// result: Verify still re-runs the original. No emails or texts are sent —
+// staff notify people themselves and mark it here.
+
+export type CurrentWinner = {
+  email: string;
+  name: string;
+  phone: string;
+  entries: number;
+  market: string | null;
+  /** "Winner 3", or "Alternate 1" for a promoted alternate. */
+  slot: string;
+  state: WinnerState;
+  at: string | null;
+  by: string | null;
+  notifiedAt: string | null;
+  notifiedBy: string | null;
+};
+
+export function currentWinners(record: DrawRecord, outcome: DrawOutcome): { winners: CurrentWinner[]; unusedAlternates: DrawRecord["alternates"] } {
+  const row = (p: DrawRecord["winners"][number], slot: string): CurrentWinner => {
+    const s = outcome.people[p.email];
+    return {
+      email: p.email,
+      name: p.name,
+      phone: p.phone,
+      entries: p.entries,
+      market: p.market ?? null,
+      slot,
+      state: s?.state ?? "not_notified",
+      at: s?.at ?? null,
+      by: s?.by ?? null,
+      notifiedAt: s?.notifiedAt ?? null,
+      notifiedBy: s?.notifiedBy ?? null,
+    };
+  };
+  const winners = [
+    ...record.winners.map((w, i) => row(w, `Winner ${i + 1}`)),
+    ...outcome.promoted
+      .map((email) => record.alternates.find((a) => a.email === email))
+      .filter((a): a is DrawRecord["alternates"][number] => !!a)
+      .map((a) => row(a, `Alternate ${a.order}`)),
+  ];
+  const unusedAlternates = record.alternates.filter((a) => !outcome.promoted.includes(a.email));
+  return { winners, unusedAlternates };
+}
+
+const STATE_LABEL: Record<WinnerState, string> = {
+  not_notified: "not yet notified",
+  notified: "notified",
+  claimed: "claimed",
+  forfeited: "forfeited",
+};
+
+/**
+ * Change one winner's status. Forfeiting promotes the next unused alternate
+ * (in drawn order) into their place. Every change is logged.
+ */
+export async function setWinnerStatus(
+  giveaway: Giveaway,
+  drawId: string,
+  rawEmail: string,
+  state: WinnerState,
+  by: string
+): Promise<StaffResult<{ promoted: string | null }>> {
+  const scope = storeScope(giveaway);
+  const record = (await readDraws(scope)).find((d) => d.id === drawId);
+  if (!record) return { ok: false, error: "That drawing is not on record." };
+  const email = normalizeEmail(rawEmail);
+
+  const result = await withDrawLock(scope, drawId, async (): Promise<StaffResult<{ promoted: string | null }>> => {
+    const outcome = await readDrawOutcome(scope, drawId);
+    const { winners, unusedAlternates } = currentWinners(record, outcome);
+    const who = winners.find((w) => w.email === email);
+    if (!who) return { ok: false, error: "That person is not a current winner of this drawing." };
+    if (who.state === "forfeited") return { ok: false, error: `${who.name} has already forfeited.` };
+    if (who.state === state) return { ok: true, promoted: null };
+    if (state === "not_notified") return { ok: false, error: "A status cannot go back to “not yet notified”." };
+
+    const at = new Date().toISOString();
+    const prev = outcome.people[email];
+    outcome.people[email] = {
+      state,
+      at,
+      by,
+      notifiedAt: state === "notified" ? at : prev?.notifiedAt,
+      notifiedBy: state === "notified" ? by : prev?.notifiedBy,
+    };
+
+    let promoted: DrawRecord["alternates"][number] | null = null;
+    if (state === "forfeited") {
+      promoted = unusedAlternates[0] ?? null;
+      if (promoted) outcome.promoted.push(promoted.email);
+    }
+    await saveDrawOutcome(scope, drawId, outcome);
+    await appendLog(scope, {
+      at,
+      email,
+      by,
+      action: "winner_status",
+      detail:
+        `${record.mode} drawing · ${who.slot} ${who.name}: ${STATE_LABEL[who.state]} → ${STATE_LABEL[state]}` +
+        (state === "forfeited"
+          ? promoted
+            ? ` · alternate ${promoted.order} ${promoted.name} promoted`
+            : " · no alternates left"
+          : ""),
+    });
+    return { ok: true, promoted: promoted?.email ?? null };
+  });
+  return result === LOCK_BUSY ? { ok: false, error: STAFF_BUSY } : result;
 }

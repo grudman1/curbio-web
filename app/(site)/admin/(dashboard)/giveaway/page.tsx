@@ -12,9 +12,9 @@ import {
   type GiveawayEntry,
 } from "@/lib/giveaway/entry";
 import { deliveryMode, isClosed, storeScope } from "@/lib/giveaway/mode";
-import { isEmailListOutstanding, isFrozen } from "@/lib/giveaway/service";
+import { currentWinners, isEmailListOutstanding, isFrozen } from "@/lib/giveaway/service";
 import { MARKETS } from "@/config/markets";
-import { readDraws, readEntries, readLog } from "@/lib/giveaway/store";
+import { readDrawOutcome, readDraws, readEntries, readLog } from "@/lib/giveaway/store";
 import { PageHeader } from "../../_ui/v2/PageHeader";
 import { OpsCard } from "../../_ui/v2/OpsCard";
 import { EmptyState } from "../../_ui/v2/EmptyState";
@@ -181,6 +181,27 @@ export default async function GiveawayAdminPage({
   ]);
   const readable = read.configured && !read.error;
   const all = readable ? read.entries : [];
+  // Winners as they stand now (promotions + statuses), for every drawing.
+  const outcomes = await Promise.all(draws.map((d) => readDrawOutcome(scope, d.id)));
+  const marketOf = (email: string) => {
+    const e = all.find((x) => x.email === email);
+    return e ? marketLabel(e) : "—";
+  };
+  const winnerViews = draws.map((d, i) => {
+    const { winners, unusedAlternates } = currentWinners(d, outcomes[i]);
+    return {
+      drawId: d.id,
+      winners: winners.map((w) => ({ ...w, phone: formatPhone(w.phone), market: w.market ?? marketOf(w.email) })),
+      alternates: unusedAlternates.map((a) => ({
+        order: a.order,
+        email: a.email,
+        name: a.name,
+        phone: formatPhone(a.phone),
+        entries: a.entries,
+        market: a.market ?? marketOf(a.email),
+      })),
+    };
+  });
   // Soft-deleted entries are off every count and list except "Deleted".
   const deleted = all.filter((e) => !!e.deletedAt);
   const entries = all.filter((e) => !e.deletedAt);
@@ -439,6 +460,7 @@ export default async function GiveawayAdminPage({
             winners={giveaway.kit.winners}
             kitName={giveaway.kit.name}
             draws={draws}
+            winnerViews={winnerViews}
             eligiblePeople={drawable.length}
             notify={`Notify by email and phone within ${giveaway.rules.notifyWithinHours} hours. A winner has ${giveaway.rules.respondWithinDays} days to respond before the next alternate takes the kit.`}
           />

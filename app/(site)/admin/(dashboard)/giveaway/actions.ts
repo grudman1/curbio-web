@@ -12,6 +12,7 @@ import {
   deleteAllTestEntries,
   findEntrant,
   hardDeleteTestEntry,
+  setWinnerStatus,
   restoreEntry,
   softDeleteEntry,
   type ManualInput,
@@ -266,6 +267,23 @@ export async function deleteAllTestEntriesAction(
   const giveaway = giveawayFor(slug);
   if (!giveaway) return { ok: false, error: "Unknown giveaway." };
   const result = await deleteAllTestEntries(giveaway, session.email);
+  if (result.ok) revalidatePath(PATH);
+  return result;
+}
+
+/** Winner status after a drawing. Forfeit promotes the next alternate. */
+export async function setWinnerStatusAction(
+  slug: string,
+  drawId: string,
+  email: string,
+  state: "notified" | "claimed" | "forfeited"
+): Promise<{ ok: true; promoted: string | null } | Fail> {
+  const session = await requireAdminApiSession();
+  if (!session) return { ok: false, error: "Sign in to continue." };
+  const giveaway = giveawayFor(slug);
+  if (!giveaway) return { ok: false, error: "Unknown giveaway." };
+  if (!["notified", "claimed", "forfeited"].includes(state)) return { ok: false, error: "Unknown status." };
+  const result = await setWinnerStatus(giveaway, drawId, email, state, session.email);
   if (result.ok) revalidatePath(PATH);
   return result;
 }
