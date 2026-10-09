@@ -52,14 +52,15 @@ export const expcon: Giveaway = {
     place: "eXpo Live Stage",
   },
 
-  // Fri Oct 9 2026, 12:00pm Mountain. Utah is on daylight time in October
-  // (UTC−6), so noon there is 18:00 UTC.
-  closesAt: "2026-10-09T18:00:00Z",
+  // MOVED EARLIER on the day, at Gavin's instruction (2026-10-09): it was
+  // Fri Oct 9 2026, 12:00pm Mountain (18:00 UTC). Now 9:30am Mountain. Utah is
+  // on daylight time in October (UTC−6), so 9:30am there is 15:30 UTC.
+  closesAt: "2026-10-09T15:30:00Z",
   drawing: {
-    long: "Fri, Oct 9 at 12:00pm Mountain",
-    short: "Friday, Oct 9 at noon Mountain",
+    long: "Fri, Oct 9 at 9:30am Mountain",
+    short: "Friday, Oct 9 at 9:30am Mountain",
     rulesDate: "Friday, October 9, 2026",
-    rulesTime: "12:00 p.m. Mountain Time",
+    rulesTime: "9:30 a.m. Mountain Time",
   },
   opens: "October 5, 2026",
 
@@ -170,7 +171,7 @@ export const expcon: Giveaway = {
       emailOptional: "Email updates from Curbio are optional and not required to enter.",
       eyebrow: "Entry confirmed",
       headline: "You're *in*!",
-      body: "We'll draw winners Friday, Oct 9 at noon Mountain. Need not be present.",
+      body: "We'll draw winners Friday, Oct 9 at 9:30am Mountain. Need not be present.",
       updated: "You were already in, so we updated your entry. It still counts once.",
       bonusHeadline: "Get 5 bonus entries.",
       bonusBody: "Book a quick call with your local Curbio manager.",
@@ -207,7 +208,7 @@ export const expcon: Giveaway = {
     closed: {
       headline: "The giveaway has *closed.*",
       sub:
-        "Entries closed Friday, Oct 9 at noon Mountain. Winners are notified by email and phone. " +
+        "Entries closed Friday, Oct 9 at 9:30am Mountain. Winners are notified by email and phone. " +
         "Curbio is still here for your next listing.",
       note: "Drawing: Friday, Oct 9 at Booth #9. Winners need not be present.",
       headerCta: "Get in touch",
@@ -217,7 +218,7 @@ export const expcon: Giveaway = {
       submit: "Send",
       thanksHeadline: "Thanks. We'll be *in touch.*",
       thanksBody: "Your local Curbio manager will reach out within one business day.",
-      enteredBody: "Entries closed Friday, Oct 9 at noon Mountain. Winners are notified by email and phone.",
+      enteredBody: "Entries closed Friday, Oct 9 at 9:30am Mountain. Winners are notified by email and phone.",
       bookingCta: "Book a quick call now",
     },
   },
