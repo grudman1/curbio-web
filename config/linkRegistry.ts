@@ -186,8 +186,41 @@ const EVENT_LINKS: TrackedLink[] = [
   expconRow("paid-facebook", "eXpcon 2026 · paid social · Facebook", "paid_ad", "Marketing", "paid_social", "social", "paid-expcon-oct", "facebook", "Only if paid social is used."),
 ];
 
+// ── Team-lead coffee card (direct mail, Nov 2026) ───────────────────────────
+// Fifty handwritten cards with a Starbucks gift card, to team leads in
+// Atlanta, Dallas, Los Angeles, Seattle and the DC area. The back panel
+// prints curbio.com/coffee; WordPress redirects that to the tagged URL below.
+// The page is config/campaigns/coffee.ts. The printed-direct flag this row
+// raises is a false alarm: the ink is the redirect, not the sell.curbio.com
+// address — the destination can be repointed in WordPress.
+const COFFEE_URL =
+  "https://sell.curbio.com/lp/coffee?utm_source=mail&utm_medium=direct_mail&utm_campaign=teamlead-starbucks-nov";
+
+const MAIL_LINKS: TrackedLink[] = [
+  {
+    id: "mail:teamlead-coffee-2026",
+    label: "Team lead coffee card · back panel",
+    type: "print",
+    owner: "Marketing",
+    channel: "mail",
+    medium: "direct_mail",
+    campaign: "teamlead-starbucks-nov",
+    market: "all",
+    destination: COFFEE_URL,
+    trackedUrl: COFFEE_URL,
+    shortLink: "curbio.com/coffee",
+    status: "printed",
+    createdAt: "2026-10-27",
+    printedAt: "2026-10-27",
+    origin: "seed",
+    notes:
+      "Handwritten team-lead cards with a Starbucks gift card, mailed Oct 2026 to Atlanta, Dallas, Los Angeles, Seattle and DC-area team leads. The card prints curbio.com/coffee; the WordPress redirect carries the tags. Leads land as Channel mail / teamlead-starbucks-nov and route by ZIP. Printed: the short link must keep resolving.",
+  },
+];
+
 export const SEED_LINKS: TrackedLink[] = [
   ...EVENT_LINKS,
+  ...MAIL_LINKS,
   ...HSM_CARD_LINKS,
   ...(seed.rows as Omit<TrackedLink, "origin">[]).map(
     (r): TrackedLink => ({ ...r, origin: "seed" })

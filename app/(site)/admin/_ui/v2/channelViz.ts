@@ -21,6 +21,9 @@ export const CHANNEL_INK: Record<Channel, string> = {
   paid_social: "var(--ops-ch-paid-social)",
   creator: "var(--ops-ch-creator)",
   hsm_field: "var(--ops-ch-events)",
+  // Direct mail shares the field ink: both are the HSM's printed, hand-carried
+  // motion, and the hub plans them as one channel (partnerships/outreach).
+  mail: "var(--ops-ch-events)",
   referral: "var(--ops-ch-referral)",
   // Grey, and grey on purpose: `direct` is the ABSENCE of attribution, so it
   // must never read as a channel doing well. See lib/channels.ts.

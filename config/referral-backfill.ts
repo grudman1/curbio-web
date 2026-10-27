@@ -3,7 +3,7 @@
 //
 // The one-time backfill of legacy records maps the ReferralSource junk drawer
 // (www.curbio.com, Phone Call, landing page, Other, lonewolf, Inbound Email,
-// partner labels, page URLs) onto the ten-value channel model. This file is
+// partner labels, page URLs) onto the closed channel model (ten values at the time; `mail` came later). This file is
 // the ONLY place that inference lives — no per-lead edits, ever. A lead whose
 // channel came from this mapping is marked `attribution: "inferred"`; a lead
 // carrying a real UTM signal keeps `attribution: "measured"` and this mapping
