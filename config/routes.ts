@@ -72,9 +72,16 @@ export const CAMPAIGN_PREFIX = "/lp/sell";
  *
  * Longest-first so a nested mount can never be shadowed by a shorter prefix.
  */
-export const MARKET_LINK_BASES: readonly string[] = [CAMPAIGN_PREFIX, "/exp"]
+export const MARKET_LINK_BASES: readonly string[] = [CAMPAIGN_PREFIX, "/lp/coffee", "/exp"]
   .slice()
   .sort((a, b) => b.length - a.length);
+// Every /lp/<slug> with a market picker belongs in that list, beside its line
+// in config/campaigns/index.ts. Without it the picker on that page builds
+// "/?market=x" — which on sell.curbio.com is /lp/sell — and a visitor who
+// picks a market or types a ZIP is dropped onto the generic sell page. The
+// list is a literal rather than derived from CAMPAIGNS because middleware.ts
+// reads it at the edge, and pulling every campaign config into that bundle
+// is a bigger change than one line.
 
 export type Tier = "campaign" | "partner" | "site" | "event";
 

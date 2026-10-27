@@ -19,6 +19,7 @@ import { CAMPAIGNS, CAMPAIGN_BY_SLUG } from "../config/campaigns/index.ts";
 import { coffee } from "../config/campaigns/coffee.ts";
 import { SEED_LINKS } from "../config/linkRegistry.ts";
 import { isPickerPageSource, withMarketSlug } from "../lib/marketGate.ts";
+import { marketBaseFor, campaignBaseFor, campaignHref } from "../lib/campaignBase.ts";
 
 const REDIRECT =
   "https://sell.curbio.com/lp/coffee?utm_source=mail&utm_medium=direct_mail&utm_campaign=teamlead-starbucks-nov";
@@ -80,6 +81,13 @@ check("3d. the lead source names the market and is a picker-page source, so the 
   assert.ok(isPickerPageSource(src));
   assert.equal(withMarketSlug(src, "atlanta"), "teamlead-coffee-atlanta");
   assert.ok(!coffee.attribution.source.startsWith("email-campaign-"), "must not look like /lp/sell's source");
+});
+check("3e. the market picker on /lp/coffee links back to /lp/coffee, not to /lp/sell (config/routes.ts MARKET_LINK_BASES)", () => {
+  assert.equal(marketBaseFor("/lp/coffee"), "/lp/coffee");
+  assert.equal(marketBaseFor("/lp/coffee/m/atlanta"), "/lp/coffee");
+  assert.equal(marketBaseFor("/lp/coffee/v/control"), "/lp/coffee");
+  // and the confirm handoff still goes to the shared /confirm
+  assert.equal(campaignHref(campaignBaseFor("/lp/coffee"), "/confirm"), "/confirm");
 });
 check("4. THE LINK REGISTRY ROW matches the card: print / Marketing / mail / campaign / all / curbio.com/coffee / printed", () => {
   const row = SEED_LINKS.find((l) => l.label === "Team lead coffee card · back panel");
