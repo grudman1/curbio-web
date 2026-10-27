@@ -314,6 +314,46 @@ em { font-style: normal; }
 /* when trust items stack one-per-line, the · separators dangle — hide them */
 @media (max-width: 480px) { .lp-hero-trust .lp-sold-proof-dot { display: none; } }
 
+/* ---------- optional hero visual (config `hero.visual`) ----------
+   Only pages that set it get the --visual class and the third grid child;
+   nothing below matches anywhere else. Desktop: a second row under the copy,
+   the form spanning both rows. Phone: one column, DOM order, so the visual
+   sits under the form and never pushes it down. */
+.lp-hero-grid--visual { grid-template-rows: auto auto; row-gap: 28px; }
+.lp-hero-grid--visual .lp-hero-copy { grid-column: 1; grid-row: 1; align-self: end; }
+.lp-hero-grid--visual .lp-hero-form-col { grid-column: 2; grid-row: 1 / span 2; }
+.lp-hero-visual { grid-column: 1; grid-row: 2; align-self: start; }
+@media (max-width: 860px) {
+  .lp-hero-grid--visual { grid-template-rows: none; }
+  .lp-hero-grid--visual .lp-hero-copy,
+  .lp-hero-grid--visual .lp-hero-form-col,
+  .lp-hero-visual { grid-column: auto; grid-row: auto; align-self: auto; }
+  .lp-hero-visual { display: flex; justify-content: center; }
+}
+
+/* the coffee card: components/HeroVisual.tsx */
+.lp-cc { display: flex; align-items: center; gap: 28px; padding: 10px 0 6px 6px; }
+.lp-cc-card {
+  position: relative; width: 264px; aspect-ratio: 5.5 / 4.25; flex: none;
+  background: var(--white); border: 1px solid var(--navy-08); border-radius: 10px;
+  box-shadow: var(--shadow-md), var(--shadow-app-pop);
+  transform: rotate(-3deg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 20px 20px 40px;
+}
+.lp-cc-text { font-family: var(--font-serif); font-weight: 600; font-size: 31px; line-height: 1.1; letter-spacing: -0.015em; color: var(--navy); text-align: center; white-space: nowrap; }
+.lp-cc-text em { font-style: normal; color: var(--amber); }
+.lp-cc-rule { display: block; width: 36px; height: 3px; background: var(--amber); border-radius: 2px; margin-top: 12px; }
+.lp-cc-logo { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); width: 68px; height: auto; }
+.lp-cc-cup { width: 112px; height: 112px; flex: none; }
+@media (max-width: 480px) {
+  .lp-cc { gap: 18px; padding: 6px 0 0; }
+  .lp-cc-card { width: 212px; padding: 16px 16px 34px; }
+  .lp-cc-text { font-size: 25px; }
+  .lp-cc-logo { width: 56px; bottom: 13px; }
+  .lp-cc-cup { width: 88px; height: 88px; }
+}
+
 /* ---------- FormCard (#quote-form) ---------- */
 .lp-fc { background: #fff; border-radius: 20px; box-shadow: var(--shadow-md); padding: 32px; width: 100%; max-width: 400px; }
 .lp-fc-h { font-family: var(--font-serif); font-weight: 600; font-size: 19px; color: var(--navy); margin: 0 0 24px; line-height: 1.2; }

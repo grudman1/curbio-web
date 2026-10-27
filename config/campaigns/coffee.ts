@@ -45,6 +45,10 @@ export const coffee: CampaignPage = {
     // The standard trust row, exactly as /lp/sell runs it. Icons are fixed per
     // position, so the order matters: homes, warranty, licensed.
     trust: ["8,000+ homes prepped", "1-year warranty", "Licensed & insured"],
+    // The mailed card, drawn in code (components/HeroVisual.tsx), so the
+    // page is recognisably the thing that arrived in the post. Under the copy
+    // on desktop, under the form on a phone.
+    visual: "coffee-card",
   },
 
   // Overrides the running cta-copy experiment: one button text, everywhere

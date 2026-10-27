@@ -1,4 +1,5 @@
 import { skeletonHeroCopy, SkeletonEyebrow } from "./SkeletonHeroCopy";
+import { HeroVisual } from "./HeroVisual";
 import type { CampaignPage } from "@/config/campaigns/types";
 
 // Layout-matching skeleton shown while market resolution is in flight.
@@ -26,7 +27,7 @@ export default function PageSkeleton({ hero }: { hero?: CampaignPage["hero"] } =
       </header>
       <main>
         <section className="lp-hero">
-          <div className="lp-shell lp-hero-grid">
+          <div className={hero?.visual ? "lp-shell lp-hero-grid lp-hero-grid--visual" : "lp-shell lp-hero-grid"}>
             <div className="lp-hero-copy">
               {copy && hero ? (
                 <SkeletonEyebrow hero={hero} />
@@ -47,6 +48,13 @@ export default function PageSkeleton({ hero }: { hero?: CampaignPage["hero"] } =
                   headline on resolve. */}
               <div aria-hidden style={{ height: 426, background: "var(--stone)", borderRadius: 12 }} />
             </div>
+            {/* Same slot as the real Hero, so the visual is in the first paint
+                and the form does not move when the page resolves. */}
+            {hero?.visual && (
+              <div className="lp-hero-visual" aria-hidden="true">
+                <HeroVisual visual={hero.visual} />
+              </div>
+            )}
           </div>
         </section>
       </main>

@@ -4,6 +4,7 @@ import { Icon, Eyebrow, PillButton } from "./LpKit";
 import { ZipModalTrigger } from "./ZipModalTrigger";
 import { FormCard } from "./FormCard";
 import { HeroCopyBody } from "./HeroCopyBody";
+import { HeroVisual, type HeroVisualName } from "./HeroVisual";
 import { trackEvent } from "@/lib/events";
 import { readVariantFromCookie } from "@/lib/ctaVariant";
 import type { CampaignMarket } from "@/lib/campaignMarkets";
@@ -81,6 +82,7 @@ export function Hero({
   headline,
   trust,
   phone,
+  visual,
   heroSub,
   referralSourceId,
   source,
@@ -102,6 +104,8 @@ export function Hero({
   prefillEmail?: string;
   /** Replaces the default "[Market] agents" eyebrow. Pass any React node. */
   eyebrowContent?: React.ReactNode;
+  /** Optional named illustration (config `hero.visual`). Nothing renders when unset. */
+  visual?: HeroVisualName;
   /** Replaces the default h1. Supplied by the campaign template from config. */
   headline?: React.ReactNode;
   /** Replaces the three trust-row items. Icons stay fixed per position. */
@@ -133,7 +137,7 @@ export function Hero({
 }) {
   return (
     <section className="lp-hero" id="hero">
-      <div className="lp-shell lp-hero-grid">
+      <div className={visual ? "lp-shell lp-hero-grid lp-hero-grid--visual" : "lp-shell lp-hero-grid"}>
         <div className="lp-hero-copy">
           {eyebrowContent ?? (
             <Eyebrow style={{ marginBottom: 18, color: "var(--fg-muted)" }}>
@@ -162,6 +166,11 @@ export function Hero({
             partnerSlug={partnerSlug}
           />
         </div>
+        {visual && (
+          <div className="lp-hero-visual" aria-hidden="true">
+            <HeroVisual visual={visual} />
+          </div>
+        )}
       </div>
     </section>
   );

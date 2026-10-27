@@ -111,4 +111,9 @@ check("5. the copy on the page is the card's; the trust row is /lp/sell's", () =
   assert.equal(coffee.sections.howItWorks, false);
   assert.equal(coffee.sections.closer, "Try us on your next listing. *Start with 15 minutes.*");
 });
+check("5b. the hero visual is on for coffee and OFF for every other campaign page", () => {
+  assert.equal(coffee.hero.visual, "coffee-card");
+  for (const c of CAMPAIGNS) if (c.slug !== "coffee") assert.equal(c.hero.visual, undefined, c.slug);
+  assert.equal(sell.hero.visual, undefined);
+});
 console.log(`coffee attribution: ${n} checks passed`);
