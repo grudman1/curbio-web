@@ -48,11 +48,12 @@ export default function PageSkeleton({ hero }: { hero?: CampaignPage["hero"] } =
                   headline on resolve. */}
               <div aria-hidden style={{ height: 426, background: "var(--stone)", borderRadius: 12 }} />
             </div>
-            {/* Same slot as the real Hero, so the visual is in the first paint
-                and the form does not move when the page resolves. */}
+            {/* Same slot and box as the real Hero, so the form does not move
+                when the page resolves — but invisible (`still`), so the
+                visual's entrance plays once, on the resolved page. */}
             {hero?.visual && (
               <div className="lp-hero-visual" aria-hidden="true">
-                <HeroVisual visual={hero.visual} />
+                <HeroVisual visual={hero.visual} still />
               </div>
             )}
           </div>

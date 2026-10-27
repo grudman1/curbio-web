@@ -331,27 +331,101 @@ em { font-style: normal; }
   .lp-hero-visual { display: flex; justify-content: center; }
 }
 
-/* the coffee card: components/HeroVisual.tsx */
-.lp-cc { display: flex; align-items: center; gap: 28px; padding: 10px 0 6px 6px; }
-.lp-cc-card {
-  position: relative; width: 264px; aspect-ratio: 5.5 / 4.25; flex: none;
-  background: var(--white); border: 1px solid var(--navy-08); border-radius: 10px;
-  box-shadow: var(--shadow-md), var(--shadow-app-pop);
-  transform: rotate(-3deg);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 20px 20px 40px;
+/* the coffee card: components/HeroVisual.tsx
+   One scale unit: the stage's font-size. Every size below is in em, so the
+   whole scene shrinks as one piece on a phone (10px = desktop size). Colours
+   are tokens; translucent shadows are the navy token via color-mix. Every
+   animated element's base style is its resting state, so reduced motion just
+   turns the animations off. */
+.lp-cc { display: flex; justify-content: flex-start; }
+.lp-cc-stage {
+  position: relative; isolation: isolate;
+  font-size: min(10px, calc((100vw - 48px) / 46));
+  width: 46em; height: 24em;
 }
-.lp-cc-text { font-family: var(--font-serif); font-weight: 600; font-size: 31px; line-height: 1.1; letter-spacing: -0.015em; color: var(--navy); text-align: center; white-space: nowrap; }
-.lp-cc-text em { font-style: normal; color: var(--amber); }
-.lp-cc-rule { display: block; width: 36px; height: 3px; background: var(--amber); border-radius: 2px; margin-top: 12px; }
-.lp-cc-logo { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); width: 68px; height: auto; }
-.lp-cc-cup { width: 112px; height: 112px; flex: none; }
-@media (max-width: 480px) {
-  .lp-cc { gap: 18px; padding: 6px 0 0; }
-  .lp-cc-card { width: 212px; padding: 16px 16px 34px; }
-  .lp-cc-text { font-size: 25px; }
-  .lp-cc-logo { width: 56px; bottom: 13px; }
-  .lp-cc-cup { width: 88px; height: 88px; }
+.lp-cc-back-svg, .lp-cc-deco { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.lp-cc-back-svg { z-index: 0; }
+.lp-cc-deco { z-index: 5; pointer-events: none; }
+.lp-cc-blob { fill: var(--amber-10); transform-box: fill-box; transform-origin: center; animation: lp-cc-grow 1s cubic-bezier(.22,1,.36,1) .1s both; }
+.lp-cc-orbit { fill: none; stroke: var(--amber-30); stroke-width: 1.5; stroke-dasharray: 2 8; stroke-linecap: round; transform-box: fill-box; transform-origin: center; animation: lp-cc-grow 1.1s cubic-bezier(.22,1,.36,1) .2s both, lp-cc-spin 60s linear 1.3s infinite; }
+
+/* soft contact shadows that breathe with the float */
+.lp-cc-shadow { position: absolute; z-index: 1; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--navy) 22%, transparent), transparent); }
+.lp-cc-shadow--card { left: 3.6em; top: 21em; width: 23em; height: 2.4em; animation: lp-cc-fade .8s ease-out 1s both, lp-cc-breathe 7s ease-in-out 2.1s infinite; }
+.lp-cc-shadow--cup { left: 25.2em; top: 22.5em; width: 9.4em; height: 1.5em; z-index: 3; animation: lp-cc-fade .6s ease-out 1.4s both; }
+
+/* the card: position + float (outer), the deal-and-flip (inner), two faces */
+.lp-cc-card { position: absolute; z-index: 2; left: 1.6em; top: 1.2em; width: 27em; height: 20.86em; transform: rotate(-4deg); perspective: 90em; animation: lp-cc-float 7s ease-in-out 2.1s infinite; }
+.lp-cc-flip { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; animation: lp-cc-deal 1.5s cubic-bezier(.2,.8,.2,1) .35s both; }
+.lp-cc-face {
+  position: absolute; inset: 0; overflow: hidden;
+  -webkit-backface-visibility: hidden; backface-visibility: hidden;
+  background: var(--white); border: 1px solid var(--navy-08); border-radius: .7em;
+  box-shadow: var(--shadow-md), var(--shadow-app-pop);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.lp-cc-face::before { content: ""; position: absolute; inset: .9em; border: 1px solid var(--amber-30); border-radius: .35em; pointer-events: none; }
+.lp-cc-front { padding-bottom: 3.4em; }
+.lp-cc-back { transform: rotateY(180deg); }
+.lp-cc-text { font-family: var(--font-serif); font-weight: 600; font-size: 3.2em; line-height: 1.1; letter-spacing: -0.015em; color: var(--navy); white-space: nowrap; }
+.lp-cc-rule { display: block; width: 3.6em; height: .3em; border-radius: .2em; margin-top: 1.2em; background-color: var(--amber); }
+/* gold-foil glint across "on us." and the rule, every few seconds */
+.lp-cc-text em, .lp-cc-rule {
+  background-image: linear-gradient(105deg, var(--amber) 0 40%, var(--amber-30) 47%, var(--white) 50%, var(--amber-30) 53%, var(--amber) 60% 100%);
+  background-size: 320% 100%; background-position: 100% 0;
+  animation: lp-cc-foil 6.5s ease-in-out 2.3s infinite;
+}
+.lp-cc-text em { color: var(--amber); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.lp-cc-rule { animation-delay: 2.5s; }
+.lp-cc-logo { position: absolute; bottom: 2em; left: 50%; width: 6.6em; height: auto; transform: translateX(-50%); }
+.lp-cc-postmark { position: absolute; top: 1.9em; right: 2em; width: 7em; height: 4.4em; fill: none; stroke: var(--navy-15); stroke-width: 1.4; stroke-linecap: round; }
+.lp-cc-back-eyebrow { font-family: var(--font-sans); font-size: 1em; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-muted); margin-top: 1.2em; }
+.lp-cc-back-url { font-family: var(--font-serif); font-weight: 600; font-size: 2.3em; color: var(--navy); margin-top: .3em; }
+
+/* the cup: slides in, steam rises */
+.lp-cc-cup { position: absolute; z-index: 4; left: 25.2em; top: 10.8em; width: 9.6em; height: 12.8em; overflow: visible; transform-origin: 50% 100%; animation: lp-cc-cup-in .9s cubic-bezier(.34,1.4,.64,1) 1.05s both; }
+.lp-cc-steam { fill: none; stroke: var(--navy-30); stroke-width: 2.2; stroke-linecap: round; opacity: .55; stroke-dasharray: 14 40; animation: lp-cc-steam 3.4s ease-in-out 1.6s infinite both; }
+.lp-cc-steam:nth-child(2) { animation-delay: 2.7s; }
+.lp-cc-steam:nth-child(3) { animation-delay: 3.8s; }
+
+/* beans pop in; sparkles fade in, then twinkle */
+.lp-cc-bean { transform-box: fill-box; transform-origin: center; animation: lp-cc-pop .6s cubic-bezier(.34,1.56,.64,1) 1.45s both; }
+.lp-cc-bean--2 { animation-delay: 1.6s; }
+.lp-cc-spark { fill: var(--amber); transform-box: fill-box; transform-origin: center; animation: lp-cc-fade .5s ease-out 1.7s both, lp-cc-twinkle 3.2s ease-in-out 2.2s infinite; }
+.lp-cc-spark--2 { animation-delay: 1.9s, 3s; }
+.lp-cc-spark--3 { animation-delay: 2.1s, 3.7s; }
+
+@keyframes lp-cc-deal {
+  0%   { opacity: 0; transform: translate3d(-2em, -3.6em, 0) rotateX(16deg) rotateY(180deg) rotateZ(10deg) scale(.86); }
+  14%  { opacity: 1; }
+  64%  { transform: translate3d(0, .4em, 0) rotateX(0) rotateY(-10deg) rotateZ(-1.5deg) scale(1.015); }
+  82%  { transform: translate3d(0, -.1em, 0) rotateY(4deg) rotateZ(.4deg) scale(1); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes lp-cc-float {
+  0%, 100% { transform: rotate(-4deg) translateY(0); }
+  50%      { transform: rotate(-3deg) translateY(-.55em); }
+}
+@keyframes lp-cc-breathe { 0%, 100% { transform: scaleX(1); opacity: 1; } 50% { transform: scaleX(.9); opacity: .7; } }
+@keyframes lp-cc-cup-in {
+  0%   { opacity: 0; transform: translate3d(3.2em, 1.2em, 0) rotate(9deg); }
+  70%  { opacity: 1; transform: translate3d(-.3em, 0, 0) rotate(-2deg); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes lp-cc-steam { 0% { stroke-dashoffset: 16; opacity: 0; } 30% { opacity: .65; } 100% { stroke-dashoffset: -28; opacity: 0; } }
+@keyframes lp-cc-foil { 0% { background-position: 100% 0; } 24%, 100% { background-position: 0 0; } }
+@keyframes lp-cc-grow { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+@keyframes lp-cc-spin { to { transform: rotate(360deg); } }
+@keyframes lp-cc-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes lp-cc-pop { from { opacity: 0; transform: scale(.3) rotate(-40deg); } to { opacity: 1; transform: none; } }
+@keyframes lp-cc-twinkle { 0%, 100% { transform: scale(1) rotate(0); opacity: 1; } 50% { transform: scale(.5) rotate(45deg); opacity: .35; } }
+
+@media (max-width: 860px) { .lp-cc { justify-content: center; } }
+/* below the fold at load: rest until seen, then PlayWhenSeen replays it */
+.lp-cc[data-armed] *, .lp-cc[data-armed] *::before { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .lp-cc *, .lp-cc *::before { animation: none !important; }
+  .lp-cc-steam { stroke-dasharray: none; }
 }
 
 /* ---------- FormCard (#quote-form) ---------- */
@@ -363,7 +437,7 @@ em { font-style: normal; }
 .lp-fc-help { font-family: var(--font-sans); font-size: 11px; font-weight: 400; color: var(--fg-muted); margin-top: 6px; }
 .lp-fc-err { font-family: var(--font-sans); font-size: 12px; font-weight: 400; color: var(--error); margin-top: 6px; }
 .lp-fc-server { font-family: var(--font-sans); font-size: 13px; color: var(--error); background: rgba(226,75,74,0.08); border-radius: 8px; padding: 10px 12px; margin: 16px 0 0; line-height: 1.45; }
-.lp-fc-submit { width: 100%; height: 52px; margin-top: 20px; background: var(--amber); color: #fff; border: 0; border-radius: 999px; font-family: var(--font-sans); font-size: 15px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 9px; transition: background var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
+.lp-fc-submit { width: 100%; min-height: 52px; padding: 6px 24px; text-align: center; text-wrap: balance; margin-top: 20px; background: var(--amber); color: #fff; border: 0; border-radius: 999px; font-family: var(--font-sans); font-size: 15px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 9px; transition: background var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out); }
 .lp-fc-submit:hover:not(:disabled) { background: var(--amber-110); box-shadow: var(--shadow-amber); }
 .lp-fc-submit:active:not(:disabled) { background: var(--amber-120); box-shadow: none; }
 .lp-fc-submit:disabled { opacity: 0.6; box-shadow: none; cursor: default; }
