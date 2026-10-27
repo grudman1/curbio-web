@@ -115,7 +115,7 @@ function CoffeeCard({ still }: { still: boolean }) {
           <g transform="translate(356 74) scale(.55)">
             <path className="lp-cc-spark lp-cc-spark--2" d="M0-11C1-2.5 2.5-1 11 0 2.5 1 1 2.5 0 11-1 2.5-2.5 1-11 0-2.5-1-1-2.5 0-11z" />
           </g>
-          <g transform="translate(286 214) scale(.6)">
+          <g transform="translate(420 150) scale(.6)">
             <path className="lp-cc-spark lp-cc-spark--3" d="M0-11C1-2.5 2.5-1 11 0 2.5 1 1 2.5 0 11-1 2.5-2.5 1-11 0-2.5-1-1-2.5 0-11z" />
           </g>
         </svg>
