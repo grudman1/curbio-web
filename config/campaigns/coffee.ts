@@ -15,10 +15,11 @@ import type { CampaignPage } from "./types";
 // look us up before the call — and its one job is a 15-minute booking with
 // the local HSM. Expect phones.
 //
-// The three points are the card's own: they go in the hero trust row (the only
-// configurable three-item slot), and the fixed "How it works" band is off.
-// The bottom of the page is the navy closer, whose button scrolls back to the
-// one form. The confirm page is the shared one, unchanged.
+// The hero carries the standard trust row (/lp/sell's three items, same icons)
+// so the page reads as Curbio, not as a one-off; the card's own three points
+// stay on the card. The fixed "How it works" band is off. The bottom of the
+// page is the navy closer, whose button scrolls back to the one form. The
+// confirm page is the shared one, unchanged.
 //
 // ATTRIBUTION: channel comes from utm_source at request time (lib/channels.ts)
 // — `mail` was added to the closed list for this campaign. `defaultUtmSource`
@@ -31,19 +32,19 @@ export const coffee: CampaignPage = {
 
   meta: {
     title: "Coffee's on us — Curbio",
+    // Matches the hero subline.
     description:
-      "Thanks for being one of the teams we want to work with. Book 15 minutes with your local " +
-      "Curbio rep: pre-listing repairs, updates and staging, fully managed, with pay-at-closing " +
-      "for qualified sellers.",
+      "Let’s grab 15 minutes. Then try us on your next listing, with a free estimate and " +
+      "no commitment.",
   },
 
   hero: {
     eyebrow: { default: "For {market} team leads", neutral: "For team leads" },
     headline: "Coffee’s *on us.*",
-    sub: "Thanks for being one of the teams we want to work with. Let’s grab 15 minutes.",
-    // The card's three points, headlines only — the trust row is one short
-    // line with fixed icons and has no room for the body copy.
-    trust: ["We handle everything", "Ready by your list date", "Sellers can pay at closing"],
+    sub: "Let’s grab 15 minutes. Then try us on your next listing, with a free estimate and no commitment.",
+    // The standard trust row, exactly as /lp/sell runs it. Icons are fixed per
+    // position, so the order matters: homes, warranty, licensed.
+    trust: ["8,000+ homes prepped", "1-year warranty", "Licensed & insured"],
   },
 
   // Overrides the running cta-copy experiment: one button text, everywhere
@@ -56,7 +57,7 @@ export const coffee: CampaignPage = {
     soldProof: true,
     // Off: its copy is fixed and the card's three points are in the hero.
     howItWorks: false,
-    closer: "Ready when you are. *Let’s grab 15 minutes.*",
+    closer: "Try us on your next listing. *Start with 15 minutes.*",
   },
 
   // Same as /lp/sell: ?zip=, ?market=, IP geo, then the picker. The lead

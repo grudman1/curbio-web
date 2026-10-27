@@ -17,6 +17,7 @@ import { deriveChannel, VALID_CHANNELS, CHANNEL_COLORS } from "../lib/channels.t
 import { CHANNEL_FUNNEL_ORDER, CHANNEL_LABELS } from "../config/marketingHub.ts";
 import { CAMPAIGNS, CAMPAIGN_BY_SLUG } from "../config/campaigns/index.ts";
 import { coffee } from "../config/campaigns/coffee.ts";
+import { sell } from "../config/campaigns/sell.ts";
 import { SEED_LINKS } from "../config/linkRegistry.ts";
 import { isPickerPageSource, withMarketSlug } from "../lib/marketGate.ts";
 import { marketBaseFor, campaignBaseFor, campaignHref } from "../lib/campaignBase.ts";
@@ -99,10 +100,15 @@ check("4. THE LINK REGISTRY ROW matches the card: print / Marketing / mail / cam
   assert.equal(row.trackedUrl, REDIRECT);
   assert.equal(deriveChannel(new URL(row.trackedUrl).searchParams.get("utm_source")), row.channel);
 });
-check("5. the copy on the page is the card's", () => {
+check("5. the copy on the page is the card's; the trust row is /lp/sell's", () => {
   assert.equal(coffee.hero.headline, "Coffee’s *on us.*");
-  assert.deepEqual(coffee.hero.trust, ["We handle everything", "Ready by your list date", "Sellers can pay at closing"]);
+  assert.equal(coffee.hero.sub, "Let’s grab 15 minutes. Then try us on your next listing, with a free estimate and no commitment.");
+  // Same three items, same order, as /lp/sell — the icons are fixed per
+  // position, so a reorder would put the wrong icon next to the wrong claim.
+  assert.deepEqual(coffee.hero.trust, sell.hero.trust);
+  assert.equal(coffee.meta?.description, coffee.hero.sub);
   assert.equal(coffee.cta, "Book 15 minutes with your local Curbio rep.");
   assert.equal(coffee.sections.howItWorks, false);
+  assert.equal(coffee.sections.closer, "Try us on your next listing. *Start with 15 minutes.*");
 });
 console.log(`coffee attribution: ${n} checks passed`);
