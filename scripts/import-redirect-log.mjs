@@ -54,7 +54,7 @@ function parseCsv(text) {
 
 const VALID_CHANNELS = new Set([
   "email", "paid_search", "paid_social", "creator", "hsm_field",
-  "partnership", "organic", "referral", "direct",
+  "partnership", "organic", "referral", "direct", "event", "mail",
 ]);
 
 const raw = readFileSync(csvPath, "utf8").replace(/^﻿/, "");

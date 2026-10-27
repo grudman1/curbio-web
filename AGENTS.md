@@ -125,7 +125,7 @@ only — never pushed, three commits behind origin — and came within one routi
   flags branches already in this state.
 - **Channel is derived from `utm_source` at REQUEST time, never from page
   config.** `deriveChannel()` in `lib/channels.ts` maps `utm_source` onto a
-  closed **ten**-value list, and anything absent or unrecognised becomes
+  closed **eleven**-value list, and anything absent or unrecognised becomes
   `direct`. It runs twice from the same value — client-side in `FormCard` for
   the GA event, server-side in `app/api/lead/route.ts` for the stored lead —
   so they cannot disagree. A page's `attribution.source` is the lead payload's

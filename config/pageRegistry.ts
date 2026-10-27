@@ -56,6 +56,16 @@ export type RegistryEntry = {
  */
 const EXISTS_ON_WORDPRESS = new Set(["/privacy-policy", "/terms"]);
 
+/**
+ * Registered campaigns still awaiting Gavin's flip to `live`. Every new
+ * campaign lands here first; removing the slug is the flip.
+ */
+const STUB_CAMPAIGNS = new Set<string>(["coffee"]);
+const STUB_CAMPAIGN_NOTES: Record<string, string> = {
+  coffee:
+    "Team-lead direct mail (Starbucks cards, Nov 2026). curbio.com/coffee redirects here with utm_source=mail. stub until the preview test lead lands as Channel mail",
+};
+
 /** Indexability for a path, from the tier map. Unlisted = not indexed. */
 function indexedFor(publicPath: string): boolean {
   return ROUTES.find((r) => r.publicPath === publicPath)?.indexed ?? false;
@@ -73,20 +83,24 @@ function implementedPages(): RegistryEntry[] {
   const simpleName = (slug: string) =>
     `${slug.charAt(0).toUpperCase()}${slug.slice(1)} Campaign`;
   for (const c of CAMPAIGNS) {
+    // stub until Gavin flips it — see AGENTS.md "Page registry". The loop
+    // derives the rows, so the flip is removing the slug from this set.
+    const status: PageStatus = STUB_CAMPAIGNS.has(c.slug) ? "stub" : "live";
     out.push({
       path: `/lp/${c.slug}`,
       group: "campaigns",
       title: simpleName(c.slug),
-      status: "live",
+      status,
       indexed: false, // campaign tier, permanently
       derivedFrom: "config/campaigns",
+      ...(STUB_CAMPAIGN_NOTES[c.slug] ? { note: STUB_CAMPAIGN_NOTES[c.slug] } : {}),
     });
     if (c.market.mode === "picker") {
       out.push({
         path: `/lp/${c.slug}/m/:market`,
         group: "campaigns",
         title: `${simpleName(c.slug)} — per-market (${MARKETS.length} variants)`,
-        status: "live",
+        status,
         indexed: false,
         derivedFrom: "config/campaigns × config/markets",
       });

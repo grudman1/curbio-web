@@ -102,17 +102,17 @@ the format. Those are separate fields.
 
 ### The closed channel value list
 
-`lib/channels.ts` — **ten values, as implemented today:**
+`lib/channels.ts` — **eleven values, as implemented today:**
 
 ```
 email · paid_search · paid_social · creator · hsm_field
-partnership · organic · referral · direct · event
+partnership · organic · referral · direct · event · mail
 ```
 
 `event` was added Aug 26 (spec v3.2) so the October event push launches
 attributed, and the code now carries it — the nine/ten drift that stood in the
-previous distillation is **resolved**. `mail` is next in line, to be added only
-when direct mail actually launches.
+previous distillation is **resolved**. `mail` was added Oct 27 2026 when direct
+mail launched (the team-lead coffee cards, `config/campaigns/coffee.ts`).
 
 Derivation rule: channel is derived from `utm_source` against this list.
 **Absent source → `direct`. Unrecognized source → `direct`.** Never null, never

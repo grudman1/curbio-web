@@ -1,5 +1,6 @@
 import type { CampaignPage } from "./types";
 import { sell } from "./sell";
+import { coffee } from "./coffee";
 
 export type { CampaignPage, ReferralSourceId } from "./types";
 
@@ -23,7 +24,7 @@ export type { CampaignPage, ReferralSourceId } from "./types";
 // live in the site tier at their own real paths. See config/campaigns/exp.ts.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const CAMPAIGNS: CampaignPage[] = [sell];
+export const CAMPAIGNS: CampaignPage[] = [sell, coffee];
 
 export const CAMPAIGN_BY_SLUG: Record<string, CampaignPage> = Object.fromEntries(
   CAMPAIGNS.map((c) => [c.slug, c])

@@ -54,7 +54,7 @@ export const OUTREACH_WEEKLY_CALLS_TARGET = 10;
 // ── Reporting dimensions ─────────────────────────────────────────────────────
 
 /**
- * The ten channels in FUNNEL-POSITION order — how far from the close the
+ * The eleven channels in FUNNEL-POSITION order — how far from the close the
  * channel sits, not the alphabet. Direct last. This is an ORDERING of the
  * closed list in lib/channels.ts, never an extension of it: every entry is
  * type-checked against Channel, and the exhaustiveness check below fails the
@@ -65,6 +65,7 @@ export const CHANNEL_FUNNEL_ORDER = [
   "event",
   "partnership",
   "hsm_field",
+  "mail",
   "email",
   "paid_search",
   "paid_social",
@@ -84,6 +85,7 @@ export const CHANNEL_LABELS: Record<Channel, string> = {
   event: "Event",
   partnership: "Partnership",
   hsm_field: "HSM field",
+  mail: "Mail",
   email: "Email",
   paid_search: "Paid search",
   paid_social: "Paid social",
@@ -94,7 +96,7 @@ export const CHANNEL_LABELS: Record<Channel, string> = {
 
 /**
  * The email split is a VIEW, resolved from which webhook the event came from.
- * It is not an eleventh channel — the CRM list is closed at ten and validated at
+ * It is not a twelfth channel — the CRM list is closed at eleven and validated at
  * the boundary; a new value maps straight back to `direct`.
  */
 export const EMAIL_SPLIT_VIEWS = [
