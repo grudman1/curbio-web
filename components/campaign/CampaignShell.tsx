@@ -265,6 +265,7 @@ export default function CampaignShell({
           headline={<RichText>{fill(page.hero.headline)}</RichText>}
           trust={page.hero.trust}
           phone={page.hero.phone}
+          visual={page.hero.visual}
           heroSub={<RichText>{fill(page.hero.sub)}</RichText>}
           referralSourceId={page.attribution.referralSourceId ?? partner?.referralSourceId}
           partnerSlug={partnerId}

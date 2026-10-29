@@ -56,6 +56,8 @@ export function isKnownReferralSource(value: string | null | undefined): boolean
   return !!value && (REFERRAL_SOURCE_IDS as readonly string[]).includes(value);
 }
 
+import type { HeroVisualName } from "@/components/HeroVisual";
+
 export type RichLine = string;
 
 export type CampaignPage = {
@@ -97,6 +99,14 @@ export type CampaignPage = {
      * one; pages that omit this render nothing, as before.
      */
     phone?: { display: string; tel: string };
+    /**
+     * Optional illustration under the copy (desktop) / under the form
+     * (phone), drawn in code from site tokens — see components/HeroVisual.tsx
+     * for the list. A NAME, not markup: a config picks a visual that exists,
+     * it cannot supply its own. Absent from the DOM when unset, so pages that
+     * do not opt in render exactly as before.
+     */
+    visual?: HeroVisualName;
   };
 
   /** Overrides the cta-copy A/B variant. Omit to keep the running experiment. */
