@@ -5,7 +5,8 @@ import type { CampaignPage } from "./types";
 //
 // Fifty handwritten Curbio cards with a Starbucks gift card went to real estate
 // team leads in Atlanta, Dallas, Los Angeles, Seattle and the DC area. The card
-// says "Coffee's on us." and lists curbio.com/coffee on the back; WordPress
+// front reads "There's no such thing as a free lunch. But there is free
+// coffee." and the back lists curbio.com/coffee; WordPress
 // redirects that to
 //
 //   https://sell.curbio.com/lp/coffee?utm_source=mail&utm_medium=direct_mail&utm_campaign=teamlead-starbucks-nov
@@ -31,7 +32,7 @@ export const coffee: CampaignPage = {
   slug: "coffee",
 
   meta: {
-    title: "Coffee's on us — Curbio",
+    title: "Free coffee from Curbio",
     // Matches the hero subline.
     description:
       "Let’s grab 15 minutes. Then try us on your next listing, with a free estimate and " +
@@ -39,8 +40,16 @@ export const coffee: CampaignPage = {
   },
 
   hero: {
-    eyebrow: { default: "For {market} team leads", neutral: "For team leads" },
-    headline: "Coffee’s *on us.*",
+    // The card's small top line rides as the eyebrow's second line: the
+    // template has no separate kicker, and the eyebrow is its only small
+    // line above the headline. Non-breaking spaces keep "a free lunch." together
+    // when a phone wraps the line, so "lunch." is never left alone.
+    eyebrow: {
+      default: "For {market} team leads\nThere’s no such thing as\u00a0a\u00a0free\u00a0lunch.",
+      neutral: "For team leads\nThere’s no such thing as\u00a0a\u00a0free\u00a0lunch.",
+    },
+    // The card's front, line for line: navy, then amber.
+    headline: "But there is\n*free coffee.*",
     sub: "Let’s grab 15 minutes. Then try us on your next listing, with a free estimate and no commitment.",
     // The standard trust row, exactly as /lp/sell runs it. Icons are fixed per
     // position, so the order matters: homes, warranty, licensed.

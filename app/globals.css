@@ -364,11 +364,11 @@ em { font-style: normal; }
   box-shadow: var(--shadow-md), var(--shadow-app-pop);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
-.lp-cc-face::before { content: ""; position: absolute; inset: .9em; border: 1px solid var(--amber-30); border-radius: .35em; pointer-events: none; }
-.lp-cc-front { padding-bottom: 3.4em; }
+.lp-cc-front { padding-bottom: 3.2em; }
 .lp-cc-back { transform: rotateY(180deg); }
-.lp-cc-text { font-family: var(--font-serif); font-weight: 600; font-size: 3.2em; line-height: 1.1; letter-spacing: -0.015em; color: var(--navy); white-space: nowrap; }
-.lp-cc-rule { display: block; width: 3.6em; height: .3em; border-radius: .2em; margin-top: 1.2em; background-color: var(--amber); }
+.lp-cc-kicker { font-family: var(--font-serif); font-weight: 400; font-size: 1.2em; line-height: 1.2; color: var(--navy); white-space: nowrap; margin-bottom: .7em; }
+.lp-cc-text { font-family: var(--font-serif); font-weight: 600; font-size: 3.3em; line-height: 1.02; letter-spacing: -0.015em; color: var(--navy); white-space: nowrap; text-align: center; }
+.lp-cc-rule { display: block; width: 3.6em; height: .3em; border-radius: .2em; margin-top: 1.1em; background-color: var(--amber); }
 /* gold-foil glint across "on us." and the rule, every few seconds */
 .lp-cc-text em, .lp-cc-rule {
   background-image: linear-gradient(105deg, var(--amber) 0 40%, var(--amber-30) 47%, var(--white) 50%, var(--amber-30) 53%, var(--amber) 60% 100%);
@@ -378,9 +378,12 @@ em { font-style: normal; }
 .lp-cc-text em { color: var(--amber); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
 .lp-cc-rule { animation-delay: 2.5s; }
 .lp-cc-logo { position: absolute; bottom: 2em; left: 50%; width: 6.6em; height: auto; transform: translateX(-50%); }
-.lp-cc-postmark { position: absolute; top: 1.9em; right: 2em; width: 7em; height: 4.4em; fill: none; stroke: var(--navy-15); stroke-width: 1.4; stroke-linecap: round; }
-.lp-cc-back-eyebrow { font-family: var(--font-sans); font-size: 1em; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--fg-muted); margin-top: 1.2em; }
-.lp-cc-back-url { font-family: var(--font-serif); font-weight: 600; font-size: 2.3em; color: var(--navy); margin-top: .3em; }
+.lp-cc-back { padding-bottom: 2.6em; }
+.lp-cc-back-logo { width: 5.6em; height: auto; margin-bottom: 1.2em; }
+.lp-cc-back-h { font-family: var(--font-serif); font-weight: 500; font-size: 1.75em; line-height: 1.18; color: var(--navy); text-align: center; white-space: nowrap; }
+.lp-cc-back-h em { color: var(--amber); }
+.lp-cc-back-rule { display: block; width: 2.6em; height: .22em; border-radius: .2em; margin-top: 1em; background: var(--amber); }
+.lp-cc-back-url { position: absolute; bottom: 1.9em; left: 0; right: 0; text-align: center; font-family: var(--font-sans); font-weight: 700; font-size: 1em; letter-spacing: .04em; color: var(--navy); }
 
 /* the cup: slides in, steam rises */
 .lp-cc-cup { position: absolute; z-index: 4; left: 25.2em; top: 10.8em; width: 9.6em; height: 12.8em; overflow: visible; transform-origin: 50% 100%; animation: lp-cc-cup-in .9s cubic-bezier(.34,1.4,.64,1) 1.05s both; }

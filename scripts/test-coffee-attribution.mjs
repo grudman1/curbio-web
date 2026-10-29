@@ -101,7 +101,10 @@ check("4. THE LINK REGISTRY ROW matches the card: print / Marketing / mail / cam
   assert.equal(deriveChannel(new URL(row.trackedUrl).searchParams.get("utm_source")), row.channel);
 });
 check("5. the copy on the page is the card's; the trust row is /lp/sell's", () => {
-  assert.equal(coffee.hero.headline, "Coffee’s *on us.*");
+  assert.equal(coffee.hero.headline, "But there is\n*free coffee.*");
+  assert.equal(coffee.hero.eyebrow.default.replace(/\u00a0/g, " "), "For {market} team leads\nThere’s no such thing as a free lunch.");
+  assert.equal(coffee.hero.eyebrow.neutral.replace(/\u00a0/g, " "), "For team leads\nThere’s no such thing as a free lunch.");
+  assert.equal(coffee.meta?.title, "Free coffee from Curbio");
   assert.equal(coffee.hero.sub, "Let’s grab 15 minutes. Then try us on your next listing, with a free estimate and no commitment.");
   // Same three items, same order, as /lp/sell — the icons are fixed per
   // position, so a reorder would put the wrong icon next to the wrong claim.

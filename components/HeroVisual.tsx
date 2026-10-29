@@ -33,11 +33,15 @@ export function HeroVisual({ visual, still = false }: { visual?: HeroVisualName;
 }
 
 /**
- * The team-lead coffee card (config/campaigns/coffee.ts). The mailed card is
- * dealt onto the table back-first — its back panel carries curbio.com/coffee,
- * as the real one does — flips to "Coffee's on us." and settles into a slow
- * float. A takeaway cup slides in beside it with rising steam; the amber
- * "on us." catches a foil glint every few seconds. No brand on the cup.
+ * The team-lead coffee card (config/campaigns/coffee.ts), drawn to match the
+ * final mailed card. It is dealt onto the table back-first — the back as
+ * mailed: wordmark, "The listing prep manager for top agents and teams.",
+ * curbio.com/coffee and the phone number — then flips to the front: "There's
+ * no such thing as a free lunch." over "But there is" and the amber "free
+ * coffee.", the amber rule, the wordmark at the foot. It settles into a slow
+ * float; a takeaway cup slides in beside it with rising steam; the amber
+ * "free coffee." catches a foil glint every few seconds. No brand on the cup,
+ * and none of the gift card that was inside.
  */
 function CoffeeCard({ still }: { still: boolean }) {
   return (
@@ -53,21 +57,26 @@ function CoffeeCard({ still }: { still: boolean }) {
         <div className="lp-cc-card">
           <div className="lp-cc-flip">
             <div className="lp-cc-face lp-cc-front">
+              <div className="lp-cc-kicker">There’s no such thing as a free lunch.</div>
               <div className="lp-cc-text">
-                Coffee’s <em>on us.</em>
+                But there is
+                <br />
+                <em>free coffee.</em>
               </div>
               <span className="lp-cc-rule" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="lp-cc-logo" src="/logo/curbio-navy.svg" alt="" width={66} height={17} />
             </div>
             <div className="lp-cc-face lp-cc-back">
-              <svg className="lp-cc-postmark" viewBox="0 0 70 44" aria-hidden="true">
-                <circle cx="22" cy="22" r="17" />
-                <circle cx="22" cy="22" r="12.5" />
-                <path d="M42 12c4-3 8 3 12 0s8 3 12 0M42 22c4-3 8 3 12 0s8 3 12 0M42 32c4-3 8 3 12 0s8 3 12 0" />
-              </svg>
-              <span className="lp-cc-back-eyebrow">Book 15 minutes</span>
-              <span className="lp-cc-back-url">curbio.com/coffee</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="lp-cc-back-logo" src="/logo/curbio-navy.svg" alt="" width={56} height={14} />
+              <div className="lp-cc-back-h">
+                The listing prep manager
+                <br />
+                for <em>top agents</em> and teams.
+              </div>
+              <span className="lp-cc-back-rule" />
+              <span className="lp-cc-back-url">curbio.com/coffee · (844) 944-2629</span>
             </div>
           </div>
         </div>
